@@ -516,6 +516,11 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         write_package(entry["maps"], kind, name, size, fid, fmt,
                       at=data["_updated_at"], at_ts=data["_updated_ts"],
                       sha=sha, models=region_models(man, reg))
+    # a format this run didn't build stays until its own job replaces it
+    for kind in {k or "base" for k, *_ in uploaded}:
+        formats = entry["maps"][kind].setdefault("formats", {})
+        for fmt, rec in ((old_maps.get(kind) or {}).get("formats") or {}).items():
+            formats.setdefault(fmt, dict(rec))
     if base_parts is not None:
         write_parts(entry["maps"], base_parts)
     # only now, with this run's packages in; those are protected
