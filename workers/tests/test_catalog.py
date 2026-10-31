@@ -6,7 +6,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest import mock
 
-from load import worker
+from load import WORKERS, worker
 
 catalog = worker("deploy/catalog.py")
 merge = worker("deploy/catalog-merge.py").merge
@@ -225,3 +225,27 @@ class Packages(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Rebuild(unittest.TestCase):
+    """380: Bratislava's .aar job was cancelled and every package lost its .aar."""
+
+    def test_old_aar_kept_until_replaced(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()):
+            path = os.path.join(tmp, "maps.json")
+            old = dict(record("Z1", "bratislavsky-terrain.zip"),
+                       formats={"zip": record("Z1", "bratislavsky-terrain.zip"),
+                                "aar": record("A1", "bratislavsky-terrain.aar")})
+            with open(path, "w") as f:
+                json.dump({"slovensko": {"regions": {"bratislavsky": {"maps": {"terrain": old}}}}}, f)
+            with open(os.path.join(WORKERS, "data", "regions.json"), encoding="utf-8") as f:
+                regions = json.load(f)
+            uploaded = [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)]
+            catalog.write_catalog(path, ["slovensko", "bratislavsky"], regions, uploaded,
+                                  {"regions": {}}, owns=["terrain"])
+            with open(path) as f:
+                terrain = json.load(f)["slovensko"]["regions"]["bratislavsky"]["maps"]["terrain"]
+        self.assertEqual(catalog.link_id(terrain["formats"]["zip"]), "Z2")
+        self.assertEqual(catalog.link_id(terrain["formats"].get("aar")), "A1",
+                         "a cancelled .aar job left the region with nothing the app opens")
+        self.assertEqual(catalog.link_id(terrain), "Z2", "the top mirrors the new ZIP")
