@@ -8,6 +8,8 @@
     "  defaults        every key there is, with what it means in `options.py`",
     "  maps            countries as in `regions.json` and the category `mountains`",
     "  sources.aerial  aerial photo sources; a map picks one with `aerial_summer`/`aerial_winter`",
+    "  credits         data authors; every source names its own in `credits`",
+    "  sources.dem     height models; a map picks them with `*_source`",
     "Tuning: change the value here on a branch and run the workflow from that branch."
   ],
   "defaults": {
@@ -72,6 +74,275 @@
     "custom_bbox": ""
   },
   "sources": {
+    "dem": {
+      "_comment": [
+        "Height models for three settings: `contour_source` (contours), `rock_source`",
+        "(rocks) and `shading_source` (shading and 3D terrain). The `for` key of each",
+        "source says for which of the three it may be picked – `workers/lint/settings.py`",
+        "keeps every level of the settings to it.",
+        "",
+        "One source for everything (the old `dem_source` input) held while only one",
+        "was verified. With several models it stopped making sense: rocks want the",
+        "finest model available, shading can do with a coarser one but must cover the",
+        "whole region. Three choices say that, and nothing is quietly substituted.",
+        "",
+        "THREE MODELS, EACH FOR A REASON:",
+        "",
+        "  sonny   20 m, verified, the default. Covers everything, never missing.",
+        "  dmr35   10 m, ÚGKK open data. Twice as fine as Sonny and downloads as",
+        "          one ZIP – still the cheapest improvement in detail.",
+        "  dmr5    LiDAR. 1 m with a cutout, 5 m for a whole region. The best we",
+        "          have, and for rocks the only one that really shows a crag's shape.",
+        "",
+        "A FOURTH SOURCE `ugkk` IS GONE. It was the same model as `dmr5`, just its",
+        "1 m form for a cutout – two keys for one LiDAR. `dmr5` now picks its form by",
+        "extent itself (see its `_comment`), so it works fully in shading too – that",
+        "always covers a whole region and gets the 5 m version.",
+        "",
+        "Rocks also have `tienovanie` – ready polygons from dark hillshade areas.",
+        "It isn't an elevation model, so it isn't in this list.",
+        "",
+        "ÚGKK licence: free use including commercial, with the source credited",
+        "(ÚGKK SR). That must be in the map attribution – see poc/web/themes.js."
+      ],
+      "sonny": {
+        "label": "Sonny's LiDAR DTM 20m",
+        "kind": "sklad",
+        "store": "dem-sonny",
+        "for": [
+          "contours",
+          "rocks",
+          "shading"
+        ],
+        "cell_m": 20,
+        "attribution": "Sonny's LiDAR DTM",
+        "verified": true,
+        "credits": [
+          "sonny"
+        ]
+      },
+      "sonny1": {
+        "label": "Sonny's LiDAR DTM 1″ (.hgt)",
+        "kind": "sklad",
+        "store": "dem-sonny1",
+        "for": [
+          "contours",
+          "rocks",
+          "shading"
+        ],
+        "cell_m": 31,
+        "attribution": "Sonny's LiDAR DTM",
+        "verified": true,
+        "_comment": [
+          "Sonny's second model, from a Drive folder:",
+          "https://drive.google.com/drive/folders/1FCXPutDU6DvnTEA4PY6iFOQKiuVd11j4",
+          "",
+          "WHAT THE FOLDER REALLY HOLDS (read 2026-08-11, not guessed):",
+          "",
+          "  15 tiles N47E017 … N49E022, each as `<tile>.zip`",
+          "  one `<tile>.hgt` per ZIP, 25 934 402 B = 3601 × 3601 × int16",
+          "  ~146 MB to download in all (measured on 11 tiles, 7.0–11.6 MB)",
+          "  plus `_Readme.txt` and `_Region.jpg` (a coverage map)",
+          "",
+          "  grid      1″ = 1/3600° → 20.3 × 30.9 m at 49° N",
+          "  CRS       EPSG:4326, WGS 84; big-endian byte order",
+          "  heights   above sea level in the national system (Bpv), NOT ellipsoidal",
+          "  nodata    -32768; not a single point in N49E020 (Tatras)",
+          "",
+          "The folder is called “…1asec v1”, but its `_Readme.txt` is VERSION 2",
+          "(2023-06-27, “Complete coverage with DTM v5.0”). The folder name says",
+          "nothing about the version – go by the readme.",
+          "",
+          "ITS SOURCE IS DMR 5.0, resampled to 1″ and rounded to whole metres. In",
+          "Slovakia it's the same LiDAR the pipeline reads from Drive at 1 m (cutout)",
+          "or 5 m (region) – just thrown away. Across the border it's SRTM v3 or",
+          "Viewfinder Panoramas fill, so NOT LiDAR.",
+          "",
+          "CAUTION, IT'S A COMPROMISE THE REPOSITORY ONCE REJECTED. It differs from",
+          "`sonny` (20m GeoTIFF) not in the horizontal grid but in the VERTICAL step:",
+          "",
+          "  model   format    horizontal     vertical",
+          "  20m     GeoTIFF   20 × 20 m      0.1 m",
+          "  1″      .hgt      20.3 × 30.9 m  1 m",
+          "",
+          "1 m steps give a stepped slope that tears a continuous wall into a heap of",
+          "false fragments (figures in workers/README.md): the same rock area, but 2.5×",
+          "more broken pieces with a coarser outline. For ROCKS `sonny` (better still",
+          "`dmr5`) is the better choice; 1″ makes sense where the 20m model doesn't",
+          "reach, or for comparison.",
+          "",
+          "`cell_m` is 31, not 20: the grid is asymmetric and estimates as well as",
+          "`rock_res: auto` should follow the WORSE axis (30.9 m along the meridian).",
+          "`rock-areas.py` measures the real cell from the raster anyway.",
+          "",
+          "IT NEEDS A DRIVE SIGN-IN, and not for a quota: all 15 tiles are SHORTCUTS",
+          "to files elsewhere. A public `uc?export=download` of a shortcut answers",
+          "“Only the owner and editors can download this file” and `gdown --folder`",
+          "fails on it. `workers/drive/folder.py` resolves shortcuts through the Drive API.",
+          "",
+          ".hgt → GeoTIFF is the standard path: 3601² is a size GDAL knows as SRTMHGT,",
+          "so `hgt_to_tif` in `update-dem.yml` needs no VRT workaround."
+        ],
+        "credits": [
+          "sonny1"
+        ]
+      },
+      "dmr35": {
+        "label": "ÚGKK DMR 3.5 (open data)",
+        "kind": "zip-url",
+        "url": "https://opendata.skgeodesy.sk/static/DMR3_5/dmr3_5-10.zip",
+        "store": "dem-dmr35",
+        "for": [
+          "contours",
+          "rocks",
+          "shading"
+        ],
+        "cell_m": 10,
+        "attribution": "ÚGKK SR – DMR 3.5",
+        "verified": true,
+        "_comment": [
+          "WORKS. Verified by run 31125042584: a 2319 MB ZIP holding one 42692×20429",
+          "raster, grid EXACTLY 10.0×10.0 m, CRS S-JTSK / Krovak East North. Cut into",
+          "15 tiles (1315 MB) and uploaded to the `dem-dmr35` release. The first ÚGKK",
+          "model the pipeline can take directly – and twice as fine as Sonny.",
+          "",
+          "Another machine than DMR 5.0, and that was the point: `opendata.skgeodesy.sk`",
+          "is static storage, not ArcGIS behind a map client. `zbgis.` and `zbgisws.`",
+          "time out from a GitHub runner; this one answered on the first try.",
+          "",
+          "With a 10 m grid it's TWICE as fine as Sonny (20 m) – and the source grid is",
+          "the only thing that caps real rock detail. `rock_res: auto` follows it: its",
+          "floor is a tenth of the DEM cell, so it drops from 2 m to 1 m.",
+          "",
+          "`cell_m: 10` is measured after unpacking, not guessed from the file name",
+          "(`workers/dem/fetch-open.py` prints it into every run's summary)."
+        ],
+        "credits": [
+          "dmr35"
+        ]
+      },
+      "dmr5": {
+        "label": "ÚGKK DMR 5.0 (LiDAR)",
+        "kind": "sklad",
+        "store": "dem-dmr5-v2",
+        "store_area": "dem-ugkk",
+        "workflow": "dmr5-drive.yml",
+        "for": [
+          "contours",
+          "rocks",
+          "shading"
+        ],
+        "cell_m": 5,
+        "cell_m_area": 1,
+        "_comment_coverage": "Mountain packages only (`mountain/outline.py`): a range ends where this OSM relation (Slovakia) does. Regions don't read it.",
+        "coverage_osm": 14296,
+        "attribution": "ÚGKK SR – DMR 5.0",
+        "verified": true,
+        "_comment": [
+          "ONE SOURCE, TWO FORMS – and the EXTENT decides, not a second form choice:",
+          "",
+          "  with a cutout (`area`)   ugkk-<cutout>.tif in release dem-ugkk, full 1 m",
+          "  whole region             tiles N49E019.tif in dem-dmr5-v2, resampled to 5 m",
+          "",
+          "WHY `-v2` IN THE STORE NAME. Tiles are read from the 4 m pyramid into 5 m",
+          "cells – a 1.25 ratio, at which `-r average` skips source cells in a rhythm",
+          "that hillshade turns into a regular light-dark GRID. The fix is in",
+          "`workers/drive/dmr5-cut.py` (kernel from `workers/lib/cell.py`), the figures",
+          "in `workers/dem/measure-resampling.py`.",
+          "",
+          "The file name `N49E020.tif` must NOT change – it's a promise about extent",
+          "(rule 2). So the store name carries the form, as `-v4` does for shading.",
+          "Without it `check-dem` would find the old tiles, decide “we have the model”",
+          "and the map would stay grainy with a green build.",
+          "",
+          "It was two sources (`dmr5` and `ugkk`) but never two models – it's one LiDAR",
+          "that can't be stored twice. At 1 m a 1°×1° tile is ~48 GB and a release asset",
+          "caps at 2 GB, so a whole region at 1 m has nowhere to go.",
+          "",
+          "WHERE IT COMES FROM: the `DMR 5.0 from Drive` workflow (dmr5-drive.yml). The",
+          "ETRS89 version of DMR 5.0 lies as two bare BigTIFFs on Google Drive, read",
+          "through HTTP Range:",
+          "",
+          "  dmr5_etrs89.tif      145.39 GiB  423 518 × 207 589 px, 1 m, LZW, 128² tiles",
+          "  dmr5_etrs89.tif.ovr   43.35 GiB  pyramids 2 … 256 m",
+          "  CRS EPSG:3046 (ETRS89 / TM zone N34), origin X 191 148, Y 5 497 220",
+          "",
+          "Each tile is compressed on its own and Range works at any offset, so only",
+          "what the cutout crosses is read: the High Tatras (30.8 × 18.2 km) at 1 m take",
+          "10 min, 1.55 GB downloaded, a 1 203 MB COG – under the 2 GB asset cap.",
+          "",
+          "HEIGHTS: ellipsoidal in the source (ETRS89), +42.6 m above Bpv. The workflow",
+          "converts them through EGM2008; Gerlach checks 2 697.03 → 2 653.92 m against",
+          "the official 2 654.4 m.",
+          "",
+          "The keys below record the ZBGIS endpoints that were tried and time out from",
+          "a GitHub runner – not a path used today."
+        ],
+        "directory": "https://zbgis.skgeodesy.sk/zbgis/rest/services",
+        "candidates": [
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/LLS_DMR5/ImageServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/LLS_DMR5/MapServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/dmr5_0/ImageServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/DMR_hres/ImageServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/dmr5/ImageServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/DMR5_0/ImageServer",
+          "https://zbgisws.skgeodesy.sk/zbgis_dmr5_0/ImageServer",
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/dmr3_5_10/ImageServer"
+        ],
+        "wcs": [
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services/dmr5_0/ImageServer/WCSServer",
+          "https://www.geoportal.sk/inspire/sk/wcs",
+          "https://zbgisws.skgeodesy.sk/zbgis_dmr5_0/ImageServer/WCSServer"
+        ],
+        "wcs_coverages": [
+          "1",
+          "Coverage1",
+          "dmr5_0",
+          "DMR5_0"
+        ],
+        "catalog": [
+          "https://rpi.gov.sk/rpi_csw/service.svc/get?SERVICE=CSW&VERSION=2.0.2&REQUEST=GetRecordById&ID=c310bf1e-68a0-43b9-9955-c7dad13a93aa&outputSchema=http://www.isotc211.org/2005/gmd&ElementSetName=full",
+          "https://rpi.gov.sk/rpi_csw/service.svc/get?SERVICE=CSW&VERSION=2.0.2&REQUEST=GetRecordById&ID=2a5ce05d-2223-4f0e-8764-f43ab881f586&outputSchema=http://www.isotc211.org/2005/gmd&ElementSetName=full",
+          "https://rpi.gov.sk/api/metadata/c310bf1e-68a0-43b9-9955-c7dad13a93aa",
+          "https://geoportal.gov.sk/gallery/datasets/detail/2a5ce05d-2223-4f0e-8764-f43ab881f586"
+        ],
+        "directories": [
+          "https://zbgis.skgeodesy.sk/zbgis/rest/services"
+        ],
+        "_comment_fallback": [
+          "Paths are tried in order: direct URLs (when given) → service discovery from",
+          "the RPI metadata catalog (another host) → ArcGIS ImageServer → WCS. Each",
+          "request goes with browser headers (Safari, Chrome, then an ArcGIS client) and",
+          "finally through curl with HTTP/2 – WAFs block by TLS fingerprint too, not only",
+          "by User-Agent. The last resort is downloading DMR 5.0 once by hand into a release."
+        ],
+        "_comment_zip": [
+          "THE PATH TO 1 m LIDAR THAT DOESN'T GO THROUGH ZBGIS. `opendata.skgeodesy.sk`",
+          "also holds the whole DMR 5.0 as one ZIP of ~198 GB – too big to download and",
+          "unpack (a runner has ~60 GB free, artifacts and assets cap at 2 GB), hence",
+          "`kind: remote-zip`.",
+          "",
+          "Inside (run 31184095104, plan-only mode): ONE GeoTIFF `dmr5_0/dmr5_jtsk03.tif`",
+          "of 151.43 GB with 46.28 GB of pyramids, a world file, metadata and a licence.",
+          "",
+          "GDAL reads it without downloading: `/vsizip//vsicurl/URL/dmr5_0/dmr5_jtsk03.tif`",
+          "uses HTTP Range, and the 512×512 DEFLATE tiles are fetched only as needed. The",
+          "retired `DMR 5.0 from the ÚGKK archive` workflow (dmr5.yml) did this; it stays",
+          "here as a note on the source, not a path the pipeline uses.",
+          "",
+          "MIND THE COST: a deflated ZIP entry can't be skipped into, so reading costs as",
+          "much as how far into the file the data lies – north is cheap, south expensive.",
+          "",
+          "`verified: false` means the URL hasn't been read from a runner. `cell_m: 5` is",
+          "a choice, not a property: the source is 1 m, but all of Slovakia at 1 m won't",
+          "fit release assets."
+        ],
+        "zip_url": "https://opendata.skgeodesy.sk/static/LLS/DMR5/DMR5_0_sjtsk03_bpv.zip",
+        "credits": [
+          "dmr5"
+        ]
+      }
+    },
     "aerial": {
       "ofmozaika_sk": {
         "label": "Ortofotomozaika SR (freemap.sk)",
@@ -144,6 +415,77 @@
           "settings": {}
         }
       }
+    }
+  },
+  "credits": {
+    "_comment": [
+      "Data authors and licences, in the shape the app reads (`LayerCredit`).",
+      "A source names them in its `credits`; a package names the source kind in `sources` of",
+      "packages.json (`dem:contours`, `aerial:summer`) and gets the authors of the source its map used.",
+      "`copyright: false` = a source without ©."
+    ],
+    "osm": {
+      "holder": "OpenStreetMap contributors",
+      "work": "OpenStreetMap",
+      "license": "ODbL 1.0",
+      "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "source_url": "https://www.openstreetmap.org/copyright"
+    },
+    "wikipedia": {
+      "holder": "Wikipedia contributors",
+      "work": "Wikipedia",
+      "license": "CC BY-SA 4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "source_url": "https://www.wikipedia.org"
+    },
+    "author": {
+      "holder": "Richard Dvorský",
+      "work": "Hillshading, 3D terrain, contours and rock faces"
+    },
+    "dmr5": {
+      "holder": "ÚGKK SR",
+      "work": "DMR 5.0 (LiDAR)",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/deed.sk",
+      "source_url": "https://www.geoportal.sk",
+      "copyright": false
+    },
+    "dmr35": {
+      "holder": "ÚGKK SR",
+      "work": "DMR 3.5",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/deed.sk",
+      "source_url": "https://www.geoportal.sk",
+      "copyright": false
+    },
+    "tienovanie": {
+      "holder": "freemap.sk",
+      "work": "Slovakia hi-res shading tiles",
+      "source_url": "https://www.freemap.sk/"
+    },
+    "ortofoto": {
+      "holder": "GKÚ Bratislava, NLC Zvolen",
+      "work": "Ortofotomozaika SR",
+      "source_url": "https://www.geoportal.sk"
+    },
+    "freemap": {
+      "holder": "freemap.sk",
+      "work": "Orthophoto tiles",
+      "source_url": "https://www.freemap.sk/"
+    },
+    "sonny": {
+      "holder": "Sonny",
+      "work": "Sonny's LiDAR DTM",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "source_url": "https://sonny.4lima.de/"
+    },
+    "sonny1": {
+      "holder": "Sonny",
+      "work": "Sonny's LiDAR DTM",
+      "license": "CC BY 4.0",
+      "license_url": "https://creativecommons.org/licenses/by/4.0/",
+      "source_url": "https://sonny.4lima.de/"
     }
   }
 }

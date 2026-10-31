@@ -146,9 +146,11 @@ def now():
 
 
 def region_models(man, reg):
-    """Which height model each layer of the region comes from."""
+    """Which source each layer of the region comes from – height models and photos."""
     return {"contours": reg.get("dem_source"), "rocks": reg.get("rock_source"),
-            "shading": man.get("dem_source")}
+            "shading": man.get("dem_source"),
+            "aerial_summer": reg.get("aerial_summer_source"),
+            "aerial_winter": reg.get("aerial_winter_source")}
 
 
 def migrate_node(maps):

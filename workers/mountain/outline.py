@@ -17,6 +17,8 @@ import urllib.request
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DATA = os.path.join(os.path.dirname(_HERE), "data")
+sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
+import map_settings  # noqa: E402
 OUTLINES = os.path.join(_DATA, "outlines")
 LOOKUP = "https://nominatim.openstreetmap.org/lookup"
 # a range is built from DMR 5.0, as `mountain.yml` asks for it
@@ -107,7 +109,7 @@ def main():
     keys = sorted(mountains) if args.all else [args.mountain]
     if not all(k in mountains for k in keys):
         raise SystemExit(f"::error::Name a range of mountains.json, or --all: {', '.join(sorted(mountains))}.")
-    covered = registry("dem-sources.json")[MODEL].get("coverage_osm")
+    covered = map_settings.dem_sources()[MODEL].get("coverage_osm")
     coverage = fetch(covered) if covered else None
     for key in keys:
         relations = [int(r) for r in mountains[key].get("outline") or []]

@@ -68,7 +68,7 @@ class PlanTiles(unittest.TestCase):
 class Target(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.NamedTemporaryFile("w", suffix=".json", delete=False)
-        json.dump(SOURCES, self.tmp)
+        json.dump({"sources": {"dem": SOURCES}}, self.tmp)
         self.tmp.close()
         self.env = {k: os.environ.pop(k) for k in ("DEM_STORE", "DMR5_STORE", "UGKK_STORE")
                     if k in os.environ}

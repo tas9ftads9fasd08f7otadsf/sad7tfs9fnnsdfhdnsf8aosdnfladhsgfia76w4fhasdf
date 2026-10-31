@@ -488,6 +488,8 @@ jobs:
       BOUNDARIES_ENABLED: ${{ needs.boundaries.outputs.enabled || 'false' }}
       BOUNDARIES_MAXZOOM: ${{ needs.boundaries.outputs.maxzoom }}
       COUNTRIES: ${{ needs.plan.outputs.countries }}
+      AERIAL_SUMMER_SOURCE: ${{ fromJSON(needs.plan.outputs.opt_aerial_sources).summer }}
+      AERIAL_WINTER_SOURCE: ${{ fromJSON(needs.plan.outputs.opt_aerial_sources).winter }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

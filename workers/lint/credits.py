@@ -4,10 +4,11 @@ import importlib.util
 import json
 import sys
 
-CREDITS = "workers/data/credits.json"
+sys.path.insert(0, "workers/lib")
+import map_settings  # noqa: E402
+
+CREDITS = f"`credits` of {map_settings.NAME}"
 PACKAGES = "workers/data/packages.json"
-DEM = "workers/data/dem-sources.json"
-USES = ("contours", "rocks", "shading")
 KEYS = {"holder", "work", "license", "license_url", "source_url", "changes",
         "copyright"}
 
@@ -22,13 +23,11 @@ def load(name, path):
 
 def main():
     bad = []
-    with open(CREDITS, encoding="utf-8") as f:
-        credits = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    settings = map_settings.load()
+    credits = map_settings.credits(settings=settings)
     with open(PACKAGES, encoding="utf-8") as f:
         packages = json.load(f)["packages"]
-    with open(DEM, encoding="utf-8") as f:
-        models = [k for k, v in json.load(f).items()
-                  if not k.startswith("_") and isinstance(v, dict)]
+    packages_mod = load("deploy_packages", "workers/deploy/packages.py")
 
     for key, credit in credits.items():
         if not credit.get("holder"):
@@ -39,9 +38,15 @@ def main():
         if "copyright" in credit and not isinstance(credit["copyright"], bool):
             bad.append(f"{CREDITS}: `{key}` – `copyright` must be true/false")
 
-    for model in models:
-        if model not in credits:
-            bad.append(f"{CREDITS}: model `{model}` of {DEM} has no author")
+    # every source a map can pick names its authors, and they are known
+    for kind in packages_mod.KINDS:
+        for key, src in map_settings.sources(kind, settings=settings).items():
+            if not src.get("credits"):
+                bad.append(f"`sources.{kind}.{key}` names no `credits` – its maps would "
+                           f"go out without an author")
+            for name in src.get("credits") or []:
+                if name not in credits:
+                    bad.append(f"`sources.{kind}.{key}` credits `{name}`, which isn't in {CREDITS}")
 
     for p in packages:
         sources = p.get("sources")
@@ -53,14 +58,16 @@ def main():
         if dem and (sources[0] != "author" or min(dem) == 0):
             bad.append(f"{PACKAGES}: `{p['key']}` – `author` must come before `dem:*`")
         for s in sources:
-            if s.startswith("dem:"):
-                if s[4:] not in USES:
-                    bad.append(f"{PACKAGES}: `{p['key']}` – `{s}` is not "
-                               f"{', '.join('dem:' + u for u in USES)}")
+            kind, sep, use = s.partition(":")
+            if sep:
+                uses = packages_mod.KINDS.get(kind, ())
+                if use not in uses:
+                    known = [f"{k}:{u}" for k, us in packages_mod.KINDS.items() for u in us]
+                    bad.append(f"{PACKAGES}: `{p['key']}` – `{s}` is not one of "
+                               f"{', '.join(known)}")
             elif s not in credits:
                 bad.append(f"{PACKAGES}: `{p['key']}` – source `{s}` isn't in {CREDITS}")
 
-    packages_mod = load("deploy_packages", "workers/deploy/packages.py")
     # the author of the computation comes before the data computed from
     relief = [credits.get("author"), credits.get("dmr5")]
     if packages_mod.credits("terrain", {"shading": "dmr5"}) != relief:
@@ -70,6 +77,9 @@ def main():
                    "and the default DMR 5.0")
     if packages_mod.credits("base") != [credits.get("osm")]:
         bad.append("packages.credits: the base map doesn't name OpenStreetMap")
+    photos = [credits.get("ortofoto"), credits.get("freemap")]
+    if packages_mod.credits("aerial_summer", {"aerial_summer": "ofmozaika_sk"}) != photos:
+        bad.append("packages.credits: summer photos from ofmozaika_sk don't name its authors")
 
     catalog = open("workers/deploy/catalog.py", encoding="utf-8").read()
     if catalog.count("models=region_models(man, reg)") < 2:

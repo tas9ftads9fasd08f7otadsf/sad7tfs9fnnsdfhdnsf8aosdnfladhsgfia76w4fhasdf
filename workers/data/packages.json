@@ -8,7 +8,7 @@
     "  symbol      SF Symbol the app draws it with",
     "  app_detail  one line under the name in the app",
     "  description one line for the log, `contents.json` and the catalog",
-    "  sources     whose data it is, keys of `credits.json`",
+    "  sources     whose data it is: keys of `credits` in map-settings.json, or the source kind the map picked (`dem:contours`, `aerial:summer`)",
     "  manifest    keys in `regions.<region>` of `_site/tiles/manifest.json`",
     "  suffixes    fallback when the manifest is unreadable: file name endings",
     "  origin      `site` = from `_site`, `wiki` = from the `--wiki` folder",
@@ -76,7 +76,7 @@
       "symbol": "sun.max.fill",
       "app_detail": "Aerial photos of the land in summer, under the map",
       "description": "orthophoto mosaic taken in summer, as JPEG raster tiles (raster .pmtiles)",
-      "sources": ["ortofoto", "freemap"],
+      "sources": ["aerial:summer"],
       "manifest": ["aerial_summer"],
       "suffixes": ["-aerial_summer.pmtiles"],
       "origin": "site"
@@ -87,7 +87,7 @@
       "symbol": "snowflake",
       "app_detail": "Aerial photos of the land under snow, under the map",
       "description": "orthophoto mosaic taken in winter, as JPEG raster tiles (raster .pmtiles)",
-      "sources": ["ortofoto", "freemap"],
+      "sources": ["aerial:winter"],
       "manifest": ["aerial_winter"],
       "suffixes": ["-aerial_winter.pmtiles"],
       "origin": "site"

@@ -11,8 +11,6 @@ SETTINGS = "workers/data/map-settings.json"
 OPTIONS_PY = "workers/plan/options.py"
 REGIONS = "workers/data/regions.json"
 MOUNTAINS = "workers/data/mountains.json"
-DEM_SOURCES = "workers/data/dem-sources.json"
-CREDITS = "workers/data/credits.json"
 REGION_WF = ".github/workflows/build-map-region.yml"
 MOUNTAIN_WF = ".github/workflows/mountain.yml"
 STATE_WF = ".github/workflows/build-map-state.yml"
@@ -55,8 +53,9 @@ spec.loader.exec_module(opts)
 settings = load(SETTINGS)
 regions = load(REGIONS)
 ranges_known = [k for k in load(MOUNTAINS) if not k.startswith("_")]
-dem = {k: v.get("for", []) for k, v in load(DEM_SOURCES).items() if not k.startswith("_")}
-credits = {k for k in load(CREDITS) if not k.startswith("_")}
+dem = {k: v.get("for", []) for k, v in
+       ((settings.get("sources") or {}).get("dem") or {}).items() if not k.startswith("_")}
+credits = {k for k in settings.get("credits") or {} if not k.startswith("_")}
 maps = settings.get("maps") or {}
 aerial = (settings.get("sources") or {}).get("aerial") or {}
 
@@ -109,7 +108,7 @@ for key, src in aerial.items():
         error(SETTINGS, f"Aerial source `{key}` names no `credits` – the photos' authors.")
     for c in src.get("credits") or []:
         if c not in credits:
-            error(SETTINGS, f"Aerial source `{key}` credits `{c}`, which isn't in {CREDITS}.")
+            error(SETTINGS, f"Aerial source `{key}` credits `{c}`, which isn't in `credits`.")
 
 
 def check_level(where, part):

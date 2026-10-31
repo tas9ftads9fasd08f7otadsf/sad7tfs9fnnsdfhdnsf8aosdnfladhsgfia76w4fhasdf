@@ -69,7 +69,7 @@ fi
 
 # for both halves: written always, deploy builds the manifest from them
 DEM_USED=$(cat contours-out/dem-source.txt 2>/dev/null || echo '')
-# keys must match `dem-sources.json`, or the attribution names another model
+# keys must match `sources.dem` of map-settings.json, or the attribution names another model
 case "$DEM_USED" in sonny|dmr35|dmr5) ;; *) DEM_USED=sonny ;; esac
 RSLOPE=$(cat contours-out/rock-slope.txt 2>/dev/null || echo off)
 RSRC=$(cat contours-out/rock-source.txt 2>/dev/null || echo off)

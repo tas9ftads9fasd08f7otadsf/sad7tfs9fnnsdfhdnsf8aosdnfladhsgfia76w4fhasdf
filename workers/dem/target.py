@@ -14,7 +14,6 @@ form, store, assets, mirror, degrees, label.
     python3 workers/dem/target.py --source=dmr5 --area-key=vysoke_tatry
 """
 import argparse
-import json
 import math
 import os
 import sys
@@ -22,6 +21,8 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)          # workers/
 _DATA = os.path.join(_WORKERS, "data")     # registries (areas, regions, sources)
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 
 # a store name can be overridden from the environment, to redirect a build to a test store
 ENV_TILES = {"sonny": "DEM_STORE", "sonny1": "SONNY1_STORE",
@@ -59,9 +60,7 @@ def store_area(key):
 def target(source, area_key, bbox, sources_path=None):
     src = (source or "sonny").strip()
     key = (area_key or "whole").strip()
-    path = sources_path or os.path.join(_DATA, "dem-sources.json")
-    with open(path) as f:
-        meta = json.load(f).get(src) or {}
+    meta = map_settings.dem_sources(sources_path).get(src) or {}
     label = meta.get("label", src)
 
     if src in HAS_AREA_FORM and key and key not in ("whole", "cely"):

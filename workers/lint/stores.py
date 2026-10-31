@@ -2,16 +2,18 @@
 """Every store the pipeline asks for is in the list of known stores.
 
 Three places say which stores exist: `drive/store.py` (`KNOWN`),
-`data/dem-sources.json` and workflow `env:`. When they drift it fails only after
+`sources.dem` of `data/map-settings.json` and workflow `env:`. When they drift it fails only after
 the work – on upload.
 """
 import glob
-import json
 import re
 import sys
 
 STORE_PY = "workers/drive/store.py"
-SOURCES = "workers/data/dem-sources.json"
+sys.path.insert(0, "workers/lib")
+import map_settings  # noqa: E402
+
+SOURCES = f"`sources.dem` of {map_settings.NAME}"
 
 bad = []
 
@@ -27,7 +29,7 @@ known = set(re.findall(r'"([^"]+)"\s*:', block.group(1)))
 print(f"{STORE_PY}: knows {len(known)} stores")
 
 # 1. elevation sources: `store` (tiles) and `store_area` (full-resolution cutout)
-sources = json.load(open(SOURCES, encoding="utf-8"))
+sources = map_settings.dem_sources()
 for key, meta in sources.items():
     if key.startswith("_") or not isinstance(meta, dict):
         continue

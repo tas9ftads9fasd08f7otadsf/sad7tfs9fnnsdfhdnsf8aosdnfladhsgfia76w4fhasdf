@@ -24,6 +24,8 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)          # workers/
 _DATA = os.path.join(_WORKERS, "data")     # registries (areas, regions, sources)
 sys.path.insert(0, _HERE)
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 
 # rasters the ZIP may hold; ÚGKK doesn't say, so all GDAL reads as a raster
 RASTER_EXT = (".tif", ".tiff", ".asc", ".xyz", ".img", ".dem", ".grd", ".vrt")
@@ -147,9 +149,9 @@ def cut_tiles(vrt, out_dir, bbox):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--url", default="", help="overrides the URL from dem-sources.json")
-    ap.add_argument("--source", default="dmr35", help="the key in dem-sources.json")
-    ap.add_argument("--sources", default=os.path.join(_DATA, "dem-sources.json"))
+    ap.add_argument("--url", default="", help="overrides the URL from `sources.dem`")
+    ap.add_argument("--source", default="dmr35", help="the key in `sources.dem`")
+    ap.add_argument("--sources", default=map_settings.PATH)
     ap.add_argument("--out", default="tiles", help="where the finished tiles go")
     ap.add_argument("--bbox", default="16.8,47.7,22.6,49.7",
                     help="the extent cut to (default Slovakia)")
@@ -159,7 +161,7 @@ def main():
     ap.add_argument("--keep-temp", action="store_true")
     args = ap.parse_args()
 
-    src = json.load(open(args.sources)).get(args.source) or {}
+    src = map_settings.dem_sources(args.sources).get(args.source) or {}
     url = args.url or src.get("url", "")
     if not url:
         print(f"::error::Source \"{args.source}\" has no `url` in {args.sources} "

@@ -100,7 +100,7 @@ export const DEFAULT_TERRAIN_EXAGGERATION = 1.3;
 
 /**
  * Zdroje výšok, z ktorých pipeline počíta vrstevnice, skaly a tieňovanie.
- * Kľúče sú tie isté ako vo `workers/data/dem-sources.json` a vo formulári –
+ * Kľúče sú tie isté ako v `sources.dem` vo `workers/data/map-settings.json` –
  * každá vrstva môže mať iný model. Licencia každého vyžaduje uvedenie zdroja,
  * preto ide atribúcia priamo do zdroja v štýle.
  */

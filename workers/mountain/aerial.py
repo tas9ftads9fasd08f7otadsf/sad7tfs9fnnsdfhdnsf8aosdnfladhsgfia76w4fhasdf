@@ -6,7 +6,6 @@
 """
 import argparse
 import importlib.util
-import json
 import os
 import sys
 
@@ -25,14 +24,15 @@ def _load(name, path):
 _tiles = _load("shading_tiles", os.path.join(_WORKERS, "rocks-shading", "tiles.py"))
 Fetcher, tile_range, lonlat_to_tile = _tiles.Fetcher, _tiles.tile_range, _tiles.lonlat_to_tile
 _mask = _load("region_mask", os.path.join(_WORKERS, "lib", "region-mask.py"))
+_settings = _load("map_settings", os.path.join(_WORKERS, "lib", "map_settings.py"))
 
 
-def source(key, season, path=os.path.join(_WORKERS, "data", "map-settings.json")):
+def source(key, season, path=None):
     """A photo source of `sources.aerial`; `{}` for none."""
     if not key:
         return {}
-    with open(path, encoding="utf-8") as f:
-        known = (json.load(f).get("sources") or {}).get("aerial") or {}
+    path = path or _settings.PATH
+    known = _settings.aerial_sources(path)
     if key not in known:
         raise SystemExit(f"::error::Unknown aerial source “{key}” – {path} has {', '.join(known)}.")
     if known[key].get("season") != season:

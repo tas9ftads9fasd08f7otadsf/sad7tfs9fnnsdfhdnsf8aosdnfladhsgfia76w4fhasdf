@@ -95,6 +95,9 @@ def manifest(site):
         if zooms:
             region[kind] = f"tiles/{key}-{kind}.pmtiles"
             region[f"{kind}_maxzoom"] = zooms[1]
+            # the catalog credits the authors of this source
+            if env(f"{kind.upper()}_SOURCE"):
+                region[f"{kind}_source"] = env(f"{kind.upper()}_SOURCE")
     out = {"default_region": key,
            "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
            "regions": {key: region}}

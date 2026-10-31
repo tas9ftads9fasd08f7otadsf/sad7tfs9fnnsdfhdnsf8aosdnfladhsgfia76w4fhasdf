@@ -7,9 +7,15 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DATA = os.path.join(os.path.dirname(_HERE), "data")
 REGISTRY = os.path.join(_DATA, "packages.json")
-CREDITS = os.path.join(_DATA, "credits.json")
+sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
+import map_settings  # noqa: E402
+
 # maps are built from DMR 5.0 unless the region names another model
 DEFAULT_MODEL = "dmr5"
+# a manifest from before ranges named their photo source had only this one
+DEFAULT_AERIAL = "ofmozaika_sk"
+# a package's source kind → the settings' sources it is picked from
+KINDS = {"dem": ("contours", "rocks", "shading"), "aerial": ("summer", "winter")}
 
 _CACHE = None
 
@@ -69,20 +75,28 @@ def subpackages(key):
     return [p["key"] for p in listing() if p.get("part_of") == key]
 
 
-def credits(key, models=None):
-    """Data authors of a package; `models` = `{contours|rocks|shading: model}` of the region."""
-    with open(CREDITS, encoding="utf-8") as f:
-        sources = json.load(f)
+def source_credits(kind, use, models, settings):
+    """Credit keys of the source the map used for `dem:<use>` or `aerial:<use>`."""
+    known = map_settings.sources(kind, settings=settings)
+    picked = models.get(use if kind == "dem" else f"aerial_{use}")
+    if picked not in known:
+        picked = DEFAULT_MODEL if kind == "dem" else DEFAULT_AERIAL
+    return (known.get(picked) or {}).get("credits") or []
+
+
+def credits(key, models=None, settings=None):
+    """Data authors of a package; `models` = what the map used, `{contours: dmr5, aerial_summer: …}`."""
+    settings = map_settings.load() if settings is None else settings
+    authors = map_settings.credits(settings=settings)
     models = models or {}
     out = []
     for source in package(key).get("sources") or ():
-        if source.startswith("dem:"):
-            source = models.get(source[4:])
-            if source not in sources:
-                source = DEFAULT_MODEL
-        credit = sources.get(source)
-        if credit and credit not in out:
-            out.append(dict(credit))
+        kind, _, use = source.partition(":")
+        names = source_credits(kind, use, models, settings) if kind in KINDS else [source]
+        for name in names:
+            credit = authors.get(name)
+            if credit and credit not in out:
+                out.append(dict(credit))
     return out
 
 
