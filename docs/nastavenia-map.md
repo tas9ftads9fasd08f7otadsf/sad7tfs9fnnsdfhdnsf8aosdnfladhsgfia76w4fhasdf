@@ -1,8 +1,9 @@
 # Nastavenia máp v jednom JSON
 
 Návrh (október 2026, tiket 381), nie popis hotového stavu. Jeden súbor
-`workers/data/map-settings.json` povie, s čím sa mapa robí: pre krajinu,
-presnejšie pre kraj a pre pohorie – výškový model, letecké snímky, vrstevnice,
+`workers/data/map-settings.json` povie, s čím sa mapa robí: pre krajinu a
+presnejšie pre jej kraj, a vedľa krajín pre pohoria ako celok a presnejšie pre
+každé pohorie – výškový model, letecké snímky, vrstevnice,
 skaly, zoomy – a pri každom zdroji aj jeho autora a licenciu. Pipeliny ho čítajú
 a jeho hodnoty sú predvolené hodnoty formulára „Run workflow“.
 
@@ -77,8 +78,8 @@ Z toho plynú tri chyby, ktoré sa už stali alebo stanú:
     "size_limit_mb": 900
   },
 
-  // presnejšie: krajina → kraj, pohorie
-  "countries": {
+  // kategórie ako v maps.json: krajiny a vedľa nich pohoria
+  "maps": {
     "slovensko": {
       "settings": {},
       "regions": {
@@ -86,19 +87,32 @@ Z toho plynú tri chyby, ktoré sa už stali alebo stanú:
       }
     },
     "cesko":   { "settings": { "contours": { "source": "none" }, "rocks": { "source": "none" }, "terrain": { "source": "none" } } },
-    "rakusko": { "settings": { "contours": { "source": "none" }, "rocks": { "source": "none" }, "terrain": { "source": "none" } } }
-  },
-  "mountains": {
-    "vysoke_tatry": {
-      "country": "slovensko",
-      "area": "vysoke_tatry",
-      "countries": ["SK", "PL"],
-      "osm": ["europe/slovakia-latest", "europe/poland/malopolskie-latest"],
+    "rakusko": { "settings": { "contours": { "source": "none" }, "rocks": { "source": "none" }, "terrain": { "source": "none" } } },
+
+    "mountains": {
+      // čo majú všetky pohoria spoločné; dnešné MOUNTAIN_OPTIONS
       "settings": {
         "contours": { "interval": 2.5, "maxzoom": 16, "maxzoom_cap": 16, "lowland_m": 0 },
         "terrain":  { "maxzoom": 16 },
-        "aerial":   { "summer": "ofmozaika_sk", "winter": null },
         "size_limit_mb": 2000
+      },
+      "ranges": {
+        "vysoke_tatry": {
+          "area": "vysoke_tatry",
+          "countries": ["SK", "PL"],
+          "osm": ["europe/slovakia-latest", "europe/poland/malopolskie-latest"],
+          "settings": {
+            "aerial": { "summer": "ofmozaika_sk", "winter": null }
+          }
+        },
+        "nizke_tatry": {
+          "area": "nizke_tatry",
+          "countries": ["SK"],
+          "osm": ["europe/slovakia-latest"],
+          "settings": {
+            "aerial": { "summer": "ofmozaika_sk", "winter": null }
+          }
+        }
       }
     }
   }
@@ -116,29 +130,42 @@ z `mountain.yml`.
 **Čo ostane, kde je:** `regions.json` (id, meno, bbox, `osmfr`, `admin_level`)
 a `areas.json` (výrezy). To nie sú nastavenia, ale geografia – kde mapa leží
 a odkiaľ je jej PBF – a číta ich ~25 skriptov. Nastavenia sa na ne odvolávajú
-kľúčom (`countries.slovensko.regions.zilinsky` = `regions.json` `zilinsky`).
+kľúčom (`maps.slovensko.regions.zilinsky` = `regions.json` `zilinsky`).
 Zlúčiť aj ich sa dá neskôr (fáza 5), ale nič to nekupuje a riziko je veľké.
+
+**Pohoria sú kategória vedľa krajín, nie pod nimi.** Tak ako v `maps.json`
+(`mountains.ranges`) a v aplikácii: Vysoké Tatry nie sú kraj Slovenska, ležia
+v SK aj PL a robia sa inak než kraj (1 m model, 2,5 m vrstevnice, snímky).
+Preto `maps.mountains` má vlastné `settings`, spoločné všetkým pohoriam, a pod
+ním `ranges`. Pohorie **nededí nič zo Slovenska** – len z `defaults` a z
+`maps.mountains`. Odkiaľ berie OSM, hovorí `osm`, v ktorých krajinách leží,
+`countries`; to sú dáta, nie dedenie. Dnešné `country: slovensko` v
+`mountains.json` odpadne (každé pohorie má `osm` vyplnené).
 
 ## 3. Dedenie: od všeobecného k presnému
 
 Hodnota sa hľadá od najpresnejšieho miesta, prvá nájdená vyhráva:
 
+Dve vetvy, rovnaký tvar – kategória, potom jej položka:
+
 ```
-options (voľný text vo formulári)       contour_interval=10
-  ↑ vstup formulára, ak nie je „config“  contour_source: sonny
-  ↑ mountains.<pohorie>.settings        interval 2.5
-  ↑ countries.<krajina>.regions.<kraj>  slope 45
-  ↑ countries.<krajina>.settings        source none (Česko)
-  ↑ defaults                            všetko
+kraj                                      pohorie
+options (voľný text)       rock_slope=40  options (voľný text)
+  ↑ formulár (nie „config“)                 ↑ formulár (nie „config“)
+  ↑ maps.<krajina>.regions.<kraj>           ↑ maps.mountains.ranges.<pohorie>  aerial.summer
+  ↑ maps.<krajina>.settings  source none    ↑ maps.mountains.settings          interval 2.5
+  ↑ defaults                                ↑ defaults
 ```
 
-- Kraj dedí od svojej krajiny cez `country` v `regions.json`, pohorie cez svoje
-  `country`. Kraj bez záznamu v `regions` berie krajinu celú.
+- Kraj dedí od svojej krajiny cez `country` v `regions.json`. Kraj bez záznamu
+  v `regions` berie krajinu celú, pohorie bez `settings` berie `maps.mountains`
+  celé.
 - Zlučuje sa po kľúčoch do hĺbky: `{"contours": {"interval": 2.5}}` zmení len
   interval, zdroj ostane zdedený.
 - `null` znamená „nemá“ (zima bez snímok), nie „zdeď“. Zdediť = kľúč vynechať.
 - Každá výsledná hodnota si pamätá, odkiaľ prišla (`defaults`,
-  `countries.slovensko`, `mountains.vysoke_tatry`, `form`, `options`). To ide do
+  `maps.slovensko`, `maps.mountains`, `maps.mountains.ranges.vysoke_tatry`,
+  `form`, `options`). To ide do
   súhrnu behu (§5).
 
 ## 4. Zdroje a ich kredity
@@ -192,9 +219,9 @@ Job `settings` (dnes `workers/plan/settings.sh`) vypíše do súhrnu tabuľku:
 | Nastavenie | Hodnota | Odkiaľ |
 |---|---|---|
 | contours.source | dmr5 | defaults |
-| contours.interval | 2.5 | mountains.vysoke_tatry |
+| contours.interval | 2.5 | maps.mountains |
 | rocks.slope | 40 | formulár |
-| aerial.summer | ofmozaika_sk (GKÚ, NLC; freemap.sk) | mountains.vysoke_tatry |
+| aerial.summer | ofmozaika_sk (GKÚ, NLC; freemap.sk) | maps.mountains.ranges.vysoke_tatry |
 
 Na telefóne je teda hneď vidno, s čím beh ide, hoci vo formulári stálo
 `config`.
@@ -243,13 +270,15 @@ python3 workers/plan/settings.py --mountain=vysoke_tatry …
 - **Lint** `workers/lint/settings.py`:
   - každý `source` v `settings` je v `sources` a má `for` toho druhu;
   - každý `credits` je v `credits`;
-  - kľúče v `countries` a `regions` sú v `regions.json`, `area` pohoria v
-    `areas.json`;
+  - kľúče krajín v `maps` a ich `regions` sú v `regions.json`, `area` pohoria
+    v `areas.json`, kľúč `mountains` v `regions.json` nie je (kategórie sa
+    nesmú zraziť);
   - `options:` každého `choice` vstupu sú `config` + kľúče `sources.dem`
     (dnes to pre `dem-sources.json` robí `lint-workflows.yml`);
   - každý vstup s `config` / prázdnym defaultom má kľúč v `defaults`.
 - **Testy** `workers/tests/test_settings.py`: dedenie (kraj prepíše krajinu,
-  `null` nededí, hlboké zlúčenie), priorita formulár > JSON, `options` >
+  pohorie dedí z `maps.mountains` a nič zo Slovenska, `null` nededí, hlboké
+  zlúčenie), priorita formulár > JSON, `options` >
   formulár, `odkiaľ` v súhrne, kredit snímok podľa zdroja.
 
 ## 8. Fázy
