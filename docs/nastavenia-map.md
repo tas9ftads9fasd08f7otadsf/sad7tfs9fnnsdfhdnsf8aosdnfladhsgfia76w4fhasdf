@@ -8,7 +8,7 @@ vrstevnice, zoomy, rozpočet, vypínače vrstiev, letecké snímky. Formuláre
 workflowov sa pýtajú len **čo** robiť; prvý job behu vypíše, s čím beh ide a
 odkiaľ ktorá hodnota prišla.
 
-§1–§6 je hotový stav, §7 ďalšie kroky.
+§1–§6 je hotový stav (tikety 381 a 382), §7 ďalšie kroky.
 
 ## 1. Prečo
 
@@ -24,7 +24,7 @@ Pred týmto tiketom bolo jedno nastavenie na deviatich miestach:
 | krajina bez modelu (Česko, Rakúsko) | `dem: false` v `regions.json` |
 | letecké snímky a ich zoomy | `aerial.json` – jeden zdroj na sezónu pre všetky pohoria |
 | zoznam modelov | `dem-sources.json` |
-| autori a licencie | `credits.json`, a ktorý balík ich nesie, v `packages.json` |
+| autori a licencie | `credits.json`, a ktorý balík ich nesie, natvrdo v `packages.json` |
 
 Formulár `build-map-state` ponúkal `dmr5` aj pre Česko, kde nie je, a
 `options.py` to potom potichu vypol. Pohorie si nemohlo vybrať zdroj snímok.
@@ -45,8 +45,12 @@ A voľné pole `options` dovolilo beh, ktorého nastavenia neboli nikde zapísan
     "…": "…"
   },
 
-  // zdroje, z ktorých si mapa vyberá
+  // zdroje, z ktorých si mapa vyberá; každý menuje svojich autorov
   "sources": {
+    "dem": {
+      "dmr5":  { "label": "DMR 5.0", "store": "dem-dmr5-v2", "for": ["contours", "rocks", "shading"], "credits": ["dmr5"], "…": "…" },
+      "sonny": { "label": "Sonny's LiDAR DTM 20m", "for": ["contours", "rocks", "shading"], "credits": ["sonny"], "…": "…" }
+    },
     "aerial": {
       "ofmozaika_sk": {
         "label": "Ortofotomozaika SR (freemap.sk)", "season": "summer",
@@ -55,6 +59,12 @@ A voľné pole `options` dovolilo beh, ktorého nastavenia neboli nikde zapísan
         "credits": ["ortofoto", "freemap"]
       }
     }
+  },
+
+  // autori a licencie v tvare, ktorý číta aplikácia (`LayerCredit`)
+  "credits": {
+    "dmr5":     { "holder": "ÚGKK SR", "work": "DMR 5.0 (LiDAR)", "license": "CC BY 4.0", "…": "…" },
+    "ortofoto": { "holder": "GKÚ Bratislava, NLC Zvolen", "work": "Ortofotomozaika SR", "…": "…" }
   },
 
   // kategórie ako v maps.json: krajiny a vedľa nich pohoria
@@ -87,13 +97,20 @@ Kraj pridaný pod `maps.slovensko.regions` prepíše len to, čo uvedie, napr.
 v SK aj PL a robia sa inak než kraj. Pohorie preto **nededí nič zo Slovenska**,
 len z `defaults` a z `maps.mountains`.
 
-**Čo zmizlo:** `aerial.json`, `dem: false` z `regions.json`, hodnoty z
-`DEFAULTS` v `options.py` (ostali `DESCRIPTIONS` – čo kľúč znamená),
-`MOUNTAIN_OPTIONS` a natvrdo `dmr5` z `mountain.yml`.
+**Čo zmizlo:** `aerial.json`, `dem-sources.json`, `credits.json`,
+`dem: false` z `regions.json`, hodnoty z `DEFAULTS` v `options.py` (ostali
+`DESCRIPTIONS` – čo kľúč znamená), `MOUNTAIN_OPTIONS` a natvrdo `dmr5` z
+`mountain.yml`.
 
 **Čo ostalo, kde je:** `regions.json` a `areas.json` (geografia – kde mapa
-leží a odkiaľ je jej PBF), `mountains.json` (výrez, krajiny a OSM výrezy
-pohoria), `dem-sources.json` a `credits.json` (§7).
+leží a odkiaľ je jej PBF) a `mountains.json` (výrez, krajiny a OSM výrezy
+pohoria).
+
+**Kredit patrí zdroju, nie balíku.** Balík v `packages.json` povie len druh
+zdroja (`dem:contours`, `aerial:summer`); katalóg vezme `credits` zdroja,
+ktorý mapa naozaj použila – model z manifestu kraja, snímky z
+`aerial_<sezóna>_source` v manifeste pohoria. Manifest spred tiketu 382
+zdroj snímok nemá, berie sa `ofmozaika_sk` – iný vtedy nebol.
 
 ## 3. Dedenie: od všeobecného k presnému
 
@@ -167,29 +184,30 @@ beh práve tu – po sekundách, nie o desať jobov neskôr.
   ostali len pre beh ručne.
 - **Snímky:** [`workers/mountain/aerial.py`](../workers/mountain/aerial.py)
   berie `--source=<kľúč>` zo `sources.aerial`; cache dlaždíc je podľa zdroja.
+- **Čítanie súboru:** [`workers/lib/map_settings.py`](../workers/lib/map_settings.py)
+  (`load`, `sources`, `dem_sources`, `aerial_sources`, `credits`) – cez neho
+  ho čítajú `options.py`, `packages.py`, DEM skripty, `outline.py` a linty.
+- **Kredity:** [`workers/lint/credits.py`](../workers/lint/credits.py) stráži,
+  že každý zdroj výšok aj snímok menuje známych autorov a každý balík druh
+  zdroja, ktorý existuje.
 - **Lint** [`workers/lint/settings.py`](../workers/lint/settings.py): `defaults`
   má presne kľúče z `DESCRIPTIONS`; krajiny a kraje sú z `regions.json`,
   pohoria z `mountains.json` a výber vo `mountain.yml` sa s nimi zhoduje;
   každá krajina, ktorú formulár stavia, má záznam; zdroje výšok sedia s `for`
-  v `dem-sources.json`, zdroje snímok majú sezónu, adresu a známych autorov;
+  v `sources.dem`, zdroje snímok majú sezónu, adresu a známych autorov;
   každý cieľ formulára sa rozlúšti; **a žiadny z piatich formulárov nemá
   vstup s nastavením.** [`workers/lint/state.py`](../workers/lint/state.py)
   stráži, že každý kraj dávky má `reuse_layers: true`.
 - **Testy** v `workers/tests/test_options.py` (`Layers`): najpresnejšie
-  vyhráva, pohorie nič zo Slovenska, JSON typy, neznáme kľúče, sezóna zdroja.
+  vyhráva, pohorie nič zo Slovenska, JSON typy, neznáme kľúče, sezóna zdroja;
+  v `test_catalog.py` a `test_mountain.py` kredit snímok podľa zdroja.
 - Pred zmenou sa porovnal starý `options.py` s formulárovými defaultmi
   s novým pre všetkých 34 krajov (s testom aj bez) a 8 pohorí: hodnoty sú
   zhodné.
 
 ## 7. Ďalej
 
-1. **Kredity podľa zdroja.** Balík v `packages.json` povie len druh zdroja
-   (`aerial:summer` ako dnes `dem:contours`) a autor sa vezme zo zdroja, ktorý
-   mapa vybrala. Dnes majú `aerial_summer` aj `aerial_winter` natvrdo
-   `ortofoto` + `freemap`; zdroj ich už nesie v `credits`.
-2. **`dem-sources.json` a `credits.json`** do `sources.dem` a `credits`
-   (čítajú ich `catalog.py`, `packages.py`, `names.py`, DEM skripty a linty).
-3. **Zimné snímky a poľská strana Tatier** – zdroj s licenciou; súbor naň má
-   miesto (`sources.aerial`, `covers`).
-4. *(len ak bude treba)* `regions.json`, `areas.json` a `mountains.json` do
+1. **Zimné snímky a poľská strana Tatier** – zdroj s licenciou; súbor naň má
+   miesto (`sources.aerial`, `covers`, autori v `credits`).
+2. *(len ak bude treba)* `regions.json`, `areas.json` a `mountains.json` do
    toho istého súboru.

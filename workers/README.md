@@ -1059,7 +1059,7 @@ v `mountains/<pohorie>/`. Pohorie, ktoré ešte visí pod krajinou
 
 **Pohorie končí tam, kde výškový model.** DMR 5.0 je len Slovensko, a tak
 pohorie, ktoré cez hranicu siaha, končí na nej: jeho okraj je orezaný na pokrytie
-modelu (`coverage_osm` v `dem-sources.json`, relácia Slovenska 14296). Vysoké
+modelu (`coverage_osm` v `sources.dem` nastavení, relácia Slovenska 14296). Vysoké
 a Západné Tatry aj Pieniny tak nemajú poľskú stranu z 20 m modelu, ktorá by
 vedľa lidaru vyzerala ako iná mapa. V `mountains.json` majú `countries` (ISO)
 a `osm` – výrezy osm.fr, z ktorých sa robia OSM vrstvy; `workers/mountain/pbf.sh`
@@ -1122,6 +1122,12 @@ z18 je štvornásobok (`aerial_maxzoom: 18`). Mozaika je slovenská – za hrani
 dlaždice chýbajú a mapa pod nimi ostane. Zima zatiaľ zdroj nemá, takže sa jej
 balík nerobí. freemap.sk
 je dobrovoľnícky server: sťahujú 4 spojenia a dlaždice ostávajú v cache na Drive.
+
+**Autori snímok idú so zdrojom.** Balík má v `packages.json` len
+`aerial:summer`; manifest pohoria zapíše `aerial_summer_source` a katalóg dá
+k balíku `credits` toho zdroja. Rovnako `dem:contours` vezme autorov modelu,
+z ktorého vrstevnice naozaj sú. Autori sú v `credits` toho istého súboru
+nastavení, výškové modely v `sources.dem`.
 
 **Interval 2,5 m nie je celé číslo**, a `build.sh` dovtedy počítal triedy
 v bashovej celočíselnej aritmetike (`$(( INTERVAL * 5 ))`) a v SQL cez
@@ -3905,7 +3911,7 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
 
    `dmr5` má dve podoby a rozhoduje rozsah, nie ďalší výber: s vyplneným
    `area` plné 1 m, bez neho dlaždice na 5 m. Že sa v nastaveniach nepoužije
-   zdroj, ktorý [workers/data/dem-sources.json](data/dem-sources.json) pre
+   zdroj, ktorý `sources.dem` v [map-settings.json](data/map-settings.json) pre
    tú vrstvu nemá, a že sa do formulára nevráti pole s nastavením, stráži
    [workers/lint/settings.py](lint/settings.py).
 

@@ -14,13 +14,15 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
-SETTINGS_NAME = "workers/data/map-settings.json"
-SETTINGS = os.path.join(_DATA, "map-settings.json")
 # the category beside the countries, as in maps.json
 MOUNTAINS = "mountains"
 
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 from cell import terrain_zoom_for, tile_m_per_px  # noqa: E402
+import map_settings  # noqa: E402
+
+SETTINGS_NAME = map_settings.NAME
+SETTINGS = map_settings.PATH
 
 
 class SettingsError(Exception):
@@ -184,17 +186,8 @@ REBUILD_OUTSIDE = [
 ]
 
 
-def dem_sources(path=None):
-    """Sources from workers/data/dem-sources.json → {key: its whole entry}."""
-    path = path or os.path.join(_DATA, "dem-sources.json")
-    with open(path) as f:
-        raw = json.load(f)
-    return {k: v for k, v in raw.items() if not k.startswith("_")}
-
-
 def load_settings(path=None):
-    with open(path or SETTINGS, encoding="utf-8") as f:
-        return json.load(f)
+    return map_settings.load(path)
 
 
 def as_text(value):
@@ -255,7 +248,7 @@ def aerial_source(settings, key, season):
     """The source entry of `aerial_<season>`, `{}` when the map has none."""
     if not key:
         return {}
-    known = (settings.get("sources") or {}).get("aerial") or {}
+    known = map_settings.aerial_sources(settings=settings)
     if key not in known:
         raise SettingsError(f"`aerial_{season}: {key}` isn't in `sources.aerial` of "
                             f"{SETTINGS_NAME}. Known: {', '.join(sorted(known))}")
@@ -321,8 +314,6 @@ def main():
                     help="path to map-settings.json (default beside the script)")
     ap.add_argument("--regions", default="",
                     help="path to regions.json (default beside the script)")
-    ap.add_argument("--dem-sources", default="",
-                    help="path to dem-sources.json (default beside the script)")
     ap.add_argument("--out", default="")
     ap.add_argument("--summary", default="",
                     help="where to add a block to the run summary (GITHUB_STEP_SUMMARY)")
@@ -392,8 +383,8 @@ def main():
         return 1
     values["test_km2"] = f"{n:g}" if test_on else "0"
 
-    # what may be picked where is the `for` in dem-sources.json
-    srcs = dem_sources(args.dem_sources or None)
+    # what may be picked where is the `for` of `sources.dem`
+    srcs = map_settings.dem_sources(settings=settings)
     contour_src = pick_source(
         "contours (contour_source)", values["contour_source"],
         [NONE] + [k for k, v in srcs.items() if "contours" in v.get("for", [])])

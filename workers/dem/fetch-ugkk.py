@@ -29,6 +29,8 @@ from importlib.machinery import SourceFileLoader
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 _probe = SourceFileLoader("probe", os.path.join(_HERE, "probe.py")).load_module()
 UA = _probe.UA
 
@@ -75,7 +77,7 @@ def is_elevation_raster(path, min_cell_m=2.5):
 
 
 def try_arcgis(bbox, tmp, sources, tile_px=4000):
-    src = json.load(open(sources))["ugkk"]
+    src = map_settings.dem_sources(sources)["ugkk"]
     # a dead host makes six routes on the same machine pointless
     candidates = list(src["candidates"])
 
@@ -149,7 +151,7 @@ def try_arcgis(bbox, tmp, sources, tile_px=4000):
 
 
 def try_wcs(bbox, tmp, sources):
-    src = json.load(open(sources))["ugkk"]
+    src = map_settings.dem_sources(sources)["ugkk"]
     w, s, e, n = bbox
     for base in src.get("wcs", []):
         ok, why = _probe.host_reachable(base)
@@ -218,7 +220,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--bbox", required=True, help="west,south,east,north")
     ap.add_argument("--out", required=True, help="output GeoTIFF (COG)")
-    ap.add_argument("--sources", default=os.path.join(_DATA, "dem-sources.json"))
+    ap.add_argument("--sources", default=map_settings.PATH)
     ap.add_argument("--direct-urls", default="",
                     help="comma separated URLs of .tif/.zip (last resort)")
     ap.add_argument("--max-cells", type=float, default=3e9,
@@ -251,7 +253,7 @@ def main():
         host_ok = True
         if not tiles:
             host_ok, why = _probe.host_reachable(
-                json.load(open(args.sources))["ugkk"]["directory"])
+                map_settings.dem_sources(args.sources)["ugkk"]["directory"])
             if not host_ok:
                 print(f"── host skgeodesy.sk doesn't answer ({why}) – "
                       f"no point trying ImageServer or WCS")

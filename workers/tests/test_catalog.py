@@ -222,6 +222,16 @@ class Packages(unittest.TestCase):
         self.assertEqual(packages.credits(dem[0], {"contours": "?"}),
                          packages.credits(dem[0], {"contours": packages.DEFAULT_MODEL}))
 
+    def test_photo_credits_follow_the_source(self):
+        settings = packages.map_settings.load()
+        settings["sources"]["aerial"]["other"] = {"season": "summer", "url": "u", "credits": ["osm"]}
+        got = packages.credits("aerial_summer", {"aerial_summer": "other"}, settings)
+        self.assertEqual([c["holder"] for c in got], ["OpenStreetMap contributors"])
+        mosaic = packages.credits("aerial_summer", {"aerial_summer": "ofmozaika_sk"}, settings)
+        self.assertEqual([c["holder"] for c in mosaic], ["GKÚ Bratislava, NLC Zvolen", "freemap.sk"])
+        self.assertEqual(packages.credits("aerial_summer", {}, settings), mosaic,
+                         "a manifest from before the source was recorded")
+
 
 if __name__ == "__main__":
     unittest.main()

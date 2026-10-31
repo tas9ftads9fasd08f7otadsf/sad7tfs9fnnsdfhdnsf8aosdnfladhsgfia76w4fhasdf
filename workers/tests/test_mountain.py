@@ -199,7 +199,8 @@ class Manifest(unittest.TestCase):
         for kind in ("trails", "water", "points"):
             open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb").close()
         with env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4", TRANSPORT_MAXZOOM="14",
-                 COUNTRIES="SK,PL", WATER_MAXZOOM="14"):
+                 COUNTRIES="SK,PL", WATER_MAXZOOM="14", AERIAL_SUMMER_SOURCE="ofmozaika_sk",
+                 AERIAL_WINTER_SOURCE="nobody"):
             reg = manifest.manifest(site)["regions"]["vysoke_tatry"]
         self.assertNotIn("trails", reg, "a range's Paths draw its trails")
         self.assertEqual((reg["water"], reg["water_maxzoom"]), ("tiles/vysoke_tatry-water.pmtiles", 14))
@@ -209,9 +210,11 @@ class Manifest(unittest.TestCase):
                          ("tiles/vysoke_tatry-transport.pmtiles", 14))
         self.assertEqual(reg["road_sign_sprite"], ["tiles/vysoke_tatry-roadsigns.png"])
         self.assertEqual(reg["regulations"], "tiles/vysoke_tatry-regulations.json")
-        self.assertEqual((reg["aerial_summer"], reg["aerial_summer_maxzoom"]),
-                         ("tiles/vysoke_tatry-aerial_summer.pmtiles", 17))
+        self.assertEqual((reg["aerial_summer"], reg["aerial_summer_maxzoom"], reg["aerial_summer_source"]),
+                         ("tiles/vysoke_tatry-aerial_summer.pmtiles", 17, "ofmozaika_sk"))
         self.assertNotIn("aerial_winter", reg)
+        self.assertNotIn("aerial_winter_source", reg, "no photos, so no source to credit")
+        self.assertEqual(catalog.region_models({}, reg)["aerial_summer"], "ofmozaika_sk")
 
     def test_a_missing_layer_is_left_out(self):
         site = self.site("contours")

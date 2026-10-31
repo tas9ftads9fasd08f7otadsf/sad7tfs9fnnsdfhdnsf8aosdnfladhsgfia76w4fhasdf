@@ -3,7 +3,7 @@
 
 `*.skgeodesy.sk` isn't visible from every network and the ArcGIS service names
 are undocumented, so a probe lists the service directory, asks each candidate
-from `dem-sources.json` for metadata, and asks a responder for a small GeoTIFF.
+from `sources.dem` of `workers/data/map-settings.json` for metadata, and asks a responder for a small GeoTIFF.
 
 Usage:
     python3 workers/dem/probe.py [--bbox=W,S,E,N] [--summary=FILE]
@@ -16,6 +16,9 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
+
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+import map_settings  # noqa: E402
 
 # geoportals behind a WAF drop non-browser requests silently; several header sets are tried
 BROWSERS = [
@@ -227,7 +230,7 @@ def probe_export(url, bbox):
 
 def diagnose(sources):
     """A host × browser profile matrix – "would posing as Safari help?" answered with data."""
-    src = json.load(open(sources))["ugkk"]
+    src = map_settings.dem_sources(sources)["ugkk"]
     hosts = []
     for u in (src.get("directories", []) + src.get("candidates", [])
               + src.get("wcs", []) + src.get("catalog", [])):
@@ -270,7 +273,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--diagnose", action="store_true",
                     help="only the host reachability matrix, download nothing")
-    ap.add_argument("--sources", default="workers/data/dem-sources.json")
+    ap.add_argument("--sources", default=map_settings.PATH)
     ap.add_argument("--bbox", default=",".join(str(v) for v in TEST_BBOX))
     ap.add_argument("--summary", default=os.environ.get("GITHUB_STEP_SUMMARY", ""))
     args = ap.parse_args()
@@ -280,7 +283,7 @@ def main():
         diagnose(args.sources)
         return 0
 
-    src = json.load(open(args.sources))["ugkk"]
+    src = map_settings.dem_sources(args.sources)["ugkk"]
     print(f"Looking for: {src['label']}")
     print(f"Test cut-out: {args.bbox} (Vysoké Tatry)")
 
@@ -318,7 +321,7 @@ def main():
     print("\n── Result")
     if winner:
         print(f"✓ USABLE: {winner}")
-        print("  Write it as the first candidate into workers/data/dem-sources.json")
+        print("  Write it as the first candidate into `sources.dem` of workers/data/map-settings.json")
         print("  and `dem_source: ugkk` will work.")
     else:
         usable = [r for r in rows if r[1] == "✓"]
@@ -342,7 +345,7 @@ def main():
             f.write("\n")
             if winner:
                 f.write(f"**✓ Usable:** `{winner}`\n\n"
-                        "Write it as the first candidate into `workers/data/dem-sources.json`"
+                        "Write it as the first candidate into `sources.dem` of `workers/data/map-settings.json`"
                         " and `dem_source: ugkk` will work.\n")
             else:
                 f.write("**✗ Nothing usable.** ÚGKK officially gives DMR 5.0 through "

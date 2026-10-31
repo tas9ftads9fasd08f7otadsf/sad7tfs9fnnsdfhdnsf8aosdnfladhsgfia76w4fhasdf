@@ -11,7 +11,7 @@ import sys
 
 # folder = job (or the workflow that job calls)
 KNOWN = {
-    "data": "lookups (areas, regions, dem-sources)",
+    "data": "lookups (areas, regions, map settings)",
     "lib": "what several jobs share (watch, planetiler, png, budget)",
     "plan": "jobs `settings`, `plan` and `keys`",
     "dem": "job `check-dem` and model refills",
