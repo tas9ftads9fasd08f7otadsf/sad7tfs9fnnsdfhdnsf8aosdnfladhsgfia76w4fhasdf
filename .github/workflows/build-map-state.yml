@@ -15,7 +15,7 @@ name: Map · Build map state
 on:
   workflow_dispatch:
     inputs:
-      # the list is workers/data/regions.json (the workflow lint guards it)
+      # the list is `regions` of workers/data/map-settings.json (the workflow lint guards it)
       country:
         description: "Country – every region of it is built"
         required: true

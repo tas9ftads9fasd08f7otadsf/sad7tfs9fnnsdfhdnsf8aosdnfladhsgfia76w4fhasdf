@@ -17,7 +17,7 @@ JOBS = "workers/state/jobs.py"
 REGISTRY = "workers/data/packages.json"
 with open(REGISTRY, encoding="utf-8") as _f:
     KNOWN_PACKAGES = {b["key"] for b in json.load(_f).get("packages") or []}
-REGIONS = "workers/data/regions.json"
+REGIONS = "workers/data/map-settings.json"
 WF_DIR = ".github/workflows"
 # batch inputs that aren't run settings
 OWN = {"country", "what", "continuation"}
@@ -165,7 +165,7 @@ if a != b:
                   f"its layer grows stale and nobody learns it.")
 
 # 7. the country choice matches the region registry
-regions = json.load(open(REGIONS, encoding="utf-8"))
+regions = json.load(open(REGIONS, encoding="utf-8"))["regions"]
 with_regions = [k for k, v in regions.items()
                 if v.get("admin_level") != REGION_LEVEL
                 and any(r.get("country") == k

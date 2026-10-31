@@ -12,7 +12,7 @@ STATE = ".github/workflows/build-map-state.yml"
 REGION = ".github/workflows/build-map-region.yml"
 RELAY = "workers/state/relay.sh"
 QUEUE = "workers/state/queue.py"
-REGIONS = "workers/data/regions.json"
+REGIONS = "workers/data/map-settings.json"
 OPTIONS_PY = "workers/plan/options.py"
 # batch inputs that aren't map settings
 OWN = {"country", "continuation"}
@@ -84,7 +84,7 @@ for name, value in FIXED.items():
 
 # 3. the country choice matches the registry – `type: choice` can't be generated, only guarded
 sys.path.insert(0, os.path.dirname(os.path.abspath(QUEUE)))
-regions = json.load(open(REGIONS))
+regions = json.load(open(REGIONS))["regions"]
 REGION_LEVEL = 4
 with_regions = [k for k, v in regions.items()
                 if v.get("admin_level") != REGION_LEVEL

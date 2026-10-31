@@ -14,7 +14,7 @@ name: Map · Regenerate state
 on:
   workflow_dispatch:
     inputs:
-      # the list is workers/data/regions.json (the workflow lint guards it)
+      # the list is `regions` of workers/data/map-settings.json (the workflow lint guards it)
       country:
         description: "Country – regenerated in every region of it"
         required: true

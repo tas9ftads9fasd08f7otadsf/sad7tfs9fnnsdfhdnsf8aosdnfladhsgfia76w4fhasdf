@@ -215,7 +215,7 @@ def layers(settings, regions, region="", mountain=""):
         out.append((f"{MOUNTAINS} › {mountain}", ranges[mountain].get("settings") or {}))
     elif region:
         if region not in regions:
-            raise SettingsError(f"Region “{region}” isn't in regions.json.")
+            raise SettingsError(f"Region “{region}” isn't in `regions` of {SETTINGS_NAME}.")
         country = regions[region].get("country") or region
         node = maps.get(country) or {}
         out.append((country, node.get("settings") or {}))
@@ -242,6 +242,27 @@ def resolve(settings, regions, region="", mountain=""):
     if missing:
         raise SettingsError(f"{SETTINGS_NAME} `defaults` lacks {', '.join(missing)}.")
     return values, origin
+
+
+def photo_gaps(settings, mountain, values):
+    """`{season: [ISO]}` – countries the range lies in that its photo source doesn't cover."""
+    if not mountain:
+        return {}
+    countries = (map_settings.mountains(settings=settings).get(mountain) or {}).get("countries") or []
+    known = map_settings.aerial_sources(settings=settings)
+    out = {}
+    for season in ("summer", "winter"):
+        covers = (known.get(values[f"aerial_{season}"]) or {}).get("covers")
+        missing = [c for c in countries if covers and c not in covers]
+        if missing:
+            out[season] = missing
+    return out
+
+
+def gap_text(mountain, season, source, covers, missing):
+    return (f"{season.capitalize()} photos of {mountain} ({source}) cover only "
+            f"{', '.join(covers)} – the range lies in {', '.join(missing)} too, where the "
+            f"map shows through without them.")
 
 
 def aerial_source(settings, key, season):
@@ -308,20 +329,20 @@ def main():
     ap.add_argument("--publish-pages", default="true",
                     help="GitHub Pages switch: false = the map is built and "
                          "checked, not deployed")
-    ap.add_argument("--region", default="", help="region key of regions.json")
+    ap.add_argument("--region", default="", help="region key of `regions`")
     ap.add_argument("--mountain", default="", help="range key of `maps.mountains.ranges`")
     ap.add_argument("--settings", default="",
                     help="path to map-settings.json (default beside the script)")
     ap.add_argument("--regions", default="",
-                    help="path to regions.json (default beside the script)")
+                    help="path to a map-settings.json for `regions` (default: --settings)")
     ap.add_argument("--out", default="")
     ap.add_argument("--summary", default="",
                     help="where to add a block to the run summary (GITHUB_STEP_SUMMARY)")
     args = ap.parse_args()
 
     settings = load_settings(args.settings or None)
-    with open(args.regions or os.path.join(_DATA, "regions.json"), encoding="utf-8") as f:
-        regions = json.load(f)
+    regions = (map_settings.regions(args.regions) if args.regions
+               else map_settings.regions(settings=settings))
     try:
         values, origin = resolve(settings, regions, args.region, args.mountain)
     except SettingsError as exc:
@@ -539,8 +560,21 @@ def main():
         return origin.get(key, "worked out from the settings above")
 
     # what the run starts with, first on the run page, in sight after a failure too
+    # an annotation once, from the run's first job; other jobs only log it
+    gaps = photo_gaps(settings, args.mountain, values)
+    known_photos = map_settings.aerial_sources(settings=settings)
+    for season, missing in gaps.items():
+        source = values[f"aerial_{season}"]
+        text = gap_text(args.mountain, season, source, known_photos[source]["covers"], missing)
+        print(f"::warning::{text}" if args.summary else text)
+
     if args.summary:
         with open(args.summary, "a") as f:
+            for season, missing in gaps.items():
+                source = values[f"aerial_{season}"]
+                f.write("> [!WARNING]\n> " + gap_text(
+                    args.mountain, season, source, known_photos[source]["covers"], missing)
+                    + "\n\n")
             f.write(f"## Settings of this run – {target}\n\n"
                     f"From `{SETTINGS_NAME}`{f' at `{sha}`' if sha else ''}; "
                     f"the most specific place wins.\n\n")

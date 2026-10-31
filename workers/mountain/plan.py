@@ -17,13 +17,15 @@ _DATA = os.path.join(_WORKERS, "data")
 
 sys.path.insert(0, os.path.join(_WORKERS, "plan"))
 import area  # noqa: E402
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 
 OSMFR = "https://download.openstreetmap.fr/extracts"
 
 
 def registry(name):
-    with open(os.path.join(_DATA, name), encoding="utf-8") as f:
-        return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    """`regions`, `areas` or `mountains` of the settings, without `_comment`."""
+    return map_settings.plain(getattr(map_settings, name)())
 
 
 def bbox_key(bbox):
@@ -86,18 +88,18 @@ def digest(path):
 
 
 def plan(key, test_km2=0.0, test_at="", mountains=None, areas=None, regions=None):
-    mountains = registry("mountains.json") if mountains is None else mountains
-    areas = registry("areas.json") if areas is None else areas
-    regions = registry("regions.json") if regions is None else regions
+    mountains = registry("mountains") if mountains is None else mountains
+    areas = registry("areas") if areas is None else areas
+    regions = registry("regions") if regions is None else regions
     if key not in mountains:
         raise SystemExit(f"::error::Unknown mountain “{key}”. Known "
-                         f"(workers/data/mountains.json): {', '.join(sorted(mountains))}.")
+                         f"(`maps.mountains.ranges` of workers/data/map-settings.json): {', '.join(sorted(mountains))}.")
     entry = mountains[key]
     country, cut = entry["country"], entry["area"]
     if country not in regions:
-        raise SystemExit(f"::error::Mountain {key}: country “{country}” isn't in regions.json.")
+        raise SystemExit(f"::error::Mountain {key}: country “{country}” isn't in `regions`.")
     if cut not in areas:
-        raise SystemExit(f"::error::Mountain {key}: cut-out “{cut}” isn't in areas.json.")
+        raise SystemExit(f"::error::Mountain {key}: cut-out “{cut}” isn't in `areas`.")
     bbox = [float(v) for v in areas[cut]["bbox"]]
     name = areas[cut]["name"]
     region_key, area_key = key, cut

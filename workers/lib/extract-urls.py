@@ -38,7 +38,7 @@ def main():
     args = ap.parse_args()
 
     if args.region:
-        lines = region(args.region, read("regions.json"), args.base)
+        lines = region(args.region, read("map-settings.json")["regions"], args.base)
     elif args.routing_area:
         lines = routing(args.routing_area, read("routing-areas.json").get("areas") or {}, args.base)
     else:

@@ -15,6 +15,7 @@ set -e
 T0=$(date +%s)
 mkdir -p data
 CUSTOM_URL="$OPT_CUSTOM_PBF_URL"
+SETTINGS=workers/data/map-settings.json
 
 # a PBF (cropped too) from an earlier run needs no download
 CACHED=""
@@ -79,21 +80,21 @@ if [ -n "$CUSTOM_URL" ]; then
     exit 1
   fi
 else
-  # ----- a preset region from workers/data/regions.json -----
+  # ----- a preset region from `regions` of workers/data/map-settings.json -----
   KEY="$REGION"
-  NAME=$(jq -r --arg r "$KEY" '.[$r].name' workers/data/regions.json)
-  BBOX=$(jq -r --arg r "$KEY" '.[$r].bbox | join(",")' workers/data/regions.json)
-  DIR=$(jq -r --arg r "$KEY" '.[$r].osmfr.dir' workers/data/regions.json)
+  NAME=$(jq -r --arg r "$KEY" '.regions[$r].name' "$SETTINGS")
+  BBOX=$(jq -r --arg r "$KEY" '.regions[$r].bbox | join(",")' "$SETTINGS")
+  DIR=$(jq -r --arg r "$KEY" '.regions[$r].osmfr.dir' "$SETTINGS")
   # the country ISO for routing: an edge carries its country, for vignettes
-  ISO=$(jq -r --arg r "$KEY" '. as $d | ($d[$r].iso // $d[$d[$r].country].iso // "")' workers/data/regions.json)
+  ISO=$(jq -r --arg r "$KEY" '.regions as $d | ($d[$r].iso // $d[$d[$r].country].iso // "")' "$SETTINGS")
   # the CCH node order area – the same for all regions of a country, or their archives won't join
-  ROUTING_AREA=$(jq -r --arg r "$KEY" '. as $d | ($d[$r].routing_area // $d[$d[$r].country].routing_area // "")' workers/data/regions.json)
+  ROUTING_AREA=$(jq -r --arg r "$KEY" '.regions as $d | ($d[$r].routing_area // $d[$d[$r].country].routing_area // "")' "$SETTINGS")
   # the parent is another region key of the same registry, not a second URL
-  PARENT=$(jq -r --arg r "$KEY" '.[$r].osmfr.parent // ""' workers/data/regions.json)
+  PARENT=$(jq -r --arg r "$KEY" '.regions[$r].osmfr.parent // ""' "$SETTINGS")
   if [ "$NAME" = "null" ]; then echo "::error::Unknown region: $KEY"; exit 1; fi
 
   # osm.fr renames its files now and then; the first existing one is taken
-  slugs() { jq -r --arg r "$1" '.[$r].osmfr.slugs[]' workers/data/regions.json; }
+  slugs() { jq -r --arg r "$1" '.regions[$r].osmfr.slugs[]' "$SETTINGS"; }
 
   if [ -z "$PARENT" ]; then
     # ----- a region without a parent (a whole country) – the ready export -----
@@ -102,7 +103,7 @@ else
       if download "$OSMFR_BASE/$DIR/$SLUG.osm.pbf"; then OK=1; break; fi
     done
     if [ -z "$OK" ]; then
-      echo "::error::The PBF for '$KEY' couldn't be downloaded. Contents of $OSMFR_BASE/$DIR/ (fix slugs in workers/data/regions.json):"
+      echo "::error::The PBF for '$KEY' couldn't be downloaded. Contents of $OSMFR_BASE/$DIR/ (fix slugs in regions of $SETTINGS):"
       curl -sL "$OSMFR_BASE/$DIR/" | grep -oE 'href="[^"]+\.osm\.pbf"' | sort -u || true
       echo "…or fill in custom_pbf_url with a direct URL of a .osm.pbf."
       exit 1
@@ -128,10 +129,10 @@ else
     fi
   elif [ -z "$CACHED" ]; then
     # ----- a region: cut from its parent (why: the file header) -----
-    PDIR=$(jq -r --arg r "$PARENT" '.[$r].osmfr.dir' workers/data/regions.json)
-    PNAME=$(jq -r --arg r "$PARENT" '.[$r].name' workers/data/regions.json)
+    PDIR=$(jq -r --arg r "$PARENT" '.regions[$r].osmfr.dir' "$SETTINGS")
+    PNAME=$(jq -r --arg r "$PARENT" '.regions[$r].name' "$SETTINGS")
     if [ "$PDIR" = "null" ]; then
-      echo "::error::Region '$KEY' has \`osmfr.parent: $PARENT\`, but workers/data/regions.json has no such region (or it lacks \`osmfr.dir\`). Fix the registry."
+      echo "::error::Region '$KEY' has \`osmfr.parent: $PARENT\`, but \`regions\` of $SETTINGS has no such region (or it lacks \`osmfr.dir\`). Fix the registry."
       exit 1
     fi
 
@@ -144,7 +145,7 @@ else
       if download "$OSMFR_BASE/$PDIR/$SLUG.osm.pbf" data/parent.osm.pbf; then OK=1; break; fi
     done
     if [ -z "$OK" ]; then
-      echo "::error::The parent extract '$PARENT' couldn't be downloaded. Contents of $OSMFR_BASE/$PDIR/ (fix slugs in workers/data/regions.json):"
+      echo "::error::The parent extract '$PARENT' couldn't be downloaded. Contents of $OSMFR_BASE/$PDIR/ (fix slugs in regions of $SETTINGS):"
       curl -sL "$OSMFR_BASE/$PDIR/" | grep -oE 'href="[^"]+\.osm\.pbf"' | sort -u || true
       exit 1
     fi

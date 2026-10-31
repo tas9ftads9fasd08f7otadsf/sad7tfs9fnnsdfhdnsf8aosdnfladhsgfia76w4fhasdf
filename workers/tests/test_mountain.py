@@ -28,14 +28,14 @@ def env(**kw):
 
 
 def registry(name):
-    with open(os.path.join(WORKERS, "data", name), encoding="utf-8") as f:
-        return json.load(f)
+    """`regions`, `areas` or `mountains` of the settings, as the old files held them."""
+    return getattr(worker("lib/map_settings.py"), name)()
 
 
 class Registry(unittest.TestCase):
     def test_every_mountain_has_a_country_and_a_cut_out(self):
-        areas, regions = registry("areas.json"), registry("regions.json")
-        for key, entry in registry("mountains.json").items():
+        areas, regions = registry("areas"), registry("regions")
+        for key, entry in registry("mountains").items():
             if key.startswith("_"):
                 continue
             self.assertEqual(regions[entry["country"]]["admin_level"], 2, key)
@@ -47,13 +47,13 @@ class Registry(unittest.TestCase):
             flow = yaml.safe_load(f)
         on = flow.get("on") or flow.get(True)
         offered = on["workflow_dispatch"]["inputs"]["mountain"]["options"]
-        known = [k for k in registry("mountains.json") if not k.startswith("_")]
+        known = [k for k in registry("mountains") if not k.startswith("_")]
         self.assertEqual(sorted(offered), sorted(known))
 
     def test_a_range_has_contours_every_five_metres(self):
         opts = worker("plan/options.py")
-        settings, regions = opts.load_settings(), registry("regions.json")
-        for key in registry("mountains.json"):
+        settings, regions = opts.load_settings(), registry("regions")
+        for key in registry("mountains"):
             if key.startswith("_"):
                 continue
             got, _ = opts.resolve(settings, regions, mountain=key)
@@ -139,7 +139,7 @@ class Plan(unittest.TestCase):
                          "https://download.openstreetmap.fr/extracts/europe/slovakia-latest.osm.pbf")
 
     def test_every_range_names_its_countries_and_extracts(self):
-        for key, entry in registry("mountains.json").items():
+        for key, entry in registry("mountains").items():
             if key.startswith("_"):
                 continue
             self.assertIn("SK", entry["countries"], key)
@@ -256,7 +256,7 @@ class Catalog(unittest.TestCase):
         self.tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, self.tmp)
         self.path = os.path.join(self.tmp, "maps.json")
-        self.regions = registry("regions.json")
+        self.regions = registry("regions")
         with open(self.path, "w") as f:
             json.dump({"slovensko": {"name": "Slovakia", "regions": {"presovsky": {"maps": {}}}}}, f)
 

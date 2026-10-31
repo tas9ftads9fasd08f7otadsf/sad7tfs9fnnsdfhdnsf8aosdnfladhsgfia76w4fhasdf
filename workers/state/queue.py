@@ -11,14 +11,14 @@ import sys
 
 _DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                      "data")
-REGIONS = os.path.join(_DATA, "regions.json")
+SETTINGS = os.path.join(_DATA, "map-settings.json")
 # the same number decides whether a package gets a region folder on Drive
 REGION_LEVEL = 4
 
 
 def read():
-    with open(REGIONS) as f:
-        return json.load(f)
+    with open(SETTINGS) as f:
+        return json.load(f)["regions"]
 
 
 def regions_of(regions, country):
@@ -51,7 +51,7 @@ def main():
     found = regions_of(regions, args.regions)
     if not found:
         # a hard error: empty output would end the batch green with nothing built
-        print(f"::error::Country “{args.regions}” has no region in {REGIONS} "
+        print(f"::error::Country “{args.regions}” has no region in `regions` of {SETTINGS} "
               f"(`admin_level: {REGION_LEVEL}`). Possible: "
               f"{', '.join(countries(regions)) or '(none)'}.", file=sys.stderr)
         sys.exit(1)

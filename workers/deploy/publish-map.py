@@ -7,7 +7,6 @@ build overwrites the same file and the link in `maps.json` keeps working.
 """
 import argparse
 import importlib.util
-import json
 import os
 import sys
 import time
@@ -15,6 +14,8 @@ import time
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 _DRIVE = os.path.join(_WORKERS, "drive")
 
 
@@ -170,8 +171,7 @@ def main():
         log(f"Catalog of this run: {args.maps} (quick test – finished maps are "
             f"in {catalog.CATALOG})")
 
-    with open(os.path.join(_DATA, "regions.json")) as f:
-        regions = json.load(f)
+    regions = map_settings.regions()
 
     formats = [f.strip() for f in args.format.split(",") if f.strip()]
     for f in formats:

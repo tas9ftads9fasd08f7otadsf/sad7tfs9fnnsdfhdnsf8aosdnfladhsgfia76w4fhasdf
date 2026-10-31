@@ -9,8 +9,6 @@ import yaml
 
 SETTINGS = "workers/data/map-settings.json"
 OPTIONS_PY = "workers/plan/options.py"
-REGIONS = "workers/data/regions.json"
-MOUNTAINS = "workers/data/mountains.json"
 REGION_WF = ".github/workflows/build-map-region.yml"
 MOUNTAIN_WF = ".github/workflows/mountain.yml"
 STATE_WF = ".github/workflows/build-map-state.yml"
@@ -51,12 +49,15 @@ opts = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(opts)
 
 settings = load(SETTINGS)
-regions = load(REGIONS)
-ranges_known = [k for k in load(MOUNTAINS) if not k.startswith("_")]
+regions = settings.get("regions") or {}
+areas = {k for k in settings.get("areas") or {} if not k.startswith("_")}
 dem = {k: v.get("for", []) for k, v in
        ((settings.get("sources") or {}).get("dem") or {}).items() if not k.startswith("_")}
 credits = {k for k in settings.get("credits") or {} if not k.startswith("_")}
 maps = settings.get("maps") or {}
+ranges = {k: v for k, v in ((maps.get(opts.MOUNTAINS) or {}).get("ranges") or {}).items()
+          if not k.startswith("_")}
+ranges_known = list(ranges)
 aerial = (settings.get("sources") or {}).get("aerial") or {}
 
 # 1. defaults name every setting there is, and nothing else
@@ -70,20 +71,22 @@ for k in sorted(set(defaults) - set(opts.DESCRIPTIONS)):
 for key, node in maps.items():
     if key == opts.MOUNTAINS:
         if key in regions:
-            error(REGIONS, f"`{key}` is a region key, but it is the mountain category in {SETTINGS}.")
-        for r in node.get("ranges") or {}:
-            if r not in ranges_known:
-                error(SETTINGS, f"Range `{r}` isn't in {MOUNTAINS}.")
-        for r in ranges_known:
-            if r not in (node.get("ranges") or {}):
-                error(SETTINGS, f"Range `{r}` of {MOUNTAINS} has no entry in `maps.mountains.ranges`.")
+            error(SETTINGS, f"`{key}` is a key of `regions`, but it is the mountain category.")
+        # a range is a place too: a cut-out, the countries it lies in, its OSM extracts
+        for r, entry in ranges.items():
+            if entry.get("area") not in areas:
+                error(SETTINGS, f"Range `{r}`: `area` {entry.get('area')!r} isn't in `areas`.")
+            if not entry.get("countries") or not entry.get("osm"):
+                error(SETTINGS, f"Range `{r}` names no `countries` or `osm` extracts.")
+            if entry.get("country") not in regions:
+                error(SETTINGS, f"Range `{r}`: `country` {entry.get('country')!r} isn't in `regions`.")
         continue
     if key not in regions or (regions[key].get("country") or key) != key:
-        error(SETTINGS, f"`maps.{key}` isn't a country of {REGIONS}.")
+        error(SETTINGS, f"`maps.{key}` isn't a country of `regions`.")
         continue
     for r in node.get("regions") or {}:
         if r not in regions or regions[r].get("country") != key or r == key:
-            error(SETTINGS, f"`maps.{key}.regions.{r}` isn't a region of {key} in {REGIONS}.")
+            error(SETTINGS, f"`maps.{key}.regions.{r}` isn't a region of {key} in `regions`.")
 
 # 3. a country a form builds has its own entry, or it quietly gets Slovakia's model
 built = set(form(STATE_WF).get("country", {}).get("options") or [])
@@ -134,7 +137,7 @@ for r in form(REGION_WF).get("region", {}).get("options") or []:
         error(SETTINGS, f"Region `{r}`: {exc}")
 offered = form(MOUNTAIN_WF).get("mountain", {}).get("options") or []
 if sorted(offered) != sorted(ranges_known):
-    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, {MOUNTAINS} has {ranges_known}.")
+    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, `maps.mountains.ranges` has {ranges_known}.")
 for r in ranges_known:
     try:
         opts.resolve(settings, regions, mountain=r)

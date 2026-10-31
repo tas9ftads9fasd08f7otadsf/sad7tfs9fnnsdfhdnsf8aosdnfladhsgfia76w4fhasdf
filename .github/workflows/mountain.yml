@@ -4,7 +4,7 @@ run-name: "${{ github.workflow }} · ${{ inputs.mountain }}"
 # ONE MOUNTAIN RANGE IN DETAIL – 5 m contours, rocks and a height model
 # from DMR 5.0 at 1 m (Sonny's 20 m beyond the Slovak border), roads, paths,
 # water and points of interest from OSM, and aerial photos of summer and winter,
-# over the range alone (`workers/data/mountains.json`) – across borders where it
+# over the range alone (`maps.mountains.ranges` of map-settings.json) – across borders where it
 # runs on. No waymarked trails: the range's Paths draw them.
 #
 # The same DEM layers the map build makes (`dem-layers.yml`), on the range's
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       mountain:
-        description: "Which range (workers/data/mountains.json)"
+        description: "Which range (maps.mountains.ranges of workers/data/map-settings.json)"
         required: true
         default: vysoke_tatry
         type: choice

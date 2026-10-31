@@ -271,8 +271,8 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "$WIKI_COUNTRY" ]; then
-            WIKI_COUNTRY=$(jq -r --arg r "$REGION" '.[$r].country // ""' \
-              workers/data/regions.json)
+            WIKI_COUNTRY=$(jq -r --arg r "$REGION" '.regions[$r].country // ""' \
+              workers/data/map-settings.json)
           fi
           export WIKI_COUNTRY
           echo "Country for the local language: ${WIKI_COUNTRY:-(unknown)}"

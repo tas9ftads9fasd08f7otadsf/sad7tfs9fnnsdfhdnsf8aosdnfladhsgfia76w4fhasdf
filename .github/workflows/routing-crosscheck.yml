@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       region:
-        description: "Region key from `workers/data/regions.json`"
+        description: "Region key from regions of `workers/data/map-settings.json`"
         required: false
         default: "bratislavsky"
         type: string

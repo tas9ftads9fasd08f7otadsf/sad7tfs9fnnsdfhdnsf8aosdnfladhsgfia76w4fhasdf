@@ -17,14 +17,14 @@ import json
 import re
 import sys
 
-REGIONS = "workers/data/regions.json"
+REGIONS = "workers/data/map-settings.json"
 PBF = "workers/plan/pbf.sh"
 
 bad = []
 
 # 1. and 2. the region lookup
 with open(REGIONS, encoding="utf-8") as f:
-    regions = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    regions = {k: v for k, v in json.load(f)["regions"].items() if not k.startswith("_")}
 
 for key, reg in regions.items():
     osmfr = reg.get("osmfr") or {}

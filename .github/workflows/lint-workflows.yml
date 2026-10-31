@@ -174,7 +174,7 @@ jobs:
           PY
 
       # choice options must be literal in YAML, so they're guarded, not generated
-      - name: The range choice matches areas.json
+      - name: The range choice matches the settings' areas
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -182,11 +182,11 @@ jobs:
           d = yaml.safe_load(open(".github/workflows/build-map-region.yml"))
           on = d[[k for k in d if k is True or k == "on"][0]]
           opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
-          areas = [k for k in json.load(open("workers/data/areas.json"))
+          areas = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
                    if not k.startswith("_")]
           want = ["whole_region"] + areas
           if opts != want:
-              print("::error::The choice `area` in the workflow doesn't match workers/data/areas.json")
+              print("::error::The choice `area` in the workflow doesn't match areas of workers/data/map-settings.json")
               print(f"  in the workflow: {opts}")
               print(f"  should be:       {want}")
               sys.exit(1)
@@ -194,12 +194,12 @@ jobs:
           PY
 
       # the same for the DMR 5.0 model workflow
-      - name: The range choice in dmr5-drive.yml matches areas.json
+      - name: The range choice in dmr5-drive.yml matches the settings' areas
         run: |
           set -euo pipefail
           python3 - <<'PY'
           import json, sys, yaml
-          areas = [k for k in json.load(open("workers/data/areas.json"))
+          areas = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
                    if not k.startswith("_")]
           want = ["whole_country"] + areas
           bad = 0
@@ -208,7 +208,7 @@ jobs:
               on = d[[k for k in d if k is True or k == "on"][0]]
               opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
               if opts != want:
-                  print(f"::error file={path}::The choice `area` doesn't match workers/data/areas.json")
+                  print(f"::error file={path}::The choice `area` doesn't match areas of workers/data/map-settings.json")
                   print(f"  in the workflow: {opts}")
                   print(f"  should be:       {want}")
                   bad += 1
@@ -218,7 +218,7 @@ jobs:
           PY
 
       # the same for “Data · rocks from hillshading”; no “whole region” on purpose
-      - name: The range choice in shading-rocks.yml matches areas.json
+      - name: The range choice in shading-rocks.yml matches the settings' areas
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -226,10 +226,10 @@ jobs:
           d = yaml.safe_load(open(".github/workflows/shading-rocks.yml"))
           on = d[[k for k in d if k is True or k == "on"][0]]
           opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
-          want = [k for k in json.load(open("workers/data/areas.json"))
+          want = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
                   if not k.startswith("_")]
           if opts != want:
-              print("::error::The choice `area` in shading-rocks.yml doesn't match workers/data/areas.json")
+              print("::error::The choice `area` in shading-rocks.yml doesn't match areas of workers/data/map-settings.json")
               print(f"  in the workflow: {opts}")
               print(f"  should be:       {want}")
               sys.exit(1)

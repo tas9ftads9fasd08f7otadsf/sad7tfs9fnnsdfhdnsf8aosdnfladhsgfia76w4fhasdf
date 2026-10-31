@@ -456,7 +456,7 @@ z cache pod kľúčom `routing-order-v1-<územie>-<run_id>` cez `restore-keys` �
 teda najnovšie poradie toho územia. Keď tam nie je alebo je staršie než 30
 dní, build kraja ho **dopočíta sám a uloží**; „Navigácia · poradie uzlov"
 (`routing-order.yml`) ho tým istým skriptom prepočíta skôr. Ktoré územie to je, hovorí
-`routing_area` pri krajine v `regions.json`; všetky kraje krajiny musia stáť na
+`routing_area` pri krajine v `regions` nastavení; všetky kraje krajiny musia stáť na
 tom istom, inak sa ich archívy v telefóne spojiť nesmú.
 
 **Neprepočítava sa pri každom builde** a nemusí: závisí len od tvaru siete.

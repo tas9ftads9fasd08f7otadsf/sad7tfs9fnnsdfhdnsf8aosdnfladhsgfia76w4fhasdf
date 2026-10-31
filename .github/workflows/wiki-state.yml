@@ -9,7 +9,7 @@ on:
     - cron: "40 2 * * 6"
   workflow_dispatch:
     inputs:
-      # the list is workers/data/regions.json
+      # the list is `regions` of workers/data/map-settings.json
       country:
         description: "Country – articles are built in every region of it"
         required: true

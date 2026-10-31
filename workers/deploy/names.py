@@ -89,7 +89,7 @@ def drive_path(regions):
     if mountain_country():
         return [MOUNTAINS, safe(region_key)]
     if custom_url:
-        # a custom PBF is not in `regions.json`; the region is what the user named it
+        # a custom PBF is not in `regions`; the region is what the user named it
         region = safe(env("CUSTOM_NAME") or region_key
                       or custom_url.rsplit("/", 1)[-1].split(".")[0])
         parts = [country_from_url(custom_url), region]

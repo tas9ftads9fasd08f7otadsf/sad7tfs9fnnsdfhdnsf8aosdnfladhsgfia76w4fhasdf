@@ -148,6 +148,17 @@ class Layers(unittest.TestCase):
         with self.assertRaisesRegex(OPTS.SettingsError, "lacks rock_slope"):
             OPTS.resolve(s, REGIONS, region="ke")
 
+    def test_photos_that_stop_at_a_border_are_named(self):
+        s = settings_with(mountains={"settings": {}, "ranges": {
+            "r": {"countries": ["SK", "PL"], "settings": {"aerial_summer": "a"}},
+            "s": {"countries": ["SK"], "settings": {"aerial_summer": "a"}}}})
+        s["sources"]["aerial"]["a"]["covers"] = ["SK"]
+        for key, want in (("r", {"summer": ["PL"]}), ("s", {})):
+            got, _ = OPTS.resolve(s, REGIONS, mountain=key)
+            self.assertEqual(OPTS.photo_gaps(s, key, got), want, key)
+        self.assertEqual(OPTS.photo_gaps(s, "", got), {}, "a region has no photos")
+        self.assertIn("PL", OPTS.gap_text("r", "summer", "a", ["SK"], ["PL"]))
+
     def test_aerial_source_must_fit_its_season(self):
         s = settings_with()
         self.assertEqual(OPTS.aerial_source(s, "a", "summer")["url"], "u")

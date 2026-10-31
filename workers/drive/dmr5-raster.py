@@ -17,7 +17,6 @@ Usage:
 """
 import argparse
 import importlib.util
-import json
 import math
 import os
 import subprocess
@@ -32,6 +31,7 @@ _DATA = os.path.join(_WORKERS, "data")     # registries (areas, regions, sources
 # the resampling – one answer for the whole pipeline, see `lib/cell.py`
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 from cell import resampling  # noqa: E402
+import map_settings  # noqa: E402
 
 
 def load(name, path):
@@ -173,7 +173,7 @@ def area_cut(vsi, bbox_wgs, grid_m, dest, work, log, info, expect=None):
     return dest
 
 
-def resolve_area(area, areas_path):
+def resolve_area(area, areas_path=None):
     key = (area or "whole_country").strip()
     if key.lower() in ("", "whole", "whole_country", "cele", "cele_slovensko", "all"):
         return "whole country", None
@@ -182,8 +182,7 @@ def resolve_area(area, areas_path):
         if len(vals) != 4:
             raise SystemExit(f"::error::a bbox must have 4 numbers: {key}")
         return f"bbox {key}", tuple(vals)
-    with open(areas_path) as f:
-        areas = json.load(f)
+    areas = map_settings.areas(areas_path)
     if key not in areas:
         known = ", ".join(k for k in areas if not k.startswith("_"))
         raise SystemExit(f"::error::unknown cut-out \"{key}\". Known: {known}")
@@ -197,7 +196,7 @@ def main(argv=None):
                     help="the largest raster in the archive is picked from it")
     ap.add_argument("--member", default="", help="a fixed path in the archive")
     ap.add_argument("--area", default="whole_country")
-    ap.add_argument("--areas", default=os.path.join(_DATA, "areas.json"))
+    ap.add_argument("--areas", default=None, help="path to map-settings.json")
     ap.add_argument("--grid-m", type=float, default=5.0)
     ap.add_argument("--out", default="out")
     ap.add_argument("--work", default="raster-work")
