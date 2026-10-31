@@ -4,15 +4,17 @@ run-name: "${{ github.workflow }} · ${{ inputs.region }}"
 
 # PBF export of the chosen region from osm.fr → Planetiler → PMTiles → GitHub Pages.
 #
-# Planetiler caps `maxzoom <= 16`; MapLibre overzooms past it, so the top zoom
-# is made without simplification. Another region: `custom_pbf_url` + `custom_name`.
+# The form asks only what to build; every setting is the region's in
+# `workers/data/map-settings.json`, printed by the first job. Planetiler caps
+# `maxzoom <= 16`; MapLibre overzooms past it, so the top zoom is made without
+# simplification. Another region: `custom_pbf_url` + `custom_name` there.
 
 on:
   workflow_dispatch:
     inputs:
       # the default is the region being worked on – the form resets on opening
       region:
-        description: "Region (ignored when custom_pbf_url is set)"
+        description: "Region – its settings are in workers/data/map-settings.json"
         required: true
         default: bratislavsky
         type: choice
@@ -82,53 +84,6 @@ on:
         required: false
         default: false
         type: boolean
-      # one source choice per layer; `none` turns the layer off.
-      # The list is workers/data/dem-sources.json. sonny = 20 m, dmr35 = 10 m,
-      # dmr5 = LiDAR (with `area` the full 1 m, without it 5 m tiles).
-      contour_source:
-        description: "Contours – which terrain model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      # from the model's slope, or `shading` = polygons from the workflow
-      # “Rocks from hillshading”, which the build calls when needed
-      rock_source:
-        description: "Rocks – from the model's slope, or from hillshading (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - shading
-          - none
-      # hillshading is always the whole region, so `dmr5` comes out at 5 m here
-      shading_source:
-        description: "Hillshading and 3D terrain – which model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      # `workflow_dispatch` takes 10 inputs at most; the contour interval is an
-      # option (`options: contour_interval=10`)
-      rock_slope:
-        description: "From which slope (°) terrain is rock (50 = faces, 40 = steep slopes too)"
-        required: false
-        default: "50"
-        type: string
       # deletes the cache and the stored version; `nothing` takes finished
       # layers. A test always rebuilds everything. Former values are still
       # taken (`REBUILD_ALIAS`); the guard is `workers/lint/rebuild.py`.
@@ -144,20 +99,12 @@ on:
           - terrain
           - articles
           - everything
-      # the tenth and last input – another switch goes into `options`.
-      # Off still builds `_site`, just doesn't upload it; Drive is `options: publish=false`.
+      # off still builds `_site`, just doesn't upload it; Drive is `publish` in the settings
       publish_pages:
         description: "Deploy the finished map to GitHub Pages (unticked = Drive only)"
         required: false
         default: false
         type: boolean
-      # e.g. `crop_bbox=18.9,49.1,19.2,49.3 size_limit_mb=1200`;
-      # the list is workers/plan/options.py, an unknown key is an error
-      options:
-        description: "Rarely changed settings as key=value (see workers/plan/options.py)"
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: read
@@ -208,9 +155,9 @@ env:
 # No job has `timeout-minutes` on purpose: the expensive phases can't resume,
 # so a timeout meant "throw away an hour and a half". GitHub still caps a job at 360 min.
 jobs:
-  # first job: prints the form, the workflow `env:` and what the options gave
+  # first job: prints the form, the workflow `env:` and the region's settings
   settings:
-    name: Run settings (form and options)
+    name: Run settings (form and map-settings.json)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -222,11 +169,7 @@ jobs:
         env:
           # the whole form at once – one by one, a new field would be forgotten
           INPUTS_JSON: ${{ toJSON(inputs) }}
-          OPT_OPTIONS: ${{ inputs.options }}
           OPT_REBUILD: ${{ inputs.rebuild }}
-          OPT_CONTOUR_SOURCE: ${{ inputs.contour_source }}
-          OPT_ROCK_SOURCE: ${{ inputs.rock_source }}
-          OPT_SHADING_SOURCE: ${{ inputs.shading_source }}
           OPT_REGION: ${{ inputs.region }}
           OPT_TEST: ${{ inputs.test }}
           OPT_PUBLISH_PAGES: ${{ inputs.publish_pages }}
@@ -266,7 +209,7 @@ jobs:
       opt_contour_maxzoom_cap: ${{ needs.plan.outputs.opt_contour_maxzoom_cap }}
       opt_contour_lowland_m: ${{ needs.plan.outputs.opt_contour_lowland_m }}
       opt_contour_smoothing: ${{ needs.plan.outputs.opt_contour_smoothing }}
-      rock_slope: ${{ inputs.rock_slope }}
+      rock_slope: ${{ needs.plan.outputs.opt_rock_slope }}
       opt_rock_maxzoom: ${{ needs.plan.outputs.opt_rock_maxzoom }}
       opt_rock_res: ${{ needs.plan.outputs.opt_rock_res }}
       opt_rock_solid: ${{ needs.plan.outputs.opt_rock_solid }}
@@ -406,7 +349,7 @@ jobs:
       opt_terrain_format: ${{ steps.opts.outputs.opt_terrain_format }}
       opt_terrain_3d: ${{ steps.opts.outputs.opt_terrain_3d }}
       opt_rocks: ${{ steps.opts.outputs.opt_rocks }}
-      opt_rock_slope: ${{ inputs.rock_slope }}
+      opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
       opt_rock_res: ${{ steps.opts.outputs.opt_rock_res }}
       opt_rock_img_asset: ${{ steps.opts.outputs.opt_rock_img_asset }}
       opt_rock_img_zoom: ${{ steps.opts.outputs.opt_rock_img_zoom }}
@@ -438,18 +381,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: workers/deploy/pages-source.sh
 
-      # options are split once, here, so other jobs read finished values
-      - name: Split the options
+      # settings are resolved once, here, so other jobs read finished values
+      - name: Settings of the region
         id: opts
         run: |
           set -euo pipefail
-          # no `--summary`: the `settings` job prints the form and options
+          # no `--summary`: the `settings` job prints them
           python3 workers/plan/options.py \
-            --options='${{ inputs.options }}' \
             --rebuild='${{ inputs.rebuild }}' \
-            --contour-source='${{ inputs.contour_source }}' \
-            --rock-source='${{ inputs.rock_source }}' \
-            --shading-source='${{ inputs.shading_source }}' \
             --region='${{ inputs.region }}' \
             --test='${{ inputs.test }}' \
             --publish-pages='${{ inputs.publish_pages }}' \
@@ -528,7 +467,7 @@ jobs:
             # rocks from hillshading are foreign server tiles – hundreds of
             # thousands for a whole region, so only ranges
             if [ '${{ steps.opts.outputs.opt_rock_source }}' = 'shading' ]; then
-              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or pick a height model (sonny / dmr35 / dmr5)."
+              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or give the region a height model as rock_source in workers/data/map-settings.json."
               exit 1
             fi
           fi
@@ -545,7 +484,7 @@ jobs:
             --bbox='${{ steps.region.outputs.test_bbox }}' \
             --full-bbox='${{ steps.region.outputs.full_bbox }}' \
             --name='${{ steps.region.outputs.name }}' \
-            --layers="contours: ${{ inputs.contour_source }} · rocks: ${{ inputs.rock_source }} · hillshading: ${{ inputs.shading_source }}" \
+            --layers="contours: ${{ steps.opts.outputs.opt_contour_source }} · rocks: ${{ steps.opts.outputs.opt_rock_source }} · hillshading: ${{ steps.opts.outputs.opt_shading_source }}" \
             --png=_site/where-it-is.png --md=/tmp/where-it-is.md
           cat /tmp/where-it-is.md >> "$GITHUB_STEP_SUMMARY"
 

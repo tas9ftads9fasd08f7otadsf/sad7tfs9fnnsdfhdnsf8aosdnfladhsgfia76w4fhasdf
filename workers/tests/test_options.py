@@ -1,4 +1,5 @@
 import io
+import json
 import os
 import subprocess
 import sys
@@ -9,6 +10,9 @@ from contextlib import redirect_stderr
 from load import WORKERS, needs, worker
 
 OPTIONS = os.path.join(WORKERS, "plan/options.py")
+OPTS = worker("plan/options.py")
+# no source on the command line, as the workflows run it
+FROM_SETTINGS = {"--contour-source": "", "--rock-source": "", "--shading-source": ""}
 
 
 def run(*args, **kw):
@@ -61,17 +65,26 @@ class Options(unittest.TestCase):
 
     def test_region_without_dem_gets_no_dem_layers(self):
         for region in ("cesko", "praha", "rakusko", "wien"):
-            v, said = self.ok(f"--region={region}", **{"--rock-source": "shading"})
+            v, _ = self.ok(f"--region={region}", **FROM_SETTINGS)
             self.assertEqual((v["contour_source"], v["rock_source"], v["shading_source"]),
                              ("none", "none", "none"), region)
             self.assertEqual((v["contours"], v["rocks"], v["terrain"], v["rock_dem"]),
                              ("false", "false", "false", ""), region)
             self.assertEqual((v["trails"], v["transport"], v["water"]), ("true", "true", "true"))
-            self.assertIn("::notice::", said)
-        v, _ = self.ok("--region=presovsky")
-        self.assertEqual((v["contour_source"], v["terrain"]), ("sonny", "true"))
-        v, _ = self.ok("--region=cesko", "--options=custom_pbf_url=https://example.org/a.osm.pbf")
-        self.assertEqual(v["contour_source"], "sonny", "a custom PBF isn't the region")
+        v, _ = self.ok("--region=presovsky", **FROM_SETTINGS)
+        self.assertEqual((v["contour_source"], v["terrain"], v["rock_slope"]), ("dmr5", "true", "50"))
+
+    def test_a_range_takes_the_mountain_category(self):
+        v, _ = self.ok("--mountain=vysoke_tatry", **FROM_SETTINGS)
+        self.assertEqual((v["contour_interval"], v["terrain_maxzoom"], v["size_limit_mb"]), ("5", "17", "2000"))
+        self.assertEqual((v["aerial_summer"], v["aerial_winter"]), ("ofmozaika_sk", ""))
+        self.assertTrue(v["aerial_summer_url"].endswith("{z}/{x}/{y}.jpg"))
+        self.assertEqual(json.loads(v["aerial_sources"]), {"summer": "ofmozaika_sk", "winter": ""})
+        self.assertIn("isn't in `maps.mountains.ranges`", self.fails("--mountain=alps"))
+
+    def test_rock_slope_checked(self):
+        self.assertEqual(self.ok("--options=rock_slope=45")[0]["rock_slope"], "45")
+        self.assertIn("whole number from 1 to 89", self.fails("--options=rock_slope=95"))
 
     def test_quick_test(self):
         v, _ = self.ok("--test=true", "--options=reuse_layers=true")
@@ -91,6 +104,59 @@ class Options(unittest.TestCase):
         self.assertEqual((v["rocks_rebuild"], v["terrain_rebuild"]), ("true", "false"))
 
 
+def settings_with(**maps):
+    return {"defaults": {**{k: "" for k in OPTS.DESCRIPTIONS}, "contour_source": "sonny",
+                         "rock_source": "sonny", "shading_source": "sonny", "rock_slope": 50},
+            "sources": {"aerial": {"a": {"season": "summer", "url": "u"}}},
+            "maps": maps}
+
+
+REGIONS = {"sk": {"country": "sk"}, "ke": {"country": "sk"}, "ba": {"country": "sk"}}
+
+
+class Layers(unittest.TestCase):
+    def test_the_most_specific_wins(self):
+        s = settings_with(sk={"settings": {"rock_slope": 45, "contour_source": "dmr5"},
+                              "regions": {"ke": {"settings": {"rock_slope": 40}}}})
+        got, origin = OPTS.resolve(s, REGIONS, region="ke")
+        self.assertEqual((got["rock_slope"], origin["rock_slope"]), ("40", "sk › ke"))
+        self.assertEqual((got["contour_source"], origin["contour_source"]), ("dmr5", "sk"))
+        self.assertEqual((got["shading_source"], origin["shading_source"]), ("sonny", "defaults"))
+        got, _ = OPTS.resolve(s, REGIONS, region="ba")
+        self.assertEqual(got["rock_slope"], "45", "a region without an entry takes its country")
+
+    def test_a_range_takes_nothing_from_a_country(self):
+        s = settings_with(sk={"settings": {"rock_slope": 45}},
+                          mountains={"settings": {"contour_interval": 2.5},
+                                     "ranges": {"r": {"settings": {"aerial_summer": "a"}}}})
+        got, origin = OPTS.resolve(s, REGIONS, mountain="r")
+        self.assertEqual((got["rock_slope"], got["contour_interval"], got["aerial_summer"]),
+                         ("50", "2.5", "a"))
+        self.assertEqual(origin["aerial_summer"], "mountains › r")
+
+    def test_null_means_none_and_json_types_read_as_the_jobs_do(self):
+        s = settings_with(sk={"settings": {"aerial_summer": None, "trails": False, "test_km2": 4}})
+        got, _ = OPTS.resolve(s, REGIONS, region="sk")
+        self.assertEqual((got["aerial_summer"], got["trails"], got["test_km2"]), ("", "false", "4"))
+
+    def test_unknown_and_moved_keys_fail(self):
+        for bad in ({"rock_slop": 40}, {"test": True}):
+            with self.assertRaises(OPTS.SettingsError):
+                OPTS.resolve(settings_with(sk={"settings": bad}), REGIONS, region="ke")
+        s = settings_with()
+        del s["defaults"]["rock_slope"]
+        with self.assertRaisesRegex(OPTS.SettingsError, "lacks rock_slope"):
+            OPTS.resolve(s, REGIONS, region="ke")
+
+    def test_aerial_source_must_fit_its_season(self):
+        s = settings_with()
+        self.assertEqual(OPTS.aerial_source(s, "a", "summer")["url"], "u")
+        self.assertEqual(OPTS.aerial_source(s, "", "winter"), {})
+        for key, season in (("a", "winter"), ("b", "summer")):
+            with self.assertRaises(OPTS.SettingsError):
+                OPTS.aerial_source(s, key, season)
+
+
 class Jobs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -102,9 +168,8 @@ class Jobs(unittest.TestCase):
             self.assertEqual(reg[key]["key"], job["package"])
 
     def test_fields_pass_every_input(self):
-        got = self.j.fields("rocks", {"ROCK_SLOPE": "45", "OPTIONS": "rock_res=2"})
-        self.assertEqual(got["what"], "rocks")
-        self.assertEqual((got["rock_slope"], got["options"], got["test"]), ("45", "rock_res=2", "false"))
+        got = self.j.fields("rocks", {"TEST": "true"})
+        self.assertEqual((got["what"], got["test"]), ("rocks", "true"))
         self.assertEqual(set(got) - {"what"}, set(self.j.TARGETS["regenerate-region.yml"]["passes"]))
 
     def test_unknown_job(self):

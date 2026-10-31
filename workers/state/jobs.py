@@ -33,13 +33,7 @@ TARGETS = {
     "regenerate-region.yml": {
         "name": "Map · Regenerate region layer",
         "passes": {
-            # height sources and slope matter only for DEM layers; passed always anyway
-            "contour_source": ("CONTOUR_SOURCE", "dmr5"),
-            "rock_source": ("ROCK_SOURCE", "dmr5"),
-            "shading_source": ("SHADING_SOURCE", "dmr5"),
-            "rock_slope": ("ROCK_SLOPE", "50"),
             "test": ("TEST", "false"),
-            "options": ("OPTIONS", ""),
         },
     },
 }
@@ -141,7 +135,7 @@ def main():
         j = job(args.describe)
         print(f"{j['name']} – {j['description']}")
     elif args.fields:
-        # one per line: a value may hold spaces (`options`)
+        # one per line: a value may hold spaces
         for k, v in fields(args.fields).items():
             print(f"{k}={v}")
     else:

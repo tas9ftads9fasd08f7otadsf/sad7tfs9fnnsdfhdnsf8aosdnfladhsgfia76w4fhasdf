@@ -39,27 +39,21 @@ class RelayCallers(unittest.TestCase):
         return runs
 
     def test_map_batch(self):
-        (wf, region), (self_wf, baton) = self.leg("relay.sh", OPTIONS="rock_res=2", TEST="false")
+        (wf, region), (self_wf, baton) = self.leg("relay.sh", REBUILD="rocks", TEST="false")
         self.assertEqual(wf, "build-map-region.yml")
-        self.assertEqual(region["region"], REGIONS[0])
-        self.assertEqual((region["area"], region["publish_pages"]), ("whole_region", "false"))
-        self.assertEqual(region["options"], "reuse_layers=true rock_res=2")
+        self.assertEqual(region, {"region": REGIONS[0], "area": "whole_region", "test": "false",
+                                  "rebuild": "rocks", "publish_pages": "false"},
+                         "settings are the region's own in map-settings.json")
         self.assertEqual(self_wf, "build-map-state.yml")
-        self.assertEqual(baton["options"], "rock_res=2", "the next leg gets the original options")
+        self.assertEqual((baton["rebuild"], baton["test"]), ("rocks", "false"))
         self.assertTrue(baton["continuation"].startswith(f"333:{REGIONS[0]}|"))
 
-    def test_own_reuse_layers_left(self):
-        (_, region), _ = self.leg("relay.sh", OPTIONS="reuse_layers=false")
-        self.assertEqual(region["options"], "reuse_layers=false")
-
     def test_regenerate_batch(self):
-        (wf, region), (self_wf, baton) = self.leg("regenerate.sh", WHAT="rocks", ROCK_SLOPE="45",
-                                                  OPTIONS="rock_res=2 test_at=20,49")
+        (wf, region), (self_wf, baton) = self.leg("regenerate.sh", WHAT="rocks", TEST="true")
         jobs = worker("state/jobs.py")
         self.assertEqual(wf, jobs.job("rocks")["workflow"])
-        self.assertEqual((region["what"], region["rock_slope"], region["options"]),
-                         ("rocks", "45", "rock_res=2 test_at=20,49"), "options keep their spaces")
-        self.assertEqual((self_wf, baton["what"]), ("regenerate-state.yml", "rocks"))
+        self.assertEqual(region, {"region": REGIONS[0], "what": "rocks", "test": "true"})
+        self.assertEqual((self_wf, baton["what"], baton["test"]), ("regenerate-state.yml", "rocks", "true"))
 
     def test_wiki_batch(self):
         (wf, region), (self_wf, baton) = self.leg("wiki.sh", REBUILD="true")
@@ -150,9 +144,8 @@ class WikiCache(unittest.TestCase):
 
 @needs("yaml")
 class Settings(unittest.TestCase):
-    ENV = {"INPUTS_JSON": '{"region": "trnavsky"}', "OPT_OPTIONS": "", "OPT_REBUILD": "nothing",
-           "OPT_CONTOUR_SOURCE": "sonny", "OPT_ROCK_SOURCE": "sonny", "OPT_SHADING_SOURCE": "sonny",
-           "OPT_TEST": "false", "OPT_PUBLISH_PAGES": "true"}
+    ENV = {"INPUTS_JSON": '{"region": "trnavsky"}', "OPT_REBUILD": "nothing",
+           "OPT_REGION": "trnavsky", "OPT_TEST": "false", "OPT_PUBLISH_PAGES": "true"}
 
     def settings(self, **env):
         tmp = tempfile.mkdtemp()
@@ -169,12 +162,21 @@ class Settings(unittest.TestCase):
         r, summary = self.settings()
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertIn("## The form this run came from", summary)
-        self.assertIn("## What came of it", summary)
+        self.assertIn("## Settings of this run – trnavsky", summary)
+        self.assertIn("| `contour_source` | `dmr5` | defaults |", summary)
 
-    def test_unknown_option_fails_first(self):
-        r, _ = self.settings(OPT_OPTIONS="rock_ress=2")
+    def test_a_range_says_where_its_values_came_from(self):
+        r, summary = self.settings(OPT_REGION="", OPT_MOUNTAIN="vysoke_tatry",
+                                   INPUTS_JSON='{"mountain": "vysoke_tatry"}',
+                                   WORKFLOW=".github/workflows/mountain.yml")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("| `contour_interval` | `5` | **mountains** |", summary)
+        self.assertIn("| `rock_slope` | `50` | defaults |", summary)
+
+    def test_unknown_region_fails_first(self):
+        r, _ = self.settings(OPT_REGION="atlantis")
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn("Unknown option", r.stderr)
+        self.assertIn("isn't in regions.json", r.stderr)
 
 
 if __name__ == "__main__":

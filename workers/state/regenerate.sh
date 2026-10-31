@@ -3,8 +3,7 @@
 # the one the form names (`what`); `workers/state/jobs.py` says what that runs.
 #
 # From the environment (see `.github/workflows/regenerate-state.yml`):
-#   COUNTRY WHAT CONTINUATION REF SELF REPO SUMMARY GH_TOKEN
-#   CONTOUR_SOURCE ROCK_SOURCE SHADING_SOURCE ROCK_SLOPE TEST OPTIONS
+#   COUNTRY WHAT CONTINUATION REF SELF REPO SUMMARY GH_TOKEN TEST
 set -euo pipefail
 
 WHAT="${WHAT:?what to regenerate is missing}"
@@ -26,16 +25,11 @@ hand_over() {
   gh workflow run "$SELF" --repo "$REPO" --ref "$REF" \
     -f country="$COUNTRY" \
     -f what="$WHAT" \
-    -f contour_source="${CONTOUR_SOURCE:-dmr5}" \
-    -f rock_source="${ROCK_SOURCE:-dmr5}" \
-    -f shading_source="${SHADING_SOURCE:-dmr5}" \
-    -f rock_slope="${ROCK_SLOPE:-50}" \
     -f test="${TEST:-false}" \
-    -f options="${OPTIONS:-}" \
     -f continuation="$baton"
 }
 
-# fields come from the registry line by line: `options` holds spaces
+# fields come from the registry line by line
 start_region() {
   local region="$1" line
   local -a args=(-f "region=$region")

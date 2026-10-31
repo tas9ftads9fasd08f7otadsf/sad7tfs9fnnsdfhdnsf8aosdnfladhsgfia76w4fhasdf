@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
-"""Split the free `key=value` input `options` into single settings; an unknown key is an error.
+"""A run's settings from `workers/data/map-settings.json` for a region or a range; an unknown key is an error.
 
-    python3 workers/plan/options.py --options=\"rock_res=1\" \\
-        --rebuild=rocks --contour-source=sonny --rock-source=dmr5 \\
-        --shading-source=sonny --test=true --publish-pages=true \\
-        --region=presovsky --out=$GITHUB_OUTPUT
+    python3 workers/plan/options.py --region=presovsky --rebuild=rocks \\
+        --test=true --publish-pages=true --out=$GITHUB_OUTPUT
+    python3 workers/plan/options.py --mountain=vysoke_tatry --summary=summary.md
 """
 import argparse
 import json
@@ -15,117 +14,131 @@ import sys
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
+SETTINGS_NAME = "workers/data/map-settings.json"
+SETTINGS = os.path.join(_DATA, "map-settings.json")
+# the category beside the countries, as in maps.json
+MOUNTAINS = "mountains"
 
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 from cell import terrain_zoom_for, tile_m_per_px  # noqa: E402
 
-# key: (default, description)
-DEFAULTS = {
-    "crop_bbox": ("", "crop the region to west,south,east,north"),
-    "area_bbox": ("", "own cut-out W,S,E,N instead of the range picked"),
+
+class SettingsError(Exception):
+    pass
+
+# every setting and what it means; the values are in workers/data/map-settings.json
+DESCRIPTIONS = {
+    "crop_bbox": "crop the region to west,south,east,north",
+    "area_bbox": "own cut-out W,S,E,N instead of the range picked",
     # 4 km², not 2: on two a rock area often hit nothing
-    "test_km2": ("4", "square size with the `test` switch on (km²)"),
-    "test_at": ("", "centre of the test square `lon,lat` (empty = centre of the cut-out)"),
-    "reuse_layers": ("true", "don't compute a height-model layer already made "
+    "test_km2": "square size with the `test` switch on (km²)",
+    "test_at": "centre of the test square `lon,lat` (empty = centre of the cut-out)",
+    "reuse_layers": ("don't compute a height-model layer already made "
                              "with these settings"),
-    "size_limit_mb": ("900", "budget of the whole site in MB"),
-    "auto_shrink": ("true", "lower the tile zoom when they don't fit"),
-    "ugkk_fallback": ("true", "when DMR 5.0 is missing for the cut-out, use Sonny"),
-    "ugkk_urls": ("", "direct URLs to ÚGKK data (last resort)"),
-    "contour_maxzoom": ("14", "max zoom of contour tiles"),
+    "size_limit_mb": "budget of the whole site in MB",
+    "auto_shrink": "lower the tile zoom when they don't fit",
+    "ugkk_fallback": "when DMR 5.0 is missing for the cut-out, use Sonny",
+    "ugkk_urls": "direct URLs to ÚGKK data (last resort)",
+    "contour_maxzoom": "max zoom of contour tiles",
     # contours climb while the budget has room, so the floor alone caps nothing
-    "contour_maxzoom_cap": ("14", "highest zoom contours may climb to"),
-    "contour_lowland_m": ("300", "below this height contours keep every second "
+    "contour_maxzoom_cap": "highest zoom contours may climb to",
+    "contour_lowland_m": ("below this height contours keep every second "
                                "line (0 = off)"),
     # 16 is Planetiler's hard cap; overzoom does the rest
-    "rock_maxzoom": ("16", "max zoom of rock tiles (Planetiler caps at 16)"),
-    "rock_solid": ("1", "1 = one rock class (no area inside another), "
+    "rock_maxzoom": "max zoom of rock tiles (Planetiler caps at 16)",
+    "rock_solid": ("1 = one rock class (no area inside another), "
                         "0 = steep/cliff classes as before"),
     # holes are gullies and ledges – the very shape rocks are computed for
-    "rock_fill_holes": ("0", "1 = fill holes in rocks (solid areas instead of "
+    "rock_fill_holes": ("1 = fill holes in rocks (solid areas instead of "
                              "shape) – not recommended"),
     # `auto` picks the grid from the DEM cell and the time budget, and says why
-    "rock_res": ("auto", "grid for the rock outline in metres, or `auto`"),
-    "contour_smoothing": ("0", "DEM smoothing in arc seconds"),
-    "trails_maxzoom": ("14", "max zoom of waymarked trail tiles"),
+    "rock_res": "grid for the rock outline in metres, or `auto`",
+    "contour_smoothing": "DEM smoothing in arc seconds",
+    "trails_maxzoom": "max zoom of waymarked trail tiles",
     # `auto` = the lowest zoom whose pixel is finer than the model cell
-    "terrain_maxzoom": ("auto", "max zoom of height tiles (auto = by the model grid)"),
-    "terrain_frac_bits": ("auto", "fraction bits of a height (auto = by the pixel, "
+    "terrain_maxzoom": "max zoom of height tiles (auto = by the model grid)",
+    "terrain_frac_bits": ("fraction bits of a height (auto = by the pixel, "
                                   "0 = whole metres)"),
     # MapLibre is the only reader and iOS 14+ decodes WebP
-    "terrain_format": ("webp", "image format of height tiles: png or webp (lossless)"),
+    "terrain_format": "image format of height tiles: png or webp (lossless)",
     # public AWS tiles are global and coarse, so no 3D on them
-    "terrain_3d": ("auto", "3D terrain in the style (auto = when we have our own height tiles)"),
+    "terrain_3d": "3D terrain in the style (auto = when we have our own height tiles)",
     # trails have no source choice – the same PBF as the map
-    "trails": ("true", "make waymarked trails from OSM relations"),
-    "features": ("true", "make landscape features OpenMapTiles lacks"),
-    "routing": ("true", "build the routing network of this region – it rides "
+    "trails": "make waymarked trails from OSM relations",
+    "features": "make landscape features OpenMapTiles lacks",
+    "routing": ("build the routing network of this region – it rides "
                         "in the base map and in package `roads`"),
-    "transport": ("true", "make roads with road limits and ferries – package "
+    "transport": ("make roads with road limits and ferries – package "
                           "`roads` – and paths, steps and lifts – package `paths`"),
     # 14, not 15: the schema's highest `min_zoom` is 14
-    "transport_maxzoom": ("14", "max zoom of road network tiles"),
-    "boundaries": ("true", "make area boundaries and their names – package "
+    "transport_maxzoom": "max zoom of road network tiles",
+    "boundaries": ("make area boundaries and their names – package "
                            "`boundaries`"),
     # 12: past it only settlement points are added (`min_zoom: 10`)
-    "boundaries_maxzoom": ("12", "max zoom of boundary tiles"),
-    "water": ("true", "make water (rivers, lakes, sea) – package `water`"),
+    "boundaries_maxzoom": "max zoom of boundary tiles",
+    "water": "make water (rivers, lakes, sea) – package `water`",
     # 14: the schema's highest `min_zoom` is 13, one more is headroom
-    "water_maxzoom": ("14", "max zoom of water tiles"),
-    "rail": ("true", "make railways with stations and the track network "
+    "water_maxzoom": "max zoom of water tiles",
+    "rail": ("make railways with stations and the track network "
                      "for navigation – package `railways`"),
     # 15: kilometre posts start at z15
-    "rail_maxzoom": ("15", "max zoom of railway tiles"),
-    "history": ("true", "make army and history (military, historic, mines, "
+    "rail_maxzoom": "max zoom of railway tiles",
+    "history": ("make army and history (military, historic, mines, "
                         "embankments, abandoned and disused) – package `history`"),
     # 14: the schema's highest `min_zoom` is 13, one more is headroom
-    "history_maxzoom": ("14", "max zoom of army and history tiles"),
-    "buildings": ("true", "make settlements – buildings with floor area and "
+    "history_maxzoom": "max zoom of army and history tiles",
+    "buildings": ("make settlements – buildings with floor area and "
                           "name – package `settlements`"),
     # 14: the schema's highest `min_zoom`, past it tiles only grow
-    "buildings_maxzoom": ("14", "max zoom of settlement tiles"),
+    "buildings_maxzoom": "max zoom of settlement tiles",
     # from DMR 5.0, 5 m is a good default nearly everywhere
-    "contour_interval": ("5", "contour interval in metres (10 = sparser)"),
+    "contour_interval": "contour interval in metres (10 = sparser)",
     # 15, not 14: the schema has classes with `min_zoom: 15`
-    "features_maxzoom": ("15", "max zoom of landscape feature tiles"),
+    "features_maxzoom": "max zoom of landscape feature tiles",
     # clipping tiles to the region outline (`workers/lib/region-clip.sh`); off for now
-    "region_clip": ("false", "clip tiles to the region outline (off for now)"),
-    "publish": ("true", "upload the finished map as ZIPs to Google Drive"),
+    "region_clip": "clip tiles to the region outline (off for now)",
+    "publish": "upload the finished map as ZIPs to Google Drive",
     # downloaded only when the region's articles are in neither cache nor catalog
-    "wikipedia": ("true", "Wikipedia articles for the region's objects (workflow "
+    "wikipedia": ("Wikipedia articles for the region's objects (workflow "
                           "“Build wiki” called from the build)"),
     # `.aar` is a job of its own on macOS – `aa` exists nowhere else
-    "apple_archive": ("true", "upload the map as .aar too (Apple Archive, a macOS job)"),
+    "apple_archive": "upload the map as .aar too (Apple Archive, a macOS job)",
     # empty = the newest asset for the cut-out
-    "rock_img_asset": ("", "exact asset name of rocks from hillshading (empty = compute in this run)"),
+    "rock_img_asset": "exact asset name of rocks from hillshading (empty = compute in this run)",
     # tuning the pipeline the build calls itself (shading-rocks.yml)
-    "rock_img_zoom": ("auto", "zoom of hillshading tiles (auto = the highest under the cap)"),
-    "rock_img_options": ("", "switches for rocks from hillshading, e.g. \"fill=40 min_hole=5\""),
-    "maxzoom": ("16", "max zoom of map tiles – Planetiler goes to 16 at most"),
-    "map_simplify": ("true", "Planetiler's default simplification and minimum "
+    "rock_img_zoom": "zoom of hillshading tiles (auto = the highest under the cap)",
+    "rock_img_options": ("switches for rocks from hillshading, e.g. \"fill=40 min_hole=5\""),
+    "maxzoom": "max zoom of map tiles – Planetiler goes to 16 at most",
+    "map_simplify": ("Planetiler's default simplification and minimum "
                               "feature size at max zoom (false = keep everything)"),
     # the style draws house numbers from z17, overzoomed from z16
-    "housenumber_minzoom": ("16", "lowest zoom with house numbers in map tiles"),
-    "custom_pbf_url": ("", "own region – URL of a .osm.pbf"),
-    "custom_name": ("", "own region – display name"),
-    "custom_bbox": ("", "own region – bbox W,S,E,N"),
+    "housenumber_minzoom": "lowest zoom with house numbers in map tiles",
+    "custom_pbf_url": "own region – URL of a .osm.pbf",
+    "custom_name": "own region – display name",
+    "custom_bbox": "own region – bbox W,S,E,N",
+    "contour_source": "height model of contours (none = don't make)",
+    "rock_source": "rocks from a height model's slope, `shading` = from hillshading, or none",
+    "shading_source": "height model of hillshading and 3D terrain (none = don't make)",
+    "rock_slope": "from which slope (°) terrain is rock (50 = faces, 40 = steep slopes too)",
+    "aerial_summer": "summer aerial photo source, a key of `sources.aerial` (empty = none)",
+    "aerial_winter": "winter aerial photo source, a key of `sources.aerial` (empty = none)",
+    "aerial_maxzoom": "deepest zoom of aerial photos (empty = the source's own)",
 }
 
 # settings that moved between inputs – so they don't fail as "unknown"
 MOVED = {
-    "rock_source": "is an input of its own in the form (rock source), not an option",
-    "test": "is a switch in the form (quick test on a few km²), not an option. "
-            "The square size is the option `test_km2`",
-    "publish_pages": "is a switch in the form (deploy to GitHub Pages), not an "
-                     "option. Publishing to Drive is the option `publish`",
+    "test": "is a switch in the form (quick test on a few km²), not a setting. "
+            "The square size is the setting `test_km2`",
+    "publish_pages": "is a switch in the form (deploy to GitHub Pages), not a "
+                     "setting. Publishing to Drive is the setting `publish`",
     "wiki_langs": "is an input of the workflow “Build wiki” (wiki.yml) – English "
                   "and the country's language are added by themselves",
     "wiki_format": "no longer exists: articles are always plain text",
     "wiki_max": "is an input of the workflow “Build wiki” (wiki.yml)",
-    "dem_source": "split into three inputs in the form – `contour_source`, "
+    "dem_source": "split into three settings – `contour_source`, "
                   "`rock_source` and `shading_source`",
-    "layers": "no longer exists: a layer is on when the form names its source "
-              "(`none` = don't make). Trails are turned off with `trails=false`",
+    "layers": "no longer exists: a layer is on when it has a source "
+              "(`none` = don't make). Trails are turned off with `trails: false`",
     "rocks": "no longer exists: rocks are turned off with `rock_source: none`",
 }
 
@@ -179,13 +192,76 @@ def dem_sources(path=None):
     return {k: v for k, v in raw.items() if not k.startswith("_")}
 
 
-def has_dem(region, path=None):
-    """False when `regions.json` says no elevation model covers the region or its country."""
-    with open(path or os.path.join(_DATA, "regions.json")) as f:
-        regions = json.load(f)
-    reg = regions.get(region) or {}
-    own = reg.get("dem", (regions.get(reg.get("country")) or {}).get("dem"))
-    return own is not False
+def load_settings(path=None):
+    with open(path or SETTINGS, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def as_text(value):
+    """A JSON value as the `opt_*` string the jobs read."""
+    if value is None:
+        return ""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, (int, float)):
+        return f"{value:g}"
+    return str(value)
+
+
+def layers(settings, regions, region="", mountain=""):
+    """`[(origin, settings)]` from the general to the specific."""
+    maps = settings.get("maps") or {}
+    out = [("defaults", settings.get("defaults") or {})]
+    if mountain:
+        cat = maps.get(MOUNTAINS) or {}
+        ranges = cat.get("ranges") or {}
+        if mountain not in ranges:
+            raise SettingsError(f"Mountain range “{mountain}” isn't in "
+                                f"`maps.{MOUNTAINS}.ranges` of {SETTINGS_NAME}.")
+        out.append((MOUNTAINS, cat.get("settings") or {}))
+        out.append((f"{MOUNTAINS} › {mountain}", ranges[mountain].get("settings") or {}))
+    elif region:
+        if region not in regions:
+            raise SettingsError(f"Region “{region}” isn't in regions.json.")
+        country = regions[region].get("country") or region
+        node = maps.get(country) or {}
+        out.append((country, node.get("settings") or {}))
+        if region != country:
+            own = (node.get("regions") or {}).get(region) or {}
+            out.append((f"{country} › {region}", own.get("settings") or {}))
+    return out
+
+
+def resolve(settings, regions, region="", mountain=""):
+    """`({key: text}, {key: origin})`; a key unknown anywhere is an error."""
+    values, origin = {}, {}
+    for where, part in layers(settings, regions, region, mountain):
+        for k, v in part.items():
+            if k.startswith("_"):
+                continue
+            if k in MOVED:
+                raise SettingsError(f"“{k}” in `{where}` {MOVED[k]}.")
+            if k not in DESCRIPTIONS:
+                raise SettingsError(f"Unknown setting “{k}” in `{where}` of {SETTINGS_NAME}. "
+                                    f"Known: {', '.join(sorted(DESCRIPTIONS))}")
+            values[k], origin[k] = as_text(v), where
+    missing = sorted(set(DESCRIPTIONS) - set(values))
+    if missing:
+        raise SettingsError(f"{SETTINGS_NAME} `defaults` lacks {', '.join(missing)}.")
+    return values, origin
+
+
+def aerial_source(settings, key, season):
+    """The source entry of `aerial_<season>`, `{}` when the map has none."""
+    if not key:
+        return {}
+    known = (settings.get("sources") or {}).get("aerial") or {}
+    if key not in known:
+        raise SettingsError(f"`aerial_{season}: {key}` isn't in `sources.aerial` of "
+                            f"{SETTINGS_NAME}. Known: {', '.join(sorted(known))}")
+    if known[key].get("season") != season:
+        raise SettingsError(f"`aerial_{season}: {key}` is a {known[key].get('season')} source.")
+    return known[key]
 
 
 def pick_source(what, value, allowed):
@@ -224,13 +300,14 @@ def check_int(values, key, lo, hi):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--options", default="")
+    ap.add_argument("--options", default="",
+                    help="key=value over the settings, for a run by hand")
     ap.add_argument("--rebuild", default="nothing")
-    ap.add_argument("--contour-source", default=NONE,
-                    help="height source for contours, or `none`")
-    ap.add_argument("--rock-source", default=NONE,
+    ap.add_argument("--contour-source", default="",
+                    help="height source for contours, or `none` (empty = the settings')")
+    ap.add_argument("--rock-source", default="",
                     help="rock source: a height model, `shading`, or `none`")
-    ap.add_argument("--shading-source", default=NONE,
+    ap.add_argument("--shading-source", default="",
                     help="height source for hillshading and 3D terrain, or `none`")
     ap.add_argument("--test", default="false",
                     help="quick test switch: true = compute only a square of "
@@ -238,8 +315,10 @@ def main():
     ap.add_argument("--publish-pages", default="true",
                     help="GitHub Pages switch: false = the map is built and "
                          "checked, not deployed")
-    ap.add_argument("--region", default="",
-                    help="region key; one without an elevation model gets no DEM layers")
+    ap.add_argument("--region", default="", help="region key of regions.json")
+    ap.add_argument("--mountain", default="", help="range key of `maps.mountains.ranges`")
+    ap.add_argument("--settings", default="",
+                    help="path to map-settings.json (default beside the script)")
     ap.add_argument("--regions", default="",
                     help="path to regions.json (default beside the script)")
     ap.add_argument("--dem-sources", default="",
@@ -249,8 +328,20 @@ def main():
                     help="where to add a block to the run summary (GITHUB_STEP_SUMMARY)")
     args = ap.parse_args()
 
-    values = {k: v for k, (v, _) in DEFAULTS.items()}
+    settings = load_settings(args.settings or None)
+    with open(args.regions or os.path.join(_DATA, "regions.json"), encoding="utf-8") as f:
+        regions = json.load(f)
+    try:
+        values, origin = resolve(settings, regions, args.region, args.mountain)
+    except SettingsError as exc:
+        print(f"::error::{exc}", file=sys.stderr)
+        return 1
     changed = {}
+    for key, given in (("contour_source", args.contour_source),
+                       ("rock_source", args.rock_source),
+                       ("shading_source", args.shading_source)):
+        if given:
+            values[key] = changed[key] = given
 
     # shlex, not split(): a value may be quoted
     for token in shlex.split(args.options or ""):
@@ -263,12 +354,12 @@ def main():
             print(f"::notice::Option `{k}` is `{OPTION_ALIAS[k]}` today – taking it as that.")
             k = OPTION_ALIAS[k]
         if k in MOVED:
-            print(f"::error::“{k}” {MOVED[k]}. Remove it from `options` "
-                  f"and set it in the form.", file=sys.stderr)
+            print(f"::error::“{k}” {MOVED[k]}. Remove it from `options`.",
+                  file=sys.stderr)
             return 1
-        if k not in DEFAULTS:
+        if k not in DESCRIPTIONS:
             print(f"::error::Unknown option “{k}”. Known options: "
-                  f"{', '.join(sorted(DEFAULTS))}", file=sys.stderr)
+                  f"{', '.join(sorted(DESCRIPTIONS))}", file=sys.stderr)
             return 1
         values[k] = v
         changed[k] = v
@@ -304,29 +395,40 @@ def main():
     # what may be picked where is the `for` in dem-sources.json
     srcs = dem_sources(args.dem_sources or None)
     contour_src = pick_source(
-        "contours (contour_source)", args.contour_source,
+        "contours (contour_source)", values["contour_source"],
         [NONE] + [k for k, v in srcs.items() if "contours" in v.get("for", [])])
     rock_src = pick_source(
-        "rocks (rock_source)", args.rock_source,
+        "rocks (rock_source)", values["rock_source"],
         [NONE, ROCK_FROM_SHADING]
         + [k for k, v in srcs.items() if "rocks" in v.get("for", [])])
     shading_src = pick_source(
-        "hillshading (shading_source)", args.shading_source,
+        "hillshading (shading_source)", values["shading_source"],
         [NONE] + [k for k, v in srcs.items() if "shading" in v.get("for", [])])
     if contour_src is None or rock_src is None or shading_src is None:
         return 1
 
-    # a custom PBF ignores the region input, so its coverage says nothing
-    if (args.region and not values["custom_pbf_url"]
-            and not has_dem(args.region, args.regions or None)):
-        if any(s != NONE for s in (contour_src, rock_src, shading_src)):
-            print(f"::notice::No elevation model covers `{args.region}` yet – contours, "
-                  f"rocks and hillshading are off, the OSM layers are built.")
-        contour_src = rock_src = shading_src = NONE
-
     values["contour_source"] = contour_src
     values["rock_source"] = rock_src
     values["shading_source"] = shading_src
+
+    if not check_int(values, "rock_slope", 1, 89):
+        return 1
+    aerial_zoom = values["aerial_maxzoom"].strip()
+    if aerial_zoom and not check_int(values, "aerial_maxzoom", 0, 22):
+        return 1
+    for season in ("summer", "winter"):
+        try:
+            src = aerial_source(settings, values[f"aerial_{season}"], season)
+        except SettingsError as exc:
+            print(f"::error::{exc}", file=sys.stderr)
+            return 1
+        values[f"aerial_{season}_url"] = src.get("url", "")
+        values[f"aerial_{season}_minzoom"] = as_text(src.get("minzoom"))
+        values[f"aerial_{season}_maxzoom"] = (values["aerial_maxzoom"] if src and aerial_zoom
+                                              else as_text(src.get("maxzoom")))
+    # one output, so a season matrix can pick its own with `fromJSON`
+    values["aerial_sources"] = json.dumps(
+        {season: values[f"aerial_{season}"] for season in ("summer", "winter")})
 
     # `terrain_maxzoom: auto` is decided here only: cache key, asset name and
     # style attribution need the number
@@ -436,23 +538,31 @@ def main():
         with open(args.out, "a") as f:
             f.write("\n".join(lines) + "\n")
 
+    target = (f"{MOUNTAINS} › {args.mountain}" if args.mountain
+              else args.region or "no region")
+    sha = os.environ.get("GITHUB_SHA", "")[:7]
+    for k in changed:
+        origin[k] = "command line"
+
+    def came_from(key):
+        return origin.get(key, "worked out from the settings above")
+
     # what the run starts with, first on the run page, in sight after a failure too
     if args.summary:
         with open(args.summary, "a") as f:
-            f.write("## What came of it – the run starts with this\n\n")
-            f.write("| setting | value | |\n|---|---|---|\n")
+            f.write(f"## Settings of this run – {target}\n\n"
+                    f"From `{SETTINGS_NAME}`{f' at `{sha}`' if sha else ''}; "
+                    f"the most specific place wins.\n\n")
+            f.write("| setting | value | from |\n|---|---|---|\n")
             for k in sorted(values):
-                mark = "**not the default**" if k in changed else ""
-                f.write(f"| `{k}` | `{values[k] or '—'}` | {mark} |\n")
-            f.write("\nUnmarked values are defaults. Marked ones you gave – in the "
-                    "form or in the `options` field.\n\n")
+                where = came_from(k)
+                where = where if where in ("defaults",) or k not in origin else f"**{where}**"
+                f.write(f"| `{k}` | `{values[k] or '—'}` | {where} |\n")
+            f.write("\n")
 
-    print("Settings:")
+    print(f"Settings for {target} ({SETTINGS_NAME}):")
     for k in sorted(values):
-        mark = "  ←" if k in changed else ""
-        d = DEFAULTS.get(
-            k, ("", "from the form inputs (sources / rebuild / test)"))[1]
-        print(f"  {k:<20} {values[k] or '(empty)':<24} {d}{mark}")
+        print(f"  {k:<22} {values[k] or '(empty)':<24} {came_from(k)}")
     if changed:
         print(f"\nChanged from the defaults: {', '.join(sorted(changed))}")
     if test_on:

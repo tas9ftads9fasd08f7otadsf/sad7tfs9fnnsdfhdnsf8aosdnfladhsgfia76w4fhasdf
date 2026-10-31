@@ -154,10 +154,9 @@
     "admin_level": 2,
     "iso": "CZ",
     "routing_area": "cesko",
-    "dem": false,
     "bbox": [12.09, 48.551, 18.86, 51.057],
     "osmfr": { "dir": "europe", "slugs": ["czech_republic-latest"] },
-    "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. `dem: false` – no elevation model covers it yet, so `workers/plan/options.py` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
+    "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `workers/data/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
   },
   "jihocesky": {
     "id": "czech_republic-jihocesky",
@@ -293,10 +292,9 @@
     "admin_level": 2,
     "iso": "AT",
     "routing_area": "rakusko",
-    "dem": false,
     "bbox": [9.53, 46.371, 17.162, 49.022],
     "osmfr": { "dir": "europe", "slugs": ["austria-latest"] },
-    "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. `dem: false` – no elevation model covers it yet, so `workers/plan/options.py` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
+    "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `workers/data/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
   },
   "burgenland": {
     "id": "austria-burgenland",

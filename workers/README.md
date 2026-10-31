@@ -155,9 +155,9 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
 
 - **Výber regiónu:** celé Slovensko alebo ktorýkoľvek z 8 krajov, celé Česko
   alebo ktorýkoľvek zo 14 krajov, celé Rakúsko alebo ktorákoľvek z 9 spolkových
-  krajín. Česko a Rakúsko majú v registri `dem: false` – výškový model ich zatiaľ
-  nepokrýva, takže vrstevnice, skaly a tieňovanie sa pre ne vypnú samé
-  ([workers/plan/options.py](plan/options.py)), všetko z OSM sa urobí. Zdroj je
+  krajín. Česko a Rakúsko výškový model zatiaľ
+  nepokrýva, takže majú vrstevnice, skaly a tieňovanie vypnuté v
+  [workers/data/map-settings.json](data/map-settings.json), všetko z OSM sa urobí. Zdroj je
   [osm.fr](https://download.openstreetmap.fr/extracts/europe/slovakia/)
   (denne aktualizované); mapovanie, `osm_name`, `admin_level` a bboxy sú vo
   [workers/data/regions.json](data/regions.json). Každý región tam má `id`
@@ -722,13 +722,13 @@ a stačí na to plocha rozseknutá hranicou bloku alebo `cliff` ležiaci v diere
 zlepovať, ani strážiť proti sebe.
 
 Predtým to boli dve polopriehľadné triedy (`steep` ≥ 50°, `cliff` ≥ 65°).
-Vrátiť sa to dá: `options: rock_plne=0`, prípadne `rock_img_options=plne=0`
+Vrátiť sa to dá: `rock_solid: 0` v nastaveniach, prípadne `rock_img_options=plne=0`
 pre skaly z tieňovania.
 
 **Diery v plochách ostávajú** — tam, kde je vnútri steny miesto pod prahom
 (polica, terasa, zarastený stupeň). Krátko sa zapĺňali spolu s tým prechodom
 na jednu triedu a bola to chyba: zo skál boli súvislé klaksy, v ktorých nebolo
-vidieť žiaden tvar. `options: rock_zapln_diery=1` to vráti, ak by to niekto
+vidieť žiaden tvar. `rock_fill_holes: 1` v nastaveniach to vráti, ak by to niekto
 naozaj chcel.
 
 **Skaly majú vlastné dlaždice.** `{región}-rocks.pmtiles`, oddelene od
@@ -788,7 +788,7 @@ zdrojového DEM. Pri Sonnym (20 m) z toho vždy vyjde **2 m** – jemnejšia
 mriežka by len interpolovala medzi tými istými výškami, stála 4× viac času a
 nepridala ani jeden nový tvar terénu. Skutočný skok v detaile prinesie až
 `rock_source: dmr5` s výrezom (1 m LiDAR), kde auto ide na 0,5 m. Zadať sa dá aj číslo
-natvrdo (`options: rock_res=1`).
+natvrdo (`rock_res: 1` v nastaveniach).
 
 > **Mriežka nie je to isté ako detail.** Mriežka 2 m hovorí, ako jemne je
 > obrys odkrokovaný. Skutočný detail je ale stropený zdrojom: Sonny má pre
@@ -1015,12 +1015,12 @@ doladenie prahov.
 
 | chcem | ako |
 |---|---|
-| skaly z tieňovania, nech to trvá koľko chce | `rock_source: tienovanie` |
-| iný zoom dlaždíc | `options: rock_img_zoom=18` |
-| iné prahy / vyplnenie | `options: rock_img_options="fill=40 min_hole=5"` |
-| aj najtenšie ryhy ako skalu (sivá deka pri z14) | `options: rock_img_options="open=0"` |
-| len výrazné steny | `options: rock_img_options="open=6"` |
-| presne ten asset, čo som si doladil ručne | `options: rock_img_asset=rockimg-…gpkg.zst` (vtedy sa nič nepočíta nanovo) |
+| skaly z tieňovania, nech to trvá koľko chce | `rock_source: shading` |
+| iný zoom dlaždíc | `rock_img_zoom: 18` |
+| iné prahy / vyplnenie | `rock_img_options: "fill=40 min_hole=5"` |
+| aj najtenšie ryhy ako skalu (sivá deka pri z14) | `rock_img_options: "open=0"` |
+| len výrazné steny | `rock_img_options: "open=6"` |
+| presne ten asset, čo som si doladil ručne | `rock_img_asset: "rockimg-…gpkg.zst"` (vtedy sa nič nepočíta nanovo) |
 | len rýchlo overiť, či to vôbec niečo nájde | switch `test` (predvolene odškrtnutý, viď nižšie) |
 
 ### Horské balíky: pohorie v detaile (`Mapa · Build mountain package`)
@@ -1112,12 +1112,15 @@ do pohoria len polovica s bodmi.
 `trails` z predošlých behov je v `MOUNTAIN_RETIRED`
 ([`deploy/names.py`](deploy/names.py)): beh ho na Drive zmaže a z katalógu vyhodí.
 
-**Letecké snímky** (`aerial_summer`, `aerial_winter`) sú JPEG dlaždice z adresy
-vo [`workers/data/aerial.json`](data/aerial.json), zabalené do rastrového
+**Letecké snímky** (`aerial_summer`, `aerial_winter`) sú JPEG dlaždice
+zdroja, ktorý pohorie vyberie nastavením `aerial_summer` / `aerial_winter`
+v [`workers/data/map-settings.json`](data/map-settings.json) (zdroje sú v
+`sources.aerial` aj s adresou, zoomami a autormi), zabalené do rastrového
 `.pmtiles` (`workers/mountain/aerial.py`). Leto je ortofotomozaika
-(`ofmozaika2c.tiles.freemap.sk`) do z17 – nad Tatrami ~0,5 GB; z18 je
-štvornásobok. Mozaika je slovenská – za hranicou dlaždice chýbajú a mapa pod
-nimi ostane. Zima zatiaľ adresu nemá, takže sa jej balík nerobí. freemap.sk
+`ofmozaika_sk` (`ofmozaika2c.tiles.freemap.sk`) do z17 – nad Tatrami ~0,5 GB;
+z18 je štvornásobok (`aerial_maxzoom: 18`). Mozaika je slovenská – za hranicou
+dlaždice chýbajú a mapa pod nimi ostane. Zima zatiaľ zdroj nemá, takže sa jej
+balík nerobí. freemap.sk
 je dobrovoľnícky server: sťahujú 4 spojenia a dlaždice ostávajú v cache na Drive.
 
 **Interval 2,5 m nie je celé číslo**, a `build.sh` dovtedy počítal triedy
@@ -1155,9 +1158,8 @@ zahodená plocha).
 Opačné poradie znamenalo, že sa každé ladenie prahu platilo desiatkami minút,
 kým si niekto spomenul dopísať voľbu do textového poľa — a to je práve tá
 vec, ktorá sa preklikáva pri každom behu. Veľkosť štvorca sa naopak mení
-zriedka, tak ostala voľbou (`options: test_km2=5`). Za miesto vo formulári
-zaplatila mriežka `rock_res`, ktorá sa prestavuje len s iným zdrojom výšok;
-je z nej tiež voľba (`options: rock_res=1`).
+zriedka, tak je v nastaveniach (`test_km2`), rovnako ako mriežka `rock_res`,
+ktorá sa prestavuje len s iným zdrojom výšok.
 
 **Mapa sa otvorí rovno na tom štvorci.** Manifest nesie pri regióne okrem
 `bbox` aj `test_bbox` a viewer sa pri štarte nastaví na ten druhý. Odkedy je
@@ -1207,9 +1209,9 @@ prísne prahy, alebo len štvorec padol na lúku pod lesom.
 
 | chcem | ako |
 |---|---|
-| iná veľkosť | `options: test_km2=5` |
+| iná veľkosť | `test_km2: 5` v nastaveniach |
 | ostrý beh na celom výreze | odškrtnúť switch `test` |
-| iné miesto než stred výrezu | `options: test_at=20.30,49.24` (`lon,lat`) |
+| iné miesto než stred výrezu | `test_at: "20.30,49.24"` (`lon,lat`) v nastaveniach |
 | to isté v samostatnom workflowe so skalami z tieňovania | výber `test: 2` v „Dáta · tieňované skaly“ (tam je to počet km², nie switch) |
 
 Dlaždice majú vlastnú cache podľa výrezu a zoomu, takže druhý build z
@@ -1776,9 +1778,9 @@ hranicu časti, takže susedné kusy na seba nadväzujú bez medzery ani prekryv
 30 minút. **Mriežka 1 m sa oplatí len na `crop_bbox`; pre kraj by to boli
 ~2 hodiny.**
 
-Ovládanie vo workflowe: `rock_source` (z ktorého modelu – alebo `ziadne`,
-čím sa skaly vypnú) a `rock_slope` (od akého sklonu je terén skala, default
-50°); mriežka obrysu je voľba `options: rock_res=…` (číslo v metroch alebo
+Ovládanie v [map-settings.json](data/map-settings.json): `rock_source` (z ktorého
+modelu – alebo `none`, čím sa skaly vypnú), `rock_slope` (od akého sklonu je
+terén skala, default 50°) a mriežka obrysu `rock_res` (číslo v metroch alebo
 `auto`, default `auto`).
 Ostatné ladenie je v `env:` na začiatku
 [build-map-region.yml](../.github/workflows/build-map-region.yml): `ROCK_SIMPLIFY` (0 = presný
@@ -2486,7 +2488,7 @@ už nesie (pravidlo 1).
 km² nedala pomýliť s ostrou, a aby ju **neprepísala**.
 
 Robí to [`workers/deploy/publish-map.py`](deploy/publish-map.py), vypnúť sa to dá
-voľbou `publish=false` v poli `options` a pozrieť si balíky lokálne ide bez
+nastavením `publish: false` v [map-settings.json](data/map-settings.json) a pozrieť si balíky lokálne ide bez
 Drive. **Ako sa balík volá a kam patrí** je vedľa, vo
 [`workers/deploy/mena.py`](deploy/mena.py) — meno na Drive je stále, takže je
 to sľub, a sľuby sú na jednom mieste:
@@ -2515,7 +2517,7 @@ Druhý packer by bol druhá pravda o tom istom.
 chyba ho nezhodí – štafeta krajiny ide hneď na ďalší kraj. So `skip_cached`: región, ktorý má články v cache **aj** balík `wikipedia`
 v `maps.json`, sa preskočí (job `need`, `workers/wiki/need.sh`). Keď jedno
 chýba, články sa stiahnu. Nanovo ich stiahne `rebuild: clanky` (alebo
-`vsetko`), vypnú sa voľbou `options: wikipedia=false`, rýchly test ich neťahá.
+`vsetko`), vypnú sa nastavením `wikipedia: false`, rýchly test ich neťahá.
 
 Kto v regióne odkazuje na wiki, dostane článok. Body, čiary aj plochy majú v OSM
 tagy `wikipedia` a `wikidata`; workflow ich z regionálneho PBF vyberie
@@ -2918,15 +2920,25 @@ prehľad, **čo prišlo z cache a čo sa naozaj počítalo** – takže sa hneď
 
 Píše ich **prvý job behu** – `settings`
 ([workers/plan/settings.sh](plan/settings.sh)) – a nie súhrn na konci: keď beh
-po hodine spadne, práve vtedy treba vedieť, s čím išiel. Vypíše celý formulár
-a označí, čo bolo iné než predvolené:
+po hodine spadne, práve vtedy treba vedieť, s čím išiel. Má ho build kraja,
+regenerácia vrstvy aj pohorie; dávky krajiny ho vypíšu v prvom kroku. Vypíše
+celý formulár a označí, čo bolo iné než predvolené:
 
 | pole | hodnota | |
 |---|---|---|
 | `region` | `presovsky` | default |
 | `area` | `mala_fatra` | **iné než default** |
 | `test` | `true` | default |
-| `rock_slope` | `45` | **iné než default** |
+
+Potom **nastavenia tohto behu** zo
+[workers/data/map-settings.json](data/map-settings.json) – každý kľúč, jeho
+hodnota a odkiaľ prišla; čo nie je z `defaults`, je tučné:
+
+| setting | value | from |
+|---|---|---|
+| `contour_interval` | `5` | **mountains** |
+| `contour_source` | `dmr5` | defaults |
+| `aerial_summer` | `ofmozaika_sk` | **mountains** |
 
 Je to preto, že formulár *Run workflow* sa vždy otvorí s predvolenými
 hodnotami – GitHub si nepamätá, s čím si beh pustil naposledy, a v API to
@@ -2942,8 +2954,8 @@ z workflowu, hodnoty z prostredia behu, takže je vidieť to, s čím beh naozaj
 ide. Čo je v YAMLe `secrets.*`, sa nevypisuje: repozitár je public a súhrn
 behu vidí ktokoľvek.
 
-A keď je vo formulári nezmysel (neznáma voľba v `options`), spadne to práve
-tu – po pár sekundách, nie o desať jobov neskôr.
+A keď je v nastaveniach nezmysel (neznámy kľúč, zdroj, ktorý vrstva nemá),
+spadne to práve tu – po pár sekundách, nie o desať jobov neskôr.
 
 
 ## Značené trasy (turistika, cyklo, bežky)
@@ -3277,7 +3289,7 @@ a kosodrevina odlíšená od lúky (`landcover subclass=scrub/heath/fell`).
 
 ### Ovládanie
 
-Vo workflowe: `options: features=false` (vypnutie) a `features_maxzoom`
+V nastaveniach: `features: false` (vypnutie) a `features_maxzoom`
 (default 15). Nižšia hodnota nie je zakázaná, ale **ticho zahodí** triedy
 s vyšším `min_zoom` – Planetiler o tom nepovie nič, preto na to job
 upozorní varovaním. Pri z14 takto chýbali ploty, živé ploty, geodetické body
@@ -3850,84 +3862,61 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
    token nemal práva, beh sa zastaví v tretej sekunde s návodom –
    Settings → Pages → Build and deployment → Source: **GitHub Actions**.
 2. Actions → **Mapa · Build map region** → *Run workflow*.
-   Formulár má **desať polí** – viac `workflow_dispatch` inputov GitHub
-   neprijme (pri 26 sa workflow prestal načítať a beh skončil ako „failure"
-   s nula jobmi). Vo formulári sú preto veci, ktoré sa naozaj menia:
+   Formulár sa pýta len **čo** robiť – päť polí:
 
    | input | typ | čo robí |
    |---|---|---|
    | `region` | výber | `slovensko` alebo kraj (default **`bratislavsky`**) |
-   | `area` | **výber** | pohorie, na ktorom sa počíta terén – `cely_region`, `tatry`, `slovensky_raj`, `mala_fatra`… (default **`cely_region`**) |
+   | `area` | **výber** | pohorie, na ktorom sa počíta terén – `whole_region`, `tatry`, `slovensky_raj`, `mala_fatra`… (default **`whole_region`**) |
    | `test` | **switch** | **rýchly test**: celý beh (mapa aj terén) len na štvorci 4 km² zo stredu výrezu a mapu otvoriť rovno tam (predvolene **odškrtnutý** – predvolený beh je ostrý; zapisuje sa do `maps-test.json`) |
-   | `contour_source` | **výber** | odkiaľ **vrstevnice**: `sonny` (20 m), `dmr35` (10 m), `dmr5` (LiDAR – s výrezom 1 m, inak 5 m), `ziadne` |
-   | `rock_source` | **výber** | odkiaľ **skaly**: ten istý zoznam modelov (počíta sa sklon), alebo `tienovanie` (hotové polygóny z tieňovaných dlaždíc), alebo `ziadne` |
-   | `shading_source` | **výber** | odkiaľ **tieňovanie a 3D terén**: `sonny`, `dmr35`, `dmr5`, `ziadne` |
-   | `rock_slope` | text | od akého sklonu (°) je terén skala |
-   | `rebuild` | výber | `nic` / `vrstevnice` / `skaly` / `tienovanie` / `clanky` / `vsetko` (staré `teren` sa ešte prijme, ale už sa neponúka) |
-   | `options` | text | zriedka menené nastavenia ako `kľúč=hodnota` (napr. veľkosť testu `test_km2=5`, mriežka na obrys skál `rock_res=1`) |
+   | `rebuild` | výber | `nothing` / `contours` / `rocks` / `terrain` / `articles` / `everything` |
+   | `publish_pages` | **switch** | nasadiť mapu aj na GitHub Pages (odškrtnuté = len Drive) |
 
-   **Defaulty sú jedno rozhodnutie, nie tri nezávislé voľby** – Bratislavský
-   kraj (najmenší), `cely_region` a odškrtnutý test, čiže predvolené spustenie
-   je ostrý build celého kraja, ktorý sa dá zaplatiť. Výrez je predvolene
-   `cely_region`, teda „nezmenšuj mi mapu za mňa": kým tu stálo `vysoke_tatry`,
-   dostal ten, kto si vybral iný kraj a ten riadok prehliadol, mapu bez
-   vrstevníc a skál skoro všade — a v logu o tom bolo len `::warning::`.
-   Zmenšovanie behu má tým pádom jednu páku a je ňou switch `test`.
-   Formulár *Run workflow* sa totiž po každom
-   otvorení vracia na predvolené hodnoty: GitHub si nepamätá, s čím si beh
-   pustil naposledy, a z API sa to ani nedá zistiť. Čím menej treba
-   prekliknúť, tým menej sa toho zabudne. Čo bolo v konkrétnom behu iné než
-   default, vypíše súhrn v bloku **Nastavenia tohto behu** – z neho sa dá
-   beh zopakovať bez hádania.
+   **Všetko ostatné – s čím sa mapa robí – je v
+   [workers/data/map-settings.json](data/map-settings.json)**: výškové modely
+   (`contour_source`, `rock_source`, `shading_source`), sklon skál
+   (`rock_slope`), interval a zoomy vrstevníc, rozpočet, vypínače vrstiev,
+   letecké snímky pohorí. Hodnota sa hľadá od najpresnejšieho miesta:
+   kraj (`maps.<krajina>.regions.<kraj>`) → krajina (`maps.<krajina>`) →
+   `defaults`; pohorie (`maps.mountains.ranges.<pohorie>`) → kategória
+   pohorí (`maps.mountains`) → `defaults`. Pohorie zo Slovenska nededí nič.
+   Česko a Rakúsko tam majú výškové vrstvy `none`.
 
-   **Prečo je vo formulári `test` a nie `rock_res`.** Polí je desať a je to
-   strop, takže sa dá pridať len to, za čo niečo vypadne. Rýchly test sa
-   zapína a vypína pri každom behu — to je switch. Jeho veľkosť aj mriežka na
-   obrys skál sa menia zriedka, takže sú z nich voľby (`test_km2=5`,
-   `rock_res=1`); mriežku navyše `auto` vyberie z bunky DEM a rozpočtu času
-   lepšie, než sa háda ručne.
+   **Prvý job behu vypíše, s čím beh ide** – tabuľku každého nastavenia,
+   jeho hodnoty a odkiaľ prišla (`defaults`, `slovensko`, `mountains ›
+   vysoke_tatry`…), so skratkou commitu, z ktorého sa súbor čítal. Formulár
+   GitHub kreslí z YAML a súbor z repozitára si pritom neprečíta, preto v
+   ňom tie hodnoty nie sú vôbec – keby boli, ukazoval by `dmr5` aj pri Česku.
 
-   **A prečo `wikipedia` a nie `contour_interval`.** Ten istý obchod, o jedno
-   kolo neskôr. Články sa zapínajú a vypínajú podľa toho, či ide o ostrý build
-   alebo o ladenie terénu — to je switch. Interval vrstevníc má z DMR 5.0 dobrý
-   default 5 m a mení sa pri prechode do nížin, nie pri každom behu, takže sa
-   píše ako voľba (`options: contour_interval=10`). Že sa jedenásty input
-   nepridá, chytí **actionlint** do dvoch sekúnd („maximum number of inputs for
-   workflow_dispatch event is 10") – nie je to na dôvere, je to overené.
+   **Ladenie = zmena súboru na vetve.** Nové nastavenie sa skúša tak, že sa
+   v `map-settings.json` na vetve zmení hodnota a workflow sa pustí z tej
+   vetvy (*Use workflow from*). Voľné pole `options` zmizlo: s ním by sa beh a
+   súbor mohli rozísť a nikto by po týždni nevedel, s čím mapa vznikla.
+   Ručne sa `workers/plan/options.py --options="kľúč=hodnota"` dá stále
+   pustiť lokálne.
 
-   **Tri výbery zdroja, jeden na vrstvu.** Kým to bol jeden `dem_source` pre
-   všetko, nedalo sa povedať to, čo dáva zmysel najčastejšie: skaly
-   z najjemnejšieho modelu (aj keď ho máme len na výrez) a tieňovanie
-   z hrubšieho, ktorý pokrýva celý región. `ziadne` vrstvu vypne – zapínač je
-   tým pádom v tom istom poli ako zdroj, takže sa nedá zadať „generuj
-   vrstevnice, zdroj žiadny". Nahradilo to aj pole `layers`; značené trasy
-   (jediná vrstva bez výberu zdroja, ide z toho istého PBF ako mapa) sa
-   vypínajú cez `options: trails=false`.
+   **Defaulty formulára sú jedno rozhodnutie** – Bratislavský kraj
+   (najmenší), `whole_region` a odškrtnutý test, čiže predvolené spustenie je
+   ostrý build celého kraja, ktorý sa dá zaplatiť. Výrez je predvolene
+   `whole_region`, teda „nezmenšuj mi mapu za mňa": kým tu stálo
+   `vysoke_tatry`, dostal ten, kto si vybral iný kraj a ten riadok
+   prehliadol, mapu bez vrstevníc a skál skoro všade. Zmenšovanie behu má
+   tým pádom jednu páku a je ňou switch `test`.
 
    `dmr5` má dve podoby a rozhoduje rozsah, nie ďalší výber: s vyplneným
-   `area` plné 1 m, bez neho dlaždice na 5 m. Zoznamy vo formulári stráži
-   `Kontrola · lint workflowov` proti [workers/data/dem-sources.json](data/dem-sources.json)
-   – zdroj sa nedá pridať do jedného a zabudnúť v druhom.
+   `area` plné 1 m, bez neho dlaždice na 5 m. Že sa v nastaveniach nepoužije
+   zdroj, ktorý [workers/data/dem-sources.json](data/dem-sources.json) pre
+   tú vrstvu nemá, a že sa do formulára nevráti pole s nastavením, stráži
+   [workers/lint/settings.py](lint/settings.py).
 
    Zoznam pohorí v `area` sa berie z
    [workers/data/areas.json](data/areas.json) – keď tam pribudne pohorie, treba
-   ho dopísať aj do výberu vo workflowe. Vlastný bbox ide cez
-   `options: area_bbox=W,S,E,N`.
+   ho dopísať aj do výberu vo workflowe. Vlastný bbox je `area_bbox` v
+   nastaveniach.
 
-   Do `options` idú veci, ktoré sa menia zriedka – napíšu sa za sebou,
-   oddelené medzerou:
-
-   ```
-   crop_bbox=18.9,49.1,19.2,49.3 size_limit_mb=1200 contour_maxzoom=15
-   ```
-
-   Známe kľúče s predvolenými hodnotami sú vo
-   [workers/plan/options.py](plan/options.py): `crop_bbox`,
-   `area_bbox`, `size_limit_mb`, `auto_shrink`, `ugkk_fallback`, `ugkk_urls`,
-   `contour_maxzoom`, `contour_smoothing`, `trails`, `trails_maxzoom`,
-   `terrain_maxzoom`, `maxzoom`, `rock_img_asset`, `rock_img_zoom`,
-   `rock_img_options`, `custom_pbf_url`, `custom_name`, `custom_bbox`,
-   `region_clip`.
+   Všetky kľúče aj s tým, čo znamenajú, sú v `DESCRIPTIONS` v
+   [workers/plan/options.py](plan/options.py); hodnoty pre každý z nich sú v
+   `defaults` súboru nastavení.
 
    **`region_clip` je DOČASNE `false`**, teda dlaždice sa nerežú na hranicu
    regiónu (`--polygon` Planetileru) a vyrobia sa na celom obdĺžniku bboxu.
@@ -3936,18 +3925,17 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
    [Orez dlaždíc po hranicu regiónu](#orez-dlaždíc-po-hranicu-regiónu)). Merané na Bratislavskom kraji (maxzoom 14): 1607
    dlaždíc namiesto 1271 (+26 %) za +0,7 % bajtov a rovnaký čas, a v tých
    navyše je riedky lem OSM z nášho PBF cez hranicu kraja. Kým je vypnutý,
-   hlási to `::warning::` v každom behu; späť sa zapína `region_clip=true`.
+   hlási to `::warning::` v každom behu; späť sa zapína `region_clip: true`.
    Rozpis a merania: [workers/lib/region-clip.sh](lib/region-clip.sh).
 
-   Zdroj skál sa vyberá **inputom `rock_source`**, nie tu – prepína celý
-   pôvod vrstvy, takže patrí do formulára. Cez `options` sa dá nanajvýš
-   vynútiť konkrétny asset (`rock_img_asset=rockimg-…gpkg.zst`); viď
+   Skaly z tieňovania sú `rock_source: shading`; konkrétny asset vynúti
+   `rock_img_asset: "rockimg-…gpkg.zst"`, viď
    [Druhá cesta k skalám](#druhá-cesta-k-skalám-tmavé-plochy-v-tieňovaní-pokus).
 
-   **Preklep je chyba, nie ticho ignorovaná hodnota.** `size_limit=1200` build
-   zastaví so zoznamom známych kľúčov – inak by bežal hodinu s iným
-   nastavením, než si myslíš. Na začiatku behu sa vypíše tabuľka všetkých
-   nastavení s vyznačením toho, čo si zmenil.
+   **Preklep je chyba, nie ticho ignorovaná hodnota.** `size_limit` namiesto
+   `size_limit_mb` kdekoľvek v nastaveniach zastaví beh hneď v prvom jobe so
+   zoznamom známych kľúčov – inak by bežal hodinu s iným nastavením, než si
+   myslíš.
 
 3. Mapa je na `https://<user>.github.io/fricomaps/` – ovládanie je zbalené pod
    tlačidlom ⚙ vľavo hore, aby bolo vidieť hlavne mapu. V paneli je prepínač
@@ -4025,33 +4013,36 @@ skladať z ôsmich behov.
 
 ### V čom sa dávka líši od jedného kraja
 
-V troch veciach a všetky sú dôsledok toho, že ide o celú krajinu:
+V dvoch veciach a obe sú dôsledok toho, že ide o celú krajinu:
 
 | | |
 |---|---|
 | `area` | natvrdo **`cely_region`** — výrez je pohorie a vyberať jedno pohorie pre osem krajov nedáva zmysel |
 | `publish_pages` | natvrdo **vypnuté** — na Pages je JEDNA mapa, takže osem behov za sebou by stránku osemkrát prepísalo a nechalo na nej posledný kraj |
-| `reuse_layers` | dopĺňa sa do `options` ako **`true`** — to je aj predvolená hodnota jedného kraja, dávka ju len píše nahlas (viď nižšie) |
 
 **Dávka nepočíta vrstvy, ktoré už raz vznikli.** Vrstevnice, skaly
 a tieňovanie sú hodiny na kraj, čiže väčšina toho dňa, ktorý dávka trvá —
 a medzi dvomi dávkami sa málokedy zmení niečo, čo by ich zmenilo. Doplnený
 sklad výškového modelu alebo opravený skript inde v pipeline pritom cache
 zahodili (oba sú v kľúči ako otlačok), takže druhá dávka počítala to isté
-odznova. Preto je `reuse_layers=true` predvolené a každý kraj ho dostáva aj
-napísané: vrstva, ktorá vznikla s **tými istými nastaveniami**, sa vezme hotová
+odznova. Preto je `reuse_layers: true` v nastaveniach každého kraja (stráži to
+`workers/lint/state.py`): vrstva, ktorá vznikla s **tými istými nastaveniami**, sa vezme hotová
 a job, ktorý to spravil, to hlási `::notice::`-om — v mape je vtedy vrstva,
 ktorú dnešný kód nevyrobil, a to nesmie byť ticho. Kto chce prepočet, povie to:
-`rebuild` (jedna vrstva nanovo) alebo `options: reuse_layers=false` (celý beh
+`rebuild` (jedna vrstva nanovo) alebo `reuse_layers: false` v nastaveniach (celý beh
 prísne). Ako sa hotová vrstva hľadá, je v [`workers/plan/cache-keys.sh`](plan/cache-keys.sh);
 rozhodnutie „počítať, alebo nie" je v [`workers/plan/hotova-vrstva.sh`](plan/hotova-vrstva.sh).
 
-Všetko ostatné je ten istý formulár s tými istými predvolenými hodnotami
-a podáva sa ďalej nezmenené: zdroje výšok, prah skál, `rebuild`, rýchly test
-aj `options`. Že sa tie dva formuláre nerozídu — a že `relay.sh` naozaj podá
-každé pole, ktoré sa dávka spýtala — stráži `workers/lint/state.py`. Vstup,
-ktorý sa spýta a nepodá, by znamenal celú krajinu postavenú s predvolenými
-hodnotami, a beh by bol pritom zelený.
+Nastavenia si každý kraj berie sám zo
+[workers/data/map-settings.json](data/map-settings.json) – tie isté, ako keby
+ho niekto pustil ručne. Dávka podáva ďalej len to málo, čo formulár má:
+`rebuild` a rýchly test. Že `relay.sh` naozaj podá každé pole, ktoré sa dávka
+spýtala, stráži `workers/lint/state.py`. Prvý krok každého článku vypíše
+nastavenia krajiny; kraj vypíše svoje vo vlastnom behu.
+
+Dávka beží deň a každý kraj sa spúšťa z vetvy, nie z commitu: zmena
+nastavení na tej vetve počas dávky platí pre kraje, ktoré ešte nebežali –
+tak ako zmena kódu.
 
 **Spadnutý kraj dávku nezastaví.** Zmysel dávky je „postav Slovensko a nechaj
 ma tak", takže sa pokračuje ďalším krajom; posledný úsek na tom **spadne**,
