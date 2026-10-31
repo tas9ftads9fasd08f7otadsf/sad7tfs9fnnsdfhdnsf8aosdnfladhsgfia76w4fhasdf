@@ -512,6 +512,54 @@ class Aerial(unittest.TestCase):
             self.assertEqual(alpha.getpixel(px(20.134, 49.164)), 255)
             self.assertEqual(alpha.getpixel(px(20.27, 49.275)), 0)
 
+    class _Cache:
+        def __init__(self, root):
+            self.root = root
+
+        def path(self, z, x, y):
+            return os.path.join(self.root, str(z), str(x), f"{y}.jpg")
+
+    def marker(self, cache, z, x, y):
+        os.makedirs(os.path.dirname(cache.path(z, x, y)), exist_ok=True)
+        open(cache.path(z, x, y), "wb").close()
+
+    @needs("PIL")
+    def test_a_404_inside_the_parks_is_asked_again(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        cache = self._Cache(tmp)
+        bbox = [19.9, 49.09, 20.32, 49.32]
+        rings = aerial._mask.rings_from_geojson(
+            os.path.join(WORKERS, "data", "outlines", "vysoke_tatry.geojson"))
+        gerlach = tuple(int(v) for v in aerial.lonlat_to_tile(20.134, 49.164, 15))
+        zdiar = tuple(int(v) for v in aerial.lonlat_to_tile(20.27, 49.275, 15))
+        for x, y in (gerlach, zdiar):
+            self.marker(cache, 15, x, y)
+        x0, y0 = min(gerlach[0], zdiar[0]), min(gerlach[1], zdiar[1])
+        x1, y1 = max(gerlach[0], zdiar[0]) + 1, max(gerlach[1], zdiar[1]) + 1
+        asked = aerial.ask_again(cache, 15, x0, y0, x1, y1,
+                                 lambda z, x, y: aerial.needed(bbox, z, x, y, rings))
+        self.assertEqual(asked, 1)
+        self.assertFalse(os.path.exists(cache.path(15, *gerlach)), "AGgE: a hole stays a hole")
+        self.assertTrue(os.path.exists(cache.path(15, *zdiar)), "beyond the parks is asked every run")
+
+    @needs("PIL")
+    def test_a_tile_the_server_lacks_is_its_parent_enlarged(self):
+        from PIL import Image
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        cache = self._Cache(tmp)
+        parent = Image.new("RGB", (256, 256), (200, 0, 0))
+        parent.paste((0, 0, 200), (128, 128, 256, 256))
+        os.makedirs(os.path.dirname(cache.path(12, 10, 20)))
+        parent.save(cache.path(12, 10, 20), "JPEG")
+        self.marker(cache, 13, 21, 41)
+        with Image.open(aerial.from_parent(cache, 13, 21, 41, 8)) as got:
+            self.assertEqual(got.size, (256, 256))
+            r, _g, b = got.getpixel((128, 128))
+            self.assertTrue(b > 150 and r < 60, "the wrong quarter of the parent")
+        self.assertIsNone(aerial.from_parent(cache, 13, 0, 0, 8), "no parent, no stand-in")
+
     def test_summer_has_a_source(self):
         self.assertTrue(aerial.source("ofmozaika_sk", "summer")["url"].endswith("{z}/{x}/{y}.jpg"))
         self.assertEqual(aerial.source("", "winter"), {})

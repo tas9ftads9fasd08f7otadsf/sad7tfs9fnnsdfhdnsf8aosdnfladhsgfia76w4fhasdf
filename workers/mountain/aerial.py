@@ -99,6 +99,46 @@ def cut(path, bbox, z, x, y, rings=None):
     return out
 
 
+def needed(bbox, z, x, y, rings=None):
+    """Whether the package shows any of the tile: inside the outline, else the box."""
+    if rings:
+        return outline_mask(rings, z, x, y, 16).getextrema()[1] > 0
+    box = window(bbox, z, x, y, 16)
+    return box is None or (box[2] > box[0] and box[3] > box[1])
+
+
+def ask_again(fetcher, z, x0, y0, x1, y1, keep):
+    """383: a 404 cached as an empty marker is asked again where the package needs it."""
+    count = 0
+    for x in range(x0, x1):
+        for y in range(y0, y1):
+            path = fetcher.path(z, x, y)
+            if os.path.isfile(path) and os.path.getsize(path) == 0 and keep(z, x, y):
+                os.remove(path)
+                count += 1
+    return count
+
+
+def from_parent(fetcher, z, x, y, minzoom):
+    """383: a tile the server lacks, cut from the nearest parent it has and enlarged."""
+    from PIL import Image  # noqa: PLC0415
+
+    for up in range(1, z - minzoom + 1):
+        parent = fetcher.path(z - up, x >> up, y >> up)
+        if not (os.path.isfile(parent) and os.path.getsize(parent) > 0):
+            continue
+        scale = 1 << up
+        with Image.open(parent) as img:
+            side = img.width // scale
+            left, top = (x % scale) * side, (y % scale) * side
+            part = img.convert("RGB").crop((left, top, left + side, top + side))
+            out = fetcher.path(z, x, y) + ".fill.jpg"
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            part.resize((img.width, img.height), Image.Resampling.BICUBIC).save(out, "JPEG", quality=85)
+        return out
+    return None
+
+
 def zoom(value, default):
     """A zoom as the form takes it, `18` or `z18`."""
     return int(str(value).strip().lstrip("zZ") or default)
@@ -157,16 +197,34 @@ def main():
         if args.poly and not rings:
             print(f"::warning::No outline at {args.poly} – the photos are cut to the box.")
         tiles = {}
+
+        def keep(z, x, y):
+            return needed(bbox, z, x, y, rings)
+
         for z in range(minzoom, maxzoom + 1):
             x0, y0, x1, y1 = tile_range(bbox, z)
-            print(f"z{z}: {(x1 - x0) * (y1 - y0)} tiles", flush=True)
+            again = ask_again(fetcher, z, x0, y0, x1, y1, keep)
+            print(f"z{z}: {(x1 - x0) * (y1 - y0)} tiles, {again} asked again", flush=True)
             fetcher.fetch_all(z, x0, y0, x1, y1)
+        filled, holes = 0, []
         for z, x, y in wanted(bbox, minzoom, maxzoom):
             path = fetcher.path(z, x, y)
-            if os.path.isfile(path) and os.path.getsize(path) > 0:
-                kept = cut(path, bbox, z, x, y, rings)
-                if kept:
-                    tiles[(z, x, y)] = kept
+            if not (os.path.isfile(path) and os.path.getsize(path) > 0):
+                if not keep(z, x, y):
+                    continue
+                path = from_parent(fetcher, z, x, y, minzoom)
+                if not path:
+                    holes.append((z, x, y))
+                    continue
+                filled += 1
+            kept = cut(path, bbox, z, x, y, rings)
+            if kept:
+                tiles[(z, x, y)] = kept
+        if filled:
+            print(f"::warning::{filled} {args.season} tiles the server lacks are their parent, enlarged.")
+        if holes:
+            raise SystemExit(f"::error::{len(holes)} {args.season} tiles have no photo and no parent "
+                             f"to stand in, e.g. {holes[:3]} – a package with holes isn't published.")
         if fetcher.n_fail > len(tiles) * 0.02:
             raise SystemExit(f"::error::{fetcher.n_fail} {args.season} tiles failed – "
                              f"a package with holes isn't published. Run it again; "
