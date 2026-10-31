@@ -15,6 +15,7 @@ run-name: "${{ github.workflow }} · ${{ inputs.region }}"
 # Published by the same script as the build, with `--only=<package>`: the
 # `maps.json` entry is added to, other packages stay. Nothing goes to Pages;
 # `.aar` is redone too, hence the second job. A whole country: “Map · Regenerate state”.
+# Settings are the region's in `workers/data/map-settings.json`, as for the build.
 
 on:
   workflow_dispatch:
@@ -78,58 +79,11 @@ on:
           - contours
           - rocks
           - terrain
-      # sources and slope matter only for DEM layers; values as in the region form
-      contour_source:
-        description: "Contours – which terrain model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      rock_source:
-        description: "Rocks – from the model's slope, or from hillshading (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - shading
-          - none
-      shading_source:
-        description: "Hillshading and 3D terrain – which model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      rock_slope:
-        description: "From which slope (°) terrain is rock (50 = faces, 40 = steep slopes too)"
-        required: false
-        default: "50"
-        type: string
       test:
         description: "Quick test: only 4 km² in the middle of the region (a pipeline trial)"
         required: false
         default: false
         type: boolean
-      # e.g. `publish=false`, `apple_archive=false`, `features_maxzoom=16`; the
-      # same file as the map build, or a layer's zoom cap would differ from the catalog's
-      options:
-        description: "Rarely changed settings as key=value (see workers/plan/options.py)"
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: read
@@ -163,6 +117,24 @@ env:
   BUDGET_TERRAIN_PCT: "12"
 
 jobs:
+  # first job: the form and the region's settings, before anything is computed
+  settings:
+    name: Run settings (form and map-settings.json)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Print the run settings
+        env:
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          WORKFLOW: .github/workflows/regenerate-region.yml
+          OPT_REGION: ${{ inputs.region }}
+          OPT_TEST: ${{ inputs.test }}
+        run: workers/plan/settings.sh
+
   # what `plan` of the map build does, without Pages, cut-out and model
   plan:
     name: Preparation (region, PBF)
@@ -233,6 +205,7 @@ jobs:
       opt_terrain_frac_bits: ${{ steps.opts.outputs.opt_terrain_frac_bits }}
       opt_terrain_format: ${{ steps.opts.outputs.opt_terrain_format }}
       opt_reuse_layers: ${{ steps.opts.outputs.opt_reuse_layers }}
+      opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -254,21 +227,16 @@ jobs:
         env:
           WHAT: ${{ inputs.what }}
 
-      # the same option split as the build; OSM layers pass none of it on
-      - name: Split the options
+      # the same settings as the build; the `settings` job prints them
+      - name: Settings of the region
         id: opts
         run: |
           set -euo pipefail
           python3 workers/plan/options.py \
-            --options='${{ inputs.options }}' \
-            --contour-source='${{ inputs.contour_source }}' \
-            --rock-source='${{ inputs.rock_source }}' \
-            --shading-source='${{ inputs.shading_source }}' \
             --region='${{ inputs.region }}' \
             --test='${{ inputs.test }}' \
             --publish-pages=false \
-            --out="$GITHUB_OUTPUT" \
-            --summary="$GITHUB_STEP_SUMMARY"
+            --out="$GITHUB_OUTPUT"
 
       - name: Today's date for the cache key
         id: day
@@ -593,7 +561,7 @@ jobs:
       opt_contour_maxzoom_cap: ${{ needs.plan.outputs.opt_contour_maxzoom_cap }}
       opt_contour_lowland_m: ${{ needs.plan.outputs.opt_contour_lowland_m }}
       opt_contour_smoothing: ${{ needs.plan.outputs.opt_contour_smoothing }}
-      rock_slope: ${{ inputs.rock_slope }}
+      rock_slope: ${{ needs.plan.outputs.opt_rock_slope }}
       opt_rock_maxzoom: ${{ needs.plan.outputs.opt_rock_maxzoom }}
       opt_rock_res: ${{ needs.plan.outputs.opt_rock_res }}
       opt_rock_solid: ${{ needs.plan.outputs.opt_rock_solid }}

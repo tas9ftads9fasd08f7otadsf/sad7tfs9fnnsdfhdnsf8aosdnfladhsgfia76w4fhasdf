@@ -42,57 +42,11 @@ on:
           - contours
           - rocks
           - terrain
-      # sources and slope matter only for DEM layers; values as in the region form
-      contour_source:
-        description: "Contours – which terrain model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      rock_source:
-        description: "Rocks – from the model's slope, or from hillshading (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - shading
-          - none
-      shading_source:
-        description: "Hillshading and 3D terrain – which model (none = don't make)"
-        required: false
-        default: dmr5
-        type: choice
-        options:
-          - sonny
-          - sonny1
-          - dmr35
-          - dmr5
-          - none
-      rock_slope:
-        description: "From which slope (°) terrain is rock (50 = faces, 40 = steep slopes too)"
-        required: false
-        default: "50"
-        type: string
-      # for a batch this tests the batch
       test:
         description: "Quick test: every region only on 4 km² in its middle (a batch trial)"
         required: false
         default: false
         type: boolean
-      options:
-        description: "Rarely changed settings as key=value (see workers/plan/options.py)"
-        required: false
-        default: ""
-        type: string
       # the relay baton, not a field for people
       continuation:
         description: "Leave empty – the relay baton, the batch passes it itself"
@@ -116,6 +70,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+      # the country's own; each region run prints the region's
+      - name: Settings of the country (map-settings.json)
+        env:
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          WORKFLOW: .github/workflows/regenerate-state.yml
+          OPT_REGION: ${{ inputs.country }}
+          OPT_TEST: ${{ inputs.test }}
+        run: workers/plan/settings.sh
       - name: Wait for the region, start the next and hand over the relay
         env:
           GH_TOKEN: ${{ github.token }}
@@ -124,10 +86,5 @@ jobs:
           COUNTRY: ${{ inputs.country }}
           WHAT: ${{ inputs.what }}
           CONTINUATION: ${{ inputs.continuation }}
-          CONTOUR_SOURCE: ${{ inputs.contour_source }}
-          ROCK_SOURCE: ${{ inputs.rock_source }}
-          SHADING_SOURCE: ${{ inputs.shading_source }}
-          ROCK_SLOPE: ${{ inputs.rock_slope }}
           TEST: ${{ inputs.test }}
-          OPTIONS: ${{ inputs.options }}
         run: workers/state/regenerate.sh

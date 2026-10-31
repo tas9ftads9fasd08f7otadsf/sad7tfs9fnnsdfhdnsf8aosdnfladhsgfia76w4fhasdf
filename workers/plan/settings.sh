@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Job `settings` – the run's first job: what the run goes with, before anything is computed.
+# Job `settings` – the run's first job: the form and what map-settings.json gives the target.
 # Its own job, so it isn't buried under the 380 MB PBF download of `plan`.
 set -euo pipefail
 
@@ -8,19 +8,16 @@ OUT="$RUNNER_TEMP/settings.md"
 
 python3 workers/plan/summary-inputs.py \
   --inputs="$INPUTS_JSON" \
-  --workflow=.github/workflows/build-map-region.yml \
+  --workflow="${WORKFLOW:-.github/workflows/build-map-region.yml}" \
   --with-env >> "$OUT"
 
-# without `--out`: this job only shows, `options.py` still fails on an unknown key
+# without `--out`: this job only shows, `plan` resolves again and fails the same way
 python3 workers/plan/options.py \
-  --options="$OPT_OPTIONS" \
-  --rebuild="$OPT_REBUILD" \
-  --contour-source="$OPT_CONTOUR_SOURCE" \
-  --rock-source="$OPT_ROCK_SOURCE" \
-  --shading-source="$OPT_SHADING_SOURCE" \
+  --rebuild="${OPT_REBUILD:-nothing}" \
   --region="${OPT_REGION:-}" \
-  --test="$OPT_TEST" \
-  --publish-pages="$OPT_PUBLISH_PAGES" \
+  --mountain="${OPT_MOUNTAIN:-}" \
+  --test="${OPT_TEST:-false}" \
+  --publish-pages="${OPT_PUBLISH_PAGES:-false}" \
   --summary="$OUT"
 
 # summary is read on a phone, the log can be grepped

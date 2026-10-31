@@ -51,10 +51,13 @@ class Registry(unittest.TestCase):
         self.assertEqual(sorted(offered), sorted(known))
 
     def test_a_range_has_contours_every_five_metres(self):
-        import yaml
-        with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
-            options = yaml.safe_load(f)["env"]["MOUNTAIN_OPTIONS"].split()
-        self.assertIn("contour_interval=5", options)
+        opts = worker("plan/options.py")
+        settings, regions = opts.load_settings(), registry("regions.json")
+        for key in registry("mountains.json"):
+            if key.startswith("_"):
+                continue
+            got, _ = opts.resolve(settings, regions, mountain=key)
+            self.assertEqual((got["contour_interval"], got["contour_source"]), ("5", "dmr5"), key)
 
     def test_exaggeration_is_the_styles(self):
         with open(os.path.join(ROOT, "poc", "web", "themes.js"), encoding="utf-8") as f:
@@ -510,7 +513,10 @@ class Aerial(unittest.TestCase):
             self.assertEqual(alpha.getpixel(px(20.27, 49.275)), 0)
 
     def test_summer_has_a_source(self):
-        self.assertTrue(aerial.season("summer")["url"].endswith("{z}/{x}/{y}.jpg"))
+        self.assertTrue(aerial.source("ofmozaika_sk", "summer")["url"].endswith("{z}/{x}/{y}.jpg"))
+        self.assertEqual(aerial.source("", "winter"), {})
+        with self.assertRaises(SystemExit):
+            aerial.source("ofmozaika_sk", "winter")
 
     def test_the_archive_is_jpeg_with_its_zooms(self):
         try:

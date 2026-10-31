@@ -5,26 +5,17 @@
 # How the batch differs from one region:
 #   area          always `whole_region` – one range for eight regions makes no sense
 #   publish_pages always off – Pages holds one map, eight runs would overwrite it
-#   reuse_layers  added as `true` unless the user wrote their own
 #
-# Everything else is passed on whole every time; `workers/lint/state.py` guards it.
+# Every setting is each region's own in `workers/data/map-settings.json`; the
+# form's few fields are passed on whole every time, `workers/lint/state.py` guards it.
 #
 # From the environment (see `.github/workflows/build-map-state.yml`):
-#   COUNTRY CONTINUATION REF SELF REGION_WF REPO SUMMARY GH_TOKEN
-#   CONTOUR_SOURCE ROCK_SOURCE SHADING_SOURCE ROCK_SLOPE REBUILD TEST OPTIONS
+#   COUNTRY CONTINUATION REF SELF REGION_WF REPO SUMMARY GH_TOKEN REBUILD TEST
 set -euo pipefail
 
 SELF="${SELF:-build-map-state.yml}"
 REGION_WF="${REGION_WF:-build-map-region.yml}"
 REGION_NAME="Map · Build map region"
-
-# the next leg gets the ORIGINAL `OPTIONS`; each leg adds reuse_layers itself
-OPTIONS_REGION="${OPTIONS:-}"
-case "$OPTIONS_REGION" in
-  *reuse_layers=*) echo "options carry their own reuse_layers – leaving it." ;;
-  *) OPTIONS_REGION="reuse_layers=true${OPTIONS_REGION:+ $OPTIONS_REGION}" ;;
-esac
-echo "The region gets options: $OPTIONS_REGION"
 
 TITLE="Map batch · ${COUNTRY:-?}"
 DESCRIPTION="Each region is its own run of **Map · Build map region**;
@@ -37,13 +28,8 @@ hand_over() {
   echo "Handing the relay over: continuation=$baton"
   gh workflow run "$SELF" --repo "$REPO" --ref "$REF" \
     -f country="$COUNTRY" \
-    -f contour_source="${CONTOUR_SOURCE:-dmr5}" \
-    -f rock_source="${ROCK_SOURCE:-dmr5}" \
-    -f shading_source="${SHADING_SOURCE:-dmr5}" \
-    -f rock_slope="${ROCK_SLOPE:-50}" \
     -f rebuild="${REBUILD:-nothing}" \
     -f test="${TEST:-false}" \
-    -f options="${OPTIONS:-}" \
     -f continuation="$baton"
 }
 
@@ -53,13 +39,8 @@ start_region() {
     -f region="$region" \
     -f area=whole_region \
     -f test="${TEST:-false}" \
-    -f contour_source="${CONTOUR_SOURCE:-dmr5}" \
-    -f rock_source="${ROCK_SOURCE:-dmr5}" \
-    -f shading_source="${SHADING_SOURCE:-dmr5}" \
-    -f rock_slope="${ROCK_SLOPE:-50}" \
     -f rebuild="${REBUILD:-nothing}" \
-    -f publish_pages=false \
-    -f options="$OPTIONS_REGION"
+    -f publish_pages=false
 }
 
 # shellcheck source=workers/state/relay-core.sh

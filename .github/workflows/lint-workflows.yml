@@ -556,39 +556,9 @@ jobs:
       # dashed workers load through `importlib`, so a deleted name fails only on the runner
       - name: Names a worker reads do exist
         run: python3 workers/lint/names.py
-      # the three source choices match `dem-sources.json` and its `for`
-      - name: Height choices match dem-sources.json
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          import json, sys, yaml
-          d = yaml.safe_load(open(".github/workflows/build-map-region.yml"))
-          on = d[[k for k in d if k is True or k == "on"][0]]
-          inputs = on["workflow_dispatch"]["inputs"]
-          srcs = {k: v.get("for", [])
-                  for k, v in json.load(open("workers/data/dem-sources.json")).items()
-                  if not k.startswith("_")}
-          # (input, which layers, what the choice holds beside models)
-          want = {
-              "contour_source": ("contours", []),
-              # rocks also have finished polygons from hillshading
-              "rock_source": ("rocks", ["shading"]),
-              "shading_source": ("shading", []),
-          }
-          bad = 0
-          for name, (layer, extra) in want.items():
-              opts = inputs[name]["options"]
-              expect = [k for k, f in srcs.items() if layer in f] + extra + ["none"]
-              if sorted(opts) != sorted(expect):
-                  print(f"::error::The choice `{name}` doesn't match workers/data/dem-sources.json")
-                  print(f"  in the workflow: {opts}")
-                  print(f"  should be:       {expect}")
-                  bad += 1
-                  continue
-              print(f"{name}: {len(opts)} choices ✓")
-          # `none` is the value turning a layer off
-          sys.exit(1 if bad else 0)
-          PY
+      # forms ask what to build; every setting resolves from map-settings.json
+      - name: Map settings resolve and no form goes around them
+        run: python3 workers/lint/settings.py
 
       # a script in `workers/` must get the env it reads, or runs on empty strings
       - name: Scripts in workers get their env

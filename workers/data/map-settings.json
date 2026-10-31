@@ -1,0 +1,149 @@
+{
+  "_comment": [
+    "Settings of every map build, read by `workers/plan/options.py` – the run forms",
+    "ask only what to build, the rest is here and the run's first job prints it.",
+    "A value is looked up from the most specific place: a region in `maps.<country>.regions`,",
+    "then its country, then `defaults`; a range in `maps.mountains.ranges`, then",
+    "`maps.mountains`, then `defaults`. A range takes nothing from a country.",
+    "  defaults        every key there is, with what it means in `options.py`",
+    "  maps            countries as in `regions.json` and the category `mountains`",
+    "  sources.aerial  aerial photo sources; a map picks one with `aerial_summer`/`aerial_winter`",
+    "Tuning: change the value here on a branch and run the workflow from that branch."
+  ],
+  "defaults": {
+    "contour_source": "dmr5",
+    "rock_source": "dmr5",
+    "shading_source": "dmr5",
+    "rock_slope": 50,
+    "crop_bbox": "",
+    "area_bbox": "",
+    "test_km2": 4,
+    "test_at": "",
+    "reuse_layers": true,
+    "size_limit_mb": 900,
+    "auto_shrink": true,
+    "ugkk_fallback": true,
+    "ugkk_urls": "",
+    "contour_interval": 5,
+    "contour_maxzoom": 14,
+    "contour_maxzoom_cap": 14,
+    "contour_lowland_m": 300,
+    "contour_smoothing": 0,
+    "rock_maxzoom": 16,
+    "rock_solid": 1,
+    "rock_fill_holes": 0,
+    "rock_res": "auto",
+    "rock_img_asset": "",
+    "rock_img_zoom": "auto",
+    "rock_img_options": "",
+    "terrain_maxzoom": "auto",
+    "terrain_frac_bits": "auto",
+    "terrain_format": "webp",
+    "terrain_3d": "auto",
+    "trails": true,
+    "trails_maxzoom": 14,
+    "features": true,
+    "features_maxzoom": 15,
+    "routing": true,
+    "transport": true,
+    "transport_maxzoom": 14,
+    "boundaries": true,
+    "boundaries_maxzoom": 12,
+    "water": true,
+    "water_maxzoom": 14,
+    "rail": true,
+    "rail_maxzoom": 15,
+    "history": true,
+    "history_maxzoom": 14,
+    "buildings": true,
+    "buildings_maxzoom": 14,
+    "maxzoom": 16,
+    "map_simplify": true,
+    "housenumber_minzoom": 16,
+    "region_clip": false,
+    "publish": true,
+    "wikipedia": true,
+    "apple_archive": true,
+    "aerial_summer": "",
+    "aerial_winter": "",
+    "aerial_maxzoom": "",
+    "custom_pbf_url": "",
+    "custom_name": "",
+    "custom_bbox": ""
+  },
+  "sources": {
+    "aerial": {
+      "ofmozaika_sk": {
+        "label": "Ortofotomozaika SR (freemap.sk)",
+        "season": "summer",
+        "url": "https://ofmozaika2c.tiles.freemap.sk/{z}/{x}/{y}.jpg",
+        "minzoom": 8,
+        "maxzoom": 17,
+        "covers": [
+          "SK"
+        ],
+        "credits": [
+          "ortofoto",
+          "freemap"
+        ]
+      }
+    }
+  },
+  "maps": {
+    "slovensko": {
+      "settings": {},
+      "regions": {}
+    },
+    "cesko": {
+      "settings": {
+        "contour_source": "none",
+        "rock_source": "none",
+        "shading_source": "none"
+      }
+    },
+    "rakusko": {
+      "settings": {
+        "contour_source": "none",
+        "rock_source": "none",
+        "shading_source": "none"
+      }
+    },
+    "mountains": {
+      "settings": {
+        "contour_interval": 5,
+        "contour_maxzoom": 16,
+        "contour_maxzoom_cap": 16,
+        "contour_lowland_m": 0,
+        "terrain_maxzoom": 17,
+        "size_limit_mb": 2000,
+        "aerial_summer": "ofmozaika_sk"
+      },
+      "ranges": {
+        "vysoke_tatry": {
+          "settings": {}
+        },
+        "belianske_tatry": {
+          "settings": {}
+        },
+        "zapadne_tatry": {
+          "settings": {}
+        },
+        "nizke_tatry": {
+          "settings": {}
+        },
+        "mala_fatra": {
+          "settings": {}
+        },
+        "velka_fatra": {
+          "settings": {}
+        },
+        "slovensky_raj": {
+          "settings": {}
+        },
+        "pieniny": {
+          "settings": {}
+        }
+      }
+    }
+  }
+}

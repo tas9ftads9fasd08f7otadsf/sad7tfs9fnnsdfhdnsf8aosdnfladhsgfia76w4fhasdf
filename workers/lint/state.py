@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Check: the "Build map state" batch builds what you would build by hand."""
+import importlib.util
 import json
 import os
 import re
@@ -95,15 +96,21 @@ if offered != with_regions:
                  f"{with_regions} (countries that really have a region). A "
                  f"country without regions leaves the batch nothing to run.")
 
-# 3b. the batch doesn't recompute what exists: reuse layers from the stores
-OPTION = "reuse_layers"
-if f"{OPTION}=true" not in relay:
-    error(RELAY, f"`relay.sh` doesn't pass the region run `{OPTION}=true`. The "
-                 f"batch would then compute contours, rocks and hillshading "
-                 f"anew in every region – most of the day the batch takes.")
-if f'"{OPTION}"' not in open(OPTIONS_PY).read():
-    error(OPTIONS_PY, f"`{OPTION}` isn't a known option, but `relay.sh` passes "
-                      f"it – every region would fail on an unknown option.")
+# 3b. the batch doesn't recompute what exists: every region reuses layers from the stores
+_spec = importlib.util.spec_from_file_location("plan_options", OPTIONS_PY)
+_opts = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_opts)
+_settings = _opts.load_settings()
+for country in with_regions:
+    for key, reg in regions.items():
+        if key != country and reg.get("country") != country:
+            continue
+        got, origin = _opts.resolve(_settings, regions, region=key)
+        if got["reuse_layers"] != "true":
+            error(_opts.SETTINGS_NAME,
+                  f"`reuse_layers` is {got['reuse_layers']} for `{key}` (from "
+                  f"`{origin['reuse_layers']}`). The batch would then compute contours, "
+                  f"rocks and hillshading anew in every region – most of the day it takes.")
 
 # 4. the relay starts itself – otherwise the chain ends with the first region, green
 if "gh workflow run \"$SELF\"" not in relay:

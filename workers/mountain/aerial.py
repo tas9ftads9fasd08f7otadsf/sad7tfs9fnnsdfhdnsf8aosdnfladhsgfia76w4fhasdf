@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """A mountain's aerial photos: XYZ JPEG tiles over its box → one raster `.pmtiles`, cut to its outline.
 
-    python3 workers/mountain/aerial.py --season=summer --bbox=19.9,49.09,20.32,49.25 \
-        --poly=data/region.geojson --out=_site/tiles/vysoke_tatry-aerial_summer.pmtiles
+    python3 workers/mountain/aerial.py --season=summer --source=ofmozaika_sk \
+        --bbox=19.9,49.09,20.32,49.25 --poly=data/region.geojson --out=_site/tiles/vysoke_tatry-aerial_summer.pmtiles
 """
 import argparse
 import importlib.util
@@ -27,12 +27,18 @@ Fetcher, tile_range, lonlat_to_tile = _tiles.Fetcher, _tiles.tile_range, _tiles.
 _mask = _load("region_mask", os.path.join(_WORKERS, "lib", "region-mask.py"))
 
 
-def season(name, path=os.path.join(_WORKERS, "data", "aerial.json")):
+def source(key, season, path=os.path.join(_WORKERS, "data", "map-settings.json")):
+    """A photo source of `sources.aerial`; `{}` for none."""
+    if not key:
+        return {}
     with open(path, encoding="utf-8") as f:
-        known = {k: v for k, v in json.load(f).items() if not k.startswith("_")}
-    if name not in known:
-        raise SystemExit(f"::error::Unknown season “{name}” – {path} has {', '.join(known)}.")
-    return known[name]
+        known = (json.load(f).get("sources") or {}).get("aerial") or {}
+    if key not in known:
+        raise SystemExit(f"::error::Unknown aerial source “{key}” – {path} has {', '.join(known)}.")
+    if known[key].get("season") != season:
+        raise SystemExit(f"::error::Aerial source “{key}” is for {known[key].get('season')}, "
+                         f"not {season}.")
+    return known[key]
 
 
 def wanted(bbox, minzoom, maxzoom):
@@ -127,18 +133,19 @@ def write(out, tiles, bbox, minzoom, maxzoom, name):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--season", required=True)
+    ap.add_argument("--source", default="", help="key of `sources.aerial`; empty = no photos")
     ap.add_argument("--bbox", required=True)
     ap.add_argument("--out", required=True)
     ap.add_argument("--cache", default="aerial-cache")
     ap.add_argument("--poly", default="", help="the range's outline (GeoJSON); else its box")
-    ap.add_argument("--url", default="", help="instead of the season's own")
-    ap.add_argument("--maxzoom", default="", help="instead of the season's own")
+    ap.add_argument("--url", default="", help="instead of the source's own")
+    ap.add_argument("--maxzoom", default="", help="instead of the source's own")
     # a volunteer server: few connections, and the cache spares it the next run
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--github-output", default=os.environ.get("GITHUB_OUTPUT", ""))
     args = ap.parse_args()
 
-    conf = season(args.season)
+    conf = source(args.source, args.season)
     url = args.url or conf.get("url") or ""
     out = {"enabled": "false"}
     if url:
@@ -174,8 +181,8 @@ def main():
         else:
             print(f"::warning::{url} gave no tile over {args.bbox} – no {args.season} photos.")
     else:
-        print(f"::notice::No {args.season} aerial photos: workers/data/aerial.json has no "
-              f"`url` for it.")
+        print(f"::notice::No {args.season} aerial photos: the range's `aerial_{args.season}` "
+              f"in workers/data/map-settings.json is empty.")
     if args.github_output:
         with open(args.github_output, "a") as f:
             f.write("".join(f"{k}={v}\n" for k, v in out.items()))

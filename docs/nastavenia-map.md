@@ -1,318 +1,195 @@
 # Nastavenia máp v jednom JSON
 
-Návrh (október 2026, tiket 381), nie popis hotového stavu. Jeden súbor
-`workers/data/map-settings.json` povie, s čím sa mapa robí: pre krajinu a
-presnejšie pre jej kraj, a vedľa krajín pre pohoria ako celok a presnejšie pre
-každé pohorie – výškový model, letecké snímky, vrstevnice,
-skaly, zoomy – a pri každom zdroji aj jeho autora a licenciu. Pipeliny ho čítajú
-a jeho hodnoty sú predvolené hodnoty formulára „Run workflow“.
+Tiket 381 (október 2026). Jeden súbor
+[`workers/data/map-settings.json`](../workers/data/map-settings.json) hovorí,
+s čím sa mapa robí: pre krajinu a presnejšie pre jej kraj, a vedľa krajín pre
+pohoria ako celok a presnejšie pre každé pohorie – výškové modely, sklon skál,
+vrstevnice, zoomy, rozpočet, vypínače vrstiev, letecké snímky. Formuláre
+workflowov sa pýtajú len **čo** robiť; prvý job behu vypíše, s čím beh ide a
+odkiaľ ktorá hodnota prišla.
 
-## 1. Dnes: jedno nastavenie na deviatich miestach
+§1–§6 je hotový stav, §7 ďalšie kroky.
 
-| Čo | Kde je dnes |
+## 1. Prečo
+
+Pred týmto tiketom bolo jedno nastavenie na deviatich miestach:
+
+| Čo | Kde bolo |
 |---|---|
-| predvolené prepínače a zoomy (`contour_interval=5`, `contour_maxzoom=14`, `size_limit_mb=900`, …) | `OPTIONS` v `workers/plan/options.py` |
-| výškový model vrstevníc, skál a tieňovania (`dmr5`) | `default:` vo štyroch formulároch (`build-map-region`, `build-map-state`, `regenerate-region`, …) |
+| predvolené prepínače a zoomy (`contour_interval=5`, `contour_maxzoom=14`, `size_limit_mb=900`, …) | `DEFAULTS` v `workers/plan/options.py` |
+| výškový model vrstevníc, skál a tieňovania (`dmr5`) | `default:` v štyroch formulároch |
 | model pohoria | natvrdo `--contour-source=dmr5 …` v `mountain.yml` |
-| čím sa pohorie líši (`contour_interval=2.5`, `terrain_maxzoom=16`, `size_limit_mb=2000`) | `MOUNTAIN_OPTIONS` v `mountain.yml` |
+| čím sa pohorie líši (`terrain_maxzoom=17`, `size_limit_mb=2000`, …) | `MOUNTAIN_OPTIONS` v `mountain.yml` |
 | sklon skál (`50`) | `default:` v každom formulári zvlášť |
 | krajina bez modelu (Česko, Rakúsko) | `dem: false` v `regions.json` |
 | letecké snímky a ich zoomy | `aerial.json` – jeden zdroj na sezónu pre všetky pohoria |
 | zoznam modelov | `dem-sources.json` |
 | autori a licencie | `credits.json`, a ktorý balík ich nesie, v `packages.json` |
 
-Z toho plynú tri chyby, ktoré sa už stali alebo stanú:
-
-- **Snímky nemajú kredit podľa zdroja.** `aerial_summer` aj `aerial_winter`
-  majú v `packages.json` natvrdo `ortofoto` + `freemap`. Zima by s iným zdrojom
-  (napr. zimné snímky inej firmy) niesla cudzí kredit.
-- **Pohorie si nevyberie zdroj.** Poľská strana Tatier ostáva bez snímok, lebo
-  `aerial.json` má jednu adresu pre všetkých; pohorie nemôže povedať „leto
-  odtiaľto, zima odtiaľto“.
-- **Formulár hovorí niečo iné než región.** `build-map-state` ponúka `dmr5` aj
-  pre Česko, kde nie je; `options.py` to potom potichu vypne. Predvolená hodnota
-  formulára nevie o krajine, ktorú v ňom človek vyberie.
+Formulár `build-map-state` ponúkal `dmr5` aj pre Česko, kde nie je, a
+`options.py` to potom potichu vypol. Pohorie si nemohlo vybrať zdroj snímok.
+A voľné pole `options` dovolilo beh, ktorého nastavenia neboli nikde zapísané.
 
 ## 2. Súbor
-
-`workers/data/map-settings.json` má štyri časti:
 
 ```jsonc
 {
   "_comment": ["…"],
 
-  // kto je autor a pod akou licenciou; dnešný credits.json
-  "credits": {
-    "osm":      { "holder": "OpenStreetMap contributors", "work": "OpenStreetMap", "license": "ODbL 1.0", "…": "…" },
-    "dmr5":     { "holder": "ÚGKK SR", "work": "DMR 5.0 (LiDAR)", "license": "CC BY 4.0", "copyright": false, "…": "…" },
-    "ortofoto": { "holder": "GKÚ Bratislava, NLC Zvolen", "work": "Ortofotomozaika SR", "…": "…" },
-    "freemap":  { "holder": "freemap.sk", "work": "Orthophoto tiles", "…": "…" }
+  // každý kľúč, ktorý existuje, s hodnotou pre každú mapu
+  "defaults": {
+    "contour_source": "dmr5", "rock_source": "dmr5", "shading_source": "dmr5",
+    "rock_slope": 50, "contour_interval": 5, "contour_maxzoom": 14,
+    "size_limit_mb": 900, "trails": true, "publish": true,
+    "aerial_summer": "", "aerial_winter": "", "aerial_maxzoom": "",
+    "…": "…"
   },
 
-  // odkiaľ dáta idú; každý zdroj menuje svoje kredity
+  // zdroje, z ktorých si mapa vyberá
   "sources": {
-    "dem": {
-      "dmr5":  { "label": "DMR 5.0", "kind": "sklad", "store": "dem-dmr5-v2", "cell_m": 1, "for": ["contours", "rocks", "shading"], "covers": ["SK"], "credits": ["dmr5"] },
-      "sonny": { "label": "Sonny's LiDAR DTM 20m", "kind": "sklad", "store": "dem-sonny", "cell_m": 20, "for": ["contours", "rocks", "shading"], "credits": ["sonny"] }
-    },
     "aerial": {
       "ofmozaika_sk": {
-        "label": "Ortofotomozaika SR (freemap.sk)",
-        "season": "summer",
+        "label": "Ortofotomozaika SR (freemap.sk)", "season": "summer",
         "url": "https://ofmozaika2c.tiles.freemap.sk/{z}/{x}/{y}.jpg",
-        "minzoom": 8, "maxzoom": 17,
-        "covers": ["SK"],
-        "jobs": 4,
+        "minzoom": 8, "maxzoom": 17, "covers": ["SK"],
         "credits": ["ortofoto", "freemap"]
       }
     }
   },
 
-  // všetko, čo sa dá nastaviť, s hodnotou pre každú mapu
-  "defaults": {
-    "contours": { "source": "dmr5", "interval": 5, "maxzoom": 14, "maxzoom_cap": 14 },
-    "rocks":    { "source": "dmr5", "slope": 50 },
-    "terrain":  { "source": "dmr5", "maxzoom": "auto" },
-    "aerial":   { "summer": null, "winter": null },
-    "maxzoom": 16,
-    "size_limit_mb": 900
-  },
-
   // kategórie ako v maps.json: krajiny a vedľa nich pohoria
   "maps": {
-    "slovensko": {
-      "settings": {},
-      "regions": {
-        "zilinsky": { "settings": { "rocks": { "slope": 45 } } }
-      }
-    },
-    "cesko":   { "settings": { "contours": { "source": "none" }, "rocks": { "source": "none" }, "terrain": { "source": "none" } } },
-    "rakusko": { "settings": { "contours": { "source": "none" }, "rocks": { "source": "none" }, "terrain": { "source": "none" } } },
-
+    "slovensko": { "settings": {}, "regions": {} },
+    "cesko":   { "settings": { "contour_source": "none", "rock_source": "none", "shading_source": "none" } },
+    "rakusko": { "settings": { "contour_source": "none", "rock_source": "none", "shading_source": "none" } },
     "mountains": {
-      // čo majú všetky pohoria spoločné; dnešné MOUNTAIN_OPTIONS
       "settings": {
-        "contours": { "interval": 2.5, "maxzoom": 16, "maxzoom_cap": 16, "lowland_m": 0 },
-        "terrain":  { "maxzoom": 16 },
-        "size_limit_mb": 2000
+        "contour_interval": 5, "contour_maxzoom": 16, "contour_maxzoom_cap": 16,
+        "contour_lowland_m": 0, "terrain_maxzoom": 17, "size_limit_mb": 2000,
+        "aerial_summer": "ofmozaika_sk"
       },
-      "ranges": {
-        "vysoke_tatry": {
-          "area": "vysoke_tatry",
-          "countries": ["SK", "PL"],
-          "osm": ["europe/slovakia-latest", "europe/poland/malopolskie-latest"],
-          "settings": {
-            "aerial": { "summer": "ofmozaika_sk", "winter": null }
-          }
-        },
-        "nizke_tatry": {
-          "area": "nizke_tatry",
-          "countries": ["SK"],
-          "osm": ["europe/slovakia-latest"],
-          "settings": {
-            "aerial": { "summer": "ofmozaika_sk", "winter": null }
-          }
-        }
-      }
+      "ranges": { "vysoke_tatry": { "settings": {} }, "…": {} }
     }
   }
 }
 ```
 
-(`jsonc` len kvôli poznámkam v tomto návrhu; súbor je čistý JSON s `_comment`
-ako ostatné v `workers/data/`.)
+**Kľúče sú ploché** a volajú sa ako výstupy `opt_<kľúč>`, ktoré joby čítajú
+(`rock_slope`, `contour_interval`, `aerial_summer`). Žiadna prekladová tabuľka,
+`grep` nájde kľúč v súbore aj vo workflowe. Hodnoty sú normálne JSON typy
+(`true`, `5`, `2.5`); `null` aj `""` znamená „nemá“.
 
-**Čo sa doň zlúči a zmizne:** `aerial.json`, `dem-sources.json`,
-`credits.json`, `mountains.json`, kľúč `dem` z `regions.json`, `OPTIONS`
-z `options.py` (ostanú tam len popisy a kontroly), `MOUNTAIN_OPTIONS`
-z `mountain.yml`.
+Kraj pridaný pod `maps.slovensko.regions` prepíše len to, čo uvedie, napr.
+`"zilinsky": { "settings": { "rock_slope": 45 } }`.
 
-**Čo ostane, kde je:** `regions.json` (id, meno, bbox, `osmfr`, `admin_level`)
-a `areas.json` (výrezy). To nie sú nastavenia, ale geografia – kde mapa leží
-a odkiaľ je jej PBF – a číta ich ~25 skriptov. Nastavenia sa na ne odvolávajú
-kľúčom (`maps.slovensko.regions.zilinsky` = `regions.json` `zilinsky`).
-Zlúčiť aj ich sa dá neskôr (fáza 5), ale nič to nekupuje a riziko je veľké.
+**Pohoria sú kategória vedľa krajín, nie pod nimi** – tak ako v `maps.json`
+(`mountains.ranges`) a v aplikácii. Vysoké Tatry nie sú kraj Slovenska, ležia
+v SK aj PL a robia sa inak než kraj. Pohorie preto **nededí nič zo Slovenska**,
+len z `defaults` a z `maps.mountains`.
 
-**Pohoria sú kategória vedľa krajín, nie pod nimi.** Tak ako v `maps.json`
-(`mountains.ranges`) a v aplikácii: Vysoké Tatry nie sú kraj Slovenska, ležia
-v SK aj PL a robia sa inak než kraj (1 m model, 2,5 m vrstevnice, snímky).
-Preto `maps.mountains` má vlastné `settings`, spoločné všetkým pohoriam, a pod
-ním `ranges`. Pohorie **nededí nič zo Slovenska** – len z `defaults` a z
-`maps.mountains`. Odkiaľ berie OSM, hovorí `osm`, v ktorých krajinách leží,
-`countries`; to sú dáta, nie dedenie. Dnešné `country: slovensko` v
-`mountains.json` odpadne (každé pohorie má `osm` vyplnené).
+**Čo zmizlo:** `aerial.json`, `dem: false` z `regions.json`, hodnoty z
+`DEFAULTS` v `options.py` (ostali `DESCRIPTIONS` – čo kľúč znamená),
+`MOUNTAIN_OPTIONS` a natvrdo `dmr5` z `mountain.yml`.
+
+**Čo ostalo, kde je:** `regions.json` a `areas.json` (geografia – kde mapa
+leží a odkiaľ je jej PBF), `mountains.json` (výrez, krajiny a OSM výrezy
+pohoria), `dem-sources.json` a `credits.json` (§7).
 
 ## 3. Dedenie: od všeobecného k presnému
 
-Hodnota sa hľadá od najpresnejšieho miesta, prvá nájdená vyhráva:
-
-Dve vetvy, rovnaký tvar – kategória, potom jej položka:
-
 ```
-kraj                                      pohorie
-options (voľný text)       rock_slope=40  options (voľný text)
-  ↑ formulár (nie „config“)                 ↑ formulár (nie „config“)
-  ↑ maps.<krajina>.regions.<kraj>           ↑ maps.mountains.ranges.<pohorie>  aerial.summer
-  ↑ maps.<krajina>.settings  source none    ↑ maps.mountains.settings          interval 2.5
-  ↑ defaults                                ↑ defaults
+kraj                                       pohorie
+maps.<krajina>.regions.<kraj>.settings     maps.mountains.ranges.<pohorie>.settings
+  ↑ maps.<krajina>.settings                  ↑ maps.mountains.settings
+  ↑ defaults                                 ↑ defaults
 ```
 
 - Kraj dedí od svojej krajiny cez `country` v `regions.json`. Kraj bez záznamu
-  v `regions` berie krajinu celú, pohorie bez `settings` berie `maps.mountains`
-  celé.
-- Zlučuje sa po kľúčoch do hĺbky: `{"contours": {"interval": 2.5}}` zmení len
-  interval, zdroj ostane zdedený.
-- `null` znamená „nemá“ (zima bez snímok), nie „zdeď“. Zdediť = kľúč vynechať.
-- Každá výsledná hodnota si pamätá, odkiaľ prišla (`defaults`,
-  `maps.slovensko`, `maps.mountains`, `maps.mountains.ranges.vysoke_tatry`,
-  `form`, `options`). To ide do
-  súhrnu behu (§5).
+  berie krajinu celú; krajina bez záznamu v `maps` berie `defaults` (lint to
+  pre krajiny, ktoré formulár stavia, nedovolí).
+- Neznámy kľúč na ktorejkoľvek úrovni je chyba – preklep `rock_slop` by sa
+  inak potichu zdedil z `defaults`.
+- Každá hodnota si pamätá, odkiaľ prišla (`defaults`, `cesko`,
+  `slovensko › zilinsky`, `mountains`, `mountains › vysoke_tatry`).
 
-## 4. Zdroje a ich kredity
+## 4. Formuláre
 
-Kredit patrí **zdroju**, nie balíku. Balík v `packages.json` povie len, aký
-druh zdroja nesie:
+| workflow | pýta sa |
+|---|---|
+| `Map · Build map region` | `region`, `area`, `test`, `rebuild`, `publish_pages` |
+| `Map · Build map state` | `country`, `rebuild`, `test` (+ štafetový `continuation`) |
+| `Map · Regenerate region layer` | `region`, `what`, `test` |
+| `Map · Regenerate state` | `country`, `what`, `test` (+ `continuation`) |
+| `Map · Build mountain package` | `mountain`, `rebuild`, `test` |
 
-```json
-{ "key": "aerial_summer", "sources": ["aerial:summer"] }
-{ "key": "contours",      "sources": ["author", "dem:contours"] }
-```
+Zmizli `contour_source`, `rock_source`, `shading_source`, `rock_slope`,
+`aerial_maxzoom` a voľné `options`.
 
-`dem:contours` sa už dnes rozkladá na model, z ktorého boli vrstevnice
-(`workers/deploy/packages.py`). Pribudne `aerial:<sezóna>` → zdroj, ktorý
-pohorie pre sezónu vybralo → jeho `credits`. Zdroj bez kreditu, alebo kredit,
-ktorý v `credits` nie je, je chyba lintu (`workers/lint/credits.py` to dnes
-robí pre `dem:*`).
+**Prečo hodnoty nie sú vo formulári.** `default:` vstupu `workflow_dispatch` je
+text v YAML; GitHub ho číta, keď kreslí formulár, a nijaký súbor z repozitára
+si pritom neprečíta, ani nevie, aký kraj človek o riadok vyššie vybral.
+Formulár by ukazoval `dmr5` aj pri Česku. Preto v ňom nastavenia nie sú vôbec
+a ukáže ich až beh.
 
-Zdroj má aj `covers` (ISO krajín). Pohorie v SK + PL so zdrojom, ktorý pokrýva
-len SK, dostane v súhrne poznámku „za hranicou PL snímky nebudú“ – dnes to stojí
-len v README. Keď pribudne poľský zdroj, pohorie môže mať pre sezónu **zoznam**
-zdrojov (`"summer": ["ofmozaika_sk", "geoportal_pl"]`), prvý vyhráva tam, kde
-má dlaždicu. To je samostatný tiket; súbor naň má miesto už teraz.
+**Ladenie** = zmena hodnoty v `map-settings.json` na vetve a beh z tej vetvy
+(*Use workflow from*). Nastavenie každého behu je tak v gite.
 
-## 5. Formulár „Run workflow“
+**Dávky krajiny** posielajú krajom len `rebuild`, `test` (a pevné
+`area: whole_region`, `publish_pages: false`); každý kraj si nastavenia vezme
+sám. Kraj sa spúšťa z vetvy, nie z commitu: zmena nastavení počas dňa, ktorý
+dávka beží, platí pre kraje, ktoré ešte nebežali – tak ako zmena kódu.
 
-**Čo GitHub nedovolí:** `default:` vstupu `workflow_dispatch` je text v YAML.
-GitHub ho číta, keď kreslí formulár; nijaký súbor z repozitára si pritom
-neprečíta a ani nevie, aký kraj človek o riadok vyššie vybral. Formulár teda
-hodnotu z JSON **ukázať** nevie.
+## 5. Prvý job behu
 
-**Ako to obísť:** predvolená hodnota formulára bude slovo `config` (pri `choice`
-prvá možnosť) alebo prázdny text (pri `string`), čo znamená „vezmi z
-`map-settings.json` pre to, čo som vybral“. Konkrétne číslo sa doplní v prvom
-jobe behu:
+Build kraja, regenerácia vrstvy a pohorie majú prvý job `settings`
+([`workers/plan/settings.sh`](../workers/plan/settings.sh)); dávky krajiny
+majú prvý krok s nastaveniami krajiny. Vypíšu formulár a potom:
 
-```yaml
-contour_source:
-  description: "Vrstevnice z (config = map-settings.json pre zvolený kraj)"
-  type: choice
-  default: config
-  options: [config, sonny, sonny1, dmr35, dmr5, none]
-rock_slope:
-  description: "Sklon skál v ° (prázdne = map-settings.json)"
-  type: string
-  default: ""
-```
-
-Job `settings` (dnes `workers/plan/settings.sh`) vypíše do súhrnu tabuľku:
-
-| Nastavenie | Hodnota | Odkiaľ |
+| setting | value | from |
 |---|---|---|
-| contours.source | dmr5 | defaults |
-| contours.interval | 2.5 | maps.mountains |
-| rocks.slope | 40 | formulár |
-| aerial.summer | ofmozaika_sk (GKÚ, NLC; freemap.sk) | maps.mountains.ranges.vysoke_tatry |
+| `aerial_summer` | `ofmozaika_sk` | **mountains** |
+| `contour_interval` | `5` | **mountains** |
+| `contour_source` | `dmr5` | defaults |
+| `rock_slope` | `50` | defaults |
 
-Na telefóne je teda hneď vidno, s čím beh ide, hoci vo formulári stálo
-`config`.
+so skratkou commitu, z ktorého sa súbor čítal. Hodnoty, ktoré z nastavení
+vychádzajú (`contours`, `rock_dem`, adresa snímok), majú „worked out from the
+settings above“. Zlý kľúč, neznámy kraj či zdroj, ktorý vrstva nemá, zastaví
+beh práve tu – po sekundách, nie o desať jobov neskôr.
 
-**Prečo nie generovať `default:` z JSON.** Dalo by sa skriptom prepísať
-`default:` vo YAML podľa `defaults` a lintom strážiť, že sa nerozišli. Lenže
-platí len pre hodnoty rovnaké pre všetky kraje – a práve tie, o ktoré tu ide
-(model, snímky, interval), sa podľa kraja a pohoria líšia. Formulár by ukazoval
-`dmr5` aj pri Česku. Preto `config` všade, kde môže hodnota závisieť od cieľa.
+## 6. Kód a stráže
 
-**„Re-run“** starého behu nesie `config`, takže zoberie **dnešný** JSON, nie
-ten z pôvodného behu. Súhrn pôvodného behu (tabuľka vyššie) je záznam toho, s
-čím išiel; kto chce presne to isté, prepíše hodnoty do formulára.
+- **Resolver** je [`workers/plan/options.py`](../workers/plan/options.py):
+  `--region=<kraj>` alebo `--mountain=<pohorie>`, výstupy `opt_*` ako predtým,
+  takže joby pod ním sa nemenili. Pribudli `opt_rock_slope`,
+  `opt_aerial_summer`/`_winter` (+ `_url`, `_minzoom`, `_maxzoom`) a
+  `opt_aerial_sources` (JSON pre maticu sezón). `--options` a `--*-source`
+  ostali len pre beh ručne.
+- **Snímky:** [`workers/mountain/aerial.py`](../workers/mountain/aerial.py)
+  berie `--source=<kľúč>` zo `sources.aerial`; cache dlaždíc je podľa zdroja.
+- **Lint** [`workers/lint/settings.py`](../workers/lint/settings.py): `defaults`
+  má presne kľúče z `DESCRIPTIONS`; krajiny a kraje sú z `regions.json`,
+  pohoria z `mountains.json` a výber vo `mountain.yml` sa s nimi zhoduje;
+  každá krajina, ktorú formulár stavia, má záznam; zdroje výšok sedia s `for`
+  v `dem-sources.json`, zdroje snímok majú sezónu, adresu a známych autorov;
+  každý cieľ formulára sa rozlúšti; **a žiadny z piatich formulárov nemá
+  vstup s nastavením.** [`workers/lint/state.py`](../workers/lint/state.py)
+  stráži, že každý kraj dávky má `reuse_layers: true`.
+- **Testy** v `workers/tests/test_options.py` (`Layers`): najpresnejšie
+  vyhráva, pohorie nič zo Slovenska, JSON typy, neznáme kľúče, sezóna zdroja.
+- Pred zmenou sa porovnal starý `options.py` s formulárovými defaultmi
+  s novým pre všetkých 34 krajov (s testom aj bez) a 8 pohorí: hodnoty sú
+  zhodné.
 
-**Beh spustený iným behom** (`build-map-state` spúšťa kraje cez API) posiela
-ďalej len to, čo človek zmenil, a zvyšok `config` – kraj si vezme svoje, nie
-hodnotu krajiny.
+## 7. Ďalej
 
-## 6. Kto to číta: `workers/plan/settings.py`
-
-Jeden resolver, nič iné JSON priamo nečíta:
-
-```
-python3 workers/plan/settings.py --region=zilinsky \
-    --form-contour-source=config --form-rock-slope= --options="$OPTIONS" \
-    --out="$GITHUB_OUTPUT" --summary="$GITHUB_STEP_SUMMARY"
-python3 workers/plan/settings.py --mountain=vysoke_tatry …
-```
-
-- Vráti ploché `opt_*` výstupy, aké dnes dáva `options.py`
-  (`opt_contour_source`, `opt_contour_interval`, …), takže joby pod ním sa
-  nemenia. Pribudnú `opt_aerial_summer_url`, `opt_aerial_summer_maxzoom`,
-  `opt_aerial_summer_credits`.
-- `options.py` ostane pre voľný text `options`: rozloží ho a skontroluje, ale
-  predvolené hodnoty už berie zo `settings.py`.
-- `aerial.py` dostane zdroj (`--source=ofmozaika_sk`), nie sezónu, a URL, zoomy,
-  počet spojení si vezme zo zdroja.
-- Python knižnica v `workers/lib/settings.py` (`load()`, `resolve(target)`), aby
-  `catalog.py`, `packages.py`, `names.py` a linty nečítali súbor každý po svojom.
-
-## 7. Stráže
-
-- **Schéma** `workers/data/map-settings.schema.json` + krok v
-  `Check · catalog schema`: neznámy kľúč v `settings` je chyba (preklep
-  `intervall` by sa inak potichu zdedil z `defaults`).
-- **Lint** `workers/lint/settings.py`:
-  - každý `source` v `settings` je v `sources` a má `for` toho druhu;
-  - každý `credits` je v `credits`;
-  - kľúče krajín v `maps` a ich `regions` sú v `regions.json`, `area` pohoria
-    v `areas.json`, kľúč `mountains` v `regions.json` nie je (kategórie sa
-    nesmú zraziť);
-  - `options:` každého `choice` vstupu sú `config` + kľúče `sources.dem`
-    (dnes to pre `dem-sources.json` robí `lint-workflows.yml`);
-  - každý vstup s `config` / prázdnym defaultom má kľúč v `defaults`.
-- **Testy** `workers/tests/test_settings.py`: dedenie (kraj prepíše krajinu,
-  pohorie dedí z `maps.mountains` a nič zo Slovenska, `null` nededí, hlboké
-  zlúčenie), priorita formulár > JSON, `options` >
-  formulár, `odkiaľ` v súhrne, kredit snímok podľa zdroja.
-
-## 8. Fázy
-
-Každá fáza je vlastné PR, pipeline po každej beží ako predtým.
-
-1. **Súbor a resolver.** `map-settings.json` z dnešných hodnôt (presne tie isté
-   čísla), `workers/lib/settings.py`, `workers/plan/settings.py`, schéma, lint,
-   testy. Nikto ho ešte nečíta – overí sa, že pre každý kraj a pohorie vráti to
-   isté, čo dnes `options.py` + formulár (test porovná oboje).
-2. **Pohoria.** `mountain.yml` číta `settings.py`; zmizne `MOUNTAIN_OPTIONS`,
-   natvrdo `dmr5` a `mountains.json`. `aerial.py` berie zdroj. Kredit snímok
-   cez `aerial:<sezóna>`; zmizne `aerial.json`.
-3. **Kraje a krajiny.** `build-map-region`, `build-map-state`,
-   `regenerate-region`, `regenerate-state` dostanú `config` defaulty a čítajú
-   `settings.py`. Zmizne `dem: false` z `regions.json` a predvolené hodnoty z
-   `OPTIONS`.
-4. **Zvyšok.** `shading-rocks.yml`, `update-dem.yml`, `dmr5-drive.yml`,
-   `catalog.py`, `packages.py`, `names.py` a linty cez `workers/lib/settings.py`;
-   zmiznú `dem-sources.json` a `credits.json`. README dostane kapitolu o súbore
-   namiesto dnešných odsekov o každom z nich.
-5. *(len ak bude treba)* `regions.json` a `areas.json` do toho istého súboru.
-
-Aplikácia (`skifahrer/rikimaps`) sa nemení: kredity číta z `maps.json` ako
-doteraz, len budú správne podľa zdroja.
-
-## 9. Otvorené otázky
-
-- **Meno súboru.** `map-settings.json` sa nepletie s `maps.json` (katalóg) ani
-  s jobom `settings`. Iný návrh?
-- **Geografia mimo** (§2): stačí, že `regions.json` a `areas.json` ostanú
-  samostatne, alebo naozaj všetko v jednom súbore?
-- **Zimné snímky a poľská strana Tatier**: aký zdroj? Plán na ne má miesto
-  (`sources.aerial`, zoznam zdrojov na sezónu), ale adresu a licenciu treba
-  vybrať.
-- **Nastavenia na úrovni výrezu** (`areas.json`, vstup `area` v
-  `build-map-region`): treba aj štvrtú úroveň, alebo stačí pohorie?
+1. **Kredity podľa zdroja.** Balík v `packages.json` povie len druh zdroja
+   (`aerial:summer` ako dnes `dem:contours`) a autor sa vezme zo zdroja, ktorý
+   mapa vybrala. Dnes majú `aerial_summer` aj `aerial_winter` natvrdo
+   `ortofoto` + `freemap`; zdroj ich už nesie v `credits`.
+2. **`dem-sources.json` a `credits.json`** do `sources.dem` a `credits`
+   (čítajú ich `catalog.py`, `packages.py`, `names.py`, DEM skripty a linty).
+3. **Zimné snímky a poľská strana Tatier** – zdroj s licenciou; súbor naň má
+   miesto (`sources.aerial`, `covers`).
+4. *(len ak bude treba)* `regions.json`, `areas.json` a `mountains.json` do
+   toho istého súboru.

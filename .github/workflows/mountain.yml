@@ -10,7 +10,8 @@ run-name: "${{ github.workflow }} · ${{ inputs.mountain }}"
 # The same DEM layers the map build makes (`dem-layers.yml`), on the range's
 # cut-out and with the cut-out's model for the height tiles too; roads and
 # paths from `transport.yml`, water from `water.yml`, points from the features
-# job; photos from `workers/data/aerial.json`. Published
+# job. Every setting, the photo source too, is the range's in
+# `workers/data/map-settings.json`. Published
 # under `mountains.ranges` in `maps.json`, a category of its own beside the
 # countries; the app draws a range alone or over the regions it crosses.
 
@@ -31,11 +32,6 @@ on:
           - velka_fatra
           - slovensky_raj
           - pieniny
-      rock_slope:
-        description: "From which slope (°) terrain is rock (50 = faces, 40 = steep slopes too)"
-        required: false
-        default: "50"
-        type: string
       rebuild:
         description: "Compute a layer anew even when it is cached"
         required: false
@@ -52,17 +48,6 @@ on:
         required: false
         default: false
         type: boolean
-      aerial_maxzoom:
-        description: "Deepest zoom of the aerial photos (empty = workers/data/aerial.json; z18 is ~4× z17)"
-        required: false
-        default: ""
-        type: string
-      # on top of MOUNTAIN_OPTIONS below, a later key wins
-      options:
-        description: "Rarely changed settings as key=value (see workers/plan/options.py)"
-        required: false
-        default: ""
-        type: string
 
 permissions:
   contents: read
@@ -74,10 +59,6 @@ env:
   DRIVE_CLIENT: ${{ vars.DRIVE_CLIENT }}
   DRIVE_SECRET: ${{ secrets.DRIVE_SECRET }}
   DRIVE_REFRESH: ${{ secrets.DRIVE_REFRESH }}
-  # what makes a mountain package finer than its region's layers
-  MOUNTAIN_OPTIONS: >-
-    contour_interval=5 contour_maxzoom=16 contour_maxzoom_cap=16
-    contour_lowland_m=0 terrain_maxzoom=17 size_limit_mb=2000
   # shares of `size_limit_mb`; no Pages here, so the height model gets the most
   BUDGET_CONTOURS_PCT: "25"
   BUDGET_ROCKS_PCT: "15"
@@ -87,6 +68,25 @@ env:
   BUDGET_FEATURES_PCT: "4"
 
 jobs:
+  # first job: the form and the range's settings, before anything is computed
+  settings:
+    name: Run settings (form and map-settings.json)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Print the run settings
+        env:
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          WORKFLOW: .github/workflows/mountain.yml
+          OPT_MOUNTAIN: ${{ inputs.mountain }}
+          OPT_REBUILD: ${{ inputs.rebuild }}
+          OPT_TEST: ${{ inputs.test }}
+        run: workers/plan/settings.sh
+
   plan:
     name: Preparation (range, settings)
     runs-on: ubuntu-latest
@@ -110,6 +110,9 @@ jobs:
       opt_publish: ${{ steps.opts.outputs.opt_publish }}
       opt_apple_archive: ${{ steps.opts.outputs.opt_apple_archive }}
       opt_size_limit_mb: ${{ steps.opts.outputs.opt_size_limit_mb }}
+      opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
+      opt_aerial_sources: ${{ steps.opts.outputs.opt_aerial_sources }}
+      opt_aerial_maxzoom: ${{ steps.opts.outputs.opt_aerial_maxzoom }}
       opt_contour_lines: ${{ steps.opts.outputs.opt_contour_lines }}
       opt_rocks: ${{ steps.opts.outputs.opt_rocks }}
       opt_terrain: ${{ steps.opts.outputs.opt_terrain }}
@@ -144,21 +147,16 @@ jobs:
         id: day
         run: echo "d=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
 
-      # all three layers from DMR 5.0: the 1 m LiDAR is what a mountain package is for
-      - name: Split the options
+      - name: Settings of the range
         id: opts
         run: |
           set -euo pipefail
           python3 workers/plan/options.py \
-            --options="$MOUNTAIN_OPTIONS $OPTIONS" \
-            --contour-source=dmr5 --rock-source=dmr5 --shading-source=dmr5 \
+            --mountain='${{ inputs.mountain }}' \
             --rebuild='${{ inputs.rebuild }}' \
             --test='${{ inputs.test }}' \
             --publish-pages=false \
-            --out="$GITHUB_OUTPUT" \
-            --summary="$GITHUB_STEP_SUMMARY"
-        env:
-          OPTIONS: ${{ inputs.options }}
+            --out="$GITHUB_OUTPUT"
 
       - name: Resolve the range
         id: mountain
@@ -353,8 +351,11 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: aerial-cache
-          key: aerial-v1-${{ matrix.season }}-${{ needs.plan.outputs.bboxkey }}-z${{ inputs.aerial_maxzoom }}
-          restore-keys: aerial-v1-${{ matrix.season }}-${{ needs.plan.outputs.bboxkey }}-
+          key: aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-z${{ needs.plan.outputs.opt_aerial_maxzoom }}
+          # v1 keys are ofmozaika_sk's, from before a range picked its source
+          restore-keys: |
+            aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-
+            ${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] == 'ofmozaika_sk' && format('aerial-v1-{0}-{1}-', matrix.season, needs.plan.outputs.bboxkey) || '' }}
 
       - name: Download the range outline
         continue-on-error: true
@@ -369,12 +370,13 @@ jobs:
           SEASON: ${{ matrix.season }}
           BBOX: ${{ needs.plan.outputs.bbox }}
           KEY: ${{ needs.plan.outputs.key }}
-          MAXZOOM: ${{ inputs.aerial_maxzoom }}
+          SOURCE: ${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}
+          MAXZOOM: ${{ needs.plan.outputs.opt_aerial_maxzoom }}
         run: |
           set -euo pipefail
           python3 -c 'import pmtiles, PIL' 2>/dev/null \
             || python3 -m pip install --quiet --break-system-packages pmtiles pillow
-          python3 workers/mountain/aerial.py --season="$SEASON" --bbox="$BBOX" \
+          python3 workers/mountain/aerial.py --season="$SEASON" --source="$SOURCE" --bbox="$BBOX" \
             --maxzoom="$MAXZOOM" --cache=aerial-cache --poly=data/region.geojson \
             --out="_site/tiles/${KEY}-aerial_${SEASON}.pmtiles"
 
@@ -430,7 +432,7 @@ jobs:
       opt_contour_maxzoom_cap: ${{ needs.plan.outputs.opt_contour_maxzoom_cap }}
       opt_contour_lowland_m: ${{ needs.plan.outputs.opt_contour_lowland_m }}
       opt_contour_smoothing: ${{ needs.plan.outputs.opt_contour_smoothing }}
-      rock_slope: ${{ inputs.rock_slope }}
+      rock_slope: ${{ needs.plan.outputs.opt_rock_slope }}
       opt_rock_maxzoom: ${{ needs.plan.outputs.opt_rock_maxzoom }}
       opt_rock_res: ${{ needs.plan.outputs.opt_rock_res }}
       opt_rock_solid: ${{ needs.plan.outputs.opt_rock_solid }}
