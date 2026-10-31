@@ -467,7 +467,7 @@ jobs:
             # rocks from hillshading are foreign server tiles – hundreds of
             # thousands for a whole region, so only ranges
             if [ '${{ steps.opts.outputs.opt_rock_source }}' = 'shading' ]; then
-              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or give the region a height model as `rock_source` in workers/data/map-settings.json."
+              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or give the region a height model as rock_source in workers/data/map-settings.json."
               exit 1
             fi
           fi
