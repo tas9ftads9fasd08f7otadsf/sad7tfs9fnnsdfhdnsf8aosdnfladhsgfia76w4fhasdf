@@ -26,14 +26,14 @@ on:
         default: ""
         type: string
       routing_country:
-        description: "The region's ISO country code (`iso` in regions.json) – the vignette stands on it"
+        description: "The region's ISO country code (`iso` in regions of map-settings.json) – the vignette stands on it"
         required: false
         default: ""
         type: string
       # the same for every region of a country – archives with different orders
       # must not be joined on the phone
       routing_area:
-        description: "The area the node order is over (`routing_area` in regions.json)"
+        description: "The area the node order is over (`routing_area` in regions of map-settings.json)"
         required: false
         default: ""
         type: string

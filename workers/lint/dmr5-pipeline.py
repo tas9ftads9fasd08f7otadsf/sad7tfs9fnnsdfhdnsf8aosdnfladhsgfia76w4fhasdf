@@ -44,7 +44,7 @@ for name, job in (bm.get("jobs") or {}).items():
         print(f"::error file={LAYERS}::job '{name}' passes dmr5-drive.yml "
               f"`area: {area}` – a cut-out must take `check-dem.outputs."
               f"mirror_dmr5_area` (the bbox the run asked for), otherwise "
-              f"the whole rectangle from areas.json is read from Drive.")
+              f"the whole rectangle from `areas` of map-settings.json is read from Drive.")
         bad += 1
     if "mirror_dmr5_asset" not in asset:
         print(f"::error file={LAYERS}::job '{name}' doesn't pass `asset` from "

@@ -104,7 +104,7 @@ fi
 
 COUNTRY="${ROUTING_COUNTRY:-}"
 if [ -z "$COUNTRY" ]; then
-  echo "::warning::The region has no ISO country code (\`iso\` in workers/data/regions.json), so archive edges say nothing of their country and the vignette has nothing to stand on."
+  echo "::warning::The region has no ISO country code (\`iso\` in regions of workers/data/map-settings.json), so archive edges say nothing of their country and the vignette has nothing to stand on."
 fi
 
 T_A=$(date +%s)

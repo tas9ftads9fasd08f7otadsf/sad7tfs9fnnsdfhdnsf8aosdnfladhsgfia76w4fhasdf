@@ -68,11 +68,11 @@ class Raster(unittest.TestCase):
             raster.clamp_to_raster((5000, 5000, 6000, 6000), self.INFO, 4, log.append)
 
     def test_resolve_area(self):
-        areas = os.path.join(WORKERS, "data", "areas.json")
+        areas = os.path.join(WORKERS, "data", "map-settings.json")
         self.assertEqual(raster.resolve_area("cele_slovensko", areas), ("whole country", None))
         self.assertEqual(raster.resolve_area("20,49,20.5,49.5", areas)[1], (20, 49, 20.5, 49.5))
         with open(areas) as f:
-            key = next(k for k in json.load(f) if not k.startswith("_"))
+            key = next(k for k in json.load(f)["areas"] if not k.startswith("_"))
         name, bbox = raster.resolve_area(key, areas)
         self.assertEqual(len(bbox), 4)
         for bad in ("1,2,3", "neznama_oblast"):

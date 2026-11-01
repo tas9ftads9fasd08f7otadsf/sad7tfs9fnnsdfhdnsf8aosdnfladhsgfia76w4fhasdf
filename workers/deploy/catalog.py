@@ -9,6 +9,8 @@ import time
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 _DRIVE = os.path.join(_WORKERS, "drive")
 
 
@@ -113,10 +115,8 @@ def registry_name(regions, key, kind):
     if kind in ("area", "mountain"):
         try:
             if kind == "mountain":
-                with open(os.path.join(_DATA, "mountains.json")) as f:
-                    key = (json.load(f).get(key) or {}).get("area") or key
-            with open(os.path.join(_DATA, "areas.json")) as f:
-                name = (json.load(f).get(key) or {}).get("name")
+                key = (map_settings.mountains().get(key) or {}).get("area") or key
+            name = (map_settings.areas().get(key) or {}).get("name")
         except (OSError, ValueError):
             name = None
     else:
@@ -181,7 +181,7 @@ MOUNTAINS_NAME = "Mountains"
 
 
 def node_id(regions, key, parent="", listed=True):
-    """A node's id, unique across the catalog; `listed` = its key may be in `regions.json`."""
+    """A node's id, unique across the catalog; `listed` = its key may be in `regions` of the settings."""
     base, test = split_test(key)
     own = (regions.get(base) or {}).get("id") if listed else None
     if not own:
@@ -549,8 +549,7 @@ if __name__ == "__main__":
     if sys.argv[1:] == ["--file"]:
         print(catalog_file())
     elif sys.argv[1:2] == ["--migrate"]:
-        with open(os.path.join(_DATA, "regions.json")) as f:
-            known = json.load(f)
+        known = map_settings.regions()
         for p in sys.argv[2:]:
             with open(p) as f:
                 d = json.load(f)

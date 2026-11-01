@@ -6,7 +6,7 @@ steps-out/
 #
 # LOMKA NA ZAČIATKU JE TU PODSTATNÁ: `data/` bez nej znamená „hocijaký
 # priečinok data kdekoľvek" a zmizli by aj číselníky vo `workers/data/` –
-# teda `git status` čistý a `areas.json` mimo repozitára.
+# teda `git status` čistý a `map-settings.json` mimo repozitára.
 /_site/
 /data/
 /planetiler.jar

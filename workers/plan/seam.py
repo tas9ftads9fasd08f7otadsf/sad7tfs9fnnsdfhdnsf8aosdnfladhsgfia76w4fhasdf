@@ -259,8 +259,8 @@ def _cli():
     import sys
 
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("--region", required=True, help="key from data/regions.json")
-    ap.add_argument("--regions", default="", help="path to regions.json")
+    ap.add_argument("--region", required=True, help="key of `regions` in data/map-settings.json")
+    ap.add_argument("--regions", default="", help="path to map-settings.json")
     ap.add_argument("--step-m", type=float, default=STEP_M)
     ap.add_argument("--from-pbf", default="",
                     help="PBF with exact borders (without it osm.fr's fallback "

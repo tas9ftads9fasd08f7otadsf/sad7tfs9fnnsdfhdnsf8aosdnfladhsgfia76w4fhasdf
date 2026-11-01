@@ -160,7 +160,7 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   [workers/data/map-settings.json](data/map-settings.json), všetko z OSM sa urobí. Zdroj je
   [osm.fr](https://download.openstreetmap.fr/extracts/europe/slovakia/)
   (denne aktualizované); mapovanie, `osm_name`, `admin_level` a bboxy sú vo
-  [workers/data/regions.json](data/regions.json). Každý región tam má `id`
+  `regions` v [workers/data/map-settings.json](data/map-settings.json). Každý región tam má `id`
   jedinečné v celom katalógu – cesta na osm.fr pod kontinentom, priečinky
   spojené `-` (`slovakia-banskobystricky`); `maps.json` ho nesie pri každom
   uzle a mapy v Riki Maps sa naň odvolávajú. **Kraj sa REŽE z rodiča** –
@@ -1035,8 +1035,8 @@ viac ani nejde (1° v 1 m má ~48 GB). Pohorie je ale malé, tak sa preň robí
 | skaly | `rock_res: auto` | to isté, z toho istého sklonu |
 | výškový model (tieňovanie, 3D) | 5 m dlaždice, z13 – z15 | **výrez v 1 m**, do **z17** |
 
-Pohoria sú vo [`workers/data/mountains.json`](data/mountains.json): krajina
-a výrez z `areas.json` (meno, bbox a DMR 5.0 v 1 m pod tým istým menom, aký
+Pohoria sú vo `maps.mountains.ranges` v [`workers/data/map-settings.json`](data/map-settings.json): krajina
+a výrez z `areas` nastavení (meno, bbox a DMR 5.0 v 1 m pod tým istým menom, aký
 si berie testovací výrez). Workflow volá **ten istý `dem-layers.yml`** ako
 build mapy, s `mountain: true` – vtedy si aj tieňovanie berie model vo tvare
 výrezu (`TERRAIN_CUTOUT`, v kľúči cache aj v mene assetu `-cut`), nie 5 m
@@ -1061,7 +1061,7 @@ v `mountains/<pohorie>/`. Pohorie, ktoré ešte visí pod krajinou
 pohorie, ktoré cez hranicu siaha, končí na nej: jeho okraj je orezaný na pokrytie
 modelu (`coverage_osm` v `sources.dem` nastavení, relácia Slovenska 14296). Vysoké
 a Západné Tatry aj Pieniny tak nemajú poľskú stranu z 20 m modelu, ktorá by
-vedľa lidaru vyzerala ako iná mapa. V `mountains.json` majú `countries` (ISO)
+vedľa lidaru vyzerala ako iná mapa. V `maps.mountains.ranges` nastavení majú `countries` (ISO)
 a `osm` – výrezy osm.fr, z ktorých sa robia OSM vrstvy; `workers/mountain/pbf.sh`
 každý oreže na bbox a zlúči ich (`osmium merge` nechá cestu na hranici raz), keď
 osm.fr neodpovie, skúsi Geofabrik. Pohorie v Poľsku by pridalo výrez, nie okraj.
@@ -1078,7 +1078,7 @@ bbox (`--edge=1`, `-e1`), aby ho aplikácia mohla odrezať presne na čiare bbox
 `ugkk-vysoke_tatry.tif` bol z menšieho bboxu – nový urobí „Data · DMR 5.0“
 s `area: vysoke_tatry`, dovtedy pás pri hranici dopĺňa Sonny.
 
-**Okraj pohoria.** Pohorie s `outline` v `mountains.json` nekončí na obdĺžniku
+**Okraj pohoria.** Pohorie s `outline` v `maps.mountains.ranges` nastavení nekončí na obdĺžniku
 bboxu, ale na hranici území z OSM: Vysoké Tatry na hranici TANAP-u (relácia
 6757027), orezanej na bbox a na pokrytie DMR 5.0. `workers/mountain/outline.py
 --all` urobí okraj každého pohoria: územia z OSM (alebo bbox), v bboxe a v pokrytí
@@ -1651,7 +1651,7 @@ farieb nemá zmysel čakať polhodinu na celý kraj, keď ťa zaujíma jedno poh
 
 *(plochy sú po orezaní na Prešovský kraj)*
 
-Pomenované výrezy sú vo [`workers/data/areas.json`](data/areas.json) – zatiaľ
+Pomenované výrezy sú vo `areas` v [`workers/data/map-settings.json`](data/map-settings.json) – zatiaľ
 Tatry (celé aj po častiach), Nízke Tatry, Slovenský raj, Pieniny, Malá aj
 Veľká Fatra, Súľovské skaly, Slovenský kras, Muránska planina, Vihorlat,
 Strážovské vrchy a Malé Karpaty. Namiesto názvu sa dá zadať aj bbox
@@ -1986,7 +1986,7 @@ je, sa vynechá a povie sa to – chýbajúci sused nesmie znamenať „šev je
 v poriadku".
 
 Susedia sa **nikde nepíšu ručne**: súrodenec je región s tým istým
-`osmfr.parent`, ktorého bbox sa toho nášho dotýka (`regions.json`). Ručný
+`osmfr.parent`, ktorého bbox sa toho nášho dotýka (`regions` nastavení). Ručný
 číselník susedov by sa raz rozišiel s hranicami.
 
 **Vnútorná hranica** znamená bod aspoň 5 km vnútri polygónu rodiča (celej
@@ -2345,7 +2345,7 @@ dopočíta ho sám a uloží – prvý kraj štafety ho vyrobí, ostatné ho vez
 Skôr ho prepočíta **„Navigácia · poradie uzlov"**
 ([`routing-order.yml`](../.github/workflows/routing-order.yml)). Ktoré
 územie to je, hovorí `routing_area` pri krajine v
-[`workers/data/regions.json`](data/regions.json). Graf Valhally ostáva ako
+`regions` v [`workers/data/map-settings.json`](data/map-settings.json). Graf Valhally ostáva ako
 CELOŠTÁTNA referenčná stavba (`navigation.yml`), proti ktorej sa nový motor dá
 krížom skontrolovať – po krajoch sa už nestavia.
 
@@ -2547,7 +2547,7 @@ leží**. Zoznam vzniká z troch zdrojov a každý rieši inú vec:
 | zdroj | čo dáva | prečo |
 |---|---|---|
 | vždy `en` | anglický článok | jediný jazyk, v ktorom je článok skoro o všetkom |
-| krajina regiónu | `sk` pre slovenské kraje | to, čo číta domáci. Tabuľka je [`workers/data/wiki-languages.json`](data/wiki-languages.json), kľúč je `country` z `regions.json` – tá istá hodnota, ktorá rozhoduje o priečinku na Drive |
+| krajina regiónu | `sk` pre slovenské kraje | to, čo číta domáci. Tabuľka je [`workers/data/wiki-languages.json`](data/wiki-languages.json), kľúč je `country` z `regions` nastavení – tá istá hodnota, ktorá rozhoduje o priečinku na Drive |
 | tag objektu | `wikipedia=pl:Rysy` → `pl` | bod na poľskej strane hrebeňa dostane poľský článok bez toho, aby o Poľsku niekto musel vedieť vopred |
 
 **Krajina bodu sa berie z regiónu, nie z bodu.** Extrakt kraja je rezaný jeho
@@ -2723,7 +2723,7 @@ kontroluje oba súbory pri každej zmene.
 **Hlavný kľúč je krajina** – rovno v koreni, bez obálky. Metadáta katalógu ležia
 vedľa nej a poznať ich je po čom: začínajú podčiarkovníkom (`_comment`,
 `_updated_at`, `_updated_ts`). Je to tá istá konvencia ako vo
-[`workers/data/areas.json`](data/areas.json), kde sú kľúče pohorí tiež v koreni
+`areas` v [`workers/data/map-settings.json`](data/map-settings.json), kde sú kľúče pohorí tiež v koreni
 a `_comment` medzi nimi – kto katalóg číta, preskočí kľúče na `_`.
 
 **Zvyšok štruktúry sedí s cestou na Drive** (krajina → kraj `regions` → výsek
@@ -3916,7 +3916,7 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
    [workers/lint/settings.py](lint/settings.py).
 
    Zoznam pohorí v `area` sa berie z
-   [workers/data/areas.json](data/areas.json) – keď tam pribudne pohorie, treba
+   `areas` v [workers/data/map-settings.json](data/map-settings.json) – keď tam pribudne pohorie, treba
    ho dopísať aj do výberu vo workflowe. Vlastný bbox je `area_bbox` v
    nastaveniach.
 
@@ -3971,7 +3971,7 @@ dispečer: zadáš krajinu, ona spustí beh pre každý jej kraj, jeden po druho
 a nechá ťa tak.
 
 **Zoznam krajov je z číselníka, nie z formulára.** Kraj krajiny je položka
-`workers/data/regions.json` s `admin_level: 4` a `country` rovným krajine
+`regions` vo `workers/data/map-settings.json` s `admin_level: 4` a `country` rovným krajine
 (`workers/state/queue.py`). Keby bol zoznam napísaný vo workflowe, pribudnutý
 kraj by v dávke ticho chýbal a dávka by skončila zelená s mapou o jeden kraj
 menšou. Poradie je poradie číselníka — od západu na východ, takže v zozname

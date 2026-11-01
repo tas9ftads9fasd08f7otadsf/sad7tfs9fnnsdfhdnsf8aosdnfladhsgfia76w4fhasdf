@@ -116,9 +116,9 @@ if (!baseUrl) {
 }
 
 const regions = JSON.parse(
-  readFileSync(join(SELF, "..", "data", "regions.json"), "utf8")
-);
-// a custom osm.fr region isn't in regions.json – then the name from `--name`
+  readFileSync(join(SELF, "..", "data", "map-settings.json"), "utf8")
+).regions;
+// a custom osm.fr region isn't in `regions` of map-settings.json – then the name from `--name`
 const regionName = regions[region]?.name || args.name || region;
 
 // the overrides pick the icon set; without its sprite the first available one

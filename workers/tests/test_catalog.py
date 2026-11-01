@@ -56,8 +56,7 @@ class Names(unittest.TestCase):
         self.assertEqual(fresh["name"], "neznamy")
 
     def test_countries_are_english_regions_native(self):
-        with open(os.path.join(catalog._DATA, "regions.json"), encoding="utf-8") as f:
-            regions = json.load(f)
+        regions = catalog.map_settings.regions()
         self.assertEqual(regions["slovensko"]["name"], "Slovakia")
         self.assertEqual(regions["kosicky"]["name"], "Košický kraj")
         slovak = ("Slovensko", "Česko", "Rakúsko", "Navigácia", "Svet")
@@ -77,8 +76,7 @@ class Names(unittest.TestCase):
 
 class RegionIds(unittest.TestCase):
     def setUp(self):
-        with open(os.path.join(catalog._DATA, "regions.json")) as f:
-            self.regions = json.load(f)
+        self.regions = catalog.map_settings.regions()
 
     def test_osmfr_path(self):
         names = catalog.names
@@ -248,8 +246,7 @@ class Rebuild(unittest.TestCase):
                                 "aar": record("A1", "bratislavsky-terrain.aar")})
             with open(path, "w") as f:
                 json.dump({"slovensko": {"regions": {"bratislavsky": {"maps": {"terrain": old}}}}}, f)
-            with open(os.path.join(WORKERS, "data", "regions.json"), encoding="utf-8") as f:
-                regions = json.load(f)
+            regions = catalog.map_settings.regions()
             uploaded = [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)]
             catalog.write_catalog(path, ["slovensko", "bratislavsky"], regions, uploaded,
                                   {"regions": {}}, owns=["terrain"])

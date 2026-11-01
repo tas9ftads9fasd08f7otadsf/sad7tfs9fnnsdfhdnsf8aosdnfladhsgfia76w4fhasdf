@@ -176,7 +176,7 @@ class Settings(unittest.TestCase):
     def test_unknown_region_fails_first(self):
         r, _ = self.settings(OPT_REGION="atlantis")
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn("isn't in regions.json", r.stderr)
+        self.assertIn("isn't in `regions`", r.stderr)
 
 
 if __name__ == "__main__":

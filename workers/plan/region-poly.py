@@ -21,6 +21,8 @@ _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
 
 sys.path.insert(0, _HERE)
+sys.path.insert(0, os.path.join(_WORKERS, "lib"))
+import map_settings  # noqa: E402
 from area import BORDER_BUFFER_M  # noqa: E402
 import boundary  # noqa: E402
 import seam  # noqa: E402
@@ -31,8 +33,7 @@ POLY_BASE = os.environ.get("OSMFR_POLYGONS",
 
 
 def regions(path=None):
-    with open(path or os.path.join(_DATA, "regions.json")) as f:
-        return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    return map_settings.plain(map_settings.regions(path))
 
 
 def poly_url(reg):
@@ -176,8 +177,8 @@ def neighbour_rings(regs, key, borders=None):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--region", required=True, help="key from data/regions.json")
-    ap.add_argument("--regions", default="", help="path to regions.json")
+    ap.add_argument("--region", required=True, help="key of `regions` in data/map-settings.json")
+    ap.add_argument("--regions", default="", help="path to map-settings.json")
     ap.add_argument("--from-pbf", default="",
                     help="OSM PBF to read the EXACT border from "
                          "(`boundary=administrative` relation); without it "
@@ -228,7 +229,7 @@ def main():
                   f"uses osm.fr's FALLBACK `.poly` – rounded to ~550 m and "
                   f"widened around the border, so the map reaches into the "
                   f"neighbouring region and beyond the state border. Check "
-                  f"`osm_name` and `admin_level` in workers/data/regions.json.")
+                  f"`osm_name` and `admin_level` in `regions` of workers/data/map-settings.json.")
 
     raw = ""
     url = poly_url(reg)
@@ -272,7 +273,7 @@ def main():
                       f"so the seam with them was NOT measured – the numbers below "
                       f"cover only the rest. For a region it means their relation "
                       f"isn't in the PBF; check `osm_name` and `admin_level` "
-                      f"in workers/data/regions.json and that the parent cut has "
+                      f"in `regions` of workers/data/map-settings.json and that the parent cut has "
                       f"`-s smart -S types=multipolygon,boundary`.")
             if neighbours:
                 seam_result = seam.measure_seam(rings, neighbours, parent_rings,

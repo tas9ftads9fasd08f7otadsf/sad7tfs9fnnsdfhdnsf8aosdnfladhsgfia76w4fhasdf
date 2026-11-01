@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Resolve the input `area` to bbox, key and name – in one place, always within the region.
 
-The input is a range from `workers/data/areas.json`, a bbox `W,S,E,N`, or empty
+The input is a range from `areas` of `workers/data/map-settings.json`, a bbox `W,S,E,N`, or empty
 (the whole region). `--test-km2` cuts a small square around the centre; its key
 gets `_test4`, so a test never lands in a real run's cache or asset.
 
@@ -9,8 +9,8 @@ gets `_test4`, so a test never lands in a real run's cache or asset.
 """
 import argparse
 import hashlib
-import json
 import math
+import os
 import re
 import sys
 
@@ -64,7 +64,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--region-bbox", required=True)
     ap.add_argument("--area", default="")
-    ap.add_argument("--areas", default="workers/data/areas.json")
+    ap.add_argument("--areas", default="", help="path to map-settings.json")
     ap.add_argument("--test-km2", type=float, default=0.0,
                     help="test mode: cut a square of about this many km² "
                          "around the centre of the cut-out (0 = off)")
@@ -90,11 +90,13 @@ def main():
         key, name = f"cutout_{h}", f"own cut-out {raw}"
         bbox = [float(v) for v in raw.split(",")]
     else:
-        areas = json.load(open(args.areas))
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+        import map_settings  # noqa: PLC0415
+        areas = map_settings.areas(args.areas or None)
         if raw not in areas or raw.startswith("_"):
             known = ", ".join(k for k in areas if not k.startswith("_"))
             print(f"::error::Unknown cut-out '{raw}'. Known cut-outs "
-                  f"({args.areas}): {known}. Or give a bbox W,S,E,N.",
+                  f"(`areas` of workers/data/map-settings.json): {known}. Or give a bbox W,S,E,N.",
                   file=sys.stderr)
             return 1
         key = re.sub(r"[^a-zA-Z0-9]", "_", raw)

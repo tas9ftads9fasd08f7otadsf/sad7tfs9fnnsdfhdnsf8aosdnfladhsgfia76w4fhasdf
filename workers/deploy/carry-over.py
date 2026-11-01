@@ -11,6 +11,8 @@ import zipfile
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DRIVE = os.path.join(os.path.dirname(_HERE), "drive")
 _DATA = os.path.join(os.path.dirname(_HERE), "data")
+sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
+import map_settings  # noqa: E402
 
 
 def _load(name, path):
@@ -64,8 +66,7 @@ def carry(archive, site, package):
 
 def last_copy(maps, package):
     """The `{id, size}` of the package's zip the catalog lists for this run's region, or None."""
-    with open(os.path.join(_DATA, "regions.json"), encoding="utf-8") as f:
-        regions = json.load(f)
+    regions = map_settings.regions()
     with open(maps, encoding="utf-8") as f:
         data = json.load(f)
     entry = (catalog.node_at(data, names.catalog_path(names.drive_path(regions)))

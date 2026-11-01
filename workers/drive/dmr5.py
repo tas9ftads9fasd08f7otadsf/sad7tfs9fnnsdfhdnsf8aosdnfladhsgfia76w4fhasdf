@@ -224,7 +224,7 @@ def stage_plan(args):
     with open(wkt_file, "w") as f:
         f.write((info.get("coordinateSystem") or {}).get("wkt", ""))
 
-    area_name, bbox = raster.resolve_area(args.area, os.path.join(_DATA, "areas.json"))
+    area_name, bbox = raster.resolve_area(args.area)
 
     # `--tiles` widens to whole degrees: `N49E020.tif` promises a whole one
     tiles_out = bbox is None or args.tiles
@@ -416,7 +416,7 @@ def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--area", default="whole_country",
-                    help="a key from workers/data/areas.json, `whole_country`, or a bbox W,S,E,N")
+                    help="a key of `areas` in workers/data/map-settings.json, `whole_country`, or a bbox W,S,E,N")
     ap.add_argument("--grid-m", type=float, default=1.0)
     ap.add_argument("--out", default="out")
     ap.add_argument("--work", default="drive-work")

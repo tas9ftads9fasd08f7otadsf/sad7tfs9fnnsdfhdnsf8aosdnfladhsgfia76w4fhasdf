@@ -137,12 +137,12 @@ if scope == "area":
         "border": "a route may run to the edge of the scope",
     })
 else:
-    regions = json.load(open(os.path.join("workers", "data", "regions.json"),
-                             encoding="utf-8"))
+    regions = json.load(open(os.path.join("workers", "data", "map-settings.json"),
+                             encoding="utf-8"))["regions"]
     graph.update({
         "name": (regions.get(key) or {}).get("name") or key,
         "region_key": key,
-        # `country` in regions.json is a catalog node (`slovensko`), not `SK`
+        # `country` in `regions` is a catalog node (`slovensko`), not `SK`
         "country_node": (regions.get(key) or {}).get("country") or "",
         # the PBF is cut at the region border, so an edge missing its end is a dead end
         "border": "a route ends at the region border; across it runs the "

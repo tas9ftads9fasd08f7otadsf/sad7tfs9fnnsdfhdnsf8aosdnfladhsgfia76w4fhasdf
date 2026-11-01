@@ -18,10 +18,10 @@ SOURCES=$(jq -r '.sources | join(",")' data/world/variant.json)
 MAP_LAYERS=$(jq -r '.map_layers' data/world/variant.json)
 VARIANT_LIMIT=$(jq -r '.limit_mb' data/world/variant.json)
 GLYPHS_MODE=$(jq -r '.glyphs' data/world/variant.json)
-NAME=$(jq -r --arg r "$REGION" '.[$r].name // ""' workers/data/regions.json)
-BBOX=$(jq -r --arg r "$REGION" '.[$r].bbox // [] | join(",")' workers/data/regions.json)
+NAME=$(jq -r --arg r "$REGION" '.regions[$r].name // ""' workers/data/map-settings.json)
+BBOX=$(jq -r --arg r "$REGION" '.regions[$r].bbox // [] | join(",")' workers/data/map-settings.json)
 if [ -z "$NAME" ] || [ -z "$BBOX" ]; then
-  echo "::error::Region '$REGION' isn't in workers/data/regions.json (or has no name and bbox). The variant takes its key from \`workers/data/world-variants.json\` – a new one needs its region in regions.json too."
+  echo "::error::Region '$REGION' isn't in \`regions\` of workers/data/map-settings.json (or has no name and bbox). The variant takes its key from \`workers/data/world-variants.json\` – a new one needs its region there too."
   exit 1
 fi
 

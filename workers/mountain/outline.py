@@ -32,8 +32,8 @@ WHOLE = 0.9999
 
 
 def registry(name):
-    with open(os.path.join(_DATA, name), encoding="utf-8") as f:
-        return {k: v for k, v in json.load(f).items() if not k.startswith("_")}
+    """`regions`, `areas` or `mountains` of the settings, without `_comment`."""
+    return map_settings.plain(getattr(map_settings, name)())
 
 
 def path_for(key):
@@ -105,10 +105,10 @@ def main():
     ap.add_argument("--mountain", default="")
     ap.add_argument("--all", action="store_true")
     args = ap.parse_args()
-    mountains, areas = registry("mountains.json"), registry("areas.json")
+    mountains, areas = registry("mountains"), registry("areas")
     keys = sorted(mountains) if args.all else [args.mountain]
     if not all(k in mountains for k in keys):
-        raise SystemExit(f"::error::Name a range of mountains.json, or --all: {', '.join(sorted(mountains))}.")
+        raise SystemExit(f"::error::Name a range of `maps.mountains.ranges`, or --all: {', '.join(sorted(mountains))}.")
     covered = map_settings.dem_sources()[MODEL].get("coverage_osm")
     coverage = fetch(covered) if covered else None
     for key in keys:

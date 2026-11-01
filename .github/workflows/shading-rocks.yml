@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       area:
-        description: "The range to look for rocks in (its bbox is in workers/data/areas.json)"
+        description: "The range to look for rocks in (its bbox is in areas of workers/data/map-settings.json)"
         required: true
         default: vysoke_tatry
         type: choice

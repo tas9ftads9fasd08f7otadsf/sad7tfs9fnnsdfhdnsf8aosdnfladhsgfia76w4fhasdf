@@ -34,7 +34,7 @@ _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
 
 AREAS = os.path.join(_DATA, "routing-areas.json")
-REGIONS = os.path.join(_DATA, "regions.json")
+REGIONS = os.path.join(_DATA, "map-settings.json")
 VIGNETTES = os.path.join(_DATA, "vignettes.json")
 REGISTRY = os.path.join(_DATA, "packages.json")
 WORKFLOW = os.path.join(".github", "workflows", "navigation.yml")
@@ -60,13 +60,13 @@ def err(path, msg):
 def national_graph(areas, regions, countries):
     """Valhalla over a whole state – the reference build that stays."""
     rel_areas = "workers/data/routing-areas.json"
-    rel_regions = "workers/data/regions.json"
+    rel_regions = "workers/data/map-settings.json"
 
     for key, area in areas.items():
         rk = area.get("region_key")
         if rk not in regions:
             err(rel_areas,
-                f"scope `{key}` has `region_key: {rk}`, which `regions.json` "
+                f"scope `{key}` has `region_key: {rk}`, which `regions` of map-settings.json "
                 f"lacks – `publish-map.py` couldn't build its Drive path from it "
                 f"and the package would end up in `other/`.")
             continue
@@ -233,7 +233,7 @@ def node_order(areas, regions):
     region build just never finds anything, archives go without an order and
     nothing fails.
     """
-    rel_regions = "workers/data/regions.json"
+    rel_regions = "workers/data/map-settings.json"
     for key, r in regions.items():
         area = r.get("routing_area")
         if area and area not in areas:
@@ -352,7 +352,7 @@ def main():
     with open(AREAS, encoding="utf-8") as f:
         areas = json.load(f)["areas"]
     with open(REGIONS, encoding="utf-8") as f:
-        regions = json.load(f)
+        regions = json.load(f)["regions"]
     with open(VIGNETTES, encoding="utf-8") as f:
         countries = json.load(f)["countries"]
 

@@ -49,7 +49,7 @@ on:
         default: ""
         type: string
       area:
-        description: "ugkk only: a range from workers/data/areas.json or a bbox W,S,E,N"
+        description: "ugkk only: a range from areas of workers/data/map-settings.json or a bbox W,S,E,N"
         required: false
         default: vysoke_tatry
         type: string
@@ -476,7 +476,7 @@ jobs:
             echo "::warning::$ASSET is $(( SZ / 1048576 )) MB. It uploads, but every build will download all of it – if that isn't intended, pick a smaller cutout."
           fi
           python3 workers/drive/store.py --put --store="$STORE" --file="$ASSET" \
-            --note="One COG per cutout; the name is a key from workers/data/areas.json. Source: ÚGKK SR – DMR 5.0."
+            --note="One COG per cutout; the name is a key of areas in workers/data/map-settings.json. Source: ÚGKK SR – DMR 5.0."
           echo "Saved: $STORE / $ASSET"
 
       - name: Summary

@@ -155,7 +155,7 @@ alebo je staršie než 30 dní (`order_max_age_days`), **dopočíta ho sám a ul
 takže prvý kraj štafety ho vyrobí a ostatné ho vezmú. Ručne ho skôr prepočíta
 **„Navigácia · poradie uzlov"** ([`routing-order.yml`](../.github/workflows/routing-order.yml))
 tým istým skriptom. Ktoré územie to je, hovorí `routing_area` pri krajine
-vo `workers/data/regions.json` – všetky kraje krajiny musia stáť na tom istom.
+vo `regions` vo `workers/data/map-settings.json` – všetky kraje krajiny musia stáť na tom istom.
 Že kľúč znie na všetkých stranách rovnako, stráži
 [`workers/lint/navigation.py`](../workers/lint/navigation.py): keby sa rozišiel,
 build kraja by nenašiel nič, archívy by šli bez poradia a nespadlo by pri tom
@@ -204,7 +204,7 @@ balík `navigacia` zanikol (`zrusene`). Predfilter PBF si berie zoznam tried zo
 slovníka (`tags.py --filter`), takže druhý zoznam neexistuje, a hotový archív
 beh overí tou istou kontrolou, aká beží v lintoch.
 
-Krajina hrany (`krajina`) sa berie z `iso` v `workers/data/regions.json` cez
+Krajina hrany (`krajina`) sa berie z `iso` v `regions` vo `workers/data/map-settings.json` cez
 `country` kraja – bez nej nemá diaľničná známka na čom stáť.
 
 Graf Valhally (`workers/routing/graph.sh`,
