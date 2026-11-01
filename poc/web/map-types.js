@@ -82,8 +82,8 @@ const INFRA = /^feature-(power|power-minor|pipeline|cutline)$/;
 export const MAP_TYPES = [
   {
     id: "turisticka",
-    label: "Turistická",
-    short: "turistika",
+    label: "Predvolená",
+    short: "predvolená",
     note:
       "Skaly, turistické chodníky a čo najviac detailu. Lyžiarske trasy ani " +
       "strediská neukazuje.",
@@ -237,6 +237,14 @@ export const MAP_TYPE_IDS = MAP_TYPES.map((t) => t.id);
 
 /** Predvolený typ mapy – FricoMaps je predovšetkým turistická mapa. */
 export const DEFAULT_MAP_TYPE = "turisticka";
+
+/** Types the viewer offers; the pipeline still builds every one for older apps. */
+export const OFFERED_MAP_TYPES = [DEFAULT_MAP_TYPE];
+
+/** Offered type by id; any other falls back to the default. */
+export function offeredMapType(id) {
+  return OFFERED_MAP_TYPES.includes(id) ? id : DEFAULT_MAP_TYPE;
+}
 
 /** Typ mapy podľa id; pri neznámom id vráti predvolený. */
 export function mapTypeDef(id) {

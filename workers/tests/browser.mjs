@@ -13,7 +13,7 @@ import { execFileSync } from "node:child_process";
 import { extname, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { THEMES } from "../../poc/web/themes.js";
-import { MAP_TYPE_IDS } from "../../poc/web/map-types.js";
+import { OFFERED_MAP_TYPES } from "../../poc/web/map-types.js";
 import { encodePng } from "../lib/png.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -186,7 +186,7 @@ async function main() {
   };
 
   const { p, console_ } = await page("");
-  for (const type of MAP_TYPE_IDS) {
+  for (const type of OFFERED_MAP_TYPES) {
     for (const theme of Object.keys(THEMES)) {
       // the panel starts folded, so the selects are set as its own controls set them
       await p.evaluate(([t, th]) => {
@@ -255,6 +255,8 @@ async function main() {
     const drawn = await p.evaluate(async (ll) => {
       const map = window.__t.maps.at(-1);
       window.__t.idle = false;
+      // the offered map type hides the signs; the sheet is still the viewer's to cut
+      map.setLayoutProperty("road-sign", "visibility", "visible");
       map.jumpTo({ center: ll, zoom: 17 });
       await new Promise((ok) => map.once("idle", ok));
       return map.hasImage("sk.ts.253-50");
@@ -276,7 +278,7 @@ async function main() {
   await browser.close();
   server.close();
   for (const pr of [...new Set(problems)]) console.log(`::error::${pr}`);
-  console.log(`Viewer: ${(MAP_TYPE_IDS.length + packages.length + 1) * Object.keys(THEMES).length} styles, ${new Set(problems).size} problems`);
+  console.log(`Viewer: ${(OFFERED_MAP_TYPES.length + packages.length + 1) * Object.keys(THEMES).length} styles, ${new Set(problems).size} problems`);
   process.exit(problems.length ? 1 : 0);
 }
 

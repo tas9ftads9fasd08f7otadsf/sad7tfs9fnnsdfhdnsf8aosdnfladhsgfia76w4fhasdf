@@ -67,7 +67,8 @@ import {
   variantLayerFor,
   mapTypeDef,
   mapTypeHidden,
-  normalizeMapType
+  normalizeMapType,
+  OFFERED_MAP_TYPES
 } from "./themes.js";
 import { PATTERNS, DASH_PRESETS, dashPreview, dashLabel } from "./patterns.js";
 import {
@@ -393,7 +394,7 @@ export function initDevMode({
    * Kam sa zapisujú úpravy vrstiev a POI: `map` = len do práve zobrazeného
    * typu mapy, `all` = do spoločných, ktoré platia pre všetky.
    */
-  let editScope = loadScope();
+  let editScope = OFFERED_MAP_TYPES.length > 1 ? loadScope() : "map";
   let zoomView = getMap()?.getZoom?.() ?? 10;
   const selectedLayers = new Set();
   const selectedPaletteKeys = new Set();
@@ -1316,6 +1317,7 @@ export function initDevMode({
 
   /** Prepínač, do ktorého priečinka idú úpravy (a čo je práve na obrazovke). */
   function scopeBar() {
+    if (OFFERED_MAP_TYPES.length < 2) return null;
     const type = mapTypeDef(mapTypeId());
     const chip = (id, label, title) =>
       el("button", {

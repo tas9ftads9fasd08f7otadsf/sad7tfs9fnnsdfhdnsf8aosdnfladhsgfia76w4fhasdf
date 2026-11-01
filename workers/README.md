@@ -3407,7 +3407,7 @@ generuje **päť máp**, každá s vlastným profilom
 
 | typ mapy | čo ukazuje | čo zámerne nie |
 |---|---|---|
-| **Turistická** (predvolená) | skaly od z11, turistické chodníky od z10, značené trasy od z8, vrcholy od z8, plný detail | lyžiarske trasy a strediská |
+| **Predvolená** (id `turisticka`, kedysi Turistická) | skaly od z11, turistické chodníky od z10, značené trasy od z8, vrcholy od z8, plný detail | lyžiarske trasy a strediská |
 | **Lyžiarska** | lyžiarske a bežkárske trasy od z8, vleky a lanovky od z9, strediská a ich body, skaly | ostatné značené trasy až od z14 a stlmené |
 | **Cestná** | cesty, pumpy, nabíjačky, odpočívadlá, servis a parkoviská od z10; vrstevnice **len po 50 m** a stlmené | vrstevnice po 10 m, skaly, chodníky, značené trasy, tieňovanie; krajina je stlmená, bežné POI až od z15 |
 | **Historická** | hrady, zámky, pamiatky, bane, štôlne, haldy a lomy od z9, POI od z12, terén ako pri turistickej | turistické chodníky, schody a značené trasy |
@@ -3418,6 +3418,10 @@ nastaviť po svojom (viď nižšie), takže „na cestnej mape toto nechcem"
 neznamená „nikde to nechcem".
 
 Typ mapy sa vyberá v paneli ⚙ (výber **Typ mapy**) a pamätá si ho prehliadač.
+**Zatiaľ sa ponúka len Predvolená** (`OFFERED_MAP_TYPES`): výber
+typu mapy aj prepínač rozsahu v developer móde sú skryté, kým zoznam drží jeden
+typ, a úpravy idú do `maps.turisticka`. Pipeline ďalej generuje všetky typy,
+lebo staršie verzie aplikácie si ich pýtajú.
 Pipeline generuje `styles/{región}-{typ mapy}-{téma}.json` pre každú
 kombináciu – teda 5 × 4 = 20 štýlov, plus predvolený typ aj pod pôvodným
 menom `{región}-{téma}.json`, aby fungovali staršie odkazy.

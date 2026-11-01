@@ -5960,6 +5960,8 @@ export {
   MAP_TYPES,
   MAP_TYPE_IDS,
   DEFAULT_MAP_TYPE,
+  OFFERED_MAP_TYPES,
+  offeredMapType,
   mapTypeDef,
   normalizeMapType,
   mapTypeHidden
