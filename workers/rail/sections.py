@@ -1,16 +1,24 @@
-"""Track sections: one kind of track from a switch of that kind to the next."""
+"""Track sections: one kind of track from a switch of that kind to the next, a lift whole."""
 import math
 from array import array
 from collections import defaultdict
 
 KINDS = {"rail", "narrow_gauge", "light_rail", "subway", "tram", "monorail", "funicular",
-         "preserved", "miniature"}
+         "preserved", "miniature", "abandoned", "disused", "razed", "dismantled",
+         "construction", "proposed"}
+# lifecycle keys a lift out of service keeps its kind in, as `rail.yml` reads them
+LIFT_KEYS = ("aerialway", "construction:aerialway", "proposed:aerialway",
+             "disused:aerialway", "abandoned:aerialway", "razed:aerialway",
+             "was:aerialway", "removed:aerialway", "demolished:aerialway",
+             "historic:aerialway")
 # a piece's number is its way id × STRIDE + its place on the way
 STRIDE = 1000
 
 
 def kind(tags):
     """Gauge, use, voltage and frequency; speed may differ along a section."""
+    if any(key in tags for key in LIFT_KEYS):
+        return ("aerialway",)
     railway = tags.get("railway")
     if railway not in KINDS:
         return None
@@ -47,6 +55,9 @@ class Sections:
         what = kind(tags)
         if what is None or len(refs) < 2:
             return
+        # two lifts meeting at a station stay two
+        if what == ("aerialway",):
+            what = ("aerialway", way_id)
         self.ways[way_id] = (what, list(refs))
         places = places or [None] * len(refs)
         self.coords[way_id] = array("d", (c for p in places for c in (p or (math.nan,) * 2)))
