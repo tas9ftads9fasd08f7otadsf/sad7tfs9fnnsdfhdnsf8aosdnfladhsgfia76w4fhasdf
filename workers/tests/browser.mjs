@@ -255,6 +255,8 @@ async function main() {
     const drawn = await p.evaluate(async (ll) => {
       const map = window.__t.maps.at(-1);
       window.__t.idle = false;
+      // the offered map type hides the signs; the sheet is still the viewer's to cut
+      map.setLayoutProperty("road-sign", "visibility", "visible");
       map.jumpTo({ center: ll, zoom: 17 });
       await new Promise((ok) => map.once("idle", ok));
       return map.hasImage("sk.ts.253-50");
