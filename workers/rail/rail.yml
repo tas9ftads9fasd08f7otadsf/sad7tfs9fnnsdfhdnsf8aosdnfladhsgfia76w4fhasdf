@@ -196,6 +196,14 @@ definitions:
     - key: duration
       value:
         tag_value: "aerialway:duration"
+    # the lift whole, from `lines.py`, as a track's section
+    - key: _section
+      type: long
+      value:
+        tag_value: rail_section
+    - key: _section_box
+      value:
+        tag_value: rail_section_box
     - key: start_date
     - key: end_date
     - key: wikidata
@@ -644,6 +652,24 @@ examples:
           state: active
           name: Skalnaté pleso
           occupancy: "8"
+
+  - name: A lift carries its section, for the app to light the whole of it
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: chair_lift
+        rail_section: "7654321000"
+        rail_section_box: "20.10000,49.10000,20.12000,49.13000"
+    output:
+      - layer: aerialway
+        geometry: line
+        min_zoom: 10
+        tags:
+          class: chair_lift
+          state: active
+          _section: 7654321000
+          _section_box: "20.10000,49.10000,20.12000,49.13000"
 
   - name: A proposed aerialway carries kind and state
     input:

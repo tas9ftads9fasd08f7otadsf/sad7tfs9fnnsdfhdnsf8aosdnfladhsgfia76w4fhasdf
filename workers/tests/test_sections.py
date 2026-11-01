@@ -13,8 +13,9 @@ def sections_of(sec, *ways):
 
 class Kind(unittest.TestCase):
     def test_kind(self):
-        self.assertIsNone(s.kind({"railway": "abandoned"}))
         self.assertIsNone(s.kind({"highway": "primary"}))
+        self.assertIsNotNone(s.kind({"railway": "abandoned"}))
+        self.assertIsNotNone(s.kind({"aerialway": "disused", "disused:aerialway": "chair_lift"}))
         self.assertNotEqual(s.kind(RAIL), s.kind({**RAIL, "voltage": "25000"}))
         self.assertEqual(s.kind(RAIL), s.kind({**RAIL, "maxspeed": "160"}))
 
@@ -77,10 +78,29 @@ class Sections(unittest.TestCase):
         self.assertEqual({frozenset(p[0] for p in pair) for pair in pairs},
                          {frozenset({1, 2}), frozenset({3, 4})})
 
+    def test_an_old_line_is_one_section_end_to_end(self):
+        sec = s.Sections()
+        sec.add(1, {"railway": "abandoned"}, [10, 11])
+        sec.add(2, {"railway": "abandoned"}, [11, 12])
+        sec.add(3, RAIL, [12, 13])
+        sec.solve()
+        got = sections_of(sec, 1, 2, 3)
+        self.assertEqual(got[1], got[2])
+        self.assertNotEqual(got[2], got[3])
+
+    def test_lifts_meeting_at_a_station_stay_apart(self):
+        sec = s.Sections()
+        sec.add(1, {"aerialway": "chair_lift"}, [10, 11])
+        sec.add(2, {"aerialway": "chair_lift"}, [11, 12])
+        sec.solve()
+        got = sections_of(sec, 1, 2)
+        self.assertEqual(len(got[1]), 1)
+        self.assertNotEqual(got[1], got[2])
+
     def test_unknown_and_short_ways(self):
         sec = s.Sections()
         sec.add(1, RAIL, [10])
-        sec.add(2, {"railway": "abandoned"}, [10, 11])
+        sec.add(2, {"highway": "track"}, [10, 11])
         sec.add(3, RAIL, [10, 11])
         sec.solve()
         self.assertIsNone(sec.split(1))
