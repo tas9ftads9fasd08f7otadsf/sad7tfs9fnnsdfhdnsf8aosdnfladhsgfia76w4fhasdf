@@ -3418,6 +3418,10 @@ nastaviť po svojom (viď nižšie), takže „na cestnej mape toto nechcem"
 neznamená „nikde to nechcem".
 
 Typ mapy sa vyberá v paneli ⚙ (výber **Typ mapy**) a pamätá si ho prehliadač.
+**Zatiaľ sa ponúka len predvolená turistická** (`OFFERED_MAP_TYPES`): výber
+typu mapy aj prepínač rozsahu v developer móde sú skryté, kým zoznam drží jeden
+typ, a úpravy idú do `maps.turisticka`. Pipeline ďalej generuje všetky typy,
+lebo staršie verzie aplikácie si ich pýtajú.
 Pipeline generuje `styles/{región}-{typ mapy}-{téma}.json` pre každú
 kombináciu – teda 5 × 4 = 20 štýlov, plus predvolený typ aj pod pôvodným
 menom `{región}-{téma}.json`, aby fungovali staršie odkazy.

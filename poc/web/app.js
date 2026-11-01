@@ -14,10 +14,10 @@ import {
   DEFAULT_DEM_SOURCE,
   DEM_SOURCES,
   TRAIL_TYPES,
-  MAP_TYPES,
+  OFFERED_MAP_TYPES,
   DEFAULT_MAP_TYPE,
   mapTypeDef,
-  normalizeMapType
+  offeredMapType
 } from "./themes.js";
 import { initDevMode, loadOverrides, saveOverrides } from "./devmode.js";
 import { labelLanguages, localName } from "./languages.js";
@@ -66,12 +66,13 @@ for (const [key, t] of Object.entries(THEMES)) {
 }
 
 // Typ mapy hovorí, **čo** mapa ukazuje (téma len to, ako to vyzerá).
-for (const t of MAP_TYPES) {
-  mapTypeSelect.add(new Option(t.label, t.id));
+for (const id of OFFERED_MAP_TYPES) {
+  mapTypeSelect.add(new Option(mapTypeDef(id).label, id));
 }
+$("row-maptype").hidden = OFFERED_MAP_TYPES.length < 2;
 mapTypeSelect.value = (() => {
   try {
-    return normalizeMapType(localStorage.getItem("fricomaps.maptype"));
+    return offeredMapType(localStorage.getItem("fricomaps.maptype"));
   } catch {
     return DEFAULT_MAP_TYPE;
   }
@@ -204,7 +205,7 @@ function currentIconSet() {
 }
 
 const archiveOn = (check) => check.checked;
-const effectiveMapType = () => mapTypeSelect.value;
+const effectiveMapType = () => offeredMapType(mapTypeSelect.value);
 
 function styleFor(manifest) {
   const region = manifest.regions[regionSelect.value];
@@ -351,7 +352,7 @@ function applyStyle(manifest) {
       ? `<b>Rýchly test:</b> vrstevnice, skaly a tieňovanie len na ` +
         `${region.test_km2} km² zo stredu výrezu – zvyšok mapy je celý región<br>`
       : "") +
-    `Mapa: <b>${kind.label}</b> – ${kind.note}<br>` +
+    (OFFERED_MAP_TYPES.length > 1 ? `Mapa: <b>${kind.label}</b> – ${kind.note}<br>` : "") +
     `Dlaždice do z${tileZ}, zobrazenie do z${MAX_DISPLAY_Z} (overzoom)<br>` +
     (region.contours
       ? `Vrstevnice po ${region.contour_interval || 10} m, od z${TERRAIN_MIN_Z}<br>`
