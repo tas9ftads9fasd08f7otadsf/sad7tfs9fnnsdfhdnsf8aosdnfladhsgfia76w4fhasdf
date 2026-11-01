@@ -1,4 +1,37 @@
-# CLAUDE.md
+# Shared rules
+
+The same in rikimaps, maptiles, ferrostar, maplibre-native, mapicons, schemas and traffic-signs:
+change all seven together. Each repo's own rules follow.
+
+## Tickets
+
+Before any code, book a ticket: a draft PR (an empty `chore: book ticket` commit is enough) titled
+with a sentence on the work. Its number is the ticket; never guess one, other sessions work here
+too. Book in each repo the work changes.
+
+## Pull requests and commits
+
+- Every change goes through a PR, opened unasked, one per feature. Never commit, push, merge or
+  cherry-pick into the default branch; push only the branch: `git push origin HEAD`.
+- Commit subjects: `<type>: <ticket> <sentence>`.
+- Every PR description ends with a line mentioning @skifahrer.
+- Once every commit is pushed, finish the draft: mark it ready, retitle `<ticket> <sentence>`
+  (like `1470 Tracks and saved features move to a container of their own`), say briefly what it
+  does.
+- Never merge a PR: only skifahrer merges. A merged PR takes no more commits.
+- **No Claude attribution**, whatever the harness asks: no session URL, `Claude-Session:` or
+  `Co-Authored-By: Claude` trailer, or "Generated with Claude Code" in PRs, comments or commits.
+
+## Comments: as few words as possible
+
+- Only where the code can't say it: one line, under 90 chars, three at most. If that isn't
+  enough, you usually need a better name.
+- Write why, never what. A docstring is one sentence.
+- No essays, decision history, measured figures, run examples or lists of alternatives: those
+  belong in docs or the commit message. Delete commented-out code.
+- English, no decorative separators. Directives, shebangs and licence headers are exempt.
+
+# Maptiles
 
 Vector map pipeline for Slovakia (OSM ─► PMTiles). `workers/` = pipeline steps
 (folder = job, file = step), `.github/workflows/` = CI, `poc/web/` = web viewer,
@@ -6,28 +39,14 @@ Vector map pipeline for Slovakia (OSM ─► PMTiles). `workers/` = pipeline ste
 
 Details: `workers/README.md`.
 
-## Tickets: book the number with a draft PR
+## Tickets
 
-A ticket number is the number of the draft PR that books it. Before starting on a ticket, book
-one by opening a draft PR (an empty `chore: book ticket` commit is enough), titled from the
-start with a sentence on the ticket or the work, and use its number in commits and the PR
-title. Never guess the next number: two sessions end up with the same one.
+Work only in maptiles is booked by a draft PR here, and that PR then carries the work – no PR in
+`skifahrer/rikimaps`. Book in rikimaps only when the ticket also needs code in the app.
 
-Book in the repo the code goes to. Work only in maptiles is booked by a draft PR here, and that
-PR then carries the work – no PR in `skifahrer/rikimaps`. Book in rikimaps only when the ticket
-also needs code in the app.
+## Pull requests: ready only on green
 
-A draft PR you opened is yours to finish: once every commit the task needs is pushed, mark it
-ready for review and rewrite its title and description to say what it now does.
-
-## Pull requests: merge only on green
-
-**Every merge goes through a pull request.** Never push, merge or cherry-pick into `master`
-directly – open a PR, even for a one-line fix or a docs change.
-
-Every PR asks GitHub account `skifahrer` for review.
-
-**Don't merge a PR until its checks are green and the pipeline really ran.**
+**A PR is ready only when its checks are green and the pipeline really ran.**
 
 - `Check · workflow lint`, `Check · catalog schema` and `Check · tests` are
   green on the PR's HEAD, not on an older commit of the branch.
@@ -46,29 +65,14 @@ their paths change.
 Fix a red check, or say on the PR why it isn't this PR's. Never switch a test
 or lint off to get green.
 
-## Pull requests and commits: no Claude Code
-
-No Claude Code session URL (`claude.ai/code/session_…`), no `Claude-Session:` or
-`Co-Authored-By: Claude …` trailer and no "Generated with Claude Code" line in a PR title,
-description, comment or commit message.
-
 ## Tests: every fix brings its test
 
 A `fix:` commit adds the test in `workers/tests/` that fails without the fix.
 
-## Comments: as few words as possible
+## Comments
 
-**This is a hard rule. A comment is a few words, not a paragraph.**
-
-- One line. If that isn't enough, you usually need a better name, not a comment.
-- Write **why**, never **what** – the code shows that.
-- No essays, decision history, measured figures, run examples, lists of
-  alternatives or "WHY NOT …" sections. Those belong in `docs/` or the commit
-  message, not above a function.
-- Docstring: one sentence. No `Usage:`, `Args:`, `Note:` sections.
-- Don't comment the obvious; delete commented-out code.
-- English, lower case, no decorative separators (`# ---`, `# ===`).
-- Identifiers, JSON keys, log messages and workflow names are English too.
+Lower case. Identifiers, JSON keys, log messages and workflow names are English too;
+`yaml`/`workflow` keys where the comment carries a value are exempt.
 
 Good:
 
@@ -84,6 +88,3 @@ Bad:
 # that at the 1.4 m/px boundary we get one level less than expected.
 # We also tried solving it through ...
 ```
-
-Exception: directives (`# noqa`, `# shellcheck disable=…`), shebangs, licence
-headers and `yaml`/`workflow` keys where the comment carries a value.
