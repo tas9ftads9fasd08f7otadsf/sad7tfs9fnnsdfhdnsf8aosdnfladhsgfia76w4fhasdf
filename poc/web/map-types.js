@@ -82,8 +82,8 @@ const INFRA = /^feature-(power|power-minor|pipeline|cutline)$/;
 export const MAP_TYPES = [
   {
     id: "turisticka",
-    label: "Turistická",
-    short: "turistika",
+    label: "Predvolená",
+    short: "predvolená",
     note:
       "Skaly, turistické chodníky a čo najviac detailu. Lyžiarske trasy ani " +
       "strediská neukazuje.",
