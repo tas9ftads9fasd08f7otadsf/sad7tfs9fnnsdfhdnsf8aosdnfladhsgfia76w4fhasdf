@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-02T17:49:40.027Z",
+  "updated_at": "2026-11-02T18:59:47.534Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -196,18 +196,12 @@
         },
         "road-path": {
           "paint": {
-            "line-color": "#d2c9ae"
+            "line-color": "#9a9274"
           },
           "paintDark": {
             "line-color": "#78787c"
           },
-          "dash": "solid",
-          "outline": {
-            "color": "#828285",
-            "width": 1,
-            "opacity": 1,
-            "colorDark": "#4e4e5c"
-          }
+          "dash": "dashed"
         },
         "road-footway": {
           "paint": {
