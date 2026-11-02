@@ -37,7 +37,7 @@ from cell import (SLOPE_EPS, dem_cell_metres, frac_bits,  # noqa: E402
 # work on the height grid is in `height.py`; here are the plan, warp and encoding
 sys.path.insert(0, _HERE)
 from height import (NODATA, edge_height, fill_nodata,  # noqa: E402
-                    flatten_outside)
+                    flatten_outside, off_the_plane)
 
 R_EARTH = 6378137.0
 ORIGIN = math.pi * R_EARTH  # 20037508.342789244
@@ -366,6 +366,10 @@ def main():
                         continue
                     d = os.path.join(args.out, str(z), str(tx))
                     os.makedirs(d, exist_ok=True)
+                    if keep is not None:
+                        ground = keep[(ty - ry) * TILE:(ty - ry + 1) * TILE,
+                                      (tx - x0) * TILE:(tx - x0 + 1) * TILE]
+                        heights = off_the_plane(heights, ground, plane, bits)
                     data = encode(terrarium(heights, bits))
                     with open(os.path.join(d, f"{ty}.{args.format}"), "wb") as f:
                         f.write(data)

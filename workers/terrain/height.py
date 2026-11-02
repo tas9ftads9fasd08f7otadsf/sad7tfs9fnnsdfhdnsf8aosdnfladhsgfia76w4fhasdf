@@ -53,6 +53,15 @@ def edge_height(grid, known):
     return float(np.median(edge)) if edge.size else 0.0
 
 
+def off_the_plane(heights, ground, plane, bits):
+    """Ground that would encode as the plane, a step above it: the app reads the plane as no ground."""
+    if plane is None:
+        return heights
+    step = (1 << (8 - bits)) / 256.0
+    clash = ground & (np.abs(heights - plane) < step / 2)
+    return np.where(clash, np.asarray(plane + step, dtype=heights.dtype), heights)
+
+
 def flatten_outside(grid, known, height):
     """One height for the whole run outside the region – a plane has no slope to shade."""
     return np.where(known, grid, np.asarray(height, dtype=grid.dtype))
