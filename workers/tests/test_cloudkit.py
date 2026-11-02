@@ -307,7 +307,7 @@ class Signing(unittest.TestCase):
 
 class Main(unittest.TestCase):
     def test_without_a_key_nothing_is_published(self):
-        with mock.patch.dict(os.environ, {"CLOUDKIT_KEY_ID_DEVELOPMENT": "", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "",
+        with mock.patch.dict(os.environ, {"CLOUDKIT_KEY_ID_PRODUCTION": "", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "",
                                           "CLOUDKIT_KEY_FILE": "", "CLOUDKIT_ENV": ""}):
             out = io.StringIO()
             with redirect_stdout(out):
@@ -330,7 +330,7 @@ class Main(unittest.TestCase):
                 self.assertEqual(handle.read(), pem)
             os.remove(cloud.key_file)
 
-    def test_unpinned_publishes_to_every_environment_with_a_key(self):
+    def test_unpinned_publishes_to_production_only(self):
         keys = {"CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
                 "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
                 "CLOUDKIT_KEY_FILE": "", "CLOUDKIT_ENV": ""}
@@ -340,22 +340,8 @@ class Main(unittest.TestCase):
                 mock.patch.object(cloudkit, "publish") as publish, redirect_stdout(io.StringIO()):
             self.assertEqual(cloudkit.main(["maps.json"]), 0)
         clouds = [call.args[1] for call in publish.call_args_list]
-        self.assertEqual([(c.environment, c.key_id) for c in clouds],
-                         [("development", "dev-id"), ("production", "prod-id")])
-        for cloud in clouds:
-            os.remove(cloud.key_file)
-
-    def test_a_refused_environment_doesnt_keep_the_other_from_its_catalog(self):
-        env = {"CLOUDKIT_ENV": "", "CLOUDKIT_KEY_FILE": "/k",
-               "CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id"}
-        refused = RuntimeError("modify x: HTTP 500")
-        with mock.patch.dict(os.environ, env), mock.patch.object(cloudkit, "public_key", return_value="pub"), \
-                mock.patch.object(cloudkit, "caller_line", return_value="caller"), \
-                mock.patch.object(cloudkit, "publish", side_effect=[refused, None]) as publish, \
-                redirect_stdout(io.StringIO()):
-            with self.assertRaises(RuntimeError):
-                cloudkit.main(["maps.json"])
-        self.assertEqual([c.args[1].environment for c in publish.call_args_list], ["development", "production"])
+        self.assertEqual([(c.environment, c.key_id) for c in clouds], [("production", "prod-id")])
+        os.remove(clouds[0].key_file)
 
     def test_the_run_says_where_it_publishes_and_with_which_key(self):
         with tempfile.TemporaryDirectory() as folder:

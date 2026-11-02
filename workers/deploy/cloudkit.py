@@ -30,7 +30,6 @@ RECORD_BYTES = 950_000
 TRIES = 3
 FEATURES = ("features-beta", "features-prod")
 COUNTRY_KEY = "country:"
-# TestFlight and the App Store read production; Xcode runs read development
 ENVIRONMENTS = ("development", "production")
 
 
@@ -394,19 +393,12 @@ def main(argv=None):
     if os.path.basename(args.catalog) != "maps.json":
         log(f"CloudKit: {args.catalog} is not the app's catalog – not published.")
         return 0
-    pinned = os.environ.get("CLOUDKIT_ENV", "").strip()
-    if pinned and pinned not in ENVIRONMENTS:
-        raise ValueError(f"CLOUDKIT_ENV is development or production, not {pinned}")
+    environment = os.environ.get("CLOUDKIT_ENV", "").strip() or "production"
+    if environment not in ENVIRONMENTS:
+        raise ValueError(f"CLOUDKIT_ENV is development or production, not {environment}")
     with open(args.catalog, encoding="utf-8") as handle:
         catalog = json.load(handle)
-    failed = None
-    for environment in [pinned] if pinned else ENVIRONMENTS:
-        try:
-            publish_to(environment, catalog, args)
-        except RuntimeError as error:
-            failed = failed or error
-    if failed:
-        raise failed
+    publish_to(environment, catalog, args)
     return 0
 
 
