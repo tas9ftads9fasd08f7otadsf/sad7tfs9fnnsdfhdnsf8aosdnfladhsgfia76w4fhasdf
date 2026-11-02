@@ -3981,6 +3981,9 @@ kraj by v dávke ticho chýbal a dávka by skončila zelená s mapou o jeden kra
 menšou. Poradie je poradie číselníka — od západu na východ, takže v zozname
 behov je vidieť, kde dávka je.
 
+Voľba **`all`** postaví všetky krajiny, ktoré majú kraje, jednu po druhej
+v poradí číselníka — jedna štafeta, nie tri dávky vedľa seba.
+
 ### Prečo je to štafeta a nie jeden dlhý job
 
 Kraj sa stavia aj **tri hodiny**, krajov je osem, čiže dávka je zhruba deň.

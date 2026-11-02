@@ -89,7 +89,7 @@ for key, node in maps.items():
             error(SETTINGS, f"`maps.{key}.regions.{r}` isn't a region of {key} in `regions`.")
 
 # 3. a country a form builds has its own entry, or it quietly gets Slovakia's model
-built = set(form(STATE_WF).get("country", {}).get("options") or [])
+built = set(form(STATE_WF).get("country", {}).get("options") or []) - {"all"}
 built |= {regions[r].get("country") or r for r in form(REGION_WF).get("region", {}).get("options") or []
           if r in regions}
 for country in sorted(built - set(maps)):
