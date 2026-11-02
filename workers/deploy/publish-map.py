@@ -306,6 +306,8 @@ def main():
     done = []
     # the same contents in both formats, so hashed once per package
     shas = {}
+    published = catalog.published_maps(args.maps, catalog_path(parts)) if args.maps else {}
+    live_before = live_ids(creds, fid) if published else None
     for (kind, description, base, fs), fmt in [(b_, f) for b_ in batch
                                                for f in formats]:
         name = file_name(kind, fmt)
@@ -318,6 +320,14 @@ def main():
                     f"in the folder.")
             else:
                 log(f"{name}: {description} isn't in this build – not publishing.")
+            continue
+        if kind not in shas:
+            shas[kind] = contents_sha(base, fs)
+        same = catalog.unchanged(published, kind, fmt, shas[kind], live_before)
+        if same:
+            log(f"{name}: the same contents as the published file – not uploaded again.")
+            done.append((kind, same.get("file") or name, description, same.get("size") or 0,
+                         "kept", catalog.link_id(same), fmt, shas[kind]))
             continue
         dest = os.path.join(args.out or os.environ.get("RUNNER_TEMP", "/tmp"),
                             name)
@@ -335,8 +345,6 @@ def main():
         finally:
             if not args.keep_zip and os.path.exists(dest):
                 os.remove(dest)
-        if kind not in shas:
-            shas[kind] = contents_sha(base, fs)
         done.append((kind, name, description, size, overwritten, file_id, fmt,
                      shas[kind]))
     log(f"Done: {len(done)} packages in {folder.folder_link(fid)}")
@@ -384,7 +392,7 @@ def main():
             f.write("| package | what it holds | size | old |\n|---|---|--:|---|\n")
             for _kind, name, description, size, overwritten, _fid, _fmt, _sha in done:
                 f.write(f"| `{name}` | {description} | {folder.human(size)} | "
-                        f"{'overwritten' if overwritten else '–'} |\n")
+                        f"{overwritten if overwritten == 'kept' else 'overwritten' if overwritten else '–'} |\n")
             f.write("\n")
             # parts separately: the table counts them in the map's size
             if pieces:

@@ -183,6 +183,51 @@ class Write(unittest.TestCase):
         self.assertEqual(other, {})
 
 
+class Unchanged(unittest.TestCase):
+    """390: a range rebuilt with one new layer uploaded all of its 1 GB again."""
+
+    def published(self, sha="s1", fid="Z1"):
+        rec = dict(record(fid, "vysoke_tatry-terrain.zip"), sha256=sha, run="9",
+                   updated_at="2026-10-27T14:33:59Z", updated_ts=1, size=5)
+        return {"terrain": dict(rec, formats={"zip": rec})}
+
+    def test_same_contents_on_drive_is_kept(self):
+        maps = self.published()
+        self.assertEqual(catalog.unchanged(maps, "terrain", "zip", "s1", {"Z1": "x"})["run"], "9")
+        self.assertIsNone(catalog.unchanged(maps, "terrain", "zip", "s2", {"Z1": "x"}))
+        self.assertIsNone(catalog.unchanged(maps, "terrain", "zip", "s1", {}), "gone from Drive")
+        self.assertIsNone(catalog.unchanged(maps, "terrain", "zip", "s1", None), "Drive unknown")
+        self.assertIsNone(catalog.unchanged(maps, "terrain", "aar", "s1", {"Z1": "x"}))
+        self.assertIsNone(catalog.unchanged(maps, "water", "zip", "s1", {"Z1": "x"}))
+
+    def test_published_maps_of_a_range_and_a_region(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "maps.json")
+            with open(path, "w") as f:
+                json.dump({"mountains": {"ranges": {"vysoke_tatry": {"maps": self.published()}}},
+                           "slovensko": {"regions": {"trnavsky": {"maps": {"water": {}}}}}}, f)
+            self.assertIn("terrain", catalog.published_maps(path, ["mountains", "vysoke_tatry"]))
+            self.assertIn("water", catalog.published_maps(path, ["slovensko", "trnavsky"]))
+            self.assertEqual(catalog.published_maps(path, ["slovensko", "nitriansky"]), {})
+            self.assertEqual(catalog.published_maps(os.path.join(tmp, "none.json"), ["x"]), {})
+
+    def test_kept_package_keeps_its_date_and_run(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
+                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}):
+            path = os.path.join(tmp, "maps.json")
+            with open(path, "w") as f:
+                json.dump({"mountains": {"ranges": {"vysoke_tatry": {"maps": self.published()}}}}, f)
+            uploaded = [("terrain", "vysoke_tatry-terrain.zip", 5, "Z1", "zip", "s1"),
+                        ("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1")]
+            catalog.write_catalog(path, ["mountains", "vysoke_tatry"], catalog.map_settings.regions(),
+                                  uploaded, {"regions": {}}, owns=["terrain", "water"])
+            with open(path) as f:
+                maps = json.load(f)["mountains"]["ranges"]["vysoke_tatry"]["maps"]
+        self.assertEqual((maps["terrain"]["run"], maps["terrain"]["updated_ts"]), ("9", 1))
+        self.assertEqual(maps["terrain"]["formats"]["zip"]["run"], "9")
+        self.assertEqual(maps["water"]["run"], "10")
+
+
 class Merge(unittest.TestCase):
     def test_three_way(self):
         base = {"sk": {"a": 1, "b": 1, "gone": 1}}
