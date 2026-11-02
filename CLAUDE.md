@@ -44,26 +44,17 @@ Details: `workers/README.md`.
 Work only in maptiles is booked by a draft PR here, and that PR then carries the work – no PR in
 `skifahrer/rikimaps`. Book in rikimaps only when the ticket also needs code in the app.
 
-## Pull requests: ready only on green
+## Pull requests: ready once the work is pushed
 
-**A PR is ready only when its checks are green and the pipeline really ran.**
+**Mark a PR ready as soon as its commits are pushed and its local checks pass.** CI is not
+your gate: watch it if you like, but don't hold the PR in draft for it.
 
-- `Check · workflow lint`, `Check · catalog schema` and `Check · tests` are
-  green on the PR's HEAD, not on an older commit of the branch.
-- No conflict with `master`.
-- The check really ran: a run with no job verified nothing, and green from
-  another commit says nothing about this one.
-
-The checks run only on changes to their paths, and a bot's push to `maps.json`
-starts no workflow, so the last result on `master` can be days old. When it
-matters, run the workflow by hand (`workflow_dispatch`) or locally:
-`workers/lint/*.py`, `workers/lint/*.mjs`, `workers/deploy/catalog-schema.py`,
+Before pushing, run the checks for what you changed:
+`workers/lint/*.py`, `workers/lint/*.mjs`, `workers/deploy/catalog-schema.py maps.json maps-test.json`,
 `python3 -m unittest discover -s workers/tests`, `node --test workers/tests/*.test.mjs`.
-`Check · tests` and `Check · mini region` run on every PR; on a push only when
-their paths change.
 
-Fix a red check, or say on the PR why it isn't this PR's. Never switch a test
-or lint off to get green.
+If CI later goes red on your PR, fix it, or say on the PR why it isn't this PR's. Never
+switch a test or lint off to get green.
 
 ## Tests: every fix brings its test
 
