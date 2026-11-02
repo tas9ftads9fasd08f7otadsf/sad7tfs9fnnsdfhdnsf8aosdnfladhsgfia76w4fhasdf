@@ -12,7 +12,7 @@ import { cpSync, copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync,
 import { execFileSync } from "node:child_process";
 import { extname, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { THEMES } from "../../poc/web/themes.js";
+import { OFFERED_THEMES } from "../../poc/web/themes.js";
 import { OFFERED_MAP_TYPES } from "../../poc/web/map-types.js";
 import { encodePng } from "../lib/png.mjs";
 
@@ -187,7 +187,7 @@ async function main() {
 
   const { p, console_ } = await page("");
   for (const type of OFFERED_MAP_TYPES) {
-    for (const theme of Object.keys(THEMES)) {
+    for (const theme of OFFERED_THEMES) {
       // the panel starts folded, so the selects are set as its own controls set them
       await p.evaluate(([t, th]) => {
         for (const [id, v] of [["maptype", t], ["theme", th]]) {
@@ -213,7 +213,7 @@ async function main() {
     [...document.querySelectorAll("#packages input")].map((box) => box.id.replace(/^package-/, "")));
   if (packages.length < 2) problems.push(`the package switches offer only ${packages.join(", ")}`);
   for (const id of [...packages, null]) {
-    for (const theme of Object.keys(THEMES)) {
+    for (const theme of OFFERED_THEMES) {
       await p.evaluate(([only, th]) => {
         const theme = document.getElementById("theme");
         if (theme.value !== th) {
@@ -278,7 +278,7 @@ async function main() {
   await browser.close();
   server.close();
   for (const pr of [...new Set(problems)]) console.log(`::error::${pr}`);
-  console.log(`Viewer: ${(OFFERED_MAP_TYPES.length + packages.length + 1) * Object.keys(THEMES).length} styles, ${new Set(problems).size} problems`);
+  console.log(`Viewer: ${(OFFERED_MAP_TYPES.length + packages.length + 1) * OFFERED_THEMES.length} styles, ${new Set(problems).size} problems`);
   process.exit(problems.length ? 1 : 0);
 }
 

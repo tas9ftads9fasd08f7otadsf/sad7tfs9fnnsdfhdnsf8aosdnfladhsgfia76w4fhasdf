@@ -656,6 +656,14 @@ export const THEMES = {
   }
 };
 
+/** Themes the viewer offers, as the app has them; the pipeline still builds every one. */
+export const OFFERED_THEMES = ["svetla", "tmava"];
+
+/** Offered theme by id; any other falls back to the light one. */
+export function offeredTheme(id) {
+  return OFFERED_THEMES.includes(id) ? id : OFFERED_THEMES[0];
+}
+
 /**
  * Rozdelenie farieb palety do skupín – slúži developer módu na to, aby sa
  * dali farby hľadať a hromadne meniť. Musí pokrývať všetky kľúče témy

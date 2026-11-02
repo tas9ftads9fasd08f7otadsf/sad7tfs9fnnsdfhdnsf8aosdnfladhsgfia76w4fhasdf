@@ -5,7 +5,7 @@
 # wasn't on is absent, not empty ("there, just empty" is another claim).
 set -euo pipefail
 # all of `poc/web/`, not a list that drifts from the folder (workers/lint/viewer.py)
-cp poc/web/*.js poc/web/*.json poc/web/index.html _site/
+cp poc/web/*.js poc/web/*.json poc/web/*.html _site/
 
 # the outline is optional; `if`, not a test chain, or `set -e` trips on the last `&&`
 OUTLINE="${REGION_OUTLINE:-}"

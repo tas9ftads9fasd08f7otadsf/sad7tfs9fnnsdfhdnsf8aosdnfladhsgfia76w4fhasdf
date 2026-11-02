@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FricoMaps – farby dlaždíc</title>
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <style>
+    :root { --bg: #f6f5f2; --fg: #222; --muted: #666; --line: #d8d5cf; --card: #fff; --off: #fdecea; }
+    @media (prefers-color-scheme: dark) {
+      :root { --bg: #18181a; --fg: #ddd; --muted: #999; --line: #333; --card: #222; --off: #3a2422; }
+    }
+    html, body { margin: 0; background: var(--bg); color: var(--fg); font: 13px system-ui, sans-serif; }
+    header { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 8px 12px;
+             border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 5; }
+    header input, header select, header button { font: inherit; padding: 3px 6px; }
+    #tile { width: 120px; }
+    #key { width: 160px; }
+    #status { flex-basis: 100%; color: var(--muted); }
+    .maps { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 8px 12px; }
+    .maps > div { position: relative; height: min(60vh, 560px); border: 1px solid var(--line); }
+    .maps .tag { position: absolute; top: 6px; left: 6px; z-index: 3; background: var(--card);
+                 padding: 2px 6px; border-radius: 4px; }
+    #ours, #ref { position: absolute; inset: 0; }
+    /* the probe renders the exact tile off screen; webgl draws it even there */
+    #probe { position: absolute; left: -10000px; top: 0; width: 256px; height: 256px; }
+    main { padding: 0 12px 24px; }
+    table { border-collapse: collapse; width: 100%; background: var(--card); }
+    td { border-top: 1px solid var(--line); padding: 4px 6px; vertical-align: middle; }
+    tr.off { background: var(--off); }
+    small { color: var(--muted); }
+    .sw { display: inline-block; width: 22px; height: 22px; border: 1px solid var(--line);
+          border-radius: 3px; margin-right: 3px; vertical-align: middle; }
+    .sw.none { background: repeating-linear-gradient(45deg, transparent 0 4px, var(--line) 4px 6px); }
+    pre { background: var(--card); border: 1px solid var(--line); padding: 6px; max-height: 240px;
+          overflow: auto; white-space: pre-wrap; }
+    details { margin-top: 10px; }
+    @media (max-width: 700px) { .maps { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <select id="provider" title="Referenčné dlaždice"></select>
+    <input id="key" type="password" placeholder="API kľúč" autocomplete="off"
+           title="Ostane len v tomto prehliadači" />
+    <input id="tile" placeholder="z/x/y" />
+    <button id="go">Ukáž</button>
+    <button id="left" title="Dlaždica vľavo">←</button>
+    <button id="right" title="Dlaždica vpravo">→</button>
+    <button id="up" title="Dlaždica hore">↑</button>
+    <button id="down" title="Dlaždica dole">↓</button>
+    <button id="zin" title="O zoom bližšie">＋</button>
+    <button id="zout" title="O zoom ďalej">－</button>
+    <button id="next" title="Označ dlaždicu ako hotovú a choď na ďalšiu">Hotovo → ďalšia</button>
+    <button id="save" title="Zapíše farby do úprav štýlu">Uložiť farby</button>
+    <button id="export">Export úprav</button>
+    <label>Import <input id="import" type="file" accept="application/json" /></label>
+    <span id="done"></span>
+    <div id="status">Načítavam…</div>
+  </header>
+  <div class="maps">
+    <div><span class="tag">Naša mapa</span><div id="ours"></div></div>
+    <div><span class="tag">Referencia</span><div id="ref"></div></div>
+  </div>
+  <div id="probe"></div>
+  <main>
+    <p><small>Farby: štýl · naša dlaždica · referencia. Riadok s rozdielom ΔE ≥ 10 je zvýraznený.
+      Farba sa zapíše pre zoom tejto dlaždice; agent ovláda stránku cez <code>window.coloring</code>
+      (docs/coloring.md).</small></p>
+    <table><tbody id="items"></tbody></table>
+    <p id="unkept"></p>
+    <details><summary>Popisky a ikony na dlaždici</summary><pre id="symbols"></pre></details>
+    <details><summary>Neuložené úpravy</summary><pre id="edits"></pre></details>
+  </main>
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script src="https://unpkg.com/pmtiles@3/dist/pmtiles.js"></script>
+  <script type="module" src="./coloring.js"></script>
+</body>
+</html>

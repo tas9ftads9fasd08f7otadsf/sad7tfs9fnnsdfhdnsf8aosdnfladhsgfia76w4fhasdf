@@ -568,60 +568,16 @@
           aria-controls="panel">⚙</button>
 
   <div id="panel" hidden>
-    <label for="packages">Balíky základnej mapy</label>
+    <label for="packages">Balíky mapy</label>
     <div id="packages"></div>
     <div id="row-maptype">
       <label for="maptype">Typ mapy</label>
       <select id="maptype"></select>
     </div>
-    <label for="theme">Farebná téma</label>
+    <label for="theme">Farebná schéma</label>
     <select id="theme"></select>
     <label for="region">Región</label>
     <select id="region"></select>
-    <div class="row" id="row-contours" hidden>
-      <input type="checkbox" id="contours" checked />
-      <label for="contours" style="margin:0">Vrstevnice</label>
-    </div>
-    <!-- Skaly majú vlastný .pmtiles (vlastný maxzoom), tak aj vlastný
-         prepínač – dajú sa zapnúť bez vrstevníc a naopak. -->
-    <div class="row" id="row-rocks" hidden>
-      <input type="checkbox" id="rocks" checked />
-      <label for="rocks" style="margin:0">Skalné plochy</label>
-    </div>
-    <div class="row" id="row-trails" hidden>
-      <input type="checkbox" id="trails" checked />
-      <label for="trails" style="margin:0">Značené trasy</label>
-    </div>
-    <!-- Násypy, múry, ploty, vedenia, prieseky, pramene, jaskyne, rozhľadne,
-         parkoviská a zjazdovky. Schéma OpenMapTiles ich nemá, takže majú
-         vlastný .pmtiles aj vlastný prepínač. -->
-    <div class="row" id="row-features" hidden>
-      <input type="checkbox" id="features" checked />
-      <label for="features" style="margin:0">Krajinné prvky</label>
-    </div>
-    <!-- Výška podjazdov a tunelov, šírka, hmotnosť a maximálna rýchlosť.
-         Vrstva `transportation` OpenMapTiles z toho nenesie ani jednu
-         hodnotu, takže vlastný .pmtiles aj vlastný prepínač. -->
-    <div class="row" id="row-roads" hidden>
-      <input type="checkbox" id="roads" checked />
-      <label for="roads" style="margin:0">Obmedzenia na ceste</label>
-    </div>
-    <!-- Názvy území z balíka `hranice`: vrstva `boundary` OpenMapTiles je
-         čiara bez mena územia, ktoré ohraničuje. -->
-    <div class="row" id="row-boundaries" hidden>
-      <input type="checkbox" id="boundaries" checked />
-      <label for="boundaries" style="margin:0">Názvy území</label>
-    </div>
-    <!-- Názvy vôd z balíka `vodstvo`: v OpenMapTiles leží meno vody mimo
-         geometrie, takže ho nemá ani tok, ani menšia plocha. -->
-    <div class="row" id="row-water" hidden>
-      <input type="checkbox" id="water" checked />
-      <label for="water" style="margin:0">Názvy vôd</label>
-    </div>
-    <div class="row" id="row-buildings" hidden>
-      <input type="checkbox" id="buildings" checked />
-      <label for="buildings" style="margin:0">Sídla (budovy s výmerou a menom)</label>
-    </div>
     <div class="row" id="row-hillshade" hidden>
       <input type="checkbox" id="hillshade" />
       <label for="hillshade" style="margin:0">Tieňovanie reliéfu</label>

@@ -119,10 +119,21 @@ const CARRIERS = { contours: "contours", rocks: "rocks", dem: "terrain", trails:
 export const BASE_PARTS = ["landscape", "roads", "paths", "railways", "points", "boundaries",
   "water", "settlements"];
 
-/** The packages of the base map a region publishes. */
-export function partsOf(region) {
+/** Packages with an archive of their own beside the base map, each switched like a part. */
+export const TERRAIN_PARTS = [
+  { id: "contours", label: "Vrstevnice", note: "Vrstevnice s výškami.", needs: "contours" },
+  { id: "rocks", label: "Skaly", note: "Skalné plochy, suť a bralá.", needs: "rocks" },
+  { id: "terrain", label: "Terén", note: "Tieňovanie reliéfu a 3D terén.", needs: "dem" }
+];
+
+/** The packages a region publishes, the app's switches; `dem` says the site has heights. */
+export function partsOf(region, { dem = false } = {}) {
   const offered = new Set(packagesOf(region).map((p) => p.id));
-  return BASE_PARTS.filter((id) => offered.has(id)).map(packageDef);
+  const has = { ...region, dem };
+  return [
+    ...BASE_PARTS.filter((id) => offered.has(id)).map(packageDef),
+    ...TERRAIN_PARTS.filter((p) => has[p.needs])
+  ];
 }
 
 /** The whole style, layers of the packages in `off` hidden; the paper always stays. */
