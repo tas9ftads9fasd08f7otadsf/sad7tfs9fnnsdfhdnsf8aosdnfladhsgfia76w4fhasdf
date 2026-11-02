@@ -9,6 +9,7 @@ then moves on. Colours are kept **per zoom**: the same layer may be lighter at z
   The API key is typed into the page and stays in that browser; it is never committed.
 - CLI for agents: `workers/tools/coloring.mjs` – the same page in headless Chromium.
 - Logic: `poc/web/coloring-core.js` (tile math, sampling summary, edits → overrides).
+- Instructions to start an agent with: [coloring-agent.md](coloring-agent.md).
 
 ## Zooms
 
