@@ -123,6 +123,15 @@ class Height(unittest.TestCase):
         self.assertIn('[ "$CUT_KEY" != whole ] && EDGE=1', src)
         self.assertIn('--edge="$EDGE"', src)
 
+    def test_ground_steps_off_the_plane(self):
+        # Riki Maps AEXu: a meadow at the plane's height read as no ground and drew squares
+        np = self.np
+        g = np.array([[928.0, 928.001], [928.0, 950.0]])
+        ground = np.array([[True, True], [False, True]])
+        out = self.h.off_the_plane(g, ground, 928.0, 8)
+        self.assertEqual(out.tolist(), [[928.0 + 1 / 256, 928.0 + 1 / 256], [928.0, 950.0]])
+        self.assertIs(self.h.off_the_plane(g, ground, None, 8), g)
+
     def test_flatten_outside(self):
         np = self.np
         g = np.array([[1.0, 2.0], [3.0, 4.0]])
