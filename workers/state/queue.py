@@ -2,7 +2,6 @@
 """Region order for “Build map state” – which regions a country has, in registry order.
 
     python3 workers/state/queue.py --regions=slovensko   # regions, one per line
-    python3 workers/state/queue.py --regions=all         # regions of every country
     python3 workers/state/queue.py --countries           # what can be given
 """
 import argparse
@@ -15,8 +14,6 @@ _DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SETTINGS = os.path.join(_DATA, "map-settings.json")
 # the same number decides whether a package gets a region folder on Drive
 REGION_LEVEL = 4
-# the batch's choice for every country that has regions
-ALL = "all"
 
 
 def read():
@@ -26,8 +23,6 @@ def read():
 
 def regions_of(regions, country):
     """Region keys of the country in registry order (west to east)."""
-    if country == ALL:
-        return [r for c in countries(regions) for r in regions_of(regions, c)]
     return [k for k, v in regions.items()
             if v.get("country") == country
             and v.get("admin_level") == REGION_LEVEL]
@@ -58,7 +53,7 @@ def main():
         # a hard error: empty output would end the batch green with nothing built
         print(f"::error::Country “{args.regions}” has no region in `regions` of {SETTINGS} "
               f"(`admin_level: {REGION_LEVEL}`). Possible: "
-              f"{', '.join(countries(regions) + [ALL])}.", file=sys.stderr)
+              f"{', '.join(countries(regions)) or '(none)'}.", file=sys.stderr)
         sys.exit(1)
     print("\n".join(found))
 

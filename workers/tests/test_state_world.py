@@ -25,11 +25,6 @@ class Queue(unittest.TestCase):
         self.assertEqual(queue.regions_of(REGIONS, "slovensko"), ["bratislavsky", "trnavsky"])
         self.assertEqual(queue.regions_of(REGIONS, "svet"), [])
 
-    def test_all_is_every_country_in_order(self):
-        regions = dict(REGIONS, cesko={"country": "cesko", "admin_level": 2},
-                       praha={"country": "cesko", "admin_level": 4})
-        self.assertEqual(queue.regions_of(regions, queue.ALL), ["bratislavsky", "trnavsky", "praha"])
-
     def test_countries_have_regions(self):
         self.assertEqual(queue.countries(REGIONS), ["slovensko"])
 

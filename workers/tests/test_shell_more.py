@@ -48,6 +48,26 @@ class RelayCallers(unittest.TestCase):
         self.assertEqual((baton["rebuild"], baton["test"]), ("rocks", "false"))
         self.assertTrue(baton["continuation"].startswith(f"333:{REGIONS[0]}|"))
 
+    def test_all_starts_one_batch_per_country(self):
+        queue = worker("state/queue.py")
+        with Stubs(gh=[DISPATCH]) as s:
+            r = s.run(["bash", "workers/state/relay.sh"], cwd=ROOT, env=s.env(
+                COUNTRY="all", REPO="o/r", REF="master", CONTINUATION="",
+                REBUILD="rocks", TEST="true", SUMMARY=os.devnull))
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            runs = [fields(c) for c in s.calls("gh")]
+        self.assertEqual([wf for wf, _ in runs], ["build-map-state.yml"] * len(runs))
+        self.assertEqual([f["country"] for _, f in runs], queue.countries(queue.read()))
+        self.assertTrue(all(f["continuation"] == "" and f["rebuild"] == "rocks" and f["test"] == "true"
+                            for _, f in runs), "each country starts its own chain with the same settings")
+
+    def test_all_takes_no_baton(self):
+        with Stubs(gh=[DISPATCH]) as s:
+            r = s.run(["bash", "workers/state/relay.sh"], cwd=ROOT, env=s.env(
+                COUNTRY="all", REPO="o/r", CONTINUATION="1:x||", SUMMARY=os.devnull))
+            self.assertNotEqual(r.returncode, 0)
+            self.assertEqual(s.calls("gh"), [])
+
     def test_regenerate_batch(self):
         (wf, region), (self_wf, baton) = self.leg("regenerate.sh", WHAT="rocks", TEST="true")
         jobs = worker("state/jobs.py")
