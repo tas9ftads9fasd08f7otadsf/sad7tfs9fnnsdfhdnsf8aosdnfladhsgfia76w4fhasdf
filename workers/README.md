@@ -2108,6 +2108,13 @@ Dve veci, ktoré z toho plynú:
   ručne. Ten istý workflow vyprázdni aj GitHub cache, ktorú už nikto nehľadá,
   a preriedi sklad `vysledky`. Kým to boli dva workflowy, mali dva plány
   posunuté o pol hodiny, aby si nelezli do cesty.
+- **Mŕtve záznamy idú hneď po builde.** Posledný job *Build map region*
+  (`drive-cleanup`) zmaže, čo už žiadny ďalší beh neobnoví: PBF výrezy
+  a Planetiler s dátumom starším než včera (kľúč nesie deň a obnovuje sa len
+  presne) a staršie kópie dopĺňaných záznamov (`slope`, `shading-tiles`,
+  `shading-vector`, `routing-order`, `wiki`), z ktorých sa po predpone berie
+  vždy len najnovšia. Vek a strop ostávajú na týždennom upratovaní, ktoré
+  pravidlá mŕtvych použije tiež (`dead` vo [`workers/drive/cache.py`](drive/cache.py)).
 
 #### Tri vrstvy, tri nezávislé kľúče
 
