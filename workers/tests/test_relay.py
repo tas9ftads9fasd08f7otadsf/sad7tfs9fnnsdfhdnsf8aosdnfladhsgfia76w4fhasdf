@@ -95,6 +95,16 @@ class Relay(unittest.TestCase):
         self.assertEqual(sum(c[:2] == ["run", "rerun"] for c in self.gh), 1)
         self.assertIn(f"{a}:failure:111", self.read("baton"))
 
+    def test_rerun_repeats_only_the_jobs_that_never_started(self):
+        # fix 401: a whole-run rerun rebuilt the region for an `.aar` job without a runner
+        a, b = REGIONS[:2]
+        self.relay(f"111:{a}|{b}||1", [
+            view(111, "completed failure", times=1), never_started(111, "true"),
+            {"match": r"^run rerun 111"}, view(111, "completed success"), NEW_RUN])
+        reruns = [c for c in self.gh if c[:2] == ["run", "rerun"]]
+        self.assertEqual(len(reruns), 1)
+        self.assertIn("--failed", reruns[0])
+
     def test_rerun_that_succeeds_counts_as_success(self):
         a, b = REGIONS[:2]
         r = self.relay(f"111:{a}|{b}||1", [

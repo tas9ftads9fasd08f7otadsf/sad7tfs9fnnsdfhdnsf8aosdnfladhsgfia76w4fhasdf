@@ -132,7 +132,8 @@ relay_main() {
         "completed failure")
           if [ "$(never_started "$RUNNING_ID")" = "true" ]; then
             log "::warning::Region $RUNNING_REGION (run $RUNNING_ID) failed with jobs GitHub never started – running it once more."
-            if gh run rerun "$RUNNING_ID" --repo "$REPO"; then
+            # `--failed`: a missing macOS runner mustn't cost a whole region rebuild
+            if gh run rerun "$RUNNING_ID" --failed --repo "$REPO"; then
               pause "$POLL_S"
               continue
             fi
