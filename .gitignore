@@ -12,3 +12,6 @@ steps-out/
 /planetiler.jar
 /maps.json.base
 /maps-test.json.base
+
+# the coloring tool's edits and tile images (workers/tools/coloring.mjs)
+/coloring/

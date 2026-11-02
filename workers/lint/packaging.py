@@ -251,7 +251,7 @@ if not re.search(r'glyphs\s*=\s*"\$BASE/fonts/\{fontstack\}/\{range\}\.pbf"',
         f"Glyphs aren't in the package, so this address is all the web has – a "
         f"relative one would point into the package, where there is nothing.")
 
-if not re.search(r"cp\s+poc/web/\*\.js\s+poc/web/\*\.json\s+poc/web/index\.html\s+_site/",
+if not re.search(r"cp\s+poc/web/\*\.js\s+poc/web/\*\.json\s+poc/web/\*\.html\s+_site/",
                  site_sh):
     bad.append(
         f"{SITE}: the viewer isn't copied into `_site` any more. It's left out of "
