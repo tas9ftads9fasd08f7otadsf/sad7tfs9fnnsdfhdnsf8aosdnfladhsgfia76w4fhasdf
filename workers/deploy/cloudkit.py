@@ -30,6 +30,8 @@ RECORD_BYTES = 950_000
 TRIES = 3
 FEATURES = ("features-beta", "features-prod")
 COUNTRY_KEY = "country:"
+# TestFlight and the App Store read production; Xcode runs read development
+ENVIRONMENTS = ("development", "production")
 
 
 def log(msg):
@@ -392,17 +394,30 @@ def main(argv=None):
     if os.path.basename(args.catalog) != "maps.json":
         log(f"CloudKit: {args.catalog} is not the app's catalog – not published.")
         return 0
-    environment = os.environ.get("CLOUDKIT_ENV", "").strip() or "development"
-    if environment not in ("development", "production"):
-        raise ValueError(f"CLOUDKIT_ENV is development or production, not {environment}")
+    pinned = os.environ.get("CLOUDKIT_ENV", "").strip()
+    if pinned and pinned not in ENVIRONMENTS:
+        raise ValueError(f"CLOUDKIT_ENV is development or production, not {pinned}")
+    with open(args.catalog, encoding="utf-8") as handle:
+        catalog = json.load(handle)
+    failed = None
+    for environment in [pinned] if pinned else ENVIRONMENTS:
+        try:
+            publish_to(environment, catalog, args)
+        except RuntimeError as error:
+            failed = failed or error
+    if failed:
+        raise failed
+    return 0
+
+
+def publish_to(environment, catalog, args):
+    """The catalog into one environment, signed with that environment's key."""
     suffix = environment.upper()
     # CloudKit gives each environment its own server-to-server key
     key_id, path = os.environ.get(f"CLOUDKIT_KEY_ID_{suffix}", "").strip(), key_file(environment)
     if not key_id or not path:
         log(f"CloudKit: no CLOUDKIT_KEY_ID_{suffix} / CLOUDKIT_PRIVATE_KEY_{suffix} – not published.")
-        return 0
-    with open(args.catalog, encoding="utf-8") as handle:
-        catalog = json.load(handle)
+        return
     log(start_line(environment, key_id, path, args))
     cloud = Cloud(key_id, path, environment)
     log(caller_line(cloud))
@@ -414,8 +429,6 @@ def main(argv=None):
             log(f"::error::CloudKit {environment}: {hint.format(env=environment.capitalize())}")
         raise
     log(f"CloudKit {environment} has {args.catalog} ✓")
-    return 0
-
 
 if __name__ == "__main__":
     sys.exit(main())
