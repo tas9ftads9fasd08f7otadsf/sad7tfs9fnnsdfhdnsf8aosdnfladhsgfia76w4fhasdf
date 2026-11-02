@@ -211,6 +211,48 @@ class PublishContents(unittest.TestCase):
         self.assertIn("trails", base["layers"])
 
 
+class PublishUnchanged(unittest.TestCase):
+    """390: a layer whose contents are already on Drive is not packed or uploaded again."""
+
+    def test_only_the_changed_layer_is_uploaded(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        site = os.path.join(tmp, "_site")
+        man = {"default_region": "vysoke_tatry", "regions": {"vysoke_tatry": {"bbox": [1, 2, 3, 4]}}}
+        touch(site, "tiles/manifest.json", json.dumps(man).encode())
+        terrain = touch(site, "tiles/vysoke_tatry-terrain.pmtiles", b"heights")
+        touch(site, "tiles/vysoke_tatry-water.pmtiles", b"water")
+        sha = files.contents_sha(site, [terrain])
+        rec = {"file": "vysoke_tatry-terrain.zip", "size": 7, "sha256": sha, "run": "9",
+               "link": "https://drive.google.com/file/d/T1/view",
+               "download": "https://drive.google.com/uc?export=download&id=T1"}
+        maps = os.path.join(tmp, "maps.json")
+        with open(maps, "w") as f:
+            json.dump({"mountains": {"ranges": {"vysoke_tatry": {"maps": {
+                "terrain": dict(rec, formats={"zip": rec})}}}}}, f)
+        env = {"REGION_KEY": "vysoke_tatry", "AREA_KEY": "whole", "TEST_KM2": "0", "MAP_LAYERS": "",
+               "MOUNTAIN_COUNTRY": "slovensko", "GITHUB_RUN_NUMBER": "10", "RUNNER_TEMP": tmp}
+        with mock.patch.dict(os.environ, env):
+            publish = worker("deploy/publish-map.py")
+            drive = publish.folder
+            upload = mock.Mock(return_value=("W1", False))
+            with mock.patch.object(publish.auth, "from_env", return_value=object()), \
+                    mock.patch.object(publish.auth, "can_write", return_value=True), \
+                    mock.patch.object(drive, "folder_id", return_value="root"), \
+                    mock.patch.object(drive, "ensure_path", return_value="F"), \
+                    mock.patch.object(drive, "ids_in", return_value={"T1": "vysoke_tatry-terrain.zip"}), \
+                    mock.patch.object(drive, "delete_named", return_value=0), \
+                    mock.patch.object(drive, "upload_clobber", upload), \
+                    mock.patch.object(sys, "argv", ["publish-map.py", f"--site={site}", f"--maps={maps}"]), \
+                    redirect_stdout(io.StringIO()) as out:
+                self.assertEqual(publish.main(), 0)
+        self.assertEqual([c.args[2] for c in upload.call_args_list], ["vysoke_tatry-water.zip"])
+        self.assertIn("vysoke_tatry-terrain.zip: the same contents", out.getvalue())
+        with open(maps) as f:
+            got = json.load(f)["mountains"]["ranges"]["vysoke_tatry"]["maps"]
+        self.assertEqual((got["terrain"]["run"], got["water"]["run"]), ("9", "10"))
+
+
 class PublishLiveIds(unittest.TestCase):
     def setUp(self):
         env = {"REGION_KEY": "trnavsky_test4", "AREA_KEY": "", "TEST_KM2": "0", "MAP_LAYERS": "",

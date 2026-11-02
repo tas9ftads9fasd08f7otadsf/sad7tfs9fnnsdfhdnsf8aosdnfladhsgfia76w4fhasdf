@@ -228,24 +228,59 @@ def migrate(data):
     return data
 
 
+def published_maps(path, cat):
+    """`maps` of the node at `cat` in the catalog at `path`, or {}."""
+    try:
+        with open(path) as f:
+            data = migrate(json.load(f))
+    except (OSError, ValueError):
+        return {}
+    if len(cat) > 1 and cat[0] == names.MOUNTAINS:
+        node = ((data.get(names.MOUNTAINS) or {}).get(names.RANGES) or {}).get(cat[1]) or {}
+    else:
+        node = data.get(cat[0]) or {}
+        for nest, key in zip(("regions", "subregions"), cat[1:3]):
+            node = (node.get(nest) or {}).get(key) or {}
+    maps = node.get("maps")
+    return maps if isinstance(maps, dict) else {}
+
+
+def published_record(maps, kind, fmt):
+    record = ((maps.get(kind or "base") or {}).get("formats") or {}).get(fmt)
+    return record if isinstance(record, dict) else None
+
+
+def unchanged(maps, kind, fmt, sha, live):
+    """The published record of `kind` in `fmt` when it holds `sha` and its file is on Drive."""
+    record = published_record(maps, kind, fmt)
+    if not sha or not record or record.get("sha256") != sha or live is None:
+        return None
+    return record if link_id(record) in live else None
+
+
 def write_package(maps, kind, name, size, fid, fmt, at="", at_ts=None,
-                  sha="", models=None):
+                  sha="", models=None, published=None):
     """One package in one format into a `maps` entry; the top mirrors the ZIP for older readers."""
-    record = {
-        "file": name,
-        "size": size,
-        "link": folder.file_link(fid),
-        "download": folder.download_link(fid),
-        # provenance per package: wiki is built by another pipeline
-        "run": env("GITHUB_RUN_NUMBER"),
-    }
-    if at:
-        record["updated_at"] = at
-    if at_ts is not None:
-        record["updated_ts"] = at_ts
-    # contents, not date: the same build twice is no new map for the app
-    if sha:
-        record["sha256"] = sha
+    kept = published_record(maps if published is None else published, kind, fmt)
+    if kept and sha and kept.get("sha256") == sha and link_id(kept) == fid:
+        # the file not uploaded again keeps its date, or an app comparing dates updates it
+        record = dict(kept)
+    else:
+        record = {
+            "file": name,
+            "size": size,
+            "link": folder.file_link(fid),
+            "download": folder.download_link(fid),
+            # provenance per package: wiki is built by another pipeline
+            "run": env("GITHUB_RUN_NUMBER"),
+        }
+        if at:
+            record["updated_at"] = at
+        if at_ts is not None:
+            record["updated_ts"] = at_ts
+        # contents, not date: the same build twice is no new map for the app
+        if sha:
+            record["sha256"] = sha
     entry = maps.setdefault(kind or "base", {})
     entry.setdefault("formats", {})[fmt] = record
     # an entry without a top is one without a link, and breaks the country in the app
@@ -517,7 +552,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     for kind, name, size, fid, fmt, sha in uploaded:
         write_package(entry["maps"], kind, name, size, fid, fmt,
                       at=data["_updated_at"], at_ts=data["_updated_ts"],
-                      sha=sha, models=region_models(man, reg))
+                      sha=sha, models=region_models(man, reg), published=old_maps)
     # a format this run didn't build stays until its own job replaces it
     for kind in {k or "base" for k, *_ in uploaded}:
         formats = entry["maps"][kind].setdefault("formats", {})
