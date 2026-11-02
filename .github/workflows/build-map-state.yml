@@ -17,7 +17,7 @@ on:
     inputs:
       # the list is `regions` of workers/data/map-settings.json (the workflow lint guards it)
       country:
-        description: "Country – every region of it is built"
+        description: "Country – every region of it is built; `all` builds every country"
         required: true
         default: slovensko
         type: choice
@@ -25,6 +25,7 @@ on:
           - slovensko
           - cesko
           - rakusko
+          - all
       # the rest is the one-region form; `relay.sh` passes them whole every time
       rebuild:
         description: "What to rebuild even when it is cached"
@@ -73,7 +74,8 @@ jobs:
         env:
           INPUTS_JSON: ${{ toJSON(inputs) }}
           WORKFLOW: .github/workflows/build-map-state.yml
-          OPT_REGION: ${{ inputs.country }}
+          # `all` has no settings of its own; each region run prints its own
+          OPT_REGION: ${{ inputs.country != 'all' && inputs.country || '' }}
           OPT_REBUILD: ${{ inputs.rebuild }}
           OPT_TEST: ${{ inputs.test }}
         run: workers/plan/settings.sh

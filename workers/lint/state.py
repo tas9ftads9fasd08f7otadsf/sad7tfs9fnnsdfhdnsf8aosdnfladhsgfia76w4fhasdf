@@ -91,9 +91,11 @@ with_regions = [k for k, v in regions.items()
                 and any(r.get("country") == k and r.get("admin_level") == REGION_LEVEL
                         for r in regions.values())]
 offered = ((state_in.get("country") or {}).get("options")) or []
-if offered != with_regions:
+ALL = "all"
+if offered != with_regions + [ALL]:
     error(STATE, f"The `country` choice is {offered}, by {REGIONS} it should be "
-                 f"{with_regions} (countries that really have a region). A "
+                 f"{with_regions + [ALL]} (countries that really have a region, then "
+                 f"`{ALL}`). A "
                  f"country without regions leaves the batch nothing to run.")
 
 # 3b. the batch doesn't recompute what exists: every region reuses layers from the stores
