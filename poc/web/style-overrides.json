@@ -1,9 +1,15 @@
 {
   "version": 2,
-  "updated_at": "2026-09-03T00:00:00.000Z",
+  "updated_at": "2026-11-02T17:49:40.027Z",
   "icons": "osm-liberty",
   "hillshade": true,
-  "palette": {},
+  "palette": {
+    "svetla": {
+      "park": "#d3edb8",
+      "track": "#9a9274",
+      "scrub": "#c2d9a3"
+    }
+  },
   "layers": {},
   "order": [
     {
@@ -33,6 +39,7 @@
     "marks": {}
   },
   "shields": {},
+  "routeShields": true,
   "iconSets": [],
   "customIcons": [],
   "maps": {
@@ -108,7 +115,18 @@
         },
         "road-service-casing": {
           "paint": {
-            "line-color": "#acaaa4"
+            "line-color": [
+              [
+                0,
+                14,
+                "#e2dccf"
+              ],
+              [
+                15,
+                20,
+                "#c8bda8"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#3d3a34"
@@ -135,7 +153,7 @@
         },
         "road-service": {
           "paint": {
-            "line-color": "#ececf1"
+            "line-color": "#ffffff"
           },
           "paintDark": {
             "line-color": "#47474a"
@@ -159,7 +177,18 @@
         },
         "road-tertiary-casing": {
           "paint": {
-            "line-color": "#b4a991"
+            "line-color": [
+              [
+                0,
+                14,
+                "#e2dccf"
+              ],
+              [
+                15,
+                20,
+                "#c8bda8"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#3d3a33"
@@ -167,7 +196,7 @@
         },
         "road-path": {
           "paint": {
-            "line-color": "#ececf1"
+            "line-color": "#d2c9ae"
           },
           "paintDark": {
             "line-color": "#78787c"
@@ -238,6 +267,41 @@
           },
           "paintDark": {
             "line-color": "#33372f"
+          }
+        },
+        "road-minor-casing": {
+          "paint": {
+            "line-color": [
+              [
+                0,
+                14,
+                "#e2dccf"
+              ],
+              [
+                15,
+                20,
+                "#c8bda8"
+              ]
+            ]
+          },
+          "paintDark": {
+            "line-color": "#0e0e16"
+          }
+        },
+        "pedestrian-area": {
+          "paint": {
+            "fill-color": "#e0e5f2"
+          },
+          "paintDark": {
+            "fill-color": "#22222e"
+          }
+        },
+        "landuse-railway": {
+          "paint": {
+            "fill-color": "#e8e4dc"
+          },
+          "paintDark": {
+            "fill-color": "#201b28"
           }
         }
       },
