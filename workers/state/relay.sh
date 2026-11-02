@@ -43,6 +43,23 @@ start_region() {
     -f publish_pages=false
 }
 
+# `all` only fans out: one chain per country, so countries run side by side
+if [ "${COUNTRY:-}" = all ]; then
+  [ -z "${CONTINUATION:-}" ] || { echo "::error::\`all\` takes no baton – continue the country's own batch."; exit 1; }
+  SUMMARY="${SUMMARY:-${GITHUB_STEP_SUMMARY:-/dev/null}}"
+  {
+    echo "## Map batch · all countries"
+    echo ""
+    echo "One **$SELF** run per country, side by side; each builds its regions one by one."
+    echo ""
+  } >> "$SUMMARY"
+  for country in $(python3 workers/state/queue.py --countries); do
+    COUNTRY="$country" hand_over ""
+    echo "- \`$country\`" >> "$SUMMARY"
+  done
+  exit 0
+fi
+
 # shellcheck source=workers/state/relay-core.sh
 . workers/state/relay-core.sh
 relay_main

@@ -17,7 +17,7 @@ on:
     inputs:
       # the list is `regions` of workers/data/map-settings.json (the workflow lint guards it)
       country:
-        description: "Country – every region of it is built; `all` builds every country"
+        description: "Country – its regions are built one by one; `all` builds the countries side by side"
         required: true
         default: slovensko
         type: choice

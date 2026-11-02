@@ -3981,8 +3981,9 @@ kraj by v dávke ticho chýbal a dávka by skončila zelená s mapou o jeden kra
 menšou. Poradie je poradie číselníka — od západu na východ, takže v zozname
 behov je vidieť, kde dávka je.
 
-Voľba **`all`** postaví všetky krajiny, ktoré majú kraje, jednu po druhej
-v poradí číselníka — jedna štafeta, nie tri dávky vedľa seba.
+Voľba **`all`** spustí pre každú krajinu, ktorá má kraje, jej vlastnú dávku
+a skončí. Krajiny tak bežia naraz, kraje v každej z nich jeden po druhom.
+Každá krajina je samostatná štafeta, takže zrušenie jednej ostatné nezastaví.
 
 ### Prečo je to štafeta a nie jeden dlhý job
 
