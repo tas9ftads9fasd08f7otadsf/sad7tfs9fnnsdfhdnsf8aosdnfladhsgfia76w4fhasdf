@@ -9,7 +9,7 @@ on:
         description: "CloudKit environment"
         type: choice
         options: [development, production]
-        default: development
+        default: production
       force:
         description: "write every node again"
         type: boolean
