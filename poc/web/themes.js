@@ -5520,7 +5520,8 @@ export function buildStyle({
         "symbol-placement": "line",
         "text-field": nameExpr,
         "text-font": REG,
-        "text-size": zl([[13, 10], [16, 12], [20, 16]])
+        // read on a bike at arm's length: a fifth bigger from z16 on
+        "text-size": zl([[13, 10.5], [16, 14], [20, 19]])
       },
       paint: {
         "text-color": c.roadText,
