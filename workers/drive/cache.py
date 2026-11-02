@@ -15,11 +15,14 @@ Nothing deletes itself – the weekly `--prune` thins it at two speeds.
     python3 workers/drive/cache.py --lookup --key=abc --restore-keys=ab
     python3 workers/drive/cache.py --save --key=abc --path=dem
     python3 workers/drive/cache.py --prune --keep-days=30 --keep-gb=100
+    python3 workers/drive/cache.py --prune --dead-only   # after a build
 """
 import argparse
 import calendar
+import datetime
 import importlib.util
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -55,6 +58,40 @@ LAYERS = ("contours-", "rocks-", "terrain-")
 def is_layer(key):
     """Is it a finished layer (the expensive kind worth keeping longer)?"""
     return key.startswith(LAYERS)
+
+
+# keys ending in the build day and restored only exactly: another day never asks for them
+DATED = ("pbf-v6-", "pbf-mountain-v3-", "planetiler-latest-")
+# a run started yesterday may still restore yesterday's key
+DATED_GRACE_DAYS = 1
+# saved as prefix + run id, restored by prefix: only the newest is ever read
+TOPPED_UP = ("slope-v1-", "shading-tiles-", "shading-vector-", "routing-order-v1-", "wiki-v3-")
+_DAY = re.compile(r"-(\d{4}-\d{2}-\d{2})$")
+_RUN = re.compile(r"\d{5,}(-s)?$")
+
+
+def dead(items, today):
+    """`[(entry, reason)]` no future run can restore; `items` newest first."""
+    out, newest = [], set()
+    for e in items:
+        key = e["full_key"]
+        if key.startswith(DATED):
+            m = _DAY.search(key)
+            try:
+                day = datetime.date.fromisoformat(m.group(1)) if m else None
+            except ValueError:
+                day = None
+            if day and (today - day).days > DATED_GRACE_DAYS:
+                out.append((e, f"build day {day} – later runs ask for their own day"))
+        elif key.startswith(TOPPED_UP):
+            m = _RUN.search(key)
+            if not m:
+                continue
+            prefix = key[:m.start()]
+            if prefix in newest:
+                out.append((e, "superseded – only the newest of its prefix is restored"))
+            newest.add(prefix)
+    return out
 
 
 # two suffixes: `zstd` may be missing somewhere, unpacked by what the name says
@@ -305,7 +342,7 @@ def do_list(args):
 
 
 def do_prune(args):
-    """Thinning: duplicates first, then age, the cap last, oldest first."""
+    """Thinning: duplicates and the dead first, then age, the cap last, oldest first."""
     creds = creds_or_die("thinning the cache")
     items = entries(creds)
     total = sum(e["size"] for e in items)
@@ -324,27 +361,32 @@ def do_prune(args):
             mark(e, "duplicate (a newer entry with the same key exists)")
         seen.add(e["key"])
 
-    # AGE: finished layers have a longer limit of their own
-    for e in items:
-        days = args.keep_days_layers if is_layer(e["full_key"]) else args.keep_days
-        if days <= 0 or not e["created"]:
-            continue
-        if _epoch(e["created"]) < time.time() - days * 86400:
-            mark(e, f"older than {days:g} days"
-                    + (" (finished layer)" if is_layer(e["full_key"]) else ""))
+    for e, why in dead(items, datetime.datetime.now(datetime.timezone.utc).date()):
+        mark(e, why)
 
-    if args.keep_gb > 0:
-        cap = args.keep_gb * 1e9
-        kept = 0
-        # keeping order: finished layers first, what can be fetched again is sacrificed
-        by_cost = ([e for e in items if is_layer(e["full_key"])]
-                   + [e for e in items if not is_layer(e["full_key"])])
-        for e in by_cost:
-            if e["id"] in reason:
+    # after a build only the dead go; age and the cap are the weekly run's
+    if not args.dead_only:
+        # AGE: finished layers have a longer limit of their own
+        for e in items:
+            days = args.keep_days_layers if is_layer(e["full_key"]) else args.keep_days
+            if days <= 0 or not e["created"]:
                 continue
-            kept += e["size"]
-            if kept > cap:
-                mark(e, f"over the {args.keep_gb:g} GB cap")
+            if _epoch(e["created"]) < time.time() - days * 86400:
+                mark(e, f"older than {days:g} days"
+                        + (" (finished layer)" if is_layer(e["full_key"]) else ""))
+
+        if args.keep_gb > 0:
+            cap = args.keep_gb * 1e9
+            kept = 0
+            # keeping order: finished layers first, what can be fetched again is sacrificed
+            by_cost = ([e for e in items if is_layer(e["full_key"])]
+                       + [e for e in items if not is_layer(e["full_key"])])
+            for e in by_cost:
+                if e["id"] in reason:
+                    continue
+                kept += e["size"]
+                if kept > cap:
+                    mark(e, f"over the {args.keep_gb:g} GB cap")
 
     freed = sum(e["size"] for e in doomed)
     log(f"To delete: {len(doomed)} entries, {human(freed)}")
@@ -361,9 +403,12 @@ def do_prune(args):
     if args.summary:
         with open(args.summary, "a") as f:
             f.write("### Drive cache\n\n")
-            f.write(f"Finished layers (contours, rocks, hillshading) are kept "
-                    f"{args.keep_days_layers:g} days, the rest "
-                    f"{args.keep_days:g}.\n\n")
+            if args.dead_only:
+                f.write("Only entries no future run can restore.\n\n")
+            else:
+                f.write(f"Finished layers (contours, rocks, hillshading) are kept "
+                        f"{args.keep_days_layers:g} days, the rest "
+                        f"{args.keep_days:g}.\n\n")
             f.write("| item | value |\n|---|--:|\n")
             f.write(f"| entries before | {len(items)} |\n")
             f.write(f"| size before | {human(total)} |\n")
@@ -445,6 +490,8 @@ def main():
                          "rocks, hillshading) – hours of work, asked for months later")
     ap.add_argument("--keep-gb", type=float, default=100,
                     help="with --prune: a cap on the whole folder (0 = none)")
+    ap.add_argument("--dead-only", action="store_true",
+                    help="with --prune: only what no future run can restore (after a build)")
     ap.add_argument("--dry-run", action="store_true",
                     help="only print what would happen")
     ap.add_argument("--summary", default="",

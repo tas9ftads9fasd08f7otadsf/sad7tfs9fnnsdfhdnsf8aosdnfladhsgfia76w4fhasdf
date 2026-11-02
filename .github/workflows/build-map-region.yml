@@ -1306,6 +1306,22 @@ jobs:
           INPUTS_JSON: ${{ toJSON(inputs) }}
         run: bash workers/deploy/summary.sh
 
+  # what no later run can restore, gone as soon as the map is out; age and the cap stay weekly
+  drive-cleanup:
+    name: Drop dead Drive cache entries
+    needs: deploy
+    if: ${{ !cancelled() && needs.deploy.result == 'success' }}
+    runs-on: ubuntu-latest
+    # a leftover costs space, not the map
+    continue-on-error: true
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Drop dead cache entries
+        run: python3 workers/drive/cache.py --prune --dead-only --summary="$GITHUB_STEP_SUMMARY"
+
   # the same contents once more as `.aar` (Apple Archive, LZFSE), unpacked
   # natively by iOS and macOS; a job of its own on macOS, where `aa` lives.
   # After `deploy`, only when it published; a failure doesn't hurt the map.

@@ -122,7 +122,7 @@ def scope_hint(detail=""):
               "for writing by default) – and overwrite the same secret.")
 
 
-def api_call(creds, method, path, body=None, ctype="application/json"):
+def api_call(creds, method, path, body=None, ctype="application/json", ok=(200, 204)):
     """One Drive API call with the token (reads and writes alike); errors become messages."""
     raw = body if body is None else (
         body if isinstance(body, bytes) else
@@ -135,7 +135,7 @@ def api_call(creds, method, path, body=None, ctype="application/json"):
         # the token may have expired just now – renew it once
         head["Authorization"] = "Bearer " + creds.renew(None)
         status, data = request_json(method, API_HOST, path, raw, head)
-    if status not in (200, 204):
+    if status not in ok:
         raise AuthError(api_hint(status, data, creds, path))
     return data
 
@@ -147,9 +147,10 @@ def api_get(creds, path):
 
 def api_delete(creds, file_id):
     """Delete a file on Drive; used to thin the cache."""
+    # 404: a build finishing beside us deleted it first
     return api_call(creds, "DELETE",
                     f"/drive/v3/files/{urllib.parse.quote(file_id)}"
-                    "?supportsAllDrives=true")
+                    "?supportsAllDrives=true", ok=(200, 204, 404))
 
 
 def granted_scopes(creds):

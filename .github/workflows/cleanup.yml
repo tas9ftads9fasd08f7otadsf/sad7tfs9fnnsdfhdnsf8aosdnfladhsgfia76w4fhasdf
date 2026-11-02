@@ -12,8 +12,9 @@ name: Maintenance · weekly cleanup
 # `claude/*` branches. Nothing is lost – everything published lies in the Drive
 # store (`workers/drive/store.py`).
 #
-# On Drive it thins the cache at two speeds: finished elevation layers 180 days
-# (hours of compute per region), the rest 30. The `results` store 90 days, the
+# On Drive it drops what no run can restore (`dead` in `workers/drive/cache.py`,
+# each region build does the same when done), then thins the cache at two speeds:
+# finished elevation layers 180 days (hours of compute per region), the rest 30. The `results` store 90 days, the
 # retention artifacts had. Elevation model stores aren't thinned – costly mirrors.
 #
 # The schedule runs `weekly`: releases, artifacts and both caches. Runs and
