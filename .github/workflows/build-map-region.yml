@@ -320,6 +320,7 @@ jobs:
       opt_rock_fill_holes: ${{ steps.opts.outputs.opt_rock_fill_holes }}
       opt_contour_smoothing: ${{ steps.opts.outputs.opt_contour_smoothing }}
       opt_trails_maxzoom: ${{ steps.opts.outputs.opt_trails_maxzoom }}
+      opt_trails_local_minzoom: ${{ steps.opts.outputs.opt_trails_local_minzoom }}
       opt_features_maxzoom: ${{ steps.opts.outputs.opt_features_maxzoom }}
       opt_transport: ${{ steps.opts.outputs.opt_transport }}
       opt_transport_maxzoom: ${{ steps.opts.outputs.opt_transport_maxzoom }}
@@ -593,6 +594,7 @@ jobs:
         id: trails
         env:
           OPT_TRAILS_MAXZOOM: ${{ needs.plan.outputs.opt_trails_maxzoom }}
+          OPT_TRAILS_LOCAL_MINZOOM: ${{ needs.plan.outputs.opt_trails_local_minzoom }}
           OPT_REGION_CLIP: ${{ needs.plan.outputs.opt_region_clip }}
           REGION_BBOX: ${{ needs.plan.outputs.bbox }}
           REGION_KEY: ${{ needs.plan.outputs.key }}
