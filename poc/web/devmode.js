@@ -3142,17 +3142,19 @@ export function initDevMode({
             apply({ immediate: true });
           }
         }),
-        numberField({
-          label: "krytie",
-          value: out.opacity,
-          min: 0,
-          max: 1,
-          step: 0.1,
-          onChange: (v) => {
-            patchSub(layer.id, "outline", { opacity: v ?? 1 });
-            apply({ immediate: true });
-          }
-        })
+        Array.isArray(out.opacity)
+          ? el("span", { class: "dev-note", text: "krytie podľa zoomu (zo súboru úprav)" })
+          : numberField({
+            label: "krytie",
+            value: out.opacity,
+            min: 0,
+            max: 1,
+            step: 0.1,
+            onChange: (v) => {
+              patchSub(layer.id, "outline", { opacity: v ?? 1 });
+              apply({ immediate: true });
+            }
+          })
       );
     }
     parts.push(el("div", { class: `dev-sub${out ? " changed" : ""}` }, outlineRow));
