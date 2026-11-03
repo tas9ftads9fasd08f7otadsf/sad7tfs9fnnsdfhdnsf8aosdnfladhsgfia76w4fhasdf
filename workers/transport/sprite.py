@@ -111,16 +111,20 @@ def raster(path, side):
                              check=True, capture_output=True).stdout
         return Image.open(io.BytesIO(png)).convert("RGBA")
     img = Image.open(path).convert("RGBA")
+    if max(img.size) < side:
+        # the sheet's pixelRatio says what size it is drawn at
+        grown = side / max(img.size)
+        return img.resize((round(img.width * grown), round(img.height * grown)), Image.LANCZOS)
     img.thumbnail((side, side))
     return img
 
 
 def write(found, base, width=1024):
-    """Shelf-packed sheets at 1x and 2x, every name of an image pointing at one cut."""
+    """Shelf-packed sheets at 1x, 2x and the app's 4x, each image's names on one cut."""
     from PIL import Image
 
     images = sorted(found)
-    for suffix, ratio in (("", 1), ("@2x", 2)):
+    for suffix, ratio in (("", 1), ("@2x", 2), ("@4x", 4)):
         cuts, x, y = [], 0, 0
         for path in images:
             try:
@@ -171,7 +175,7 @@ def main():
         return
     n = write(found, a.out)
     names = sum(len(v["names"]) for v in found.values())
-    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x)")
+    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x, @4x)")
 
 
 if __name__ == "__main__":
