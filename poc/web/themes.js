@@ -27,6 +27,8 @@ import {
   DASH_IDS,
   dashArray,
   dashIdOf,
+  dashValue,
+  isDashBands,
   patternDef,
   patternImageName
 } from "./patterns.js";
@@ -1388,7 +1390,8 @@ export function trailTypeDef(type, overrides) {
   const mark = typeof own.mark === "string" ? own.mark.trim() : null;
   return {
     ...type,
-    dash: DASH_IDS.includes(own.dash) ? own.dash : type.dash,
+    dash: own.dash !== undefined && cleanDash(own.dash, [], "") !== undefined
+      ? own.dash : type.dash,
     // prázdny reťazec je „žiadna", nie „vezmi predvolenú"
     iconPick: "icon" in own ? (icon ? [icon] : []) : type.icons,
     markPick: mark === null ? null : (MARK_SHAPE_IDS.includes(mark) ? mark : "")
@@ -1473,6 +1476,43 @@ export const NO_FILL = "none";
 const NO_FILL_PROPS = new Set(["fill-color", "fill-extrusion-color"]);
 /** Strop počtu zoomových zlomov na jednu vlastnosť. */
 export const MAX_PAINT_STOPS = 8;
+
+/**
+ * A dash: one preset id, or zoom bands `[[from, to, preset], …]` covering their range
+ * without gaps; `undefined` (with the reason in `problems`) when it is neither.
+ */
+export function cleanDash(value, problems, where) {
+  if (!isDashBands(value)) {
+    if (DASH_IDS.includes(value)) return value;
+    problems.push(`${where}: neznámy vzor čiary "${value}".`);
+    return undefined;
+  }
+  if (value.length > MAX_PAINT_STOPS) {
+    problems.push(`${where}: ${value.length} zoomových pásiem čiary, strop je ${MAX_PAINT_STOPS}.`);
+    return undefined;
+  }
+  const out = [];
+  for (const band of value) {
+    const [from, to, id] = Array.isArray(band) ? band : [];
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to > 24 || to < from) {
+      problems.push(`${where}: pásmo čiary ${JSON.stringify(band)} nie je [od, do, vzor] `
+        + `s celými zoomami 0–24.`);
+      return undefined;
+    }
+    if (!DASH_IDS.includes(id)) {
+      problems.push(`${where}: neznámy vzor čiary "${id}" v pásme z${from}–${to}.`);
+      return undefined;
+    }
+    const prev = out[out.length - 1];
+    if (prev && from !== prev[1] + 1) {
+      problems.push(`${where}: pásmo čiary z${from}–${to} nenadväzuje na z${prev[0]}–${prev[1]}.`);
+      return undefined;
+    }
+    out.push([from, to, id]);
+  }
+  // one band, or all of one dash, is just that dash
+  return out.every(([, , id]) => id === out[0][2]) ? out[0][2] : out;
+}
 
 /**
  * Vlastnosti z `layout`, ktoré sa dajú prepísať – a ich medze.
@@ -2219,11 +2259,8 @@ export function normalizeOverrides(raw) {
     }
     const clean = {};
     if (def.dash != null) {
-      if (!DASH_IDS.includes(def.dash)) {
-        problems.push(`Trasa "${id}": neznámy vzor čiary "${def.dash}".`);
-      } else if (def.dash !== TRAIL_BY_ID[id].dash) {
-        clean.dash = def.dash;
-      }
+      const dash = cleanDash(def.dash, problems, `Trasa "${id}"`);
+      if (dash !== undefined && dash !== TRAIL_BY_ID[id].dash) clean.dash = dash;
     }
     if (def.icon != null) {
       const icon = String(def.icon).trim();
@@ -2426,11 +2463,8 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
     // aj „solid" je úprava: prerušovanie zabudované v štýle sa musí dať vypnúť.
     // Zapisuje sa len vtedy, keď ho vrstva naozaj má (`frico:dash`).
     if (def.dash != null) {
-      if (!DASH_IDS.includes(def.dash)) {
-        problems.push(`${where}Vrstva "${id}": neznámy vzor čiary "${def.dash}".`);
-      } else {
-        clean.dash = def.dash;
-      }
+      const dash = cleanDash(def.dash, problems, `${where}Vrstva "${id}"`);
+      if (dash !== undefined) clean.dash = dash;
     }
 
     // `null` nie je „nič": zabudovaný vzor (`frico:pattern`) sa musí dať vypnúť.
@@ -2585,8 +2619,8 @@ function cleanVariants(raw, id, problems, where) {
     if (Object.keys(layout).length) clean.layout = layout;
 
     if (v.dash != null) {
-      if (!DASH_IDS.includes(v.dash)) problems.push(`${kde}: neznámy vzor čiary "${v.dash}".`);
-      else clean.dash = v.dash;
+      const dash = cleanDash(v.dash, problems, kde);
+      if (dash !== undefined) clean.dash = dash;
     }
     if (v.icon != null) {
       const icon = String(v.icon).trim();
@@ -2913,7 +2947,7 @@ function variantLayers(layer, variants, hasIcon) {
     }
     // „plná" nie je „nič" – rovnaká úvaha ako pri úprave vrstvy
     if (v.dash && layer.type === "line") {
-      const arr = dashArray(v.dash);
+      const arr = dashValue(v.dash);
       if (arr) vrstva.paint["line-dasharray"] = arr;
       else delete vrstva.paint["line-dasharray"];
     }
@@ -3057,7 +3091,7 @@ function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme)
     // „plná" znamená vlastnosť zmazať: `line-dasharray: null` by MapLibre neprijal
     if (o.dash && layer.type === "line") {
       layer.paint = { ...(layer.paint || {}) };
-      const arr = dashArray(o.dash);
+      const arr = dashValue(o.dash);
       if (arr) layer.paint["line-dasharray"] = arr;
       else delete layer.paint["line-dasharray"];
     }
@@ -3157,26 +3191,26 @@ export function applyLayerOrder(style, order) {
  * Je to tichá chyba, tak je na ňu kontrola (`workers/lint/style.mjs`) – toto
  * pole je jej jediný zdroj pravdy a preto je exportované.
  */
-// z20 is z16 ×12, about the road's real width when zoomed in close
+// z20 is z16 ×9, under the road's real width, so a town street stops short of its houses
 export const ROAD_DEFS = [
   ["motorway", "Diaľnice", ["motorway"], "motorway", "motorwayCasing",
-    [[4, 0.5], [6, 0.9], [10, 3], [14, 8], [16, 18], [20, 216]], 3, 4],
+    [[4, 0.5], [6, 0.9], [10, 3], [14, 8], [16, 18], [20, 162]], 3, 4],
   ["trunk", "Rýchlostné cesty", ["trunk"], "trunk", "roadCasing",
-    [[5, 0.45], [7, 0.8], [10, 2.6], [14, 7], [16, 16], [20, 192]], 2.6, 5],
+    [[5, 0.45], [7, 0.8], [10, 2.6], [14, 7], [16, 16], [20, 144]], 2.6, 5],
   ["primary", "Cesty I. triedy", ["primary"], "primary", "roadCasing",
-    [[6, 0.4], [8, 0.75], [10, 2.2], [14, 6.5], [16, 15], [20, 180]], 2.4, 6],
+    [[6, 0.4], [8, 0.75], [10, 2.2], [14, 6.5], [16, 15], [20, 135]], 2.4, 6],
   ["secondary", "Cesty II. triedy", ["secondary"], "secondary", "roadCasing",
-    [[8, 0.4], [10, 0.7], [12, 2], [14, 5], [16, 12], [20, 144]], 2, 8],
+    [[8, 0.4], [10, 0.7], [12, 2], [14, 5], [16, 12], [20, 108]], 2, 8],
   ["tertiary", "Cesty III. triedy", ["tertiary"], "secondary", "roadCasing",
-    [[9, 0.35], [11, 0.6], [12, 1.6], [14, 4.2], [16, 10], [20, 120]], 1.8, 9],
+    [[9, 0.35], [11, 0.6], [12, 1.6], [14, 4.2], [16, 10], [20, 90]], 1.8, 9],
   // `living_street` schéma nevydáva – `highway=living_street` mapuje na
   // `minor` rovnako ako `residential` a `unclassified`.
   ["minor", "Miestne cesty", ["minor", "raceway", "busway", "bus_guideway"], "minor", "roadCasing",
-    [[11, 0.3], [12, 0.6], [14, 3.5], [16, 9], [20, 108]], 1.6, 11],
+    [[11, 0.3], [12, 0.6], [14, 3.5], [16, 9], [20, 81]], 1.6, 11],
   ["service", "Účelové cesty", ["service"], "service", "roadCasing",
-    [[12, 0.3], [13, 0.5], [14, 2], [16, 6], [20, 72]], 1.2, 12],
+    [[12, 0.3], [13, 0.5], [14, 2], [16, 6], [20, 54]], 1.2, 12],
   ["pedestrian", "Pešie zóny", ["pedestrian"], "pedestrian", "roadCasing",
-    [[12, 0.3], [13, 0.6], [14, 2.4], [16, 7], [20, 84]], 1.2, 12]
+    [[12, 0.3], [13, 0.6], [14, 2.4], [16, 7], [20, 63]], 1.2, 12]
 ];
 
 /** Prípony troch priechodov ciest (tunel → povrch → most) – pre kontrolu. */
@@ -4414,13 +4448,13 @@ export function buildStyle({
           "symbol-placement": "line",
           "symbol-spacing": 200,
           "icon-image": SPECIAL.arrow,
-          "icon-size": zl([[16, 0.6], [20, 1.2]]),
+          "icon-size": zl([[16, 0.9], [20, 1.8]]),
           "icon-rotate": ["case", ["==", num("oneway", 0), -1], 180, 0],
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true
         },
         paint: {
-          "icon-opacity": 0.5,
+          "icon-opacity": 0.8,
           ...(sdfIcons ? { "icon-color": c.onewayIcon } : {})
         }
       },
@@ -4719,7 +4753,7 @@ export function buildStyle({
             "line-width": zw(TRAIL_STRIPE),
             "line-offset": trailOffset,
             "line-opacity": zl([[9, 0.75], [13, 0.95]]),
-            ...(dashArray(dash) ? { "line-dasharray": dashArray(dash) } : {})
+            ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {})
           }
         },
         ["trasy", label, "line", {}, [...MARK_KEYS, paletteKey]]
@@ -5529,7 +5563,9 @@ export function buildStyle({
         "text-field": nameExpr,
         "text-font": REG,
         // read on a bike at arm's length: a fifth bigger from z16 on
-        "text-size": zl([[13, 10.5], [16, 14], [20, 19]])
+        "text-size": zl([[13, 10.5], [16, 14], [20, 19]]),
+        // zoomed in, the default spacing put a street's name twice on one phone screen
+        "symbol-spacing": zl([[13, 250], [16, 450], [20, 900]])
       },
       paint: {
         "text-color": c.roadText,

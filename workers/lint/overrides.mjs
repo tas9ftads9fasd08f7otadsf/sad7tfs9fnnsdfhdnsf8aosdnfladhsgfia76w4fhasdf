@@ -335,6 +335,8 @@ for (const [z, expected] of [[5, 2], [9, 2], [11.9, 2], [12, 4], [12.9, 4], [13,
       if ((layer.metadata || {})["frico:derived"]) continue;
       const arr = (layer.paint || {})["line-dasharray"];
       const meta = (layer.metadata || {})["frico:dash"];
+      // a zoom step comes from overrides, never from the style's own dash
+      if (Array.isArray(arr) && arr[0] === "step") continue;
       if (!Array.isArray(arr)) {
         if (meta !== undefined) {
           error("poc/web/themes.js",

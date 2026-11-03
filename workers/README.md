@@ -3767,7 +3767,10 @@ Formát súboru:
     "turisticka": {
       "layers": {
         "road-path":  { "dash": "dotted", "paint": { "line-width": 2 } },
-        "trail-ski":  { "visible": true }
+        "trail-ski":  { "visible": true },
+        "trail-hiking": { "variants": [
+          { "attr": "way", "values": ["path"], "dash": [[0, 12, "solid"], [13, 24, "dashed"]] }
+        ] }
       },
       "poi": { "hidden": [] }
     },
@@ -3778,6 +3781,10 @@ Formát súboru:
   }
 }
 ```
+
+`dash` je meno predvoľby, alebo zoomové pásma `[[od, do, predvoľba], …]`, ktoré
+na seba nadväzujú – trasa vyššie je na chodníku do z12 plná a od z13 čiarkovaná.
+Platí to pre vrstvu, jej variant aj druh trasy (`trails.types.<druh>.dash`).
 
 `layers` a `poi` platia pre **všetky** typy máp, `maps.<typ>` len pre jeden a
 prebíja spoločné nastavenie (`paint` sa mieša po jednotlivých vlastnostiach).
