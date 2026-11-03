@@ -1173,6 +1173,9 @@ export const METRES_PER_PX_Z0 = 156543.03 * Math.cos((48.7 * Math.PI) / 180);
 /** Šírka v pixeloch, ktorú má na zemi `metres` – dlaždice majú 512 px. */
 export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 / 2);
 
+/** Protected-area band width in px; at most the 8 px tile buffer (4 of 256 at 512 px). */
+export const PARK_BAND = [[8, 2], [11, 4], [13, 6], [14, 7]];
+
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
 export const PATH_GROUND_MIN_Z = 16;
@@ -3740,16 +3743,25 @@ export function buildStyle({
     );
   }
 
+  // a band inside the border, not a fill: a nature park covers whole ranges of rock and ice
   add(
     {
       id: "park",
-      type: "fill",
+      type: "line",
       "source-layer": "park",
       // vrstva `park` nesie aj bod pre popisok, nie len obrys
       filter: polygonOnly(),
-      paint: { "fill-color": c.park, "fill-opacity": 0.55 }
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": c.park,
+        // within the tile buffer, else tile seams inside a park show as stripes
+        "line-width": zl(PARK_BAND),
+        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
+        "line-blur": 1.5,
+        "line-opacity": 0.45
+      }
     },
-    ["uzemie", "Park (plocha)", "area", { "fill-color": "park" }]
+    ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
   );
   add(
     {
