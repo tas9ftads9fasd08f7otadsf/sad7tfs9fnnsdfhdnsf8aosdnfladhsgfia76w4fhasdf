@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T12:13:50.206Z",
+  "updated_at": "2026-11-03T12:16:41.152Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -525,7 +525,28 @@
                 5.5
               ]
             ]
-          }
+          },
+          "variants": [
+            {
+              "attr": "way",
+              "values": [
+                "path"
+              ],
+              "label": "po chodníku",
+              "dash": [
+                [
+                  0,
+                  12,
+                  "solid"
+                ],
+                [
+                  13,
+                  24,
+                  "dashed"
+                ]
+              ]
+            }
+          ]
         },
         "trail-ferrata": {
           "paint": {

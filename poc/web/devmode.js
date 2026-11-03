@@ -71,7 +71,7 @@ import {
   normalizeMapType,
   OFFERED_MAP_TYPES
 } from "./themes.js";
-import { PATTERNS, DASH_PRESETS, dashPreview, dashLabel } from "./patterns.js";
+import { PATTERNS, DASH_PRESETS, dashPreview, dashLabel, isDashBands } from "./patterns.js";
 import {
   patternPreview,
   patternPicker,
@@ -2021,6 +2021,9 @@ export function initDevMode({
       note ? el("small", { text: note }) : null
     ]);
 
+  // dash bands are written in the overrides file; the panel shows them and keeps them
+  const ZOOM_DASH = "__zoom";
+
   /**
    * Výber prerušovania čiary s náhľadom – samotný názov („Čiarkovaná") o nej
    * veľa nepovie.
@@ -2031,25 +2034,27 @@ export function initDevMode({
    */
   function dashField({ label, value, onChange, builtin }) {
     const preview = el("span", { class: "dev-dash" });
+    const bands = isDashBands(value);
     const draw = (id) => {
-      const d = dashPreview(id === "" ? builtin : id, 2);
+      const d = dashPreview(id === "" ? builtin : id === ZOOM_DASH ? value[0][2] : id, 2);
       preview.innerHTML =
         `<svg width="54" height="10" viewBox="0 0 54 10" aria-hidden="true">` +
         `<line x1="1" y1="5" x2="53" y2="5" stroke="currentColor" stroke-width="2"` +
         (d ? ` stroke-dasharray="${d}"` : "") +
         `/></svg>`;
     };
-    draw(value);
+    draw(bands ? ZOOM_DASH : value);
     const field = selectField({
       label,
-      value,
+      value: bands ? ZOOM_DASH : value,
       options: [
+        ...(bands ? [[ZOOM_DASH, `podľa zoomu: ${dashLabel(value)}`]] : []),
         ...(builtin !== undefined ? [["", `— zo štýlu (${dashLabel(builtin)}) —`]] : []),
         ...DASH_PRESETS.map((d) => [d.id, d.label])
       ],
       onChange: (v) => {
         draw(v);
-        onChange(v);
+        if (v !== ZOOM_DASH) onChange(v);
       }
     });
     return el("span", { class: "dev-dashrow" }, [field, preview]);
