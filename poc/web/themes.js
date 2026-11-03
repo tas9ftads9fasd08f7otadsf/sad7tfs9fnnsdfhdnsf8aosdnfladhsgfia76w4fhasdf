@@ -6013,12 +6013,16 @@ export function buildStyle({
     ["hamlet", "Osady", ["hamlet"], 12, REG, zl([[12, 10], [18, 14]])],
     ["suburb", "Mestské časti", ["suburb"], 11, REG, zl([[11, 11], [18, 15]])],
     ["village", "Obce", ["village"], 9, REG, zl([[9, 10], [16, 15]])],
-    ["town", "Mestá", ["town"], 7, REG, zl([[7, 11], [14, 18]])],
-    ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [13, 22]])],
+    // bold capitals tell towns from villages close up and cities at every zoom, as on Mapy.com
+    ["town", "Mestá", ["town"], 7, BOLD, zl([[7, 11], [14, 18]]), 13],
+    ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [13, 22]]), 0],
     ["state", "Kraje a regióny", ["state", "province"], 4, BOLD, zl([[4, 11], [8, 15]])],
     ["country", "Štáty", ["country"], 2, BOLD, zl([[2, 11], [6, 18]])]
   ];
-  for (const [id, label, classes, mz, font, size] of places) {
+  for (const [id, label, classes, mz, font, size, capsFrom] of places) {
+    const caps = capsFrom === undefined ? {}
+      : { "text-transform": capsFrom ? ["step", ["zoom"], "none", capsFrom, "uppercase"] : "uppercase",
+          "text-letter-spacing": 0.04 };
     add(
       {
         id: `place-${id}`,
@@ -6031,6 +6035,7 @@ export function buildStyle({
           "text-font": font,
           "text-size": size,
           "text-max-width": 9,
+          ...caps,
           "symbol-sort-key": num("rank", 100)
         },
         paint: {
