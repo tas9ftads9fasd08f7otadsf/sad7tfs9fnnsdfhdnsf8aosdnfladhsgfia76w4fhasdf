@@ -422,7 +422,9 @@
           "outline": [
             6757027
           ],
-          "settings": {}
+          "settings": {
+            "aerial_maxzoom": 18
+          }
         },
         "belianske_tatry": {
           "country": "slovensko",
