@@ -1118,7 +1118,8 @@ v [`workers/data/map-settings.json`](data/map-settings.json) (zdroje sú v
 `sources.aerial` aj s adresou, zoomami a autormi), zabalené do rastrového
 `.pmtiles` (`workers/mountain/aerial.py`). Leto je ortofotomozaika
 `ofmozaika_sk` (`ofmozaika2c.tiles.freemap.sk`) do z17 – nad Tatrami ~0,5 GB;
-z18 je štvornásobok (`aerial_maxzoom: 18`). Mozaika je slovenská – za hranicou
+z18 je štvornásobok (`aerial_maxzoom: 18`) a Vysoké Tatry ho majú
+v `settings` svojho pohoria. Mozaika je slovenská – za hranicou
 dlaždice chýbajú a mapa pod nimi ostane. Zima zatiaľ zdroj nemá, takže sa jej
 balík nerobí. freemap.sk
 je dobrovoľnícky server: sťahujú 4 spojenia a dlaždice ostávajú v cache na Drive.

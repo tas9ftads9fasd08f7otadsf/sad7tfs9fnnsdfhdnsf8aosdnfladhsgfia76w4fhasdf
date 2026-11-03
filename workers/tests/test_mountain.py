@@ -59,6 +59,15 @@ class Registry(unittest.TestCase):
             got, _ = opts.resolve(settings, regions, mountain=key)
             self.assertEqual((got["contour_interval"], got["contour_source"]), ("5", "dmr5"), key)
 
+    def test_only_the_high_tatras_take_photos_to_z18(self):
+        opts = worker("plan/options.py")
+        settings, regions = opts.load_settings(), registry("regions")
+        for key in registry("mountains"):
+            if key.startswith("_"):
+                continue
+            got, _ = opts.resolve(settings, regions, mountain=key)
+            self.assertEqual(got["aerial_maxzoom"], "18" if key == "vysoke_tatry" else "", key)
+
     def test_exaggeration_is_the_styles(self):
         with open(os.path.join(ROOT, "poc", "web", "themes.js"), encoding="utf-8") as f:
             found = re.search(r"DEFAULT_TERRAIN_EXAGGERATION = ([\d.]+)", f.read())
