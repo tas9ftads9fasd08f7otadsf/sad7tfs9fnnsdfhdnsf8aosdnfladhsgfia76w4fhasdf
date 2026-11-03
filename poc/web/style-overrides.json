@@ -43,6 +43,14 @@
     {
       "id": "road-tertiary",
       "before": "road-shield-motorway"
+    },
+    {
+      "id": "park-name",
+      "before": "mountain-peak"
+    },
+    {
+      "id": "park-area-name",
+      "before": "mountain-peak"
     }
   ],
   "poi": {
