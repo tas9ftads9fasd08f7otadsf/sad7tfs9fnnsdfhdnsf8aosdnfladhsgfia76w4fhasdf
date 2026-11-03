@@ -194,3 +194,86 @@ layers:
             type: long
           - key: osm_type
             value: '${ feature.osm_type }'
+
+  # a range's peaks and saddles: the base map's `mountain_peak` has them, a range has no base map
+  - id: peak
+    features:
+      - source: osm
+        geometry: centroid
+        min_zoom: 10
+        include_when:
+          natural: [peak, volcano]
+        attributes:
+          - key: name
+          - key: ele
+          - key: class
+            value: peak
+          - key: osm_id
+            value: '${ feature.id }'
+            type: long
+          - key: osm_type
+            value: '${ feature.osm_type }'
+      - source: osm
+        geometry: centroid
+        min_zoom: 12
+        include_when:
+          natural: saddle
+        attributes:
+          - key: name
+          - key: ele
+          - key: class
+            value: saddle
+          - key: osm_id
+            value: '${ feature.id }'
+            type: long
+          - key: osm_type
+            value: '${ feature.osm_type }'
+
+# TESTS: `java -jar planetiler.jar verify workers/features/points.yml`
+examples:
+  - name: A peak is named with its height from z10
+    input:
+      source: osm
+      geometry: point
+      tags:
+        natural: peak
+        name: Gerlachovský štít
+        ele: '2655'
+    output:
+      - layer: peak
+        geometry: point
+        min_zoom: 10
+        tags:
+          class: peak
+          name: Gerlachovský štít
+          ele: 2655.0
+
+  - name: A saddle is a point from z12
+    input:
+      source: osm
+      geometry: point
+      tags:
+        natural: saddle
+        name: Priečne sedlo
+    output:
+      - layer: peak
+        geometry: point
+        min_zoom: 12
+        tags:
+          class: saddle
+          name: Priečne sedlo
+
+  - name: A spring stays a landscape point
+    input:
+      source: osm
+      geometry: point
+      tags:
+        natural: spring
+        name: Studnička
+    output:
+      - layer: feature_point
+        geometry: point
+        min_zoom: 12
+        tags:
+          class: spring
+          name: Studnička

@@ -2396,6 +2396,10 @@ vznikali v jednom súbore (`features.yml`) a appka ich nemala ako rozdeliť bez
 toho, aby ho rozbalila a filtrovala obsah sama. Vstup aj predfilter zostali
 spoločné (`workers/features/build.sh` beží Planetiler nad tým istým PBF
 druhýkrát, raz na každú schému).
+Vrstva `peak` v nich nesie štíty a sedlá (`natural=peak`, `volcano`, `saddle`)
+s menom a výškou: kraj ich má v `mountain_peak` základnej mapy, pohorie
+základnú mapu nemá. Štýly krajov ju nekreslia, takže štít nie je dvakrát; kreslí
+ju aplikácia na mape pohoria.
 
 Krajinné línie a plochy (`-features.pmtiles`: násypy, múry, ploty, vedenia,
 parkoviská, zjazdovky, …) VLASTNÝ balík nemajú a ostávajú v základnej mape –
