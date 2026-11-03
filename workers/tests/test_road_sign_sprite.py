@@ -122,6 +122,19 @@ class Entries(unittest.TestCase):
                          ("regulatory", 104, "Stoj"))
         self.assertNotIn("sk.ts.101", index, "the region has no SK:101, so no image")
 
+    @needs("PIL")
+    @needs_cmd("rsvg-convert")
+    def test_a_sheet_sharp_on_a_3x_screen(self):
+        from PIL import Image
+
+        base = os.path.join(self.root, "r-roadsigns")
+        sp.write(self.entries(self.used), base)
+        with open(base + "@6x.json") as f:
+            stop = json.load(f)["sk.ts.stop"]
+        self.assertEqual((stop["height"], stop["pixelRatio"]), (6 * sp.SIDE, 6))
+        with Image.open(base + "@6x.png") as sheet:
+            self.assertLessEqual(sheet.width, sp.MAX_WIDTH)
+
 
 if __name__ == "__main__":
     unittest.main()

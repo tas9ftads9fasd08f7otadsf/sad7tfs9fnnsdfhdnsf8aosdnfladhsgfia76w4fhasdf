@@ -17,6 +17,9 @@ DEAD_END = "information/dead-end"
 # side of the box a sign fits in, at 1x
 SIDE = 24
 ROW = 32
+# the app draws a sign up to 44 pt on a 3x screen (TestFlight AKMw)
+SHEETS = (("", 1), ("@2x", 2), ("@6x", 6))
+MAX_WIDTH = 2048
 
 
 def supported(country, mapping=MAPPING):
@@ -116,23 +119,24 @@ def raster(path, side):
 
 
 def write(found, base, width=1024):
-    """Shelf-packed sheets at 1x and 2x, every name of an image pointing at one cut."""
+    """Shelf-packed sheets at each of `SHEETS`, every name of an image pointing at one cut."""
     from PIL import Image
 
     images = sorted(found)
-    for suffix, ratio in (("", 1), ("@2x", 2)):
+    for suffix, ratio in SHEETS:
         cuts, x, y = [], 0, 0
+        wide = min(width * ratio, MAX_WIDTH)
         for path in images:
             try:
                 img = raster(path, SIDE * ratio)
             except (subprocess.CalledProcessError, OSError) as exc:
                 print(f"::warning::{path} couldn't be drawn: {exc}")
                 continue
-            if x + img.width > width * ratio:
+            if x + img.width > wide:
                 x, y = 0, y + ROW * ratio
             cuts.append((path, img, x, y))
             x += img.width + 2 * ratio
-        sheet = Image.new("RGBA", (width * ratio, max(y + ROW * ratio, 1)))
+        sheet = Image.new("RGBA", (wide, max(y + ROW * ratio, 1)))
         index = {}
         for path, img, cx, cy in cuts:
             sheet.paste(img, (cx, cy))
@@ -171,7 +175,7 @@ def main():
         return
     n = write(found, a.out)
     names = sum(len(v["names"]) for v in found.values())
-    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x)")
+    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x, @6x)")
 
 
 if __name__ == "__main__":

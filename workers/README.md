@@ -2269,7 +2269,8 @@ ako návestidlá vo vrstve `railway_point` železníc): uzly s
 PBF ciest (Planetiler berie jeden OSM vstup), z prvej značky v hodnote:
 `SK:253[50];SK:506` → `sk.ts.253-50`, holé `stop` alebo `highway=stop` dostane
 krajinu kraja (`sk.ts.stop`), `traffic_sign=maxspeed` číslo z `maxspeed`.
-Obrázky sú sprite `<kraj>-roadsigns.json/.png` (+`@2x`), ktorý
+Obrázky sú sprite `<kraj>-roadsigns.json/.png` (+`@2x` a `@6x` – ten kreslí
+aplikácia v navigačnej karte, kde je značka veľká), ktorý
 [`sprite.py`](transport/sprite.py) kreslí zo zbierky
 [skifahrer/traffic-signs](https://github.com/skifahrer/traffic-signs) – tá je
 len zdroj obrázkov po krajinách. **Ktorá hodnota z OSM je ktorý obrázok, hovorí

@@ -137,7 +137,7 @@ def road_signs_files(site, man):
 
 
 ROAD_SIGNS_SUFFIXES = ("-roadsigns.json", "-roadsigns.png", "-roadsigns@2x.json",
-                       "-roadsigns@2x.png")
+                       "-roadsigns@2x.png", "-roadsigns@6x.json", "-roadsigns@6x.png")
 
 
 def regulations_files(site, man):
