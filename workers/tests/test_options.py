@@ -103,6 +103,28 @@ class Options(unittest.TestCase):
         v, _ = self.ok("--rebuild=rocks")
         self.assertEqual((v["rocks_rebuild"], v["terrain_rebuild"]), ("true", "false"))
 
+    def test_a_mountain_downloads_its_photos_anew(self):
+        for rebuild, aerial, rocks in (("aerial", "true", "false"), ("everything", "true", "true"),
+                                       ("rocks", "false", "true")):
+            v, _ = self.ok("--mountain=vysoke_tatry", f"--rebuild={rebuild}", **FROM_SETTINGS)
+            self.assertEqual((v["aerial_rebuild"], v["rocks_rebuild"]), (aerial, rocks), rebuild)
+        _, said = self.ok("--mountain=vysoke_tatry", "--rebuild=aerial", **FROM_SETTINGS)
+        self.assertIn("recomputed: aerial\n", said)
+
+    def test_a_region_has_no_photos_to_rebuild(self):
+        v, said = self.ok("--rebuild=everything")
+        self.assertEqual(v["aerial_rebuild"], "false")
+        self.assertNotIn("aerial", said.split("recomputed:")[1].splitlines()[0])
+
+    @needs("yaml")
+    def test_the_mountain_form_offers_only_known_rebuilds(self):
+        import yaml  # noqa: PLC0415
+        with open(os.path.join(os.path.dirname(WORKERS), ".github", "workflows", "mountain.yml")) as f:
+            inputs = yaml.safe_load(f)[True]["workflow_dispatch"]["inputs"]
+        offered = inputs["rebuild"]["options"]
+        self.assertIn("aerial", offered)
+        self.assertEqual(set(offered) - set(OPTS.REBUILD), set())
+
 
 def settings_with(**maps):
     return {"defaults": {**{k: "" for k in OPTS.DESCRIPTIONS}, "contour_source": "sonny",

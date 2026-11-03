@@ -163,16 +163,19 @@ REBUILD = {
     "rocks": ("rocks_rebuild",),
     "terrain": ("terrain_rebuild",),
     "articles": ("wiki_rebuild",),
+    "aerial": ("aerial_rebuild",),
     "everything": ("contours_rebuild", "rocks_rebuild", "terrain_rebuild",
-                   "wiki_rebuild"),
+                   "wiki_rebuild", "aerial_rebuild"),
 }
+# only a mountain package has photos; the region form doesn't offer these
+MOUNTAIN_REBUILDS = ("aerial",)
 # former values → today's; translated aloud, "Re-run" carries the old form
 REBUILD_ALIAS = {"teren": "terrain", "nic": "nothing", "vrstevnice": "contours",
                  "skaly": "rocks", "tienovanie": "terrain", "clanky": "articles",
                  "vsetko": "everything"}
 # the flags `rebuild` switches – one list, so none can be forgotten
 REBUILD_FLAGS = ("contours_rebuild", "rocks_rebuild", "terrain_rebuild",
-                 "wiki_rebuild")
+                 "wiki_rebuild", "aerial_rebuild")
 
 # what `rebuild` does NOT redo; said aloud, or "everything" reads as a lie
 REBUILD_OUTSIDE = [
@@ -530,6 +533,10 @@ def main():
         return 1
     for flag in REBUILD_FLAGS:
         values[flag] = "true" if flag in REBUILD[rebuild] else "false"
+    # a region's "everything" mustn't claim photos it doesn't have
+    if not args.mountain:
+        for flag in (f for v in MOUNTAIN_REBUILDS for f in REBUILD[v]):
+            values[flag] = "false"
 
     # a quick test always rebuilds everything; the real run's cache is safe –
     # its keys carry `dem_bboxkey`, which for a test is the test square's bbox
