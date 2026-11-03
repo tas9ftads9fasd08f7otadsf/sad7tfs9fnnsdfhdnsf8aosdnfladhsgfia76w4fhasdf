@@ -166,6 +166,7 @@ if (marks.length) {
       marks.map(([k, v]) => `${k} ${v} (was ${TRAIL_MARK_DEFAULTS[k]})`).join(", ")
   );
 }
+if (overrides.trails?.lanes) summary.push(`  trail lanes: one per ${overrides.trails.lanes}`);
 for (const [id, def] of Object.entries(overrides.shields || {})) {
   summary.push(`  shield ${id}: shape ${def.shape}`);
 }

@@ -1181,6 +1181,9 @@ export const PATH_GROUND_MIN_Z = 16;
 export const TRAIL_GAP_ZOOM = 16;
 const atZoom = (stops, z) => (stops.find(([sz]) => sz === z) || [, 0])[1];
 
+/** One stripe per route (`route`), or one per mark colour, as Mapy.com draws them. */
+export const TRAIL_LANES = ["route", "colour"];
+
 /** Predvolené odstupy v pixeloch pri z16 – to, čo prepisuje developer mode. */
 export const TRAIL_GAP_DEFAULTS = {
   road: atZoom(TRAIL_OFFSET_ROAD, TRAIL_GAP_ZOOM),
@@ -2248,6 +2251,13 @@ export function normalizeOverrides(raw) {
     const round = Math.round(n * 10) / 10;
     if (round !== def) out.trails.gap[key] = round;
   }
+  if (rawTrails.lanes != null) {
+    if (!TRAIL_LANES.includes(rawTrails.lanes)) {
+      problems.push(`Pruhy trás "${rawTrails.lanes}": poznám ${TRAIL_LANES.join(", ")}.`);
+    } else if (rawTrails.lanes !== TRAIL_LANES[0]) {
+      out.trails.lanes = rawTrails.lanes;
+    }
+  }
   for (const [id, def] of Object.entries(rawTrails.types || {})) {
     if (!TRAIL_BY_ID[id]) {
       problems.push(`Neznámy druh trasy "${id}" – preskakujem.`);
@@ -2668,6 +2678,7 @@ export function hasOverrides(o) {
     Object.keys(o.trails?.gap || {}).length > 0 ||
     Object.keys(o.trails?.types || {}).length > 0 ||
     Object.keys(o.trails?.marks || {}).length > 0 ||
+    Boolean(o.trails?.lanes) ||
     Object.keys(o.shields || {}).length > 0 ||
     o.routeShields === false ||
     (o.iconSets || []).length > 0 ||
@@ -4651,6 +4662,10 @@ export function buildStyle({
     // krivka (`TRAIL_STRIPE`) a tá istá interpolácia – inak by medzi trasami
     // presvital podklad. Čísla sú pixely pri z16.
     const trailGaps = trailGapPx(overrides);
+    // tiles from before `lane` existed keep a stripe per route
+    const laneNum = overrides?.trails?.lanes === "colour"
+      ? ["to-number", ["coalesce", ["get", "lane"], ["get", "off"], 0]]
+      : num("off", 0);
     const scaled = (stops, ref, want) =>
       stops.map(([z, v]) => [z, Math.round(((v * want) / ref) * 100) / 100]);
     const ROAD_STOPS = scaled(TRAIL_OFFSET_ROAD, TRAIL_GAP_DEFAULTS.road, trailGaps.road);
@@ -4672,7 +4687,7 @@ export function buildStyle({
           [
             "+",
             ["case", ["==", str("way"), "path"], PATH_STOPS[i][1], ROAD_STOPS[i][1]],
-            ["*", num("off", 0), PITCH_STOPS[i][1]]
+            ["*", laneNum, PITCH_STOPS[i][1]]
           ]
         ]
       ])
@@ -4782,7 +4797,7 @@ export function buildStyle({
       for (const side of [1, -1]) {
         for (let off = 0; off <= TRAIL_MARK_STACK_MAX; off += 1) {
           expr.push(
-            ["all", ["==", num("side", 1), side], ["==", num("off", 0), off]],
+            ["all", ["==", num("side", 1), side], ["==", laneNum, off]],
             ["literal", [0, -side * (base + step * off)]]
           );
         }

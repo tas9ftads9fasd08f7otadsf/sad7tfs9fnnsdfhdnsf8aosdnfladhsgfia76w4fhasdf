@@ -11,7 +11,7 @@
  *   2. offset curves share the breaks of `TRAIL_OFFSET_ZOOMS` – they combine by index;
  *   3. `TRAIL_GAP_DEFAULTS` really are the values at `TRAIL_GAP_ZOOM`;
  *   4. the line dash is a valid `patterns.js` preset;
- *   5. `side`, `off` and `way` are in the tile schema;
+ *   5. `side`, `off`, `lane` and `way` are in the tile schema;
  *   6. `orient_ways` is called and its result passed to `Ways`;
  *   7. the pitch is the stripe width – the same curve and interpolation;
  *   8. the offset from the road stays within `TRAIL_OFFSET_LIMIT_M` metres;
@@ -143,7 +143,7 @@ if (!/def orient_ways\(/.test(py)) {
 
 // 5. attributes in the tile schema
 const yml = readFileSync(SCHEMA, "utf8");
-for (const key of ["side", "off", "way"]) {
+for (const key of ["side", "off", "lane", "way"]) {
   if (!new RegExp(`^\\s*-\\s*key:\\s*${key}\\s*$`, "m").test(yml)) {
     bad.push(
       `workers/trails/trails.yml doesn't pass attribute \`${key}\` into tiles, ` +

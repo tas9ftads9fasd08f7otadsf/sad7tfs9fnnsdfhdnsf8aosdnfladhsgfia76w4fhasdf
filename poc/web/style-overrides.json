@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T12:13:49.937Z",
+  "updated_at": "2026-11-03T12:16:41.152Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -53,7 +53,8 @@
         "dash": "dashed-long"
       }
     },
-    "marks": {}
+    "marks": {},
+    "lanes": "colour"
   },
   "shields": {},
   "routeShields": true,
