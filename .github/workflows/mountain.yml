@@ -546,7 +546,8 @@ jobs:
     name: Package as Apple Archive (.aar)
     needs: [plan, dem, transport, points, water, boundaries, aerial, publish]
     if: ${{ !cancelled() && needs.publish.outputs.published == 'success' && needs.plan.outputs.opt_apple_archive == 'true' }}
-    runs-on: macos-latest
+    # intel: arm runners left `.aar` jobs waiting for one
+    runs-on: macos-15-intel
     permissions:
       contents: write     # `maps.json` – as `publish` does
     env:

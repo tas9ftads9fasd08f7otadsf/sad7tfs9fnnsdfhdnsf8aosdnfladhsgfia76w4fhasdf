@@ -364,7 +364,8 @@ jobs:
     name: Package as Apple Archive (.aar)
     needs: wiki
     if: ${{ !cancelled() && needs.wiki.outputs.published == 'success' }}
-    runs-on: macos-latest
+    # intel: arm runners left `.aar` jobs waiting for one
+    runs-on: macos-15-intel
     permissions:
       contents: write
     steps:

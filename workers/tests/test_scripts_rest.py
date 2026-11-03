@@ -43,7 +43,7 @@ class Guards(unittest.TestCase):
         work = work_dir(self)
         r = self.run_in(work, "workers/deploy/apple-archive.sh", PATH="/usr/bin:/bin")
         self.assertEqual(r.returncode, 1)
-        self.assertIn("macos-latest", r.stdout)
+        self.assertIn("macos-15-intel", r.stdout)
         with Stubs(aa=[{"match": ".*"}]) as s:
             r = s.run(["bash", "workers/deploy/apple-archive.sh"], cwd=work, env=s.env(TEST_KM2="0"))
             self.assertEqual(r.returncode, 1)

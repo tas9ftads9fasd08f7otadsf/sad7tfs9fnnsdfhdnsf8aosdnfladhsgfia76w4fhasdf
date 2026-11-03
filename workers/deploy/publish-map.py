@@ -182,7 +182,7 @@ def main():
         # skipping silently is not allowed; `aa` exists only on macOS
         raise SystemExit("::error::Apple Archive can't be built – the `aa` tool "
                          "isn't here. It ships with macOS (11+), so a `--format` "
-                         "with `aar` belongs in a job on `macos-latest`; on Linux "
+                         "with `aar` belongs in a job on `macos-15-intel`; on Linux "
                          "keep `--format=zip`.")
 
     parts = drive_path(regions)
