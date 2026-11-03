@@ -4247,6 +4247,9 @@ node workers/tests/browser.mjs --work=/tmp/mini --deps=<npm prefix s playwright>
 - `Check · mini region` (`mini-region.yml`): pár km² OSM z `mini_region.py`
   cez každý `build.sh`, vrstevnice, skaly a tieňovanie zo syntetického kopca,
   potom `check-packages.py` a viewer v Chromiu (`browser.mjs`).
+  Beží len pri zmene súborov, z ktorých sa mapa stavia (zoznam `paths` vo
+  workflowe, pre push na master aj PR rovnaký); PR len s `CLAUDE.md` či
+  dokumentáciou ho preskočí.
 
 Test, ktorý potrebuje numpy, osmium, GDAL a pod., má `@needs(...)` /
 `@needs_cmd(...)` z `workers/tests/load.py`. Falošné príkazy (`gh`, `java`,

@@ -3,7 +3,9 @@ name: Check · mini region
 # a few km² of OSM and a synthetic hill through every package build, read back
 
 on:
+  # a PR branch is checked by `pull_request`; pushing it as well would run twice
   push:
+    branches: [master]
     paths:
       - "workers/transport/**"
       - "workers/boundaries/**"
@@ -18,16 +20,50 @@ on:
       - "workers/terrain/**"
       - "workers/styles/**"
       - "workers/lib/**"
+      - "workers/assets/**"
+      - "workers/data/**"
+      - "workers/dem/**"
+      - "workers/drive/store.py"
+      - "workers/plan/region-poly.py"
+      - "workers/lint/**"
+      - "workers/tests/load.py"
       - "workers/tests/mini_region.py"
       - "workers/tests/integration.py"
       - "workers/tests/check-packages.py"
       - "workers/tests/geo.py"
       - "workers/tests/browser.mjs"
-      - "workers/assets/**"
       - "poc/web/**"
       - ".github/workflows/mini-region.yml"
-  # every PR, whatever it touches
+  # the same list: a PR that only touches docs or CLAUDE.md skips the build
   pull_request:
+    paths:
+      - "workers/transport/**"
+      - "workers/boundaries/**"
+      - "workers/water/**"
+      - "workers/rail/**"
+      - "workers/history/**"
+      - "workers/buildings/**"
+      - "workers/trails/**"
+      - "workers/features/**"
+      - "workers/routing/**"
+      - "workers/contours-rocks/**"
+      - "workers/terrain/**"
+      - "workers/styles/**"
+      - "workers/lib/**"
+      - "workers/assets/**"
+      - "workers/data/**"
+      - "workers/dem/**"
+      - "workers/drive/store.py"
+      - "workers/plan/region-poly.py"
+      - "workers/lint/**"
+      - "workers/tests/load.py"
+      - "workers/tests/mini_region.py"
+      - "workers/tests/integration.py"
+      - "workers/tests/check-packages.py"
+      - "workers/tests/geo.py"
+      - "workers/tests/browser.mjs"
+      - "poc/web/**"
+      - ".github/workflows/mini-region.yml"
   workflow_dispatch:
   schedule:
     # Planetiler and osmium are installed unpinned and change under us
