@@ -37,6 +37,9 @@ fi
 TZ_="$OPT_TRAILS_MAXZOOM"
 case "$TZ_" in ''|*[!0-9]*) TZ_=14 ;; esac
 if [ "$TZ_" -gt 16 ]; then TZ_=16; fi
+LZ_="$OPT_TRAILS_LOCAL_MINZOOM"
+case "$LZ_" in ''|*[!0-9]*) LZ_=11 ;; esac
+if [ "$LZ_" -gt "$TZ_" ]; then LZ_=$TZ_; fi
 
 # the map's own region cut, so trails don't reach beyond it
 mapfile -t CLIP < <(workers/lib/region-clip.sh "$REGION_BBOX")
@@ -47,8 +50,10 @@ java -Xmx4g -jar planetiler.jar generate-custom \
   "${CLIP[@]}" \
   --output="_site/tiles/${REGION_KEY}-trails.pmtiles" \
   --maxzoom="$TZ_" --render_maxzoom="$TZ_" \
+  --local_minzoom="$LZ_" \
   --simplify_tolerance_at_max_zoom=0 \
   --min_feature_size_at_max_zoom=0 \
+  --min_feature_size=0 \
   --force
 
 OUT="_site/tiles/${REGION_KEY}-trails.pmtiles"
