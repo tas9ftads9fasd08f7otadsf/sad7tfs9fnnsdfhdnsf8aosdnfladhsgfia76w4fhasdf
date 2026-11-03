@@ -4,6 +4,7 @@ import argparse
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -153,6 +154,39 @@ def write(found, base, width=1024):
     return len(images)
 
 
+def plain_svg(path):
+    """The SVG re-drawn by rsvg in Cairo's shape, its glyphs as plain groups."""
+    # the app's renderer refuses an unnamed group in `<defs>` and draws no `<symbol>`
+    svg = subprocess.run(["rsvg-convert", "-f", "svg", path],
+                         check=True, capture_output=True, text=True).stdout
+    svg = re.sub(r"<defs>\s*<g>(.*?)</g>\s*</defs>", r"<defs>\1</defs>", svg, flags=re.S)
+    svg = re.sub(r"<symbol\b([^>]*)>", r"<g\1>", svg).replace("</symbol>", "</g>")
+    return re.sub(r">\s+<", "><", svg)
+
+
+def write_svg(found, base):
+    """`{base}-svg.json`: each SVG image once, every name pointing at its key."""
+    signs, images = {}, {}
+    for path in sorted(found):
+        if not path.endswith(".svg"):
+            continue
+        try:
+            svg = plain_svg(path)
+        except (subprocess.CalledProcessError, OSError) as exc:
+            print(f"::warning::{path} couldn't be redrawn: {exc}")
+            continue
+        key = os.path.splitext(os.path.basename(path))[0]
+        images[key] = svg
+        for name in found[path]["names"]:
+            signs.setdefault(name, {"image": key})
+    if not images:
+        return 0
+    with open(f"{base}-svg.json", "w", encoding="utf-8") as f:
+        json.dump({"signs": signs, "images": images}, f, sort_keys=True, separators=(",", ":"))
+        f.write("\n")
+    return len(images)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--country", required=True)
@@ -174,8 +208,10 @@ def main():
         print(f"“{a.country}”: no sign this region uses has an image – no road sign sprite.")
         return
     n = write(found, a.out)
+    vectors = write_svg(found, a.out)
     names = sum(len(v["names"]) for v in found.values())
-    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x, @4x)")
+    print(f"Road signs {a.country}: {n} images, {names} names → {a.out}.json/.png (+@2x, @4x),"
+          f" {vectors} SVGs")
 
 
 if __name__ == "__main__":

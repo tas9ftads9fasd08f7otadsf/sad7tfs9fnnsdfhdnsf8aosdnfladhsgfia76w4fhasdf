@@ -131,6 +131,32 @@ class Entries(unittest.TestCase):
             stop = json.load(f)["sk.ts.stop"]
         self.assertEqual((stop["height"], stop["pixelRatio"]), (4 * sp.SIDE, 4))
 
+    @needs_cmd("rsvg-convert")
+    def test_svgs_ship_once_with_every_name(self):
+        base = os.path.join(self.root, "r-roadsigns")
+        found = self.entries(self.used)
+        self.assertEqual(sp.write_svg(found, base), len(found))
+        with open(base + "-svg.json") as f:
+            out = json.load(f)
+        stop, other = out["signs"]["sk.ts.stop"]["image"], out["signs"]["sk.ts.202"]["image"]
+        self.assertEqual(stop, other, "two names of one image share it")
+        self.assertIn("<svg", out["images"][stop])
+        self.assertNotIn("sk.ts.101", out["signs"])
+
+    @needs_cmd("rsvg-convert")
+    def test_glyphs_become_plain_groups(self):
+        path = os.path.join(self.root, "glyphs.svg")
+        with open(path, "w") as f:
+            f.write('<svg xmlns="http://www.w3.org/2000/svg" '
+                    'xmlns:xlink="http://www.w3.org/1999/xlink" width="10" height="10">'
+                    '<defs><g><symbol overflow="visible" id="glyph0-0">'
+                    '<path d="M 0 0 L 5 0 L 5 -5 Z"/></symbol></g></defs>'
+                    '<use xlink:href="#glyph0-0" x="2" y="8"/></svg>')
+        svg = sp.plain_svg(path)
+        self.assertNotIn("<symbol", svg)
+        self.assertNotRegex(svg, r"<defs>\s*<g>")
+        self.assertIn("<path", svg)
+
     @needs("PIL")
     def test_a_small_png_grows_to_the_side(self):
         from PIL import Image
