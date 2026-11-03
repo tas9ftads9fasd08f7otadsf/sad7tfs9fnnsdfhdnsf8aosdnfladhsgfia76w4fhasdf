@@ -87,7 +87,7 @@
         },
         "road-motorway-casing": {
           "paint": {
-            "line-color": "#6fa158"
+            "line-color": "#629157"
           },
           "paintDark": {
             "line-color": "#4c6043"
@@ -103,10 +103,10 @@
         },
         "road-motorway-casing-bridge": {
           "paint": {
-            "line-color": "#808170"
+            "line-color": "#629157"
           },
           "paintDark": {
-            "line-color": "#424238"
+            "line-color": "#4c6043"
           }
         },
         "road-primary": {
@@ -138,13 +138,18 @@
             "line-color": [
               [
                 0,
-                14,
+                13,
                 "#e2dccf"
+              ],
+              [
+                14,
+                14,
+                "#c0b59f"
               ],
               [
                 15,
                 20,
-                "#c8bda8"
+                "#b9b096"
               ]
             ]
           },
@@ -206,7 +211,7 @@
               [
                 15,
                 20,
-                "#c8bda8"
+                "#b9b096"
               ]
             ]
           },
@@ -225,7 +230,18 @@
         },
         "road-footway": {
           "paint": {
-            "line-color": "#e0e5f2"
+            "line-color": [
+              [
+                0,
+                14,
+                "#9c9377"
+              ],
+              [
+                15,
+                20,
+                "#e0e5f2"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#646871"
@@ -234,7 +250,18 @@
           "outline": {
             "color": "#a9a9b2",
             "width": 1,
-            "opacity": 1,
+            "opacity": [
+              [
+                0,
+                14,
+                0
+              ],
+              [
+                15,
+                20,
+                1
+              ]
+            ],
             "colorDark": "#474754"
           }
         },
@@ -299,7 +326,7 @@
               [
                 15,
                 20,
-                "#c8bda8"
+                "#b9b096"
               ]
             ]
           },
@@ -855,6 +882,190 @@
           },
           "paintDark": {
             "fill-color": "#34312a"
+          }
+        },
+        "road-trunk": {
+          "paint": {
+            "line-color": "#fdcd7a"
+          },
+          "paintDark": {
+            "line-color": "#ad7a27"
+          }
+        },
+        "road-trunk-casing": {
+          "paint": {
+            "line-color": "#e8a540"
+          },
+          "paintDark": {
+            "line-color": "#856028"
+          }
+        },
+        "road-motorway-tunnel": {
+          "paint": {
+            "line-color": "#9bd873"
+          },
+          "paintDark": {
+            "line-color": "#6d9e4c"
+          }
+        },
+        "road-motorway-casing-tunnel": {
+          "paint": {
+            "line-color": "#629157"
+          },
+          "paintDark": {
+            "line-color": "#4c6043"
+          }
+        },
+        "road-trunk-bridge": {
+          "paint": {
+            "line-color": "#fdcd7a"
+          },
+          "paintDark": {
+            "line-color": "#ad7a27"
+          }
+        },
+        "road-trunk-casing-bridge": {
+          "paint": {
+            "line-color": "#e8a540"
+          },
+          "paintDark": {
+            "line-color": "#856028"
+          }
+        },
+        "road-trunk-tunnel": {
+          "paint": {
+            "line-color": "#fdcd7a"
+          },
+          "paintDark": {
+            "line-color": "#ad7a27"
+          }
+        },
+        "road-trunk-casing-tunnel": {
+          "paint": {
+            "line-color": "#e8a540"
+          },
+          "paintDark": {
+            "line-color": "#856028"
+          }
+        },
+        "road-primary-bridge": {
+          "paint": {
+            "line-color": "#ffcc77"
+          },
+          "paintDark": {
+            "line-color": "#ad7a27"
+          }
+        },
+        "road-primary-casing-bridge": {
+          "paint": {
+            "line-color": "#e8a540"
+          },
+          "paintDark": {
+            "line-color": "#856028"
+          }
+        },
+        "road-primary-tunnel": {
+          "paint": {
+            "line-color": "#ffcc77"
+          },
+          "paintDark": {
+            "line-color": "#ad7a27"
+          }
+        },
+        "road-primary-casing-tunnel": {
+          "paint": {
+            "line-color": "#e8a540"
+          },
+          "paintDark": {
+            "line-color": "#856028"
+          }
+        },
+        "road-secondary-bridge": {
+          "paint": {
+            "line-color": "#faee75"
+          },
+          "paintDark": {
+            "line-color": "#7e7628"
+          }
+        },
+        "road-secondary-casing-bridge": {
+          "paint": {
+            "line-color": "#cbbf36"
+          },
+          "paintDark": {
+            "line-color": "#656134"
+          }
+        },
+        "road-secondary-tunnel": {
+          "paint": {
+            "line-color": "#faee75"
+          },
+          "paintDark": {
+            "line-color": "#7e7628"
+          }
+        },
+        "road-secondary-casing-tunnel": {
+          "paint": {
+            "line-color": "#cbbf36"
+          },
+          "paintDark": {
+            "line-color": "#656134"
+          }
+        },
+        "road-cycleway": {
+          "paint": {
+            "line-color": [
+              [
+                0,
+                14,
+                "#9c9377"
+              ],
+              [
+                15,
+                20,
+                "#e0e5f2"
+              ]
+            ]
+          },
+          "paintDark": {
+            "line-color": "#646871"
+          },
+          "dash": "solid",
+          "outline": {
+            "color": "#a9a9b2",
+            "width": 1,
+            "opacity": [
+              [
+                0,
+                14,
+                0
+              ],
+              [
+                15,
+                20,
+                1
+              ]
+            ],
+            "colorDark": "#474754"
+          }
+        },
+        "road-pedestrian-casing": {
+          "paint": {
+            "line-color": [
+              [
+                0,
+                14,
+                "#c8bda8"
+              ],
+              [
+                15,
+                20,
+                "#b9b096"
+              ]
+            ]
+          },
+          "paintDark": {
+            "line-color": "#3d3a34"
           }
         }
       },

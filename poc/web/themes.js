@@ -2525,12 +2525,15 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
       } else if (def.outline.dash != null && !DASH_IDS.includes(def.outline.dash)) {
         problems.push(`${where}Vrstva "${id}": neznámy vzor okraja "${def.outline.dash}".`);
       } else {
+        // a casing can fade in by zoom, like Mapy.com's footways
+        const byZoom = Array.isArray(def.outline.opacity)
+          ? cleanValue("line-opacity", def.outline.opacity, id, problems, where) : undefined;
         const opacity = Number(def.outline.opacity);
         clean.outline = {
           color: String(def.outline.color).toLowerCase(),
           width,
           dash: def.outline.dash && def.outline.dash !== "solid" ? def.outline.dash : undefined,
-          opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
+          opacity: byZoom ?? (Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1)
         };
         if (!clean.outline.dash) delete clean.outline.dash;
         // tmavý variant okraja – to isté ako `paintDark`, len na odvodenej vrstve
@@ -3010,7 +3013,7 @@ function outlineLayer(layer, outline) {
       paint: {
         "line-color": outline.color,
         "line-width": outlineWidth(layer, outline.width),
-        "line-opacity": outline.opacity ?? 1,
+        "line-opacity": overrideValue(1, outline.opacity ?? 1, 1),
         ...dash
       }
     };
@@ -3023,7 +3026,7 @@ function outlineLayer(layer, outline) {
       paint: {
         "line-color": outline.color,
         "line-width": outlineWidth(layer, outline.width),
-        "line-opacity": outline.opacity ?? 1,
+        "line-opacity": overrideValue(1, outline.opacity ?? 1, 1),
         ...dash
       }
     };
