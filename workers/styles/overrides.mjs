@@ -56,6 +56,9 @@ try {
 
 const { overrides, problems } = normalizeOverrides(raw);
 
+const dashText = (dash) => (Array.isArray(dash)
+  ? dash.map(([from, to, id]) => `z${from}–${to} ${id}`).join(", ") : dash);
+
 for (const p of problems) console.log(`::warning::${p}`);
 
 // what actually changes
@@ -124,7 +127,7 @@ if (outlined.length) summary.push(`  outlines: ${outlined.map(([id]) => id).join
 if (scaled.length) summary.push(`  scaled from the style: ${scaled.join(", ")}`);
 if (splits.length) summary.push(`  split by OSM: ${splits.join(" · ")}`);
 if (dashed.length) {
-  summary.push(`  line dashes: ${dashed.map(([id, o]) => `${id} → ${o.dash}`).join(", ")}`);
+  summary.push(`  line dashes: ${dashed.map(([id, o]) => `${id} → ${dashText(o.dash)}`).join(", ")}`);
 }
 if (reiconed.length) {
   summary.push(`  icons: ${reiconed.map(([id, o]) => `${id} → ${o.icon}`).join(", ")}`);
@@ -151,7 +154,7 @@ if (gaps.length) {
 }
 for (const [id, def] of Object.entries(overrides.trails?.types || {})) {
   const parts = [];
-  if (def.dash) parts.push(`line ${def.dash}`);
+  if (def.dash) parts.push(`line ${dashText(def.dash)}`);
   if (def.icon != null) parts.push(`icon ${def.icon || "none"}`);
   if (def.mark != null) parts.push(`mark ${def.mark || "none"}`);
   summary.push(`  trail ${id}: ${parts.join(" · ")}`);

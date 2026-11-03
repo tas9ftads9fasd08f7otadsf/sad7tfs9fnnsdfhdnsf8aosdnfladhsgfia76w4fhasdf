@@ -27,6 +27,8 @@ import {
   DASH_IDS,
   dashArray,
   dashIdOf,
+  dashValue,
+  isDashBands,
   patternDef,
   patternImageName
 } from "./patterns.js";
@@ -1388,7 +1390,8 @@ export function trailTypeDef(type, overrides) {
   const mark = typeof own.mark === "string" ? own.mark.trim() : null;
   return {
     ...type,
-    dash: DASH_IDS.includes(own.dash) ? own.dash : type.dash,
+    dash: own.dash !== undefined && cleanDash(own.dash, [], "") !== undefined
+      ? own.dash : type.dash,
     // prázdny reťazec je „žiadna", nie „vezmi predvolenú"
     iconPick: "icon" in own ? (icon ? [icon] : []) : type.icons,
     markPick: mark === null ? null : (MARK_SHAPE_IDS.includes(mark) ? mark : "")
@@ -1473,6 +1476,43 @@ export const NO_FILL = "none";
 const NO_FILL_PROPS = new Set(["fill-color", "fill-extrusion-color"]);
 /** Strop počtu zoomových zlomov na jednu vlastnosť. */
 export const MAX_PAINT_STOPS = 8;
+
+/**
+ * A dash: one preset id, or zoom bands `[[from, to, preset], …]` covering their range
+ * without gaps; `undefined` (with the reason in `problems`) when it is neither.
+ */
+export function cleanDash(value, problems, where) {
+  if (!isDashBands(value)) {
+    if (DASH_IDS.includes(value)) return value;
+    problems.push(`${where}: neznámy vzor čiary "${value}".`);
+    return undefined;
+  }
+  if (value.length > MAX_PAINT_STOPS) {
+    problems.push(`${where}: ${value.length} zoomových pásiem čiary, strop je ${MAX_PAINT_STOPS}.`);
+    return undefined;
+  }
+  const out = [];
+  for (const band of value) {
+    const [from, to, id] = Array.isArray(band) ? band : [];
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 0 || to > 24 || to < from) {
+      problems.push(`${where}: pásmo čiary ${JSON.stringify(band)} nie je [od, do, vzor] `
+        + `s celými zoomami 0–24.`);
+      return undefined;
+    }
+    if (!DASH_IDS.includes(id)) {
+      problems.push(`${where}: neznámy vzor čiary "${id}" v pásme z${from}–${to}.`);
+      return undefined;
+    }
+    const prev = out[out.length - 1];
+    if (prev && from !== prev[1] + 1) {
+      problems.push(`${where}: pásmo čiary z${from}–${to} nenadväzuje na z${prev[0]}–${prev[1]}.`);
+      return undefined;
+    }
+    out.push([from, to, id]);
+  }
+  // one band, or all of one dash, is just that dash
+  return out.every(([, , id]) => id === out[0][2]) ? out[0][2] : out;
+}
 
 /**
  * Vlastnosti z `layout`, ktoré sa dajú prepísať – a ich medze.
@@ -2219,11 +2259,8 @@ export function normalizeOverrides(raw) {
     }
     const clean = {};
     if (def.dash != null) {
-      if (!DASH_IDS.includes(def.dash)) {
-        problems.push(`Trasa "${id}": neznámy vzor čiary "${def.dash}".`);
-      } else if (def.dash !== TRAIL_BY_ID[id].dash) {
-        clean.dash = def.dash;
-      }
+      const dash = cleanDash(def.dash, problems, `Trasa "${id}"`);
+      if (dash !== undefined && dash !== TRAIL_BY_ID[id].dash) clean.dash = dash;
     }
     if (def.icon != null) {
       const icon = String(def.icon).trim();
@@ -2426,11 +2463,8 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
     // aj „solid" je úprava: prerušovanie zabudované v štýle sa musí dať vypnúť.
     // Zapisuje sa len vtedy, keď ho vrstva naozaj má (`frico:dash`).
     if (def.dash != null) {
-      if (!DASH_IDS.includes(def.dash)) {
-        problems.push(`${where}Vrstva "${id}": neznámy vzor čiary "${def.dash}".`);
-      } else {
-        clean.dash = def.dash;
-      }
+      const dash = cleanDash(def.dash, problems, `${where}Vrstva "${id}"`);
+      if (dash !== undefined) clean.dash = dash;
     }
 
     // `null` nie je „nič": zabudovaný vzor (`frico:pattern`) sa musí dať vypnúť.
@@ -2585,8 +2619,8 @@ function cleanVariants(raw, id, problems, where) {
     if (Object.keys(layout).length) clean.layout = layout;
 
     if (v.dash != null) {
-      if (!DASH_IDS.includes(v.dash)) problems.push(`${kde}: neznámy vzor čiary "${v.dash}".`);
-      else clean.dash = v.dash;
+      const dash = cleanDash(v.dash, problems, kde);
+      if (dash !== undefined) clean.dash = dash;
     }
     if (v.icon != null) {
       const icon = String(v.icon).trim();
@@ -2913,7 +2947,7 @@ function variantLayers(layer, variants, hasIcon) {
     }
     // „plná" nie je „nič" – rovnaká úvaha ako pri úprave vrstvy
     if (v.dash && layer.type === "line") {
-      const arr = dashArray(v.dash);
+      const arr = dashValue(v.dash);
       if (arr) vrstva.paint["line-dasharray"] = arr;
       else delete vrstva.paint["line-dasharray"];
     }
@@ -3057,7 +3091,7 @@ function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme)
     // „plná" znamená vlastnosť zmazať: `line-dasharray: null` by MapLibre neprijal
     if (o.dash && layer.type === "line") {
       layer.paint = { ...(layer.paint || {}) };
-      const arr = dashArray(o.dash);
+      const arr = dashValue(o.dash);
       if (arr) layer.paint["line-dasharray"] = arr;
       else delete layer.paint["line-dasharray"];
     }
@@ -4719,7 +4753,7 @@ export function buildStyle({
             "line-width": zw(TRAIL_STRIPE),
             "line-offset": trailOffset,
             "line-opacity": zl([[9, 0.75], [13, 0.95]]),
-            ...(dashArray(dash) ? { "line-dasharray": dashArray(dash) } : {})
+            ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {})
           }
         },
         ["trasy", label, "line", {}, [...MARK_KEYS, paletteKey]]

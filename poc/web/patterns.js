@@ -192,6 +192,24 @@ const DASH_BY_ID = Object.fromEntries(DASH_PRESETS.map((d) => [d.id, d]));
 /** `line-dasharray` pre daný preset (`null` = plná čiara). */
 export const dashArray = (id) => DASH_BY_ID[id]?.dash ?? null;
 
+/** Zoom bands `[[from, to, preset], …]` instead of one preset. */
+export const isDashBands = (dash) => Array.isArray(dash) && Array.isArray(dash[0]);
+
+// a step can't drop the property on some zooms, so solid is a dash with no gap
+const SOLID_DASH = [1, 0];
+
+/** `line-dasharray` for a preset or zoom bands: an array, a zoom step, or `null` for solid. */
+export function dashValue(dash) {
+  if (!isDashBands(dash)) return dashArray(dash);
+  const arrays = dash.map(([, , id]) => dashArray(id));
+  if (arrays.every((a) => !a)) return null;
+  const expr = ["step", ["zoom"], ["literal", arrays[0] || SOLID_DASH]];
+  for (let i = 1; i < dash.length; i += 1) {
+    expr.push(dash[i][0], ["literal", arrays[i] || SOLID_DASH]);
+  }
+  return expr;
+}
+
 /**
  * Opak `dashArray`: predvoľba podľa `line-dasharray` zo štýlu.
  *
@@ -210,6 +228,9 @@ export function dashIdOf(dasharray) {
 
 /** Popis prerušovania do panela: meno predvoľby, inak samotné čísla. */
 export function dashLabel(dash) {
+  if (isDashBands(dash)) {
+    return dash.map(([from, to, id]) => `z${from}–${to} ${dashLabel(id)}`).join(", ");
+  }
   if (Array.isArray(dash)) {
     const id = dashIdOf(dash);
     return id ? DASH_BY_ID[id].label : `vlastné [${dash.join(", ")}]`;

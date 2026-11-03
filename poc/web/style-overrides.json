@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T08:47:31.888Z",
+  "updated_at": "2026-11-03T09:26:46.102Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -303,6 +303,29 @@
           "paintDark": {
             "fill-color": "#201b28"
           }
+        },
+        "trail-hiking": {
+          "variants": [
+            {
+              "attr": "way",
+              "values": [
+                "path"
+              ],
+              "label": "po chodníku",
+              "dash": [
+                [
+                  0,
+                  12,
+                  "solid"
+                ],
+                [
+                  13,
+                  24,
+                  "dashed"
+                ]
+              ]
+            }
+          ]
         }
       },
       "poi": {
