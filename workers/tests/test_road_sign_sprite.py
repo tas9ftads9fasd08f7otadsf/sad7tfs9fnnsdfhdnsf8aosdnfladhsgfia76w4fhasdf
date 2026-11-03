@@ -122,6 +122,22 @@ class Entries(unittest.TestCase):
                          ("regulatory", 104, "Stoj"))
         self.assertNotIn("sk.ts.101", index, "the region has no SK:101, so no image")
 
+    @needs("PIL")
+    @needs_cmd("rsvg-convert")
+    def test_a_4x_sheet_for_the_apps_cards(self):
+        base = os.path.join(self.root, "r-roadsigns")
+        sp.write(self.entries(self.used), base)
+        with open(base + "@4x.json") as f:
+            stop = json.load(f)["sk.ts.stop"]
+        self.assertEqual((stop["height"], stop["pixelRatio"]), (4 * sp.SIDE, 4))
+
+    @needs("PIL")
+    def test_a_small_png_grows_to_the_side(self):
+        from PIL import Image
+        path = os.path.join(self.root, "small.png")
+        Image.new("RGBA", (40, 20)).save(path)
+        self.assertEqual(sp.raster(path, 96).size, (96, 48))
+
 
 if __name__ == "__main__":
     unittest.main()
