@@ -98,6 +98,8 @@ jobs:
       # a mountain build is the only other place this schema runs
       - name: Range borders schema tests
         run: workers/lib/verify-schema.sh workers/boundaries/range.yml
+      - name: Landscape points schema tests
+        run: workers/lib/verify-schema.sh workers/features/points.yml
       - name: Build and read back
         run: python3 workers/tests/integration.py --dem --jar planetiler.jar --work "$RUNNER_TEMP/mini"
       # the versions index.html loads from unpkg, so the page runs without the CDN

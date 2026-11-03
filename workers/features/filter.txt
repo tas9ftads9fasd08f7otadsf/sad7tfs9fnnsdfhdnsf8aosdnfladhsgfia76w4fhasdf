@@ -14,7 +14,7 @@ nwr/barrier=wall,city_wall,retaining_wall,fence,guard_rail,handrail,hedge
 nwr/power=line,minor_line
 
 # terrain edges and vegetation
-nwr/natural=tree_row,gully,earth_bank,shingle,spring,cave_entrance,sinkhole
+nwr/natural=tree_row,gully,earth_bank,shingle,spring,cave_entrance,sinkhole,peak,volcano,saddle
 
 # water structures and waterfalls
 nwr/waterway=dam,weir,lock_gate,waterfall
