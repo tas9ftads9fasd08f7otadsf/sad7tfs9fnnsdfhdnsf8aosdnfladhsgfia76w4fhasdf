@@ -6,6 +6,7 @@ import gzip
 import json
 import math
 import os
+import re
 import subprocess
 import sys
 
@@ -67,6 +68,12 @@ ABSENT = [("boundaries", "boundary_label", {"name": "Malá Obec"}),
 OUTSIDE_NAMES = {"Vonku", "Cudzie jazero"}
 
 
+def zoom_of(value, doc):
+    """A schema zoom; `${ args.x }` is the argument's default, as Planetiler takes it."""
+    found = re.fullmatch(r"\$\{\s*args\.(\w+)\s*\}", str(value).strip())
+    return int(doc["args"][found.group(1)]["default"]) if found else int(value)
+
+
 def schema_layers(name):
     """`{layer id: (lowest min_zoom, geometries)}` from a schema yml."""
     folder = {"points": "features", "paths": "transport", "range": "boundaries"}.get(name, name)
@@ -75,7 +82,7 @@ def schema_layers(name):
     out = {}
     for layer in doc["layers"]:
         feats = layer.get("features") or []
-        zooms = [f.get("min_zoom", 0) for f in feats]
+        zooms = [zoom_of(f.get("min_zoom", 0), doc) for f in feats]
         out[layer["id"]] = min(zooms) if zooms else 0
     return out
 
