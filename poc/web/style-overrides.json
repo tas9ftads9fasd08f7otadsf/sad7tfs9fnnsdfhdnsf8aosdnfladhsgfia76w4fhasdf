@@ -1,13 +1,19 @@
 {
   "version": 2,
-  "updated_at": "2026-11-02T18:59:47.534Z",
+  "updated_at": "2026-11-03T08:47:31.888Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
     "svetla": {
       "park": "#d3edb8",
       "track": "#9a9274",
-      "scrub": "#c2d9a3"
+      "scrub": "#c2d9a3",
+      "building": "#e2d3b9",
+      "buildingOutline": "#cec2b2",
+      "water": "#9ec5e2",
+      "river": "#9ec5e2",
+      "rock": "#b4ae9f",
+      "rockPattern": "#8f8577"
     }
   },
   "layers": {},
