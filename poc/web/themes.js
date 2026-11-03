@@ -6019,8 +6019,8 @@ export function buildStyle({
     ["hamlet", "Osady", ["hamlet"], 12, REG, zl([[12, 10], [18, 14]])],
     ["suburb", "Mestské časti", ["suburb"], 11, REG, zl([[11, 11], [18, 15]])],
     ["village", "Obce", ["village"], 9, REG, zl([[9, 10], [16, 15]])],
-    // capitals tell towns from villages close up and cities at every zoom, as on Mapy.com
-    ["town", "Mestá", ["town"], 7, REG, zl([[7, 11], [14, 18]]), 13],
+    // bold capitals tell towns from villages close up and cities at every zoom, as on Mapy.com
+    ["town", "Mestá", ["town"], 7, BOLD, zl([[7, 11], [14, 18]]), 13],
     ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [13, 22]]), 0],
     ["state", "Kraje a regióny", ["state", "province"], 4, BOLD, zl([[4, 11], [8, 15]])],
     ["country", "Štáty", ["country"], 2, BOLD, zl([[2, 11], [6, 18]])]
