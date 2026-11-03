@@ -37,7 +37,7 @@ fi
 TZ_="$OPT_TRAILS_MAXZOOM"
 case "$TZ_" in ''|*[!0-9]*) TZ_=14 ;; esac
 if [ "$TZ_" -gt 16 ]; then TZ_=16; fi
-LZ_="$OPT_TRAILS_LOCAL_MINZOOM"
+LZ_="${OPT_TRAILS_LOCAL_MINZOOM:-}"
 case "$LZ_" in ''|*[!0-9]*) LZ_=11 ;; esac
 if [ "$LZ_" -gt "$TZ_" ]; then LZ_=$TZ_; fi
 
