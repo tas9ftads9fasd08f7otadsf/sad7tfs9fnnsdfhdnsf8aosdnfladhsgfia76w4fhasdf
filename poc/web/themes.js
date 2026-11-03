@@ -1488,6 +1488,9 @@ const NO_FILL_PROPS = new Set(["fill-color", "fill-extrusion-color"]);
 /** Strop počtu zoomových zlomov na jednu vlastnosť. */
 export const MAX_PAINT_STOPS = 8;
 
+const RIVER_NAME_MINZOOM = 10;
+const RIVER_NAME_SIZE = [[10, 10], [13, 11], [18, 14]];
+
 /**
  * A dash: one preset id, or zoom bands `[[from, to, preset], …]` covering their range
  * without gaps; `undefined` (with the reason in `problems`) when it is neither.
@@ -5052,18 +5055,22 @@ export function buildStyle({
   // ================= popisky =================
   // pri balíku `vodstvo` sa tie isté mená kreslia z neho (meno je tam na
   // geometrii, nie vedľa nej) – dvakrát by sa prekrývali
-  add(
+  const isRiver = ["==", str("class"), "river"];
+  // rivers are named from afar, as on Mapy.com; streams only close up
+  const waterwayName = (id, label, minzoom, filter, size, extra = {}) => add(
     {
-      id: "waterway-name",
+      id,
       type: "symbol",
       "source-layer": "waterway",
-      minzoom: 13,
+      minzoom,
+      filter,
+      ...extra,
       layout: {
         "symbol-placement": "line",
         "text-field": nameExpr,
         "text-font": ITAL,
-        "text-size": zl([[13, 10], [18, 13]]),
-        ...(waterUrl ? { visibility: "none" } : {})
+        "text-size": zl(size),
+        ...(extra.source || !waterUrl ? {} : { visibility: "none" })
       },
       paint: {
         "text-color": c.waterText,
@@ -5071,13 +5078,10 @@ export function buildStyle({
         "text-halo-width": 1
       }
     },
-    [
-      "popisky",
-      "Názvy vodných tokov",
-      "text",
-      { "text-color": "waterText", "text-halo-color": "textHalo" }
-    ]
+    ["popisky", label, "text", { "text-color": "waterText", "text-halo-color": "textHalo" }]
   );
+  waterwayName("waterway-river-name", "Názvy riek", RIVER_NAME_MINZOOM, isRiver, RIVER_NAME_SIZE);
+  waterwayName("waterway-name", "Názvy vodných tokov", 13, ["!", isRiver], [[13, 10], [18, 13]]);
   add(
     {
       id: "water-name",
@@ -5107,33 +5111,10 @@ export function buildStyle({
   // vodstvo z vlastného .pmtiles: meno je na geometrii, takže meno dostane aj
   // tok a plocha, ktorú `water_name` OpenMapTiles nemá
   if (waterUrl) {
-    add(
-      {
-        id: "water-pkg-waterway-name",
-        type: "symbol",
-        source: "water",
-        "source-layer": "waterway",
-        minzoom: 13,
-        filter: ["has", "name"],
-        layout: {
-          "symbol-placement": "line",
-          "text-field": nameExpr,
-          "text-font": ITAL,
-          "text-size": zl([[13, 10], [18, 13]])
-        },
-        paint: {
-          "text-color": c.waterText,
-          "text-halo-color": c.textHalo,
-          "text-halo-width": 1
-        }
-      },
-      [
-        "popisky",
-        "Názvy vodných tokov (balík vodstvo)",
-        "text",
-        { "text-color": "waterText", "text-halo-color": "textHalo" }
-      ]
-    );
+    waterwayName("water-pkg-river-name", "Názvy riek (balík vodstvo)", RIVER_NAME_MINZOOM,
+      ["all", ["has", "name"], isRiver], RIVER_NAME_SIZE, { source: "water" });
+    waterwayName("water-pkg-waterway-name", "Názvy vodných tokov (balík vodstvo)", 13,
+      ["all", ["has", "name"], ["!", isRiver]], [[13, 10], [18, 13]], { source: "water" });
     add(
       {
         id: "water-pkg-name",
