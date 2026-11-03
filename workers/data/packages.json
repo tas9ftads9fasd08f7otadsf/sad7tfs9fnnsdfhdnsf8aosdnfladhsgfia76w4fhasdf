@@ -218,6 +218,18 @@
       "regenerate": "history"
     },
     {
+      "key": "names",
+      "app": "Geographical names",
+      "symbol": "character.textbox",
+      "part_of": "base",
+      "app_detail": "Cities, villages, mountains, valleys, plains and regions",
+      "description": "OSM names of cities, towns, villages and settlements, mountain ranges, ridges and peaks, valleys, plains and regions – a layer per kind, points and lines (.pmtiles)",
+      "sources": ["osm"],
+      "manifest": ["names"],
+      "suffixes": ["-names.pmtiles"],
+      "origin": "site"
+    },
+    {
       "key": "settlements",
       "app": "Settlements",
       "symbol": "building.2.fill",

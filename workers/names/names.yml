@@ -1,0 +1,338 @@
+# Planetiler custom schema – geographical names from OSM in one `.pmtiles`, a layer per kind.
+# Only named objects; areas come as one point inside, lines stay lines so names run along them.
+schema_name: FricoMaps geographical names
+schema_description: >-
+  Names of cities, villages, settlements, mountains, valleys, plains and regions, from OSM
+attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
+
+sources:
+  osm:
+    type: osm
+    local_path: data/names.osm.pbf
+
+tag_mappings:
+  population: integer
+  ele: integer
+
+definitions:
+  - &named
+    name: __any__
+  - &city_tags
+    place: [city]
+  - &town_tags
+    place: [town]
+  - &village_tags
+    place: [village]
+  - &settlement_tags
+    place: [hamlet, isolated_dwelling, farm, suburb, borough, quarter, neighbourhood]
+  - &mountain_points
+    natural: [peak, volcano, hill]
+  - &mountain_areas
+    natural: [mountain_range]
+  - &mountain_lines
+    natural: [mountain_range, ridge, arete]
+  - &valley_tags
+    natural: [valley, gorge, canyon]
+  - &plain_tags
+    natural: [plain, plateau, basin]
+  - &region_tags
+    place: [region, state, province, county]
+
+  - &name_attrs
+    - key: class
+      type: match_value
+    - key: name
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    - key: population
+    - key: ele
+    - key: wikidata
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+    - key: osm_type
+      value: '${ feature.osm_type }'
+
+layers:
+  # 1. cities and towns
+  - id: city
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 4
+        include_when:
+          __all__: [*city_tags, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 7
+        include_when:
+          __all__: [*town_tags, *named]
+        attributes: *name_attrs
+
+  # 2. villages
+  - id: village
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 10
+        include_when:
+          __all__: [*village_tags, *named]
+        attributes: *name_attrs
+
+  # 3. settlements: hamlets, farms and the parts of a town
+  - id: settlement
+    features:
+      - source: osm
+        geometry: point
+        min_zoom: 12
+        include_when:
+          __all__: [*settlement_tags, *named]
+        attributes: *name_attrs
+
+  # 4. mountains: ranges and ridges, peaks and hills
+  - id: mountain
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 7
+        include_when:
+          __all__: [*mountain_areas, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: line
+        min_zoom: 9
+        include_when:
+          __all__: [*mountain_lines, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 7
+        include_when:
+          __all__: [*mountain_areas, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 11
+        include_when:
+          __all__: [*mountain_points, *named]
+        attributes: *name_attrs
+
+  # 5. valleys, gorges and canyons
+  - id: valley
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 9
+        include_when:
+          __all__: [*valley_tags, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: line
+        min_zoom: 10
+        include_when:
+          __all__: [*valley_tags, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 11
+        include_when:
+          __all__: [*valley_tags, *named]
+        attributes: *name_attrs
+
+  # 6. plains, plateaus and basins
+  - id: plain
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 7
+        include_when:
+          __all__: [*plain_tags, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 8
+        include_when:
+          __all__: [*plain_tags, *named]
+        attributes: *name_attrs
+
+  # 7. regions, from a land's own to counties
+  - id: region
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 5
+        include_when:
+          __all__: [*region_tags, *named]
+        attributes: *name_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 5
+        include_when:
+          __all__: [*region_tags, *named]
+        attributes: *name_attrs
+
+# TESTS: `workers/lib/verify-schema.sh workers/names/names.yml`
+examples:
+  - name: A city is named from z4, with its population
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: city
+        name: Košice
+        population: "228249"
+    output:
+      - layer: city
+        geometry: point
+        min_zoom: 4
+        tags:
+          class: city
+          name: Košice
+          population: 228249
+
+  - name: A town is a city from z7
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: town
+        name: Poprad
+    output:
+      - layer: city
+        geometry: point
+        min_zoom: 7
+        tags:
+          class: town
+          name: Poprad
+
+  - name: A village is named from z10
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: village
+        name: Ždiar
+    output:
+      - layer: village
+        geometry: point
+        min_zoom: 10
+        tags:
+          class: village
+          name: Ždiar
+
+  - name: A hamlet is a settlement
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: hamlet
+        name: Podspády
+    output:
+      - layer: settlement
+        geometry: point
+        min_zoom: 12
+        tags:
+          class: hamlet
+          name: Podspády
+
+  - name: A place without a name is left out
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: village
+    output: []
+
+  - name: A peak is a mountain with its height
+    input:
+      source: osm
+      geometry: point
+      tags:
+        natural: peak
+        name: Kriváň
+        ele: "2494"
+    output:
+      - layer: mountain
+        geometry: point
+        min_zoom: 11
+        tags:
+          class: peak
+          name: Kriváň
+          ele: 2494
+
+  - name: A range drawn as an area is named at one point inside
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        natural: mountain_range
+        name: Vysoké Tatry
+    output:
+      - layer: mountain
+        geometry: point
+        min_zoom: 7
+        tags:
+          class: mountain_range
+          name: Vysoké Tatry
+
+  - name: A ridge drawn as a line is named along it
+    input:
+      source: osm
+      geometry: line
+      tags:
+        natural: ridge
+        name: Hlavný hrebeň
+    output:
+      - layer: mountain
+        geometry: line
+        min_zoom: 9
+        tags:
+          class: ridge
+          name: Hlavný hrebeň
+
+  - name: A valley drawn as a line is named along it
+    input:
+      source: osm
+      geometry: line
+      tags:
+        natural: valley
+        name: Mengusovská dolina
+    output:
+      - layer: valley
+        geometry: line
+        min_zoom: 10
+        tags:
+          class: valley
+          name: Mengusovská dolina
+
+  - name: A plain drawn as an area is named at one point inside
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        natural: plain
+        name: Podunajská nížina
+    output:
+      - layer: plain
+        geometry: point
+        min_zoom: 7
+        tags:
+          class: plain
+          name: Podunajská nížina
+
+  - name: A region is named from z5
+    input:
+      source: osm
+      geometry: point
+      tags:
+        place: region
+        name: Spiš
+    output:
+      - layer: region
+        geometry: point
+        min_zoom: 5
+        tags:
+          class: region
+          name: Spiš

@@ -1,0 +1,8 @@
+# PBF prefilter for `names.yml` (`osmium tags-filter --expressions`).
+# `r/` pulls the member ways of multipolygons; `workers/lint/names.py` guards the schema side.
+
+# cities, villages, settlements and regions
+nwr/place
+
+# mountains, valleys and plains
+nwr/natural=peak,volcano,hill,mountain_range,ridge,arete,valley,gorge,canyon,plain,plateau,basin

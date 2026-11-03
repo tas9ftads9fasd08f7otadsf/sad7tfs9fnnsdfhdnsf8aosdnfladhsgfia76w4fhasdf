@@ -110,6 +110,7 @@ env:
   BUDGET_WATER_PCT: "5"
   BUDGET_RAIL_PCT: "3"
   BUDGET_HISTORY_PCT: "3"
+  BUDGET_NAMES_PCT: "2"
   BUDGET_BUILDINGS_PCT: "6"
   # the same for DEM layers; `dem-layers.yml` gets them as inputs
   BUDGET_CONTOURS_PCT: "25"

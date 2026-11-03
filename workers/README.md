@@ -3410,6 +3410,29 @@ Ovládanie: `history=false` balík vypne, `history_maxzoom` (14) je strop
 dlaždíc, `BUDGET_HISTORY_PCT` podiel na rozpočte stránky. Samostatne sa
 pregeneruje voľbou `history` v „Mapa · Pregeneruj vrstvu kraja".
 
+## Zemepisné názvy (balík `names`)
+
+`workers/names/` robí `{kraj}-names.pmtiles`: len pomenované objekty, jedna
+vrstva na druh, ktorý aplikácia zapína a vypína zvlášť.
+
+| Vrstva | Čo v nej je | Od zoomu |
+|---|---|---|
+| `city` | `place=city`, `place=town` | 4, 7 |
+| `village` | `place=village` | 10 |
+| `settlement` | osady, samoty, majere a časti mesta | 12 |
+| `mountain` | pohoria (bod vnútri, aj čiara), hrebene, vrcholy a kopce | 7, 9, 11 |
+| `valley` | doliny, rokliny, kaňony (bod aj čiara) | 9 |
+| `plain` | nížiny, plošiny, kotliny | 7 |
+| `region` | `place=region`, `state`, `province`, `county` | 5 |
+
+Atribúty: `class` (hodnota značky), `name`, `name_en`, `name:xx` v jazykoch
+aplikácie, `population`, `ele`, `wikidata`, `osm_id`, `osm_type`. Štýl kreslí
+aplikácia, webové štýly ho nekreslia.
+
+Ovládanie: `names=false` balík vypne, `names_maxzoom` (14) je strop dlaždíc,
+`BUDGET_NAMES_PCT` podiel na rozpočte stránky. Prázdny výrez nie je chyba:
+balík sa nespraví.
+
 ## Typy máp – čo ktorá mapa ukazuje
 
 Jedna mapa nemôže byť dobrá turistická aj dobrá cestná naraz. Turista chce
