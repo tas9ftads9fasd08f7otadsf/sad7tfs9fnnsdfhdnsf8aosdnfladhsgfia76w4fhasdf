@@ -4414,13 +4414,13 @@ export function buildStyle({
           "symbol-placement": "line",
           "symbol-spacing": 200,
           "icon-image": SPECIAL.arrow,
-          "icon-size": zl([[16, 0.6], [20, 1.2]]),
+          "icon-size": zl([[16, 0.9], [20, 1.8]]),
           "icon-rotate": ["case", ["==", num("oneway", 0), -1], 180, 0],
           "icon-rotation-alignment": "map",
           "icon-allow-overlap": true
         },
         paint: {
-          "icon-opacity": 0.5,
+          "icon-opacity": 0.8,
           ...(sdfIcons ? { "icon-color": c.onewayIcon } : {})
         }
       },

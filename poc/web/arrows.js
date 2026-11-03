@@ -71,12 +71,8 @@ export const ARROW_SHAPES = [
 
 export const ARROW_SHAPE_IDS = ARROW_SHAPES.map((s) => s.id);
 
-/**
- * Tvar, ktorý štýl použije, kým ho nikto neprepne. Trojuholník zámerne:
- * šípky sa kreslia od z16 v mierke, kde má obrázok pár pixelov, a plný tvar
- * je v nej čitateľnejší než obrys.
- */
-export const DEFAULT_ARROW_SHAPE = "triangle";
+/** Tvar, ktorý štýl použije, kým ho nikto neprepne: trojuholník sa v aplikácii čítal ako značka, nie smer. */
+export const DEFAULT_ARROW_SHAPE = "stick";
 
 /** Meno obrázka v sprite pre daný tvar. */
 export const arrowImage = (shape) => `${ARROW_PREFIX}${shape}`;
