@@ -11,8 +11,8 @@
       "buildingOutline": "#cec2b2",
       "water": "#9ec5e2",
       "river": "#9ec5e2",
-      "rock": "#b5b8a8",
-      "rockPattern": "#888b7a",
+      "rock": "#c8cbba",
+      "rockPattern": "#a3a896",
       "trailRed": "#c60000",
       "trailBlue": "#0018c0",
       "trailGreen": "#188400",
@@ -737,6 +737,124 @@
           },
           "paintDark": {
             "line-color": "#332c1e"
+          }
+        },
+        "landcover-wood": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                12,
+                "#b0d28b"
+              ],
+              [
+                13,
+                14,
+                "#c8e4a9"
+              ],
+              [
+                15,
+                20,
+                "#cceaab"
+              ]
+            ]
+          },
+          "paintDark": {
+            "fill-color": "#17251a"
+          }
+        },
+        "landcover-scrub": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                12,
+                "#a5c680"
+              ],
+              [
+                13,
+                14,
+                "#cce4b0"
+              ],
+              [
+                15,
+                20,
+                "#d6eeb4"
+              ]
+            ]
+          },
+          "paintDark": {
+            "fill-color": "#272a1e"
+          }
+        },
+        "rock-area": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                12,
+                "#a3a58e"
+              ],
+              [
+                13,
+                14,
+                "#a39e8f"
+              ],
+              [
+                15,
+                20,
+                "#b7b2a0"
+              ]
+            ]
+          },
+          "paintDark": {
+            "fill-color": "#403c33"
+          }
+        },
+        "contour-major": {
+          "paint": {
+            "line-color": [
+              [
+                0,
+                14,
+                "#8b8974"
+              ],
+              [
+                15,
+                20,
+                "#90917a"
+              ]
+            ]
+          },
+          "paintDark": {
+            "line-color": "#6f6a5c"
+          }
+        },
+        "contour-minor": {
+          "paint": {
+            "line-color": "#a2a48b"
+          },
+          "paintDark": {
+            "line-color": "#4f4b40"
+          }
+        },
+        "landcover-rock": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                12,
+                "#b2c09c"
+              ],
+              [
+                13,
+                20,
+                "#c8cbba"
+              ]
+            ]
+          },
+          "paintDark": {
+            "fill-color": "#34312a"
           }
         }
       },
