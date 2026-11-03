@@ -23,6 +23,9 @@ sources:
   boundaries:
     type: geojson
     local_path: data/world/boundaries.geojson
+  regions:
+    type: geojson
+    local_path: data/world/regions.geojson
   countries:
     type: geojson
     local_path: data/world/countries.geojson
@@ -74,6 +77,12 @@ layers:
         min_zoom: 2
         include_when:
           kind: disputed
+        attributes:
+          - key: kind
+      # states and kraje once a country is wide enough to hold them (TestFlight APXS)
+      - source: regions
+        geometry: line
+        min_zoom: 5
         attributes:
           - key: kind
 

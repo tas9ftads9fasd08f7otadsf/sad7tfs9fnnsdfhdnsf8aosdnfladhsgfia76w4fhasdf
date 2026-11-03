@@ -57,6 +57,7 @@ const FROM = {
   lakeMinor: 5,
   boundary: 0,
   boundaryDisputed: 2,
+  boundaryRegion: 5,
   place: 1,
   download: { continent: 0, country: 2, subregion: 5 },
   downloadLabel: { continent: 2, country: 3, subregion: 5 }
@@ -123,6 +124,16 @@ function style(themeId) {
     });
   }
 
+  layers.push({
+    // states and kraje, under the country borders
+    id: "boundary-region",
+    type: "line",
+    source: "world",
+    "source-layer": "boundary",
+    minzoom: FROM.boundaryRegion,
+    filter: ["==", ["get", "kind"], "region"],
+    paint: { "line-color": c.boundary, "line-width": 0.6, "line-opacity": 0.6 }
+  });
   layers.push({
     id: "boundary",
     type: "line",
