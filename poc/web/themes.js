@@ -1173,6 +1173,11 @@ export const METRES_PER_PX_Z0 = 156543.03 * Math.cos((48.7 * Math.PI) / 180);
 /** Šírka v pixeloch, ktorú má na zemi `metres` – dlaždice majú 512 px. */
 export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 / 2);
 
+/** Residential land reaches this far around a building, in metres on the ground. */
+export const YARD_M = 20;
+/** From this zoom residential land follows the buildings, below it the OSM polygons. */
+export const YARD_FROM_Z = 13;
+
 /** Protected-area band width in px; at most the 8 px tile buffer (4 of 256 at 512 px). */
 export const PARK_BAND = [[8, 2], [11, 4], [13, 6], [14, 7]];
 
@@ -3690,6 +3695,25 @@ export function buildStyle({
     // `waterway=dam` ako plocha; v dlaždiciach je od začiatku, štýl ho nekreslil
     ["dam", "Priehrada (plocha)", ["dam"], "dam"]
   ];
+  // osm's residential polygons take in whole meadows; close up the yards show where people live
+  add(
+    {
+      id: "landuse-residential-yard",
+      type: "line",
+      ...(buildingsUrl ? { source: "buildings" } : {}),
+      "source-layer": "building",
+      minzoom: YARD_FROM_Z - 1,
+      layout: { "line-join": "round", "line-cap": "round" },
+      paint: {
+        "line-color": c.residential,
+        "line-width": ["interpolate", ["exponential", 2], ["zoom"],
+          YARD_FROM_Z - 1, realWidthPx(2 * YARD_M, YARD_FROM_Z - 1),
+          MAX_DISPLAY_Z + 2, realWidthPx(2 * YARD_M, MAX_DISPLAY_Z + 2)],
+        "line-opacity": zl([[YARD_FROM_Z - 1, 0], [YARD_FROM_Z, 1]])
+      }
+    },
+    ["uzemie", "Obytná zóna – okolie budov", "line", { "line-color": "residential" }]
+  );
   for (const [id, label, classes, paletteKey] of landuse) {
     add(
       {
@@ -3697,7 +3721,10 @@ export function buildStyle({
         type: "fill",
         "source-layer": "landuse",
         filter: ["in", str("class"), ["literal", classes]],
-        paint: { "fill-color": c[paletteKey] }
+        paint: {
+          "fill-color": c[paletteKey],
+          ...(id === "residential" ? { "fill-opacity": zl([[YARD_FROM_Z - 1, 1], [YARD_FROM_Z, 0]]) } : {})
+        }
       },
       ["uzemie", label, "area", { "fill-color": paletteKey }]
     );
@@ -4169,7 +4196,7 @@ export function buildStyle({
   );
   // balík `sidla` má každú budovu, aj tú, ktorú OpenMapTiles zahodí
   if (buildingsUrl) {
-    // the built-up area z11 to z14, fading under its buildings
+    // the built-up area at overview zooms, until the yards take over
     add(
       {
         id: "settlement-area",
@@ -4180,7 +4207,7 @@ export function buildStyle({
         maxzoom: 15,
         paint: {
           "fill-color": c.building,
-          "fill-opacity": zl([[11, 0.8], [14, 0.5]])
+          "fill-opacity": zl([[11, 0.8], [YARD_FROM_Z - 1, 0.65], [YARD_FROM_Z, 0]])
         }
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
