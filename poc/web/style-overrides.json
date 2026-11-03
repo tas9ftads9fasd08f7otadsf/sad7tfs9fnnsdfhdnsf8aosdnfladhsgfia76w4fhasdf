@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T09:26:46.102Z",
+  "updated_at": "2026-11-03T12:13:49.937Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -13,7 +13,14 @@
       "water": "#9ec5e2",
       "river": "#9ec5e2",
       "rock": "#b4ae9f",
-      "rockPattern": "#8f8577"
+      "rockPattern": "#8f8577",
+      "trailRed": "#c60000",
+      "trailBlue": "#0018c0",
+      "trailGreen": "#188400",
+      "trailCycling": "#ea44c6",
+      "trailMtb": "#ba42e4",
+      "rail": "#5a5a5a",
+      "aerialway": "#4f4f4f"
     }
   },
   "layers": {},
@@ -41,7 +48,11 @@
   },
   "trails": {
     "gap": {},
-    "types": {},
+    "types": {
+      "bicycle": {
+        "dash": "dashed-long"
+      }
+    },
     "marks": {}
   },
   "shields": {},
@@ -304,7 +315,216 @@
             "fill-color": "#201b28"
           }
         },
+        "rail-bg": {
+          "paint": {
+            "line-width": [
+              [
+                7,
+                0.6
+              ],
+              [
+                9,
+                1.2
+              ],
+              [
+                11,
+                2
+              ],
+              [
+                13,
+                2.4
+              ],
+              [
+                15,
+                2.6
+              ],
+              [
+                17,
+                4
+              ],
+              [
+                20,
+                8
+              ]
+            ]
+          }
+        },
+        "rail-hatch": {
+          "minzoom": 10,
+          "paint": {
+            "line-width": [
+              [
+                10,
+                0.8
+              ],
+              [
+                11,
+                1
+              ],
+              [
+                13,
+                1.3
+              ],
+              [
+                15,
+                1.3
+              ],
+              [
+                17,
+                2.2
+              ],
+              [
+                20,
+                5
+              ]
+            ]
+          },
+          "dash": "dashed"
+        },
+        "aerialway": {
+          "paint": {
+            "line-width": [
+              [
+                11,
+                0.6
+              ],
+              [
+                13,
+                0.9
+              ],
+              [
+                15,
+                1.5
+              ],
+              [
+                20,
+                3
+              ]
+            ]
+          },
+          "dash": "solid"
+        },
+        "road-track": {
+          "paint": {
+            "line-width": [
+              [
+                11,
+                0.4
+              ],
+              [
+                13,
+                0.8
+              ],
+              [
+                14,
+                1.1
+              ],
+              [
+                15,
+                1.6
+              ],
+              [
+                16,
+                2.2
+              ],
+              [
+                20,
+                8
+              ]
+            ]
+          }
+        },
+        "trail-hiking-mark": {
+          "minzoom": 16
+        },
+        "trail-hiking-icon": {
+          "minzoom": 16
+        },
+        "trail-ferrata-mark": {
+          "minzoom": 16
+        },
+        "trail-ferrata-icon": {
+          "minzoom": 16
+        },
+        "trail-bicycle-mark": {
+          "minzoom": 16
+        },
+        "trail-bicycle-icon": {
+          "minzoom": 16
+        },
+        "trail-mtb-mark": {
+          "minzoom": 16
+        },
+        "trail-mtb-icon": {
+          "minzoom": 16
+        },
+        "trail-ski-mark": {
+          "minzoom": 16
+        },
+        "trail-ski-icon": {
+          "minzoom": 16
+        },
+        "trail-horse-mark": {
+          "minzoom": 16
+        },
+        "trail-horse-icon": {
+          "minzoom": 16
+        },
+        "trail-halo": {
+          "paint": {
+            "line-width": [
+              [
+                11,
+                1.4
+              ],
+              [
+                13,
+                1.9
+              ],
+              [
+                14,
+                2.2
+              ],
+              [
+                16,
+                3.4
+              ],
+              [
+                20,
+                7.5
+              ]
+            ]
+          }
+        },
         "trail-hiking": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          },
           "variants": [
             {
               "attr": "way",
@@ -326,6 +546,156 @@
               ]
             }
           ]
+        },
+        "trail-ferrata": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          }
+        },
+        "trail-bicycle": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          }
+        },
+        "trail-mtb": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          }
+        },
+        "trail-ski": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          }
+        },
+        "trail-horse": {
+          "paint": {
+            "line-width": [
+              [
+                9,
+                0.7
+              ],
+              [
+                11,
+                0.9
+              ],
+              [
+                13,
+                1.2
+              ],
+              [
+                14,
+                1.5
+              ],
+              [
+                16,
+                2.3
+              ],
+              [
+                20,
+                5.5
+              ]
+            ]
+          }
         }
       },
       "poi": {
