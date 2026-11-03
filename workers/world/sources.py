@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""World map sources – water, state borders and download regions, from five files.
+"""World map sources – water, state borders, regions and download regions, from six files.
 
     data/world/water.gpkg          seas and oceans   OSM (osmdata.openstreetmap.de)
     data/world/lakes.geojson       lakes             Natural Earth 10m
     data/world/boundaries.geojson  state borders     Natural Earth 10m
+    data/world/regions.geojson     regions' borders  Natural Earth 10m (admin-1)
     data/world/countries.geojson   states (labels)   Natural Earth 10m
     data/world/downloads.geojson   download regions  Geofabrik index-v1.json
 
@@ -38,6 +39,12 @@ SOURCES = {
         "mb": 2.3,
         "what": "state borders – Natural Earth 10m",
     },
+    "regions": {
+        "url": f"{NE}/ne_10m_admin_1_states_provinces_lines.geojson",
+        "file": "ne_10m_admin_1_states_provinces_lines.geojson",
+        "mb": 20.1,
+        "what": "regions' borders (states, kraje) – Natural Earth 10m",
+    },
     "lakes": {
         "url": f"{NE}/ne_10m_lakes.geojson",
         "file": "ne_10m_lakes.geojson",
@@ -63,6 +70,7 @@ SOURCES = {
 MINIMUM = {
     "countries": 150,
     "boundaries": 200,
+    "regions": 5000,
     "lakes": 300,
     "downloads": 100,
     "water": 1000,
@@ -256,6 +264,28 @@ def prepare_boundaries(src, out):
     write_geojson(out, result, "boundaries", "state borders")
 
 
+# meta bounds, indicators and unrecognised lines are not borders anyone crosses
+REGION_CLASSES = ("admin-1 boundary", "admin-1 region boundary",
+                  "admin-1 statistical boundary")
+
+
+def prepare_regions(src, out):
+    """Borders of states, provinces and kraje → lines, `kind` region (TestFlight APXS)."""
+    result = []
+    for feature in read_geojson(src, "regions' borders"):
+        p = feature.get("properties") or {}
+        if not feature.get("geometry"):
+            continue
+        if str(prop(p, "FEATURECLA")).lower() not in REGION_CLASSES:
+            continue
+        result.append({
+            "type": "Feature",
+            "geometry": feature["geometry"],
+            "properties": {"kind": "region"},
+        })
+    write_geojson(out, result, "regions", "regions' borders")
+
+
 def prepare_lakes(src, out):
     """Lakes → areas; large ones enter the map before small ones."""
     result = []
@@ -365,7 +395,7 @@ def prepare_water(zip_path, out):
         f"({human(os.path.getsize(out))})")
 
 
-STEPS = ("water", "boundaries", "countries", "lakes", "downloads")
+STEPS = ("water", "boundaries", "regions", "countries", "lakes", "downloads")
 
 
 def main():
@@ -412,6 +442,8 @@ def main():
             prepare_water(src, os.path.join(args.out, "water.gpkg"))
         elif k == "boundaries":
             prepare_boundaries(src, os.path.join(args.out, "boundaries.geojson"))
+        elif k == "regions":
+            prepare_regions(src, os.path.join(args.out, "regions.geojson"))
         elif k == "countries":
             prepare_countries(src, os.path.join(args.out, "countries.geojson"))
         elif k == "lakes":

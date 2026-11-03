@@ -130,6 +130,17 @@ class World(unittest.TestCase):
         self.assertEqual([p["rank"] for p in props], ["major", "minor", "minor"])
         self.assertTrue(all(p["kind"] == "lake" for p in props))
 
+    def test_prepare_regions(self):
+        line = {"type": "LineString", "coordinates": [[17, 48], [18, 49]]}
+        props = self.prepare(world.prepare_regions, [
+            {"geometry": line, "properties": {"FEATURECLA": "Admin-1 boundary"}},
+            {"geometry": line, "properties": {"FEATURECLA": "Admin-1 statistical boundary"}},
+            {"geometry": line, "properties": {"FEATURECLA": "Admin-1 statistical meta bounds"}},
+            {"geometry": line, "properties": {"FEATURECLA": "Admin-1 boundary indicator"}},
+            {"geometry": None, "properties": {"FEATURECLA": "Admin-1 boundary"}},
+        ], "regions")
+        self.assertEqual(props, [{"kind": "region"}, {"kind": "region"}])
+
     def test_too_few_features_fail(self):
         poly = {"type": "Polygon", "coordinates": [[[0, 0], [1, 0], [1, 1], [0, 0]]]}
         with self.assertRaises(SystemExit), redirect_stdout(io.StringIO()):
