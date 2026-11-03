@@ -45,6 +45,29 @@ definitions:
       type: long
     - key: osm_type
       value: '${ feature.osm_type }'
+  # the same for lines, ids only close up: a river is many ways and merges only without them
+  - &waterway_attrs
+    - key: class
+      type: match_value
+    - key: family
+      type: match_key
+    - key: name
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    - key: intermittent
+    - key: tunnel
+    - key: layer
+    - key: width
+    - key: boat
+    - key: wikidata
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+      min_zoom: 13
+    - key: osm_type
+      value: '${ feature.osm_type }'
+      min_zoom: 13
 
 layers:
   # 1. running water
@@ -56,7 +79,7 @@ layers:
         min_zoom: 4
         include_when:
           waterway: [river]
-        attributes: *water_attrs
+        attributes: *waterway_attrs
 
       # streams and canals: from z11
       - source: osm
@@ -64,7 +87,7 @@ layers:
         min_zoom: 11
         include_when:
           waterway: [stream, canal, flowline]
-        attributes: *water_attrs
+        attributes: *waterway_attrs
 
       # ditches and drains: from z13 – densest of all, a grid at z11
       - source: osm
@@ -72,7 +95,12 @@ layers:
         min_zoom: 13
         include_when:
           waterway: [ditch, drain]
-        attributes: *water_attrs
+        attributes: *waterway_attrs
+
+    # one river is many ways; merged, its name fits along it from afar
+    tile_post_process:
+      merge_line_strings:
+        min_length: 0
 
   # 2. standing water and sea
   - id: water
@@ -109,7 +137,7 @@ layers:
           natural: [coastline]
         attributes: *water_attrs
 
-    # river segments with equal values merge, or twenty labels name one river
+    # coastline pieces of equal values merge
     tile_post_process:
       merge_line_strings:
         min_length: 0
@@ -141,6 +169,23 @@ examples:
           class: river
           family: waterway
           name: Váh
+
+  - name: A river carries no OSM id below z13, so its ways merge and the name fits
+    input:
+      source: osm
+      geometry: line
+      tags:
+        waterway: river
+        name: Torysa
+    output:
+      - layer: waterway
+        geometry: line
+        at_zoom: 12
+        allow_extra_tags: false
+        tags:
+          class: river
+          family: waterway
+          name: Torysa
 
   - name: A stream is from z11
     input:
