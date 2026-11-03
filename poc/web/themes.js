@@ -5529,7 +5529,9 @@ export function buildStyle({
         "text-field": nameExpr,
         "text-font": REG,
         // read on a bike at arm's length: a fifth bigger from z16 on
-        "text-size": zl([[13, 10.5], [16, 14], [20, 19]])
+        "text-size": zl([[13, 10.5], [16, 14], [20, 19]]),
+        // zoomed in, the default spacing put a street's name twice on one phone screen
+        "symbol-spacing": zl([[13, 250], [16, 450], [20, 900]])
       },
       paint: {
         "text-color": c.roadText,
