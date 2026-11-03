@@ -22,7 +22,8 @@
       "rail": "#5a5a5a",
       "aerialway": "#4f4f4f",
       "hillShadow": "#33452ab3",
-      "hillAccent": "#5a6a4a38"
+      "hillAccent": "#5a6a4a38",
+      "ice": "#d8f0fb"
     }
   },
   "layers": {},
@@ -288,8 +289,13 @@
             "line-color": [
               [
                 0,
-                14,
+                12,
                 "#e2dccf"
+              ],
+              [
+                13,
+                14,
+                "#c9bfa8"
               ],
               [
                 15,
