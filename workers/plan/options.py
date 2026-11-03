@@ -57,6 +57,7 @@ DESCRIPTIONS = {
     "rock_res": "grid for the rock outline in metres, or `auto`",
     "contour_smoothing": "DEM smoothing in arc seconds",
     "trails_maxzoom": "max zoom of waymarked trail tiles",
+    "trails_local_minzoom": "zoom local marked routes start at",
     # `auto` = the lowest zoom whose pixel is finer than the model cell
     "terrain_maxzoom": "max zoom of height tiles (auto = by the model grid)",
     "terrain_frac_bits": ("fraction bits of a height (auto = by the pixel, "
@@ -475,7 +476,8 @@ def main():
         if not check_bool(values, key, label):
             return 1
     for key, lo, hi in (("contour_maxzoom_cap", 8, 16),
-                        ("housenumber_minzoom", 0, 17)):
+                        ("housenumber_minzoom", 0, 17),
+                        ("trails_local_minzoom", 8, 16)):
         if not check_int(values, key, lo, hi):
             return 1
     bits = values["terrain_frac_bits"].strip().lower()

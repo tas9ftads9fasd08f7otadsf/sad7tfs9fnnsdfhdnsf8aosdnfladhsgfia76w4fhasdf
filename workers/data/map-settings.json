@@ -47,6 +47,7 @@
     "terrain_3d": "auto",
     "trails": true,
     "trails_maxzoom": 14,
+    "trails_local_minzoom": 11,
     "features": true,
     "features_maxzoom": 15,
     "routing": true,

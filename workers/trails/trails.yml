@@ -4,6 +4,12 @@ schema_name: FricoMaps marked trails
 schema_description: Hiking paths, cycle routes, ski and horse trails from OSM relations
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
+args:
+  # `trails_local_minzoom` in the map settings; Mapy.com shows them from its z12
+  local_minzoom:
+    description: zoom local routes start at
+    default: 11
+
 sources:
   trails:
     type: geojson
@@ -40,6 +46,9 @@ layers:
             type: integer
           - key: off
             type: double
+          # the lane shared by routes of one colour, for `trails.lanes: colour`
+          - key: lane
+            type: double
           - key: cnt
             type: integer
           # what it runs on – `path` or `road`
@@ -56,10 +65,10 @@ layers:
           tier: regional
         attributes: *trail_attributes
 
-      # local loops and nature trails – once the way below shows too
+      # local loops and nature trails, most of the marked length in the mountains
       - source: trails
         geometry: line
-        min_zoom: 12
+        min_zoom: ${ args.local_minzoom }
         include_when:
           tier: local
         attributes: *trail_attributes
