@@ -236,7 +236,6 @@ if (args.check) {
 
 const payload = {
   version: 2,
-  updated_at: new Date().toISOString(),
   icons: overrides.icons,
   hillshade: overrides.hillshade,
   palette: overrides.palette,

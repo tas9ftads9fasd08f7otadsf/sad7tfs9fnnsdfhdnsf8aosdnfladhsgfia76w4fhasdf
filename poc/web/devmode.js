@@ -228,11 +228,9 @@ export function saveOverrides(overrides) {
 
 /** JSON tak, ako sa ukladá do súboru aj do zdrojáku. */
 export function serializeOverrides(overrides) {
-  return JSON.stringify(
-    { ...overrides, updated_at: new Date().toISOString() },
-    null,
-    2
-  );
+  // a save time made every two branches that touched the file conflict
+  const { updated_at: _, ...rest } = overrides;
+  return JSON.stringify(rest, null, 2);
 }
 
 const isHex6 = (v) => /^#[0-9a-f]{6}$/i.test(v);
