@@ -229,6 +229,14 @@ class Trails(unittest.TestCase):
         self.assertEqual(order, [4, 3, 1], "the unnamed part collapses into its named parent")
         self.assertEqual(order, [r["rel"] for r in self.t.Ways.lane_order(list(reversed(routes)))])
 
+    def test_lane_slots_share_a_lane_per_colour(self):
+        base = {"route": "hiking", "colour": "red", "hex": ""}
+        lanes = [dict(base), dict(base), dict(base, colour="blue"),
+                 dict(base, route="ski"), dict(base, route="bicycle", colour=""),
+                 dict(base, route="mtb", colour="")]
+        self.assertEqual(self.t.Ways.lane_slots(lanes),
+                         [(1, 0, 0), (1, 1, 0), (1, 2, 1), (1, 3, 0), (-1, 0, 0), (-1, 1, 1)])
+
 
 if __name__ == "__main__":
     unittest.main()

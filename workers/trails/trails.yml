@@ -40,6 +40,9 @@ layers:
             type: integer
           - key: off
             type: double
+          # the lane shared by routes of one colour, for `trails.lanes: colour`
+          - key: lane
+            type: double
           - key: cnt
             type: integer
           # what it runs on – `path` or `road`

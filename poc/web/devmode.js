@@ -54,6 +54,7 @@ import {
   CUSTOM_ICON_MAX_COUNT,
   CUSTOM_ICON_MAX_BYTES,
   TRAIL_GAP_DEFAULTS,
+  TRAIL_LANES,
   TRAIL_GAP_ZOOM,
   TRAIL_MARK_DEFAULTS,
   TRAIL_MARK_RANGES,
@@ -750,7 +751,8 @@ export function initDevMode({
     const nTrails =
       Object.keys(overrides.trails.gap).length +
       Object.keys(overrides.trails.marks).length +
-      Object.keys(overrides.trails.types).length;
+      Object.keys(overrides.trails.types).length +
+      (overrides.trails.lanes ? 1 : 0);
     const nShields = Object.keys(overrides.shields).length;
     const nIkony = (overrides.customIcons || []).length;
     const nSady = (overrides.iconSets || []).length;
@@ -4539,6 +4541,18 @@ export function initDevMode({
         el("small", { text: `v pixeloch pri z${TRAIL_GAP_ZOOM}, ostatné zoomy sa škálujú s ním` })
       ]),
       ...gapFields,
+      el("div", { class: `dev-sub${overrides.trails.lanes ? " changed" : ""}` }, [
+        selectField({
+          label: "Trasy na jednej ceste",
+          value: overrides.trails.lanes || TRAIL_LANES[0],
+          options: [["route", "každá trasa svoj pásik"], ["colour", "jeden pásik na farbu"]],
+          onChange: (v) => {
+            if (v === TRAIL_LANES[0]) delete overrides.trails.lanes;
+            else overrides.trails.lanes = v;
+            apply({ immediate: true });
+          }
+        })
+      ]),
       el("div", { class: "dev-bulk on" }, [
         el("button", {
           type: "button",
@@ -4547,6 +4561,7 @@ export function initDevMode({
           onclick: () => {
             overrides.trails.gap = {};
             overrides.trails.marks = {};
+            delete overrides.trails.lanes;
             apply();
           }
         })

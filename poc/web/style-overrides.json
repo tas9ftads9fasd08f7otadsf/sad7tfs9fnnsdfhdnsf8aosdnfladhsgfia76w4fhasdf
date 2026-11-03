@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T08:47:31.888Z",
+  "updated_at": "2026-11-03T09:30:24.232Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -42,7 +42,8 @@
   "trails": {
     "gap": {},
     "types": {},
-    "marks": {}
+    "marks": {},
+    "lanes": "colour"
   },
   "shields": {},
   "routeShields": true,

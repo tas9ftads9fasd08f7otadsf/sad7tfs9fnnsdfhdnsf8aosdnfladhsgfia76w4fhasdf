@@ -296,12 +296,7 @@ class Ways(osmium.SimpleHandler):
         self.ways += 1
         self.lanes[len(lanes)] += 1
         self.by_way_class[way] += 1
-        # lanes are numbered per side
-        taken = Counter()
-        for info in lanes:
-            side = SIDE_BY_ROUTE.get(info["route"], 1)
-            idx = taken[side]
-            taken[side] += 1
+        for info, (side, idx, lane) in zip(lanes, self.lane_slots(lanes)):
             self.by_type[info["route"]] += 1
             self.by_colour[info["colour"] or "no colour"] += 1
             self.by_mark[
@@ -317,6 +312,7 @@ class Ways(osmium.SimpleHandler):
                 # numbered outwards, so one route ending doesn't shift the others
                 "side": side,
                 "off": idx,
+                "lane": lane,
                 "way": way,
                 "cnt": len(lanes),
                 "rel": info["rel"],
@@ -327,6 +323,22 @@ class Ways(osmium.SimpleHandler):
                     props[key] = info[key]
             self.write(coords, props)
             self.features += 1
+
+    @staticmethod
+    def lane_slots(lanes):
+        """Per route: its side, its own lane and the lane it shares with routes of its colour."""
+        taken, shared, slots = Counter(), {}, []
+        for info in lanes:
+            side = SIDE_BY_ROUTE.get(info["route"], 1)
+            # a route without a mark colour is drawn in its kind's colour
+            key = (side, info["colour"], info["hex"]) if info["colour"] or info["hex"] \
+                else (side, "", info["route"])
+            if key not in shared:
+                shared[key] = sum(1 for k in shared if k[0] == side)
+            # lanes are numbered per side
+            slots.append((side, taken[side], shared[key]))
+            taken[side] += 1
+        return slots
 
     @staticmethod
     def lane_order(routes):

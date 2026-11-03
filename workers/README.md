@@ -3779,6 +3779,11 @@ Formát súboru:
 }
 ```
 
+`trails.lanes` hovorí, ako sa kreslia trasy na jednej ceste: `route` (predvolené)
+dá každej trase vlastný pásik, `colour` jeden pásik na farbu značky, ako Mapy.com.
+Pruh na farbu (`lane`) píše `workers/trails/routes.py`; dlaždice trás bez neho
+ostanú pri pásiku na trasu, kým sa neprestavajú.
+
 `layers` a `poi` platia pre **všetky** typy máp, `maps.<typ>` len pre jeden a
 prebíja spoločné nastavenie (`paint` sa mieša po jednotlivých vlastnostiach).
 Súbory z verzie 1 (bez `maps`) sa načítajú bez zmeny – všetko z nich sa berie
