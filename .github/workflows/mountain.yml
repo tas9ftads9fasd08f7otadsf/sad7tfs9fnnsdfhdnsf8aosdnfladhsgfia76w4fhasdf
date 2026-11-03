@@ -42,6 +42,7 @@ on:
           - contours
           - rocks
           - terrain
+          - aerial
           - everything
       test:
         description: "Quick test: only 4 km² in the middle of the range"
@@ -139,6 +140,7 @@ jobs:
       opt_contours_rebuild: ${{ steps.opts.outputs.opt_contours_rebuild }}
       opt_rocks_rebuild: ${{ steps.opts.outputs.opt_rocks_rebuild }}
       opt_terrain_rebuild: ${{ steps.opts.outputs.opt_terrain_rebuild }}
+      opt_aerial_rebuild: ${{ steps.opts.outputs.opt_aerial_rebuild }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -342,16 +344,24 @@ jobs:
       fail-fast: false
       matrix:
         season: [summer, winter]
+    env:
+      TILE_KEY: aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-z${{ needs.plan.outputs.opt_aerial_maxzoom }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # a saved key is never overwritten, so the fresh tiles need it gone
+      - name: Rebuild – delete the old tile cache
+        if: ${{ needs.plan.outputs.opt_aerial_rebuild == 'true' }}
+        run: python3 workers/drive/cache.py --delete --key="$TILE_KEY"
+
       - name: Tile cache (restore)
         id: tile-cache
+        if: ${{ needs.plan.outputs.opt_aerial_rebuild != 'true' }}
         uses: ./.github/actions/cache-restore
         with:
           path: aerial-cache
-          key: aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-z${{ needs.plan.outputs.opt_aerial_maxzoom }}
+          key: ${{ env.TILE_KEY }}
           # v1 keys are ofmozaika_sk's, from before a range picked its source
           restore-keys: |
             aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-
@@ -386,7 +396,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: aerial-cache
-          key: ${{ steps.tile-cache.outputs.cache-primary-key }}
+          key: ${{ env.TILE_KEY }}
 
       - name: Upload the site part
         if: ${{ steps.photos.outputs.enabled == 'true' }}

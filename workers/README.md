@@ -1858,6 +1858,7 @@ so zaškrtnutým inputom:
 | `skaly` | skaly – zmaže cache aj súbor v sklade `dem-rocks` (vrstevnice sa prepočítajú s nimi, sú lacné) a pri `rock_source: tienovanie` zahodí aj rozrobené obrysy podpipeline (`fresh=1`) |
 | `tienovanie` | tieňovanie a 3D terén – zmaže cache aj súbor v sklade `dem-terrain` |
 | `clanky` | články z Wikipédie – **obíde cache** `wiki-…` a stiahne ich odznova |
+| `aerial` | letecké snímky pohoria – zmaže cache `aerial-v2-…` a dlaždice stiahne odznova (len „Map · Build mountain package“) |
 | `vsetko` | všetko z tejto tabuľky |
 
 Prečo to musí najprv mazať: **existujúci záznam cache sa nedá prepísať.**

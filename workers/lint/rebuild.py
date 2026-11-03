@@ -20,6 +20,7 @@ WORKFLOW = ".github/workflows/build-map-region.yml"
 # elevation layers (and the shaded-rocks sub-pipeline) live in their own workflow
 LAYERS = ".github/workflows/dem-layers.yml"
 OPTIONS = "workers/plan/options.py"
+MOUNTAIN = ".github/workflows/mountain.yml"
 
 bad = []
 
@@ -57,7 +58,8 @@ if not in_form:
     bad.append(f"{WORKFLOW}: input `rebuild` has no choice of values – the form "
                f"can't say what to recompute.")
 
-known = set(opts.REBUILD)
+mountain_only = set(getattr(opts, "MOUNTAIN_REBUILDS", ()))
+known = set(opts.REBUILD) - mountain_only
 alias = set(getattr(opts, "REBUILD_ALIAS", {}))
 
 for v in in_form:
@@ -66,6 +68,9 @@ for v in in_form:
                    f"`{opts.REBUILD_ALIAS[v]}`. It must be accepted (Re-run "
                    f"repeats the old values), not offered – two names for one "
                    f"thing in a form are worse than one.")
+    elif v in mountain_only:
+        bad.append(f"{WORKFLOW}: `rebuild` offers `{v}`, which only a mountain "
+                   f"package has – a region run would quietly do nothing.")
     elif v not in known:
         bad.append(f"{WORKFLOW}: `rebuild` offers `{v}`, which {OPTIONS} "
                    f"doesn't know (it knows {sorted(known)}) – the run would "
@@ -77,7 +82,10 @@ for v in sorted(known - set(in_form)):
 
 # the flag must get from `plan` to the job that recomputes
 plan_outputs = ((wf.get("jobs") or {}).get("plan") or {}).get("outputs") or {}
+mountain_flags = {f for v in mountain_only for f in opts.REBUILD[v]}
 for flag in opts.REBUILD_FLAGS:
+    if flag in mountain_flags:
+        continue
     if f"opt_{flag}" not in plan_outputs:
         bad.append(f"{WORKFLOW}: job `plan` doesn't output `opt_{flag}`, so the "
                    f"flag never reaches the job that should recompute – a "
@@ -86,6 +94,29 @@ for flag in opts.REBUILD_FLAGS:
         bad.append(f"{WORKFLOW}: nobody reads `opt_{flag}` "
                    f"(`needs.plan.outputs.opt_{flag}`) – the form would promise "
                    f"a recompute that never happens.")
+
+# mountain-only values: offered by the mountain form, carried and read there
+if mountain_only:
+    try:
+        mtext = open(MOUNTAIN, encoding="utf-8").read()
+        mwf = yaml.safe_load(mtext)
+    except (OSError, ValueError) as exc:
+        bad.append(f"{MOUNTAIN} can't be read: {exc}")
+        mwf, mtext = {}, ""
+    mon = mwf.get("on") or mwf.get(True) or {}
+    m_inputs = ((mon.get("workflow_dispatch") or {}).get("inputs") or {})
+    m_form = set((m_inputs.get("rebuild") or {}).get("options") or [])
+    m_outputs = ((mwf.get("jobs") or {}).get("plan") or {}).get("outputs") or {}
+    for v in sorted(mountain_only - m_form):
+        bad.append(f"{OPTIONS}: `{v}` is a mountain rebuild, but the form in "
+                   f"{MOUNTAIN} doesn't offer it.")
+    for flag in sorted(mountain_flags):
+        if f"opt_{flag}" not in m_outputs:
+            bad.append(f"{MOUNTAIN}: job `plan` doesn't output `opt_{flag}` – a "
+                       f"rebuild would quietly do nothing.")
+        elif f"needs.plan.outputs.opt_{flag}" not in mtext:
+            bad.append(f"{MOUNTAIN}: nobody reads `opt_{flag}` – the form would "
+                       f"promise a recompute that never happens.")
 
 # rocks from shading: `rebuild: rocks` must drop half-done outlines too
 sr = ((layers.get("jobs") or {}).get("shading-rocks") or {}).get("with") or {}
