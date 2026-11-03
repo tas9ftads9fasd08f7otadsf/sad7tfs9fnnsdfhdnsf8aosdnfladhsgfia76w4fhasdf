@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-11-03T12:16:41.152Z",
+  "updated_at": "2026-11-03T12:23:33.216Z",
   "icons": "osm-liberty",
   "hillshade": true,
   "palette": {
@@ -12,15 +12,17 @@
       "buildingOutline": "#cec2b2",
       "water": "#9ec5e2",
       "river": "#9ec5e2",
-      "rock": "#b4ae9f",
-      "rockPattern": "#8f8577",
+      "rock": "#b5b8a8",
+      "rockPattern": "#888b7a",
       "trailRed": "#c60000",
       "trailBlue": "#0018c0",
       "trailGreen": "#188400",
       "trailCycling": "#ea44c6",
       "trailMtb": "#ba42e4",
       "rail": "#5a5a5a",
-      "aerialway": "#4f4f4f"
+      "aerialway": "#4f4f4f",
+      "hillShadow": "#33452ab3",
+      "hillAccent": "#5a6a4a38"
     }
   },
   "layers": {},
@@ -694,6 +696,32 @@
               [
                 20,
                 5.5
+              ]
+            ]
+          }
+        },
+        "hillshade": {
+          "paint": {
+            "hillshade-exaggeration": [
+              [
+                6,
+                0.55
+              ],
+              [
+                10,
+                0.7
+              ],
+              [
+                12,
+                0.85
+              ],
+              [
+                14,
+                0.8
+              ],
+              [
+                16,
+                0.65
               ]
             ]
           }
