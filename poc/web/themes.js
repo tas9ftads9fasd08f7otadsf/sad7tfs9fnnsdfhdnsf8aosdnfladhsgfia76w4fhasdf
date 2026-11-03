@@ -172,6 +172,7 @@ export const THEMES = {
     grass: "#e4e6d2",
     park: "#d9e6c8",
     parkOutline: "#a8cf90",
+    parkText: "#3d7d32",
     sand: "#f0e6c8",
     ice: "#eef6fa",
     wetland: "#d6e3d0",
@@ -297,6 +298,7 @@ export const THEMES = {
     grass: "#232219",
     park: "#202a20",
     parkOutline: "#2a4030",
+    parkText: "#8fc87a",
     sand: "#2a2820",
     ice: "#1e2630",
     wetland: "#18241d",
@@ -421,6 +423,7 @@ export const THEMES = {
     grass: "#dcdec2",
     park: "#cfdcb4",
     parkOutline: "#88b070",
+    parkText: "#3a7430",
     sand: "#ecdfb5",
     ice: "#ffffff",
     wetland: "#bcd8c0",
@@ -544,6 +547,7 @@ export const THEMES = {
     grass: "#eae9d4",
     park: "#e2e6cc",
     parkOutline: "#c0d8a8",
+    parkText: "#4a8a40",
     sand: "#f5e8cc",
     ice: "#f2f5f0",
     wetland: "#cfe0d5",
@@ -700,6 +704,7 @@ export const PALETTE_GROUPS = [
       ["grass", "Tráva / lúka / pole"],
       ["park", "Park"],
       ["parkOutline", "Obrys parku"],
+      ["parkText", "Názov chráneného územia"],
       ["sand", "Piesok"],
       ["ice", "Ľadovec"],
       ["wetland", "Mokraď"],
@@ -5290,33 +5295,41 @@ export function buildStyle({
     }
   }
 
-  add(
+  // Slovak protection classes shortened as on the signs; buffer zones aren't named
+  const parkPrefix = [
+    "match", str("class"),
+    "národná_prírodná_rezervácia", "NPR ", "prírodná_rezervácia", "PR ",
+    "národná_prírodná_pamiatka", "NPP ", "prírodná_pamiatka", "PP ", "chránený_areál", "CHA ",
+    ""
+  ];
+  const parkLabel = (id, minzoom, maxzoom, geometry) => add(
     {
-      id: "park-name",
+      id,
       type: "symbol",
       "source-layer": "park",
-      // the outline is cut per tile, so labelling it repeats the name on every tile
-      filter: ["==", ["geometry-type"], "Point"],
-      minzoom: 11,
+      filter: ["all", ["in", ["geometry-type"], ["literal", [geometry, `Multi${geometry}`]]],
+        ["!", ["in", "ochranné_pásmo", str("class")]]],
+      minzoom,
+      ...(maxzoom ? { maxzoom } : {}),
       layout: {
-        "text-field": nameExpr,
-        "text-font": REG,
-        "text-size": zl([[11, 10], [16, 13]]),
-        "text-max-width": 8
+        "text-field": ["concat", parkPrefix, nameExpr],
+        "text-font": ITAL,
+        "text-size": zl([[11, 10], [14, 12], [16, 14]]),
+        "text-max-width": 8,
+        "text-padding": 24
       },
       paint: {
-        "text-color": c.poiText,
+        "text-color": c.parkText,
         "text-halo-color": c.textHalo,
         "text-halo-width": 1.2
       }
     },
-    [
-      "popisky",
-      "Názvy parkov",
-      "text",
-      { "text-color": "poiText", "text-halo-color": "textHalo" }
-    ]
+    ["popisky", geometry === "Point" ? "Názvy chránených území" : "Názvy chránených území (v ploche)",
+      "text", { "text-color": "parkText", "text-halo-color": "textHalo" }]
   );
+  // one label point per area from afar; close up the area names itself, as on Mapy.com
+  parkLabel("park-name", 11, 13, "Point");
+  parkLabel("park-area-name", 13, null, "Polygon");
 
   // štítky s číslom cesty. Idú pred `road-name` zámerne: MapLibre umiestňuje
   // popisky v poradí vrstiev a keď sa nezmestí meno aj číslo, má ostať číslo.
