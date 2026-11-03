@@ -189,7 +189,8 @@ jobs:
     name: Package as Apple Archive (.aar)
     needs: world
     if: ${{ !cancelled() && needs.world.outputs.published == 'success' && inputs.apple_archive }}
-    runs-on: macos-latest
+    # intel: arm runners left `.aar` jobs waiting for one
+    runs-on: macos-15-intel
     permissions:
       contents: write
     steps:

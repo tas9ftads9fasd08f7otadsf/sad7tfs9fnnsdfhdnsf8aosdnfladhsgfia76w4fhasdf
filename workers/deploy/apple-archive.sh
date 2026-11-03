@@ -9,7 +9,7 @@
 set -euo pipefail
 
 if ! command -v aa >/dev/null 2>&1; then
-  echo "::error::The aa tool isn't here. Apple Archive ships with macOS 11+, so this job must run on macos-latest; .aar can't be built on Linux."
+  echo "::error::The aa tool isn't here. Apple Archive ships with macOS 11+, so this job must run on macos-15-intel; .aar can't be built on Linux."
   exit 1
 fi
 echo "Apple Archive: $(command -v aa)"

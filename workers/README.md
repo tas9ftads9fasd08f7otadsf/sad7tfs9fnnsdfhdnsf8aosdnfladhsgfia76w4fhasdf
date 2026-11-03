@@ -2190,7 +2190,7 @@ Priečinok hovorí, čoho sa mapa týka, a čo chýba, sa vyrobí:
 Každý balík je aj ako **`.aar` (Apple Archive)** – ten istý obsah, to isté
 meno, iná prípona. iOS a macOS ho rozbalia systémovo (framework AppleArchive),
 bez tretej knižnice v aplikácii, a LZFSE je na Apple hardvéri rýchlejšie než
-deflate. Robí to vlastný job na `macos-latest`, lebo nástroj `aa` je súčasť
+deflate. Robí to vlastný job na `macos-15-intel`, lebo nástroj `aa` je súčasť
 macOS; pri mape sa vypína voľbou `apple_archive=false`, pri článkoch nie. V `maps.json` má každý balík
 `formats.zip` aj `formats.aar`. + index.json
 ```
