@@ -35,6 +35,7 @@ test("the residential polygons give way to the yards at the same zoom", () => {
   }
 });
 
+// 440 Mapy fills villages solid up to its z15
 test("villages are a solid built-up area up to Mapy's z15, yards only from its z16", () => {
   assert.equal(YARD_FROM_Z, 15);
   const { layers } = styleOf("https://x/buildings.pmtiles");
