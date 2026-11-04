@@ -1039,6 +1039,16 @@ const zw = (stops) => [
   ...stops.flat()
 ];
 
+/** Share of its road's width a slip road gets; Mapy draws interchange loops slim. */
+export const RAMP_SCALE = 0.5;
+const RAMP_FACTOR = ["case", ["==", ["get", "ramp"], 1], RAMP_SCALE, 1];
+const zwRoad = (stops) => [
+  "interpolate",
+  ["exponential", 1.5],
+  ["zoom"],
+  ...stops.flatMap(([z, w]) => [z, ["*", w, RAMP_FACTOR]])
+];
+
 /** Lineárna interpolácia podľa zoomu. */
 const zl = (stops) => ["interpolate", ["linear"], ["zoom"], ...stops.flat()];
 
@@ -1701,8 +1711,11 @@ export function valueAtZoom(value, zoom) {
   if (!Array.isArray(input) || input[0] !== "zoom") return null;
   const stops = [];
   for (let i = 0; i + 1 < rest.length; i += 2) {
-    if (typeof rest[i] !== "number" || !isScalarValue(rest[i + 1])) return null;
-    stops.push([rest[i], rest[i + 1]]);
+    // a road's stop scaled for slip roads: the road's own width answers
+    const out = Array.isArray(rest[i + 1]) && rest[i + 1][0] === "*" && typeof rest[i + 1][1] === "number"
+      ? rest[i + 1][1] : rest[i + 1];
+    if (typeof rest[i] !== "number" || !isScalarValue(out)) return null;
+    stops.push([rest[i], out]);
   }
   if (!stops.length) return null;
   const base = Array.isArray(curve) && curve[0] === "exponential" ? Number(curve[1]) || 1 : 1;
@@ -2835,7 +2848,10 @@ export function scaleExpr(expr, rel) {
   const { scale = 1, add = 0 } = rel || {};
   // `0.5 * 1.4` je v plávajúcej čiarke `0.7000000000000001`
   const t = (v) =>
-    typeof v === "number" ? Math.round((v * scale + add) * 1000) / 1000 : v;
+    typeof v === "number" ? Math.round((v * scale + add) * 1000) / 1000
+      // a slip road's stop: the road's width times its share
+      : Array.isArray(v) && v[0] === "*" && typeof v[1] === "number" ? ["*", t(v[1]), ...v.slice(2)]
+        : v;
   if (typeof expr === "number") return t(expr);
   if (!Array.isArray(expr)) return expr;
   // `["interpolate", <druh>, <vstup>, z1, v1, z2, v2, …]`
@@ -4304,7 +4320,7 @@ export function buildStyle({
           layout,
           paint: {
             "line-color": c[casingKey],
-            "line-width": zw(widen(stops, extra)),
+            "line-width": zwRoad(widen(stops, extra)),
             ...(opts.dash ? { "line-dasharray": opts.dash } : {}),
             ...(opts.casingOpacity ? { "line-opacity": opts.casingOpacity } : {})
           }
@@ -4324,7 +4340,7 @@ export function buildStyle({
           layout,
           paint: {
             "line-color": c[colorKey],
-            "line-width": zw(stops),
+            "line-width": zwRoad(stops),
             ...(opts.opacity ? { "line-opacity": opts.opacity } : {})
           }
         },

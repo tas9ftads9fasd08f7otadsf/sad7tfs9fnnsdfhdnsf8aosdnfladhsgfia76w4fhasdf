@@ -22,13 +22,13 @@ const evaluate = (expr, properties) => {
   return parsed.value.evaluate({ zoom: 14 }, { type: "Polygon", properties });
 };
 
-// 450 Mapy greens natural grassland but leaves meadows plain, and browns allotments
-test("grassland and allotments are variants of their own", () => {
+// 450 Mapy browns allotments; 453 the green grass variant is parks (city.test.mjs)
+test("allotments are a variant of their own", () => {
   assert.deepEqual(problems, []);
   const grass = style.layers.find((l) => l.id.startsWith("landcover-grass__var"));
   const garden = style.layers.find((l) => l.id.startsWith("landcover-garden__var"));
-  assert.ok(JSON.stringify(grass.filter).includes("grassland"));
-  assert.ok(JSON.stringify(garden.filter).includes("allotments"));
+  assert.deepEqual(overrides.maps.turisticka.layers["landcover-garden"].variants[0].values, ["allotments"]);
+  assert.ok(garden);
   assert.notDeepEqual(grass.paint["fill-color"], byId("landcover-grass").paint["fill-color"]);
 });
 
