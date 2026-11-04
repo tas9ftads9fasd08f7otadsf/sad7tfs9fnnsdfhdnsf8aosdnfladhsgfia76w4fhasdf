@@ -4987,7 +4987,8 @@ export function buildStyle({
           id: `trail-${id}-label`,
           type: "symbol",
           source: "trails",
-          "source-layer": "trail",
+          // whole routes: `trail` is cut at every junction and no name fits a piece
+          "source-layer": "trail_name",
           minzoom: 12,
           filter: [
             "all",
