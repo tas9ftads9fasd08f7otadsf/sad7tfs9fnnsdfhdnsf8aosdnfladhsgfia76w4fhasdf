@@ -1257,8 +1257,8 @@ export const TRAIL_MARK_ZOOM = 16;
  * miesto a kolízia nechala vždy tú istú (z troch trás bolo vidieť dve).
  *
  * Značka sa preto posunie `icon-offset`-om podľa toho, koľká je trasa v rade
- * (`off`) a na ktorej strane je jej pásik (`side`): pešie nahor, kolesové
- * nadol. Vzniká z toho stĺpik značiek nad rozcestím, ako sú na strome.
+ * (`off`) a na ktorej strane je jej pásik (`side`): pešie nadol, tesne pod
+ * chodník, kolesové nahor. Vzniká z toho stĺpik značiek, ako sú na strome.
  *
  * `icon-offset` je v pixeloch obrázka, ktoré MapLibre násobí `icon-size` –
  * stĺpik sa teda škáluje sám, ale zadáva sa v pixeloch, nie vo výškach značky.
@@ -1272,7 +1272,7 @@ export const TRAIL_MARK_ZOOM = 16;
  * Pri stĺpiku je to bezpečné – rad je krátky, stojí kolmo na trasu a čo si
  * prekrýva, je jeho vlastná priečka. Stráži to `workers/lint/marks.mjs`.
  */
-export const TRAIL_MARK_STACK = { base: MARK_BOX + 4, step: MARK_BOX };
+export const TRAIL_MARK_STACK = { base: MARK_BOX / 2 + 6, step: MARK_BOX };
 
 /**
  * Miesto okolo značky, ktoré si drží voľné (v pixeloch obrazovky).
@@ -4770,10 +4770,9 @@ export function buildStyle({
     /** Druhy trás už aj s tým, čo na nich prepísal developer mode. */
     const trailTypes = TRAIL_TYPES.map((t) => trailTypeDef(t, overrides));
 
+    // the number only when there's no name: "0930 Tatranská magistrála" never fits a bend
     const trailLabel = [
       "case",
-      ["all", ["has", "ref"], ["has", "name"]],
-      ["concat", ["get", "ref"], " ", ["get", "name"]],
       ["has", "name"],
       ["get", "name"],
       ["has", "ref"],
@@ -4848,7 +4847,7 @@ export function buildStyle({
     /** Kreslí sa tomuto druhu značka? („žiadna" z developer módu ju vypne.) */
     const drawsMark = (t) => marksBaked && t.markPick !== "";
 
-    // stĺpik značiek nad čiarou podľa `off` a `side`; záporné `y` je nahor.
+    // hiking marks hang just below the path, the other side's stand above it
     // Vymenované preto, že `icon-offset` je pole a výrazy MapLibre pole
     // počítať nevedia – nad `TRAIL_MARK_STACK_MAX` sa kreslí posledná priečka.
     const stackOffset = (base, step) => {
@@ -4857,11 +4856,11 @@ export function buildStyle({
         for (let off = 0; off <= TRAIL_MARK_STACK_MAX; off += 1) {
           expr.push(
             ["all", ["==", num("side", 1), side], ["==", laneNum, off]],
-            ["literal", [0, -side * (base + step * off)]]
+            ["literal", [0, side * (base + step * off)]]
           );
         }
       }
-      expr.push(["literal", [0, -base]]);
+      expr.push(["literal", [0, base]]);
       return expr;
     };
     // krok stĺpika je z developer módu, tak ako rozostup a veľkosť značky
@@ -4980,7 +4979,8 @@ export function buildStyle({
             "text-font": REG,
             "text-size": zl([[12, 9], [14, 10.5], [18, 13]]),
             "symbol-spacing": 420,
-            "text-max-angle": 30,
+            // mountain trails wind; at 30° the long names never fit
+            "text-max-angle": 60,
             "text-padding": 6,
             // popisok sa odsunie nabok, nech neleží na pásikoch
             "text-offset": [0, 0.8],

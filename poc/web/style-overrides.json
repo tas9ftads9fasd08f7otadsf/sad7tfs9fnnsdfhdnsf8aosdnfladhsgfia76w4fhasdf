@@ -4,7 +4,7 @@
   "hillshade": true,
   "palette": {
     "svetla": {
-      "track": "#9a9274",
+      "track": "#867a5a",
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
       "buildingOutline": "#cec2b2",
@@ -241,7 +241,7 @@
         },
         "road-path": {
           "paint": {
-            "line-color": "#9a9274"
+            "line-color": "#6b5e40"
           },
           "paintDark": {
             "line-color": "#78787c"
@@ -591,15 +591,19 @@
               ],
               [
                 12,
-                0.85
-              ],
-              [
-                14,
                 0.8
               ],
               [
+                13,
+                0.7
+              ],
+              [
+                14,
+                0.6
+              ],
+              [
                 16,
-                0.65
+                0.5
               ]
             ]
           }
@@ -641,8 +645,13 @@
             "fill-color": [
               [
                 0,
+                11,
+                "#8db46a"
+              ],
+              [
                 12,
-                "#9cbe78"
+                12,
+                "#b4cb98"
               ],
               [
                 13,
@@ -652,21 +661,60 @@
               [
                 15,
                 20,
-                "#d6eeb4"
+                "#cbe5ab"
               ]
             ]
           },
           "paintDark": {
             "fill-color": "#272a1e"
-          }
+          },
+          "variants": [
+            {
+              "attr": "subclass",
+              "values": [
+                "fell",
+                "tundra"
+              ],
+              "label": "alpínske lúky",
+              "paint": {
+                "fill-color": [
+                  [
+                    0,
+                    11,
+                    "#9cbe78"
+                  ],
+                  [
+                    12,
+                    12,
+                    "#c2d0ac"
+                  ],
+                  [
+                    13,
+                    14,
+                    "#e0e8d0"
+                  ],
+                  [
+                    15,
+                    20,
+                    "#e4ecd6"
+                  ]
+                ]
+              }
+            }
+          ]
         },
         "rock-area": {
           "paint": {
             "fill-color": [
               [
                 0,
-                12,
+                11,
                 "#98a882"
+              ],
+              [
+                12,
+                12,
+                "#8c917c"
               ],
               [
                 13,
@@ -676,7 +724,7 @@
               [
                 15,
                 20,
-                "#b7b2a0"
+                "#a8a394"
               ]
             ]
           },
@@ -689,13 +737,13 @@
             "line-color": [
               [
                 0,
-                14,
+                13,
                 "#8b8974"
               ],
               [
-                15,
+                14,
                 20,
-                "#90917a"
+                "#a2a38c"
               ]
             ]
           },
@@ -705,7 +753,18 @@
         },
         "contour-minor": {
           "paint": {
-            "line-color": "#a2a48b"
+            "line-color": [
+              [
+                0,
+                13,
+                "#a2a48b"
+              ],
+              [
+                14,
+                20,
+                "#b4b69e"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#4f4b40"
@@ -716,13 +775,18 @@
             "fill-color": [
               [
                 0,
-                12,
+                11,
                 "#a8b98f"
+              ],
+              [
+                12,
+                12,
+                "#c4cdb4"
               ],
               [
                 13,
                 20,
-                "#d2d5c6"
+                "#d6d9cb"
               ]
             ]
           },

@@ -187,7 +187,7 @@ for (const t of TRAIL_TYPES) {
   const offsets = new Set();
   for (const side of [1, -1]) {
     for (let off = 0; off <= TRAIL_MARK_STACK_MAX; off += 1) {
-      const y = -side * (TRAIL_MARK_STACK.base + TRAIL_MARK_STACK.step * off);
+      const y = side * (TRAIL_MARK_STACK.base + TRAIL_MARK_STACK.step * off);
       const key = `${side}:${off}`;
       if (offsets.has(String(y))) {
         error(
