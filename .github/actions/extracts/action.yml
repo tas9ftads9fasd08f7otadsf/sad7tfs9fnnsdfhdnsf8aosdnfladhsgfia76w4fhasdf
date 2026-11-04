@@ -20,7 +20,9 @@ runs:
       shell: bash
       run: |
         set -euo pipefail
-        npm install --silent --no-save --prefix "$RUNNER_TEMP/extracts" @actions/artifact@6.3.1
+        # a registry hiccup here once left a whole region out of the country map
+        "$GITHUB_WORKSPACE/workers/lib/retry.sh" \
+          npm install --silent --no-save --prefix "$RUNNER_TEMP/extracts" @actions/artifact@6.3.1
 
     - name: Take or download the extracts
       uses: actions/github-script@v9
