@@ -77,3 +77,77 @@ layers:
     tile_post_process:
       merge_line_strings:
         min_length: 0
+
+  # one line per route without the lane attributes, which break `trail` into pieces at
+  # every junction; the names ride on it
+  - id: trail_name
+    features:
+      - source: trails
+        geometry: line
+        min_zoom: 12
+        include_when:
+          __any__:
+            - name: __any__
+            - ref: __any__
+        attributes:
+          - key: route
+          - key: colour
+          - key: hex
+          - key: tier
+          - key: name
+          - key: ref
+          - key: rel
+            type: long
+    tile_post_process:
+      merge_line_strings:
+        min_length: 0
+
+examples:
+  - name: A trail's name rides on a line without lane attributes
+    input:
+      source: trails
+      geometry: line
+      tags:
+        route: hiking
+        colour: red
+        tier: national
+        name: Tatranská magistrála
+        ref: "0930"
+        rel: 1208354
+        side: 1
+        off: 1
+        lane: 1
+        cnt: 2
+        way: path
+    output:
+      - layer: trail
+        geometry: line
+        min_zoom: 8
+        allow_extra_tags: true
+        tags:
+          name: Tatranská magistrála
+      - layer: trail_name
+        geometry: line
+        min_zoom: 12
+        allow_extra_tags: false
+        tags:
+          route: hiking
+          colour: red
+          tier: national
+          name: Tatranská magistrála
+          ref: "0930"
+          rel: 1208354
+
+  - name: A route with neither name nor number has no label line
+    input:
+      source: trails
+      geometry: line
+      tags:
+        route: hiking
+        colour: blue
+        tier: regional
+        side: 1
+    output:
+      - layer: trail
+        geometry: line
+        allow_extra_tags: true

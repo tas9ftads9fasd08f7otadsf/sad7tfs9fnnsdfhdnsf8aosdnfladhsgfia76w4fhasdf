@@ -63,6 +63,7 @@ EXPECTED = [
     ("buildings", "settlement_area", {}),
     ("buildings", "settlement", {"name": "Malá Obec"}),
     ("trails", "trail", {"name": "Okruh"}),
+    ("trails", "trail_name", {"name": "Okruh"}),
     ("features", "feature_line", {}),
     ("points", "feature_point", {"name": "Rozhľadňa"}),
 ]
