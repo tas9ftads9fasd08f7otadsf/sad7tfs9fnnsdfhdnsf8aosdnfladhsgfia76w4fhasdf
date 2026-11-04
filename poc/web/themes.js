@@ -13,6 +13,7 @@
  * istý objekt použije aj pipeline.
  */
 
+import { LIFT_CABINS, LIFT_CHAIRS, LIFT_WIDTH, LIFT_DASH, liftWidthStops } from "./lifts.js";
 import {
   ICON_SOURCE_IDS,
   CUSTOM_SET_PREFIX,
@@ -210,6 +211,7 @@ export const THEMES = {
     railHatch: "#ffffff",
     ferry: "#8aa8c8",
     aerialway: "#8a8a8a",
+    aerialwayCabin: "#ffffff",
     pier: "#e8e4dc",
     boundary: "#9e7bb5",
     boundaryLocal: "#b8a0c8",
@@ -337,6 +339,7 @@ export const THEMES = {
     railHatch: "#65656f",
     ferry: "#3a4a66",
     aerialway: "#55556a",
+    aerialwayCabin: "#1a1a22",
     pier: "#2a2833",
     boundary: "#7a5f95",
     boundaryLocal: "#5f4a75",
@@ -461,6 +464,7 @@ export const THEMES = {
     railHatch: "#f4f1e4",
     ferry: "#5f93b5",
     aerialway: "#5a5a5a",
+    aerialwayCabin: "#ffffff",
     pier: "#e0dac8",
     boundary: "#8a6aa0",
     boundaryLocal: "#a880b8",
@@ -585,6 +589,7 @@ export const THEMES = {
     railHatch: "#fdf6ec",
     ferry: "#8fb8a8",
     aerialway: "#a89c90",
+    aerialwayCabin: "#f6efe4",
     pier: "#f0e6da",
     boundary: "#c090a8",
     boundaryLocal: "#c8a0b8",
@@ -815,6 +820,7 @@ export const PALETTE_GROUPS = [
       ["railHatch", "Čiarkovanie železnice (svetlý diel)"],
       ["ferry", "Kompa"],
       ["aerialway", "Lanovka / vlek"],
+      ["aerialwayCabin", "Čiarky v kabínkovej lanovke"],
       ["pier", "Mólo"],
       ["aeroway", "Letisková plocha"],
       ["aerowayLine", "Dráha / rolovacia dráha"]
@@ -4460,21 +4466,36 @@ export function buildStyle({
   roadPass("-bridge", " (most)", isBridge, { cap: "butt" });
 
   // --- lanovky, kompy, móla ---
-  add(
-    {
-      id: "aerialway",
-      type: "line",
-      "source-layer": "transportation",
-      minzoom: 11,
-      filter: ["==", ["get", "class"], "aerialway"],
-      paint: {
-        "line-color": c.aerialway,
-        "line-width": zl([[11, 0.6], [16, 1.6], [20, 3]]),
-        "line-dasharray": [6, 2]
-      }
-    },
-    ["doprava", "Lanovky a vleky", "line", { "line-color": "aerialway" }]
-  );
+  // cabins ride a railway-like band, chairs bold dashes, drag lifts a thin dash, as on Mapy
+  const liftKind = (kinds) => ["all", ["==", ["get", "class"], "aerialway"],
+    ["in", str("subclass"), ["literal", kinds]]];
+  const dragLift = ["all", ["==", ["get", "class"], "aerialway"],
+    ["!", ["in", str("subclass"), ["literal", [...LIFT_CABINS, ...LIFT_CHAIRS]]]]];
+  for (const [id, label, filter, paletteKey, width, dash] of [
+    ["aerialway-casing", "Kabínkové lanovky (podklad)", liftKind(LIFT_CABINS), "aerialway",
+      LIFT_WIDTH.cabinCasing, null],
+    ["aerialway", "Kabínkové lanovky", liftKind(LIFT_CABINS), "aerialwayCabin",
+      LIFT_WIDTH.cabin, LIFT_DASH.cabin],
+    ["aerialway-chair", "Sedačkové lanovky", liftKind(LIFT_CHAIRS), "aerialway",
+      LIFT_WIDTH.chair, LIFT_DASH.chair],
+    ["aerialway-drag", "Vleky", dragLift, "aerialway", LIFT_WIDTH.drag, LIFT_DASH.drag]
+  ]) {
+    add(
+      {
+        id,
+        type: "line",
+        "source-layer": "transportation",
+        minzoom: 11,
+        filter,
+        paint: {
+          "line-color": c[paletteKey],
+          "line-width": zl(liftWidthStops(width)),
+          ...(dash ? { "line-dasharray": dash } : {})
+        }
+      },
+      ["doprava", label, "line", { "line-color": paletteKey }]
+    );
+  }
   add(
     {
       id: "ferry",
