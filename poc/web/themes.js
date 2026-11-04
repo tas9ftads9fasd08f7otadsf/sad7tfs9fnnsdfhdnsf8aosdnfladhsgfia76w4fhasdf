@@ -1188,7 +1188,7 @@ export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 
 /** Residential land reaches this far around a building, in metres on the ground. */
 export const YARD_M = 20;
 /** From this zoom residential land follows the buildings, below it the OSM polygons. */
-export const YARD_FROM_Z = 13;
+export const YARD_FROM_Z = 15;
 
 /** Length in px of the ticks inside a protected area's border; within the 8 px tile buffer. */
 export const PARK_BAND = [[10, 2.5], [13, 4], [16, 6]];
@@ -4227,7 +4227,7 @@ export function buildStyle({
         maxzoom: 15,
         paint: {
           "fill-color": c.building,
-          "fill-opacity": zl([[11, 0.8], [YARD_FROM_Z - 1, 0.65], [YARD_FROM_Z, 0]])
+          "fill-opacity": zl([[11, 0.85], [YARD_FROM_Z - 1, 0.85], [YARD_FROM_Z, 0]])
         }
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
