@@ -5849,7 +5849,7 @@ export function buildStyle({
   // tematické body: hrady na historickej mape, vleky na lyžiarskej, pumpy na
   // cestnej. Samostatné vrstvy, nech sa dajú zapnúť skôr než ostatné POI;
   // profil typu mapy ich zapína, inde sú vypnuté.
-  const topicPoi = (id, label, classes, paletteKey, minzoom) =>
+  const topicPoi = (id, label, classes, paletteKey, minzoom, notClasses = []) =>
     add(
       {
         id,
@@ -5857,9 +5857,11 @@ export function buildStyle({
         "source-layer": "poi",
         minzoom,
         filter: poiFilter([
-          "any",
-          ["in", str("subclass"), ["literal", classes]],
-          ["in", str("class"), ["literal", classes]]
+          "all",
+          ["any",
+            ["in", str("subclass"), ["literal", classes]],
+            ["in", str("class"), ["literal", classes]]],
+          ["!", ["in", str("class"), ["literal", notClasses]]]
         ]),
         layout: {
           ...poiLayout,
@@ -5888,7 +5890,9 @@ export function buildStyle({
 
   topicPoi("poi-historic", "Pamiatky (historická mapa)", HISTORIC_CLASSES, "historicPoi", 10);
   topicPoi("poi-mining", "Bane, štôlne a haldy (historická mapa)", MINING_CLASSES, "miningPoi", 10);
-  topicPoi("poi-ski", "Lyžiarske stredisko a vleky (lyžiarska mapa)", SKI_CLASSES, "skiPoi", 11);
+  // `station` is the lift's; a railway station shares the subclass
+  topicPoi("poi-ski", "Lyžiarske stredisko a vleky (lyžiarska mapa)", SKI_CLASSES, "skiPoi", 11,
+    ["railway"]);
   topicPoi("poi-road", "Pumpy, odpočívadlá a servis (cestná mapa)", ROAD_SERVICE_CLASSES, "servicePoi", 10);
 
   // ---- vrcholy hôr (dôležité pre outdoor mapu) ----
