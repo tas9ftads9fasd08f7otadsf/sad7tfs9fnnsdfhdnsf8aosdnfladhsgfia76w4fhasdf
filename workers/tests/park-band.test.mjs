@@ -15,6 +15,7 @@ const style = buildStyle({
 });
 const byId = (id) => style.layers.find((l) => l.id === id);
 
+// 439 Mapy marks a protected area by a border with ticks, not a band
 test("a protected area is a solid border with ticks inside it, not a fill over the land", () => {
   const ticks = byId("park");
   assert.equal(ticks.type, "line");
@@ -26,10 +27,12 @@ test("a protected area is a solid border with ticks inside it, not a fill over t
   assert.equal(byId("park-outline").paint["line-dasharray"], undefined, "the border is solid");
 });
 
+// 439 ticks, like the band before, must not cross the tile buffer
 test("the ticks stay within the 8 px tile buffer, so tile seams inside a park don't show", () => {
   for (const [, width] of PARK_BAND) assert.ok(width <= 8, `${width} px`);
 });
 
+// 439 Mapy leaves untitled Natura 2000 sites and buffer zones unmarked
 test("Natura 2000 sites and buffer zones get no border, reserves and parks do", { skip: !spec && NEEDS_SPEC }, () => {
   const shown = (id, cls, type = "Polygon") => {
     const parsed = spec.expression.createExpression(byId(id).filter);
