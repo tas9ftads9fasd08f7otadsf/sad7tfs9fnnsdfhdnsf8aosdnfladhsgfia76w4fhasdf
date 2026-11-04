@@ -11,7 +11,7 @@
       "water": "#9ec5e2",
       "river": "#9ec5e2",
       "rock": "#c8cbba",
-      "rockPattern": "#8a8f7c",
+      "rockPattern": "#a6aa9a",
       "trailRed": "#c60000",
       "trailBlue": "#0018c0",
       "trailGreen": "#188400",
@@ -23,7 +23,8 @@
       "hillAccent": "#5a6a4a38",
       "ice": "#d8f0fb",
       "trailYellow": "#f2d200",
-      "background": "#f1f0e5"
+      "background": "#f1f0e5",
+      "hillHighlight": "#ffffff99"
     }
   },
   "layers": {},
@@ -681,22 +682,22 @@
                   [
                     0,
                     11,
-                    "#9cbe78"
+                    "#a8c08a"
                   ],
                   [
                     12,
                     12,
-                    "#c2d0ac"
+                    "#d2dcc2"
                   ],
                   [
                     13,
                     14,
-                    "#e0e8d0"
+                    "#eaeee0"
                   ],
                   [
                     15,
                     20,
-                    "#e4ecd6"
+                    "#eff2e8"
                   ]
                 ]
               }
@@ -776,17 +777,17 @@
               [
                 0,
                 11,
-                "#9aab82"
+                "#b0c09a"
               ],
               [
                 12,
                 12,
-                "#b2bba2"
+                "#d4dac6"
               ],
               [
                 13,
                 20,
-                "#c4c7b8"
+                "#e6e8dc"
               ]
             ]
           },

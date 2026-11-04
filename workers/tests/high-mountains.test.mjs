@@ -57,3 +57,14 @@ test("steep rock is darker than scree", () => {
     assert.ok(light(at("rock-area")) < light(at("landcover-rock")), `z${z}`);
   }
 });
+
+// 446 above the trees the ground is near white, only the rock walls are dark
+test("scree and alpine grass are near white from z13", () => {
+  const light = (hex) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16);
+  const L = overrides.maps.turisticka.layers;
+  const at = (bands, z) => bands.find(([from, to]) => from <= z && z <= to)[2];
+  for (const z of [13, 15]) {
+    assert.ok(light(at(L["landcover-rock"].paint["fill-color"], z)) > 660, `scree z${z}`);
+    assert.ok(light(at(L["landcover-scrub"].variants[0].paint["fill-color"], z)) > 660, `fell z${z}`);
+  }
+});
