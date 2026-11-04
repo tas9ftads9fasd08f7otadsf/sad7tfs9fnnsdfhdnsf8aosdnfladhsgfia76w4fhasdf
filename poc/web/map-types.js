@@ -13,7 +13,8 @@
  * Pravidlo má tvar `{ match, ...akcie }`:
  *   match: { id: string | string[] | RegExp, group, kind }  (voliteľné)
  *   akcie: visible, minzoom, maxzoom, minzoomFloor (zdvihne, neznižuje),
- *          opacity (vynásobí krytie)
+ *          opacity (vynásobí krytie), classesFrom ({ minzoom, classes }:
+ *          tieto triedy POI až od zoomu)
  * Neskoršie pravidlo prepíše skoršie.
  */
 
@@ -44,6 +45,19 @@ export const SKI_CLASSES = [
   "j-bar", "magic_carpet", "cable_car", "station"
 ];
 
+/** Everyday town POI that Mapy's outdoor map leaves out until the street level. */
+export const TOWN_CLASSES = [
+  "parking", "parking_space", "car", "car_parts", "car_repair", "car_wash", "tyres",
+  "motorcycle", "shop", "grocery", "clothing_store", "hairdresser", "bus", "school",
+  "kindergarten", "college", "post", "parcel_locker", "dentist", "doctors", "bank", "atm",
+  "board", "clinic", "pharmacy", "fast_food", "bar", "nightclub", "beer", "pub", "cafe",
+  "alcohol_shop", "bakery", "butcher", "fire_station", "police", "town_hall", "courthouse",
+  "community_centre", "library", "books", "art_gallery", "stadium", "pitch", "playground",
+  "waste_basket", "dormitory", "charging_station", "laundry"
+];
+/** Style zoom (Mapy's z18) from which the default map shows them. */
+export const TOWN_POI_Z = 17;
+
 /** Čo hľadá vodič: pumpa, nabíjačka, odpočívadlo, servis, parkovisko. */
 export const ROAD_SERVICE_CLASSES = [
   "fuel", "charging_station", "rest_area", "services", "parking",
@@ -70,6 +84,7 @@ const TRAIL_MARKS = /^trail-.*-mark$/;
 const ROAD_SIGNS = ["road-sign", "road-sign-paths", "road-sign-roads", "road-sign-computed"];
 /** Tematické vrstvy – každá patrí len niektorým mapám. */
 const TOPIC_LAYERS = ["poi-historic", "poi-mining", "poi-ski", "poi-road"];
+const POI_LAYERS = ["poi-major", "poi-all", ...TOPIC_LAYERS];
 /** Skalné plochy z vrstevnicových dlaždíc. */
 const ROCKS = /^rock-/;
 /** Zjazdovky a bežky z vlastných dlaždíc (workers/features/features.yml). */
@@ -115,7 +130,8 @@ export const MAP_TYPES = [
       { match: { id: "trail-halo" }, minzoom: 10 },
       // Vrcholy, chaty a studničky sú tu to hlavné.
       { match: { id: "poi-major" }, minzoom: 13 },
-      { match: { id: "mountain-peak" }, minzoom: 8 }
+      { match: { id: "mountain-peak" }, minzoom: 8 },
+      { match: { id: POI_LAYERS }, classesFrom: { minzoom: TOWN_POI_Z, classes: TOWN_CLASSES } }
     ]
   },
   {
@@ -308,6 +324,16 @@ const OPACITY_PROPS = {
   raster: ["raster-opacity"]
 };
 
+function withClassesFrom(filter, { minzoom, classes }) {
+  const listed = ["literal", classes];
+  const gate = ["any",
+    ["!", ["any",
+      ["in", ["coalesce", ["get", "class"], ""], listed],
+      ["in", ["coalesce", ["get", "subclass"], ""], listed]]],
+    [">=", ["zoom"], minzoom]];
+  return filter ? ["all", filter, gate] : gate;
+}
+
 /**
  * Aplikuje profil typu mapy na hotový zoznam vrstiev. Mení vrstvy na mieste
  * (štýl sa práve poskladal, nikto iný ho zatiaľ nedrží).
@@ -334,6 +360,7 @@ export function applyMapType(style, id) {
         layer.minzoom = Math.max(layer.minzoom ?? 0, rule.minzoomFloor);
       }
       if (rule.maxzoom != null) layer.maxzoom = rule.maxzoom;
+      if (rule.classesFrom) layer.filter = withClassesFrom(layer.filter, rule.classesFrom);
       if (rule.opacity != null) {
         for (const prop of OPACITY_PROPS[layer.type] || []) {
           // Popisku sa krytie nastavuje len vtedy, keď ho vrstva už má –
