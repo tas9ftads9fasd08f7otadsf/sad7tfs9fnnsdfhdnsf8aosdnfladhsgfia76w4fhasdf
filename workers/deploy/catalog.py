@@ -94,7 +94,7 @@ def region_entry(man):
 
 TILE_LAYERS = ("pmtiles", "contours", "rocks", "trails", "features", "points",
                "transport", "paths", "boundaries", "water", "rail", "rail_routing",
-               "history", "buildings", "aerial_summer", "aerial_winter",
+               "history", "names", "buildings", "aerial_summer", "aerial_winter",
                "omt_landscape", "omt_points", "omt_roads", "omt_paths", "omt_railways",
                "omt_water", "omt_boundaries", "omt_settlements")
 
@@ -510,7 +510,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
               "rocks_maxzoom", "rock_slope", "dem_source", "rock_source",
               "trails_maxzoom", "features_maxzoom", "points_maxzoom",
               "transport_maxzoom", "paths_maxzoom", "boundaries_maxzoom", "water_maxzoom",
-              "rail_maxzoom", "history_maxzoom", "buildings_maxzoom",
+              "rail_maxzoom", "history_maxzoom", "names_maxzoom", "buildings_maxzoom",
               "aerial_summer_maxzoom", "aerial_winter_maxzoom", "countries"):
         if reg.get(k) is not None:
             entry[k] = reg[k]

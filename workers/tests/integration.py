@@ -16,7 +16,7 @@ sys.path.insert(0, _HERE)
 from load import worker  # noqa: E402
 import mini_region  # noqa: E402
 
-PACKAGES = ("transport", "boundaries", "water", "rail", "history", "buildings", "trails", "features")
+PACKAGES = ("transport", "boundaries", "water", "rail", "history", "names", "buildings", "trails", "features")
 REGION_KEY = "mini"
 # apt is the job's business; the builds only ask for what is already there
 SUDO = '#!/bin/sh\n[ "$1" = apt-get ] && exit 0\nexec "$@"\n'

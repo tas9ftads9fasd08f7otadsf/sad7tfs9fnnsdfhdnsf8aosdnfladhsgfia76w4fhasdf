@@ -84,6 +84,8 @@ jq -n \
   --argjson railmaxzoom "${RAIL_MAXZOOM:-15}" \
   --argjson history "${HISTORY_ENABLED:-false}" \
   --argjson histmaxzoom "${HISTORY_MAXZOOM:-14}" \
+  --argjson names "${NAMES_ENABLED:-false}" \
+  --argjson namesmaxzoom "${NAMES_MAXZOOM:-14}" \
   --argjson railrouting "${RAIL_ROUTING:-false}" \
   --argjson buildings "${BUILDINGS_ENABLED:-false}" \
   --argjson bldmaxzoom "${BUILDINGS_MAXZOOM:-14}" \
@@ -188,6 +190,10 @@ jq -n \
       + (if $history then {
         history: ("tiles/" + $region + "-history.pmtiles"),
         history_maxzoom: $histmaxzoom
+      } else {} end)
+      + (if $names then {
+        names: ("tiles/" + $region + "-names.pmtiles"),
+        names_maxzoom: $namesmaxzoom
       } else {} end)
       + (if $buildings then {
         buildings: ("tiles/" + $region + "-buildings.pmtiles"),

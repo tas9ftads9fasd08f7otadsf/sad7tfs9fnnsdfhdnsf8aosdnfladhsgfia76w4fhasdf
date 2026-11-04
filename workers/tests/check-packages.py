@@ -21,11 +21,11 @@ sys.path.insert(0, _HERE)
 import mini_region  # noqa: E402
 
 SCHEMAS = {"transport": ["transport", "paths"], "boundaries": ["boundaries"], "water": ["water"],
-           "rail": ["rail"], "history": ["history"], "buildings": ["buildings"],
+           "rail": ["rail"], "history": ["history"], "names": ["names"], "buildings": ["buildings"],
            "trails": ["trails"], "features": ["features", "points"], "range-boundaries": ["range"]}
 ARCHIVE = {"points": "points", "paths": "paths", "range": "range-boundaries"}
 # drawn by the app, not by the published styles
-UNSTYLED = {"range-boundaries"}
+UNSTYLED = {"range-boundaries", "names"}
 # clip-tiles.py keeps 100 m past the outline
 MARGIN_M = 100
 
@@ -54,6 +54,10 @@ EXPECTED = [
     ("history", "history", {"name": "Hrad"}),
     ("history", "army", {}),
     ("history", "embankment", {}),
+    ("names", "village", {"class": "village", "name": "Malá Obec"}),
+    ("names", "mountain", {"class": "peak", "name": "Vrch", "ele": 512}),
+    ("names", "mountain", {"class": "ridge", "name": "Hrebeň"}),
+    ("names", "valley", {"class": "valley", "name": "Dolina"}),
     ("buildings", "building", {"name": "Kostol"}),
     ("buildings", "building_name", {"name": "Kostol"}),
     ("buildings", "settlement_area", {}),
