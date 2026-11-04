@@ -4,14 +4,14 @@
   "hillshade": true,
   "palette": {
     "svetla": {
-      "track": "#9a9274",
+      "track": "#867a5a",
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
       "buildingOutline": "#cec2b2",
       "water": "#9ec5e2",
       "river": "#9ec5e2",
       "rock": "#c8cbba",
-      "rockPattern": "#a3a896",
+      "rockPattern": "#a6aa9a",
       "trailRed": "#c60000",
       "trailBlue": "#0018c0",
       "trailGreen": "#188400",
@@ -23,7 +23,8 @@
       "hillAccent": "#5a6a4a38",
       "ice": "#d8f0fb",
       "trailYellow": "#f2d200",
-      "background": "#f1f0e5"
+      "background": "#f1f0e5",
+      "hillHighlight": "#ffffff99"
     }
   },
   "layers": {},
@@ -241,7 +242,7 @@
         },
         "road-path": {
           "paint": {
-            "line-color": "#9a9274"
+            "line-color": "#6b5e40"
           },
           "paintDark": {
             "line-color": "#78787c"
@@ -591,15 +592,19 @@
               ],
               [
                 12,
-                0.85
-              ],
-              [
-                14,
                 0.8
               ],
               [
+                13,
+                0.7
+              ],
+              [
+                14,
+                0.6
+              ],
+              [
                 16,
-                0.65
+                0.5
               ]
             ]
           }
@@ -641,8 +646,13 @@
             "fill-color": [
               [
                 0,
+                11,
+                "#8db46a"
+              ],
+              [
                 12,
-                "#9cbe78"
+                12,
+                "#b4cb98"
               ],
               [
                 13,
@@ -652,31 +662,70 @@
               [
                 15,
                 20,
-                "#d6eeb4"
+                "#cbe5ab"
               ]
             ]
           },
           "paintDark": {
             "fill-color": "#272a1e"
-          }
+          },
+          "variants": [
+            {
+              "attr": "subclass",
+              "values": [
+                "fell",
+                "tundra"
+              ],
+              "label": "alpínske lúky",
+              "paint": {
+                "fill-color": [
+                  [
+                    0,
+                    11,
+                    "#a8c08a"
+                  ],
+                  [
+                    12,
+                    12,
+                    "#d2dcc2"
+                  ],
+                  [
+                    13,
+                    14,
+                    "#eaeee0"
+                  ],
+                  [
+                    15,
+                    20,
+                    "#eff2e8"
+                  ]
+                ]
+              }
+            }
+          ]
         },
         "rock-area": {
           "paint": {
             "fill-color": [
               [
                 0,
+                11,
+                "#86966f"
+              ],
+              [
                 12,
-                "#98a882"
+                12,
+                "#7a7f6a"
               ],
               [
                 13,
                 14,
-                "#a39e8f"
+                "#8f897a"
               ],
               [
                 15,
                 20,
-                "#b7b2a0"
+                "#948f80"
               ]
             ]
           },
@@ -689,13 +738,13 @@
             "line-color": [
               [
                 0,
-                14,
+                13,
                 "#8b8974"
               ],
               [
-                15,
+                14,
                 20,
-                "#90917a"
+                "#a2a38c"
               ]
             ]
           },
@@ -705,7 +754,18 @@
         },
         "contour-minor": {
           "paint": {
-            "line-color": "#a2a48b"
+            "line-color": [
+              [
+                0,
+                13,
+                "#a2a48b"
+              ],
+              [
+                14,
+                20,
+                "#b4b69e"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#4f4b40"
@@ -716,13 +776,18 @@
             "fill-color": [
               [
                 0,
+                11,
+                "#b0c09a"
+              ],
+              [
                 12,
-                "#a8b98f"
+                12,
+                "#d4dac6"
               ],
               [
                 13,
                 20,
-                "#d2d5c6"
+                "#e6e8dc"
               ]
             ]
           },
