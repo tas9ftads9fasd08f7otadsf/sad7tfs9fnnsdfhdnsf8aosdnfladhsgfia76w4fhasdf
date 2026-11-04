@@ -81,6 +81,7 @@ const ALL_TRAILS = /^trail-/;
  */
 const TRAIL_MARKS = /^trail-.*-mark$/;
 /** Traffic signs, the `traffic_sign` layer of the base map and of the roads; paths' own too. */
+const ROAD_LIMITS = ["road-maxspeed", "road-limit-height", "road-limit-mass"];
 const ROAD_SIGNS = ["road-sign", "road-sign-paths", "road-sign-roads", "road-sign-computed"];
 /** Tematické vrstvy – každá patrí len niektorým mapám. */
 const TOPIC_LAYERS = ["poi-historic", "poi-mining", "poi-ski", "poi-road"];
@@ -107,6 +108,9 @@ export const MAP_TYPES = [
       // Nič, čo patrí inej mape.
       { match: { id: TOPIC_LAYERS }, visible: false },
       { match: { id: ROAD_SIGNS }, visible: false },
+      // speed and weight limits are the driver's, municipal borders read as lane markings
+      { match: { id: ROAD_LIMITS }, visible: false },
+      { match: { id: "boundary-municipality" }, visible: false },
       { match: { id: SKI_TRAILS }, visible: false },
       { match: { id: PISTES }, visible: false },
       { match: { id: LIFTS }, minzoom: 12 },
