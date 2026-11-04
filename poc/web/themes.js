@@ -3708,7 +3708,8 @@ export function buildStyle({
   // využitie územia: presne tie triedy, ktoré schéma naozaj vydáva (26 hodnôt,
   // Tables.java: osm_landuse_polygon)
   const landuse = [
-    ["residential", "Obytná zóna", ["residential", "suburb", "neighbourhood", "quarter"], "residential"],
+    // quarters and suburbs are place outlines, often over whole wooded hills
+    ["residential", "Obytná zóna", ["residential"], "residential"],
     ["industrial", "Priemysel a obchod", ["industrial", "commercial", "retail", "garages"], "industrial"],
     ["railway", "Železničný areál", ["railway", "bus_station"], "industrial"],
     ["cemetery", "Cintorín", ["cemetery"], "cemetery"],
