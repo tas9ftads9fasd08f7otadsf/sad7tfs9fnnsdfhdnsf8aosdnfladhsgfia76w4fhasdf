@@ -47,3 +47,13 @@ test("trail labels show the name alone and allow winding paths", () => {
   assert.equal(label["text-field"][1][0], "has");
   assert.deepEqual(label["text-field"][2], ["get", "name"]);
 });
+
+// 446 rock reads as rock: darker than the scree around it at every zoom
+test("steep rock is darker than scree", () => {
+  const light = (hex) => parseInt(hex.slice(1, 3), 16) + parseInt(hex.slice(3, 5), 16) + parseInt(hex.slice(5, 7), 16);
+  const bands = (id) => overrides.maps.turisticka.layers[id].paint["fill-color"];
+  for (const z of [10, 12, 13, 15, 18]) {
+    const at = (id) => bands(id).find(([from, to]) => from <= z && z <= to)[2];
+    assert.ok(light(at("rock-area")) < light(at("landcover-rock")), `z${z}`);
+  }
+});
