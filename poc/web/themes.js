@@ -1444,6 +1444,8 @@ export function shieldShapeFor(id, fallback, overrides) {
     : fallback;
 }
 
+/** How much of a road shows through the hill it tunnels under. */
+export const TUNNEL_OPACITY = 0.45;
 const isTunnel = ["==", ["get", "brunnel"], "tunnel"];
 const isBridge = ["==", ["get", "brunnel"], "bridge"];
 const isSurface = ["all", ["!=", ["get", "brunnel"], "tunnel"], ["!=", ["get", "brunnel"], "bridge"]];
@@ -4297,7 +4299,8 @@ export function buildStyle({
           paint: {
             "line-color": c[casingKey],
             "line-width": zw(widen(stops, extra)),
-            ...(opts.dash ? { "line-dasharray": opts.dash } : {})
+            ...(opts.dash ? { "line-dasharray": opts.dash } : {}),
+            ...(opts.casingOpacity ? { "line-opacity": opts.casingOpacity } : {})
           }
         },
         ["cesty", `${label} – obrys${passLabel}`, "line", { "line-color": casingKey },
@@ -4313,7 +4316,11 @@ export function buildStyle({
           minzoom: mz,
           filter: filterFor(classes),
           layout,
-          paint: { "line-color": c[colorKey], "line-width": zw(stops) }
+          paint: {
+            "line-color": c[colorKey],
+            "line-width": zw(stops),
+            ...(opts.opacity ? { "line-opacity": opts.opacity } : {})
+          }
         },
         ["cesty", `${label}${passLabel}`, "line", { "line-color": colorKey }]
       );
@@ -4321,7 +4328,9 @@ export function buildStyle({
   };
 
   // --- tunely (prerušované, pod povrchom) ---
-  roadPass("-tunnel", " (tunel)", isTunnel, { cap: "butt", dash: [3, 2] });
+  // faded, as on Mapy: an opaque tunnel reads as a road over the mountain
+  roadPass("-tunnel", " (tunel)", isTunnel,
+    { cap: "butt", dash: [3, 2], opacity: TUNNEL_OPACITY, casingOpacity: 0.8 });
 
   // --- chodníky, cyklotrasy, schody, poľné cesty ---
   const pathDefs = [
