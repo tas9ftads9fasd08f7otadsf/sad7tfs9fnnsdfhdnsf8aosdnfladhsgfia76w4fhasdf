@@ -4,7 +4,6 @@
   "hillshade": true,
   "palette": {
     "svetla": {
-      "park": "#6aa84a",
       "track": "#9a9274",
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
@@ -23,7 +22,8 @@
       "hillShadow": "#33452ab3",
       "hillAccent": "#5a6a4a38",
       "ice": "#d8f0fb",
-      "trailYellow": "#f2d200"
+      "trailYellow": "#f2d200",
+      "background": "#f1f0e5"
     }
   },
   "layers": {},
@@ -790,7 +790,7 @@
               [
                 0,
                 12,
-                "#b0d28b"
+                "#bcd9a0"
               ],
               [
                 13,
@@ -814,7 +814,7 @@
               [
                 0,
                 12,
-                "#a5c680"
+                "#9cbe78"
               ],
               [
                 13,
@@ -838,7 +838,7 @@
               [
                 0,
                 12,
-                "#a3a58e"
+                "#98a882"
               ],
               [
                 13,
@@ -889,12 +889,12 @@
               [
                 0,
                 12,
-                "#b2c09c"
+                "#a8b98f"
               ],
               [
                 13,
                 20,
-                "#c8cbba"
+                "#d2d5c6"
               ]
             ]
           },
@@ -1084,6 +1084,16 @@
           },
           "paintDark": {
             "line-color": "#3d3a34"
+          }
+        },
+        "landcover-grass": {
+          "paint": {
+            "fill-color": "#f1f0e5"
+          }
+        },
+        "landcover-farmland": {
+          "paint": {
+            "fill-color": "#f1f0e5"
           }
         }
       },
