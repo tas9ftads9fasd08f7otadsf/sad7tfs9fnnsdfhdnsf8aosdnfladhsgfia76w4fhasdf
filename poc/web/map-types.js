@@ -85,6 +85,7 @@ const ROAD_SIGNS = ["road-sign", "road-sign-paths", "road-sign-roads", "road-sig
 /** Tematické vrstvy – každá patrí len niektorým mapám. */
 const TOPIC_LAYERS = ["poi-historic", "poi-mining", "poi-ski", "poi-road"];
 const POI_LAYERS = ["poi-major", "poi-all", ...TOPIC_LAYERS];
+const LIFTS = /^aerialway(-casing|-chair|-drag)?$/;
 /** Skalné plochy z vrstevnicových dlaždíc. */
 const ROCKS = /^rock-/;
 /** Zjazdovky a bežky z vlastných dlaždíc (workers/features/features.yml). */
@@ -108,7 +109,7 @@ export const MAP_TYPES = [
       { match: { id: ROAD_SIGNS }, visible: false },
       { match: { id: SKI_TRAILS }, visible: false },
       { match: { id: PISTES }, visible: false },
-      { match: { id: "aerialway" }, minzoom: 12 },
+      { match: { id: LIFTS }, minzoom: 12 },
       // Násypy, zárezy, bralné hrany a vedenia sú v teréne orientačné body –
       // na turistickej mape patria k tomu najužitočnejšiemu, takže ostávajú
       // tak, ako ich dáva štýl. Ploty naopak až celkom zblízka, inak by
@@ -154,7 +155,7 @@ export const MAP_TYPES = [
       { match: { id: TRAIL_MARKS }, minzoomFloor: MARK_MINZOOM },
       { match: { id: "trail-ski-label" }, minzoom: 11 },
       { match: { id: "trail-halo" }, minzoom: 9 },
-      { match: { id: "aerialway" }, minzoom: 9 },
+      { match: { id: LIFTS }, minzoom: 9 },
       // Ostatné trasy až zblízka – inak by zo zjazdovky spravili spleť.
       { match: { id: OTHER_TRAILS }, minzoomFloor: 14, opacity: 0.7 },
       { match: { id: "road-path" }, minzoomFloor: 13 },

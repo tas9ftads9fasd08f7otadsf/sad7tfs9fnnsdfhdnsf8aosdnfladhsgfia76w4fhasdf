@@ -1,4 +1,5 @@
 /** Maps of one package each; who owns a layer follows the app's `MapOverlay.claimant`. */
+import { LIFT_CABINS, LIFT_CHAIRS, LIFT_WIDTH, LIFT_DASH, liftWidthStops } from "./lifts.js";
 
 export const BASE_PACKAGE = "base";
 
@@ -75,7 +76,9 @@ export function normalizePackage(id, region) {
   return packagesOf(region).some((p) => p.id === id) ? id : BASE_PACKAGE;
 }
 
-const BASE_RAIL = new Set(["rail-bg", "rail-hatch", "aerialway"]);
+const BASE_RAIL = new Set([
+  "rail-bg", "rail-hatch", "aerialway", "aerialway-casing", "aerialway-chair", "aerialway-drag"
+]);
 const FEATURE_LIFTS = new Set([
   "feature-aerialway-construction", "feature-aerialway-proposed", "feature-aerialway-disused"
 ]);
@@ -189,6 +192,7 @@ const INK = {
   halo: ["#FFFFFF", "#000000"],
   markInk: ["#2B2723", "#F0EFEB"],
   liftInk: ["#4A443E", "#C9C3BD"],
+  liftCabin: ["#FFFFFF", "#1A1A22"],
   liftGoods: ["#8D5A3B", "#C99A74"],
   army: ["#6B7A3A", "#A3B46A"],
   mining: ["#7A5536", "#C0956C"],
@@ -207,6 +211,9 @@ const NARROW = ["any", ["==", ["get", "class"], "narrow_gauge"],
 const GAUGE_SCALE = ["case", BROAD, 1.35, NARROW, 0.65, 1];
 const SERVICE = ["has", "service"];
 const INDUSTRIAL_LIFT = ["any", ["==", ["get", "class"], "goods"], ["==", ["get", "usage"], "industrial"]];
+
+const liftOf = (kinds) => ["in", ["coalesce", ["get", "class"], ""], ["literal", kinds]];
+const liftWidth = (w) => liftWidthStops(w).flat();
 
 const zoomed = (stops, scale) => [
   "interpolate", ["linear"], ["zoom"],
@@ -288,7 +295,16 @@ export function railLayers(dark, { bold = "Noto Sans Bold" } = {}) {
     railLine("main", MAIN, { color: k("railGround"), width: [8, 0.4, 16, 2.6] },
       { extra: ["!", SERVICE], scale: GAUGE_SCALE, dash: [3, 3], minzoom: 8 }),
     railLine("urban", URBAN, { color: urbanInk, width: [10, 0.8, 16, 2.6] }),
-    liftLine("lift", ["active"], k("liftInk"), { extra: ["!", INDUSTRIAL_LIFT] }),
+    liftLine("lift-cabin-casing", ["active"], k("liftInk"),
+      { extra: liftOf(LIFT_CABINS), width: liftWidth(LIFT_WIDTH.cabinCasing) }),
+    liftLine("lift-cabin", ["active"], k("liftCabin"),
+      { extra: liftOf(LIFT_CABINS), width: liftWidth(LIFT_WIDTH.cabin), dash: LIFT_DASH.cabin }),
+    liftLine("lift-chair", ["active"], k("liftInk"),
+      { extra: liftOf(LIFT_CHAIRS), width: liftWidth(LIFT_WIDTH.chair), dash: LIFT_DASH.chair }),
+    liftLine("lift", ["active"], k("liftInk"), {
+      extra: ["all", ["!", INDUSTRIAL_LIFT], ["!", liftOf([...LIFT_CABINS, ...LIFT_CHAIRS])]],
+      width: liftWidth(LIFT_WIDTH.drag), dash: LIFT_DASH.drag
+    }),
     liftLine("lift-goods", ["active"], k("liftGoods"), { extra: INDUSTRIAL_LIFT }),
     liftLine("lift-construction", ["construction"], k("liftInk"), { dash: [3, 2] }),
     liftLine("lift-proposed", ["proposed"], k("railProposed"), { dash: [1, 2] }),
