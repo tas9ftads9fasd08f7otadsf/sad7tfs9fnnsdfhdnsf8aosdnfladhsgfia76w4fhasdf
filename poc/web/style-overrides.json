@@ -182,7 +182,18 @@
         },
         "landuse-industrial": {
           "paint": {
-            "fill-color": "#e5e1d9"
+            "fill-color": [
+              [
+                0,
+                12,
+                "#e1d4b6"
+              ],
+              [
+                13,
+                20,
+                "#d8d5ce"
+              ]
+            ]
           },
           "paintDark": {
             "fill-color": "#2b2822"
@@ -292,7 +303,18 @@
         },
         "landuse-residential": {
           "paint": {
-            "fill-color": "#f0e7d5"
+            "fill-color": [
+              [
+                0,
+                14,
+                "#e1d4b6"
+              ],
+              [
+                15,
+                20,
+                "#efe6d4"
+              ]
+            ]
           },
           "paintDark": {
             "fill-color": "#332c1e"
@@ -1094,6 +1116,11 @@
         "landcover-farmland": {
           "paint": {
             "fill-color": "#f1f0e5"
+          }
+        },
+        "landuse-pitch": {
+          "paint": {
+            "fill-color": "#e2ecc5"
           }
         }
       },

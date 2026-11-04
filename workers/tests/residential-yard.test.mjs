@@ -34,3 +34,10 @@ test("the residential polygons give way to the yards at the same zoom", () => {
     assert.ok(opacity[YARD_FROM_Z - 1] > 0, id);
   }
 });
+
+test("villages are a solid built-up area up to Mapy's z15, yards only from its z16", () => {
+  assert.equal(YARD_FROM_Z, 15);
+  const { layers } = styleOf("https://x/buildings.pmtiles");
+  const opacity = stops(layers.find((l) => l.id === "settlement-area").paint["fill-opacity"]);
+  assert.ok(opacity[YARD_FROM_Z - 1] >= 0.8);
+});
