@@ -715,8 +715,13 @@
             "line-color": [
               [
                 0,
-                13,
+                11,
                 "#8b8974"
+              ],
+              [
+                12,
+                13,
+                "#a6ab92"
               ],
               [
                 14,
@@ -959,7 +964,19 @@
         "landcover-grass": {
           "paint": {
             "fill-color": "#f1f0e5"
-          }
+          },
+          "variants": [
+            {
+              "attr": "subclass",
+              "values": [
+                "grassland"
+              ],
+              "label": "travinno-bylinné porasty",
+              "paint": {
+                "fill-color": "#bdd49e"
+              }
+            }
+          ]
         },
         "landcover-farmland": {
           "paint": {
@@ -970,6 +987,20 @@
           "paint": {
             "fill-color": "#e2ecc5"
           }
+        },
+        "landcover-garden": {
+          "variants": [
+            {
+              "attr": "subclass",
+              "values": [
+                "allotments"
+              ],
+              "label": "záhradkárske osady",
+              "paint": {
+                "fill-color": "#ddcfae"
+              }
+            }
+          ]
         }
       },
       "poi": {

@@ -214,6 +214,7 @@ export const THEMES = {
     aerialwayCabin: "#ffffff",
     pier: "#e8e4dc",
     boundary: "#9e7bb5",
+    boundaryBand: "#4f7a3e",
     boundaryLocal: "#b8a0c8",
     placeText: "#333333",
     roadText: "#5a4a3a",
@@ -342,6 +343,7 @@ export const THEMES = {
     aerialwayCabin: "#1a1a22",
     pier: "#2a2833",
     boundary: "#7a5f95",
+    boundaryBand: "#6a9a5a",
     boundaryLocal: "#5f4a75",
     placeText: "#c8c8d8",
     roadText: "#9a8f80",
@@ -467,6 +469,7 @@ export const THEMES = {
     aerialwayCabin: "#ffffff",
     pier: "#e0dac8",
     boundary: "#8a6aa0",
+    boundaryBand: "#4f7a3e",
     boundaryLocal: "#a880b8",
     placeText: "#2a2a1a",
     roadText: "#4a3a2a",
@@ -592,6 +595,7 @@ export const THEMES = {
     aerialwayCabin: "#f6efe4",
     pier: "#f0e6da",
     boundary: "#c090a8",
+    boundaryBand: "#7a9a6a",
     boundaryLocal: "#c8a0b8",
     placeText: "#5a4a45",
     roadText: "#7a5a4a",
@@ -844,6 +848,7 @@ export const PALETTE_GROUPS = [
     label: "Hranice",
     keys: [
       ["boundary", "Štátna / krajská hranica"],
+      ["boundaryBand", "Pás pri štátnej hranici"],
       ["boundaryLocal", "Okresná / obecná hranica"]
     ]
   },
@@ -5064,6 +5069,8 @@ export function buildStyle({
       id: "boundary-region",
       type: "line",
       "source-layer": "boundary",
+      // Mapy drops region borders close up, where the land itself says enough
+      maxzoom: 13,
       filter: ["all", [">=", num("admin_level", 99), 3], ["<=", num("admin_level", 99), 4]],
       paint: {
         "line-color": c.boundary,
@@ -5074,6 +5081,7 @@ export function buildStyle({
     },
     ["hranice", "Hranice krajov", "line", { "line-color": "boundary" }]
   );
+  // a soft band with a thin dashed line in it, as on Mapy; a solid line read as a road
   add(
     {
       id: "boundary-country",
@@ -5081,8 +5089,24 @@ export function buildStyle({
       "source-layer": "boundary",
       filter: ["<=", num("admin_level", 99), 2],
       paint: {
+        "line-color": c.boundaryBand,
+        "line-width": zl([[4, 2], [8, 4], [12, 9], [14, 14], [20, 20]]),
+        "line-blur": zl([[4, 1], [12, 3], [20, 6]]),
+        "line-opacity": 0.45
+      }
+    },
+    ["hranice", "Štátne hranice (pás)", "line", { "line-color": "boundaryBand" }]
+  );
+  add(
+    {
+      id: "boundary-country-line",
+      type: "line",
+      "source-layer": "boundary",
+      filter: ["<=", num("admin_level", 99), 2],
+      paint: {
         "line-color": c.boundary,
-        "line-width": zl([[4, 1], [12, 3], [20, 6]])
+        "line-width": zl([[4, 0.6], [12, 1.1], [20, 2]]),
+        "line-dasharray": [4, 2]
       }
     },
     ["hranice", "Štátne hranice", "line", { "line-color": "boundary" }]
@@ -5314,6 +5338,13 @@ export function buildStyle({
     "národná_prírodná_pamiatka", "NPP ", "prírodná_pamiatka", "PP ", "chránený_areál", "CHA ",
     ""
   ];
+  const CHKO_TITLE = "Chránená krajinná oblasť ";
+  // OSM spells the title out; Mapy writes "CHKO Východné Karpaty"
+  const parkName = ["case",
+    ["all", ["==", str("class"), "chránená_krajinná_oblasť"], ["in", CHKO_TITLE, nameExpr]],
+    ["concat", "CHKO ", ["slice", nameExpr, ["+", ["index-of", CHKO_TITLE, nameExpr], CHKO_TITLE.length]]],
+    ["==", str("class"), "chránená_krajinná_oblasť"], ["concat", "CHKO ", nameExpr],
+    ["concat", parkPrefix, nameExpr]];
   const parkLabel = (id, minzoom, maxzoom, geometry) => add(
     {
       id,
@@ -5324,7 +5355,7 @@ export function buildStyle({
       minzoom,
       ...(maxzoom ? { maxzoom } : {}),
       layout: {
-        "text-field": ["concat", parkPrefix, nameExpr],
+        "text-field": parkName,
         "text-font": ITAL,
         "text-size": zl([[11, 10], [14, 12], [16, 14]]),
         "text-max-width": 8,
