@@ -170,8 +170,8 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#d9e6c8",
-    parkOutline: "#a8cf90",
+    park: "#9ac16a",
+    parkOutline: "#9ac16a",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
     ice: "#eef6fa",
@@ -296,8 +296,8 @@ export const THEMES = {
     river: "#16213e",
     forest: "#17251a",
     grass: "#232219",
-    park: "#202a20",
-    parkOutline: "#2a4030",
+    park: "#3d6a38",
+    parkOutline: "#3d6a38",
     parkText: "#8fc87a",
     sand: "#2a2820",
     ice: "#1e2630",
@@ -421,7 +421,7 @@ export const THEMES = {
     river: "#7ab8d4",
     forest: "#9ecb84",
     grass: "#dcdec2",
-    park: "#cfdcb4",
+    park: "#88b070",
     parkOutline: "#88b070",
     parkText: "#3a7430",
     sand: "#ecdfb5",
@@ -545,8 +545,8 @@ export const THEMES = {
     river: "#a5cbb8",
     forest: "#c7dfa8",
     grass: "#eae9d4",
-    park: "#e2e6cc",
-    parkOutline: "#c0d8a8",
+    park: "#a8c890",
+    parkOutline: "#a8c890",
     parkText: "#4a8a40",
     sand: "#f5e8cc",
     ice: "#f2f5f0",
@@ -1085,6 +1085,13 @@ const POLYGON_ONLY = ["==", ["geometry-type"], "Polygon"];
 const polygonOnly = (filter) =>
   filter ? ["all", POLYGON_ONLY, filter] : POLYGON_ONLY;
 
+// untitled areas are Natura 2000 sites; buffer zones aren't reserves either
+const PARK_MARKED = ["!", ["any",
+  ["==", str("class"), "protected_area"],
+  ["in", "ochranné_pásmo", str("class")],
+  ["in", "(external)", str("class")]]];
+const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
+
 /**
  * Triedy `mountain_peak`, ktoré nie sú bodovým vrcholom, ale pretiahnutým
  * útvarom – hrebeňom či masívom. Popisujú územie, takže sa kreslia ako
@@ -1183,8 +1190,10 @@ export const YARD_M = 20;
 /** From this zoom residential land follows the buildings, below it the OSM polygons. */
 export const YARD_FROM_Z = 13;
 
-/** Protected-area band width in px; at most the 8 px tile buffer (4 of 256 at 512 px). */
-export const PARK_BAND = [[8, 2], [11, 4], [13, 6], [14, 7]];
+/** Length in px of the ticks inside a protected area's border; within the 8 px tile buffer. */
+export const PARK_BAND = [[10, 2.5], [13, 4], [16, 6]];
+/** Ticks along a protected area's border, in multiples of their length. */
+export const PARK_TICKS = [0.35, 3];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
@@ -3781,36 +3790,36 @@ export function buildStyle({
     );
   }
 
-  // a band inside the border, not a fill: a nature park covers whole ranges of rock and ice
+  // ticks inside the border, not a fill: a nature park covers whole ranges of rock and ice
   add(
     {
       id: "park",
       type: "line",
       "source-layer": "park",
       // vrstva `park` nesie aj bod pre popisok, nie len obrys
-      filter: polygonOnly(),
-      layout: { "line-join": "round" },
+      filter: PARK_AREA,
+      minzoom: 10,
       paint: {
         "line-color": c.park,
         // within the tile buffer, else tile seams inside a park show as stripes
         "line-width": zl(PARK_BAND),
         "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
-        "line-blur": 1.5,
-        "line-opacity": 0.45
+        "line-dasharray": PARK_TICKS
       }
     },
-    ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
+    ["uzemie", "Park (zúbky pri hranici)", "line", { "line-color": "park" }]
   );
   add(
     {
       id: "park-outline",
       type: "line",
       "source-layer": "park",
+      filter: PARK_AREA,
       minzoom: 10,
+      layout: { "line-join": "round" },
       paint: {
         "line-color": c.parkOutline,
-        "line-width": zl([[10, 0.6], [16, 1.6], [20, 3]]),
-        "line-dasharray": [4, 2]
+        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]])
       }
     },
     ["uzemie", "Park (obrys)", "line", { "line-color": "parkOutline" }]
@@ -5289,7 +5298,7 @@ export function buildStyle({
       type: "symbol",
       "source-layer": "park",
       filter: ["all", ["in", ["geometry-type"], ["literal", [geometry, `Multi${geometry}`]]],
-        ["!", ["in", "ochranné_pásmo", str("class")]]],
+        PARK_MARKED],
       minzoom,
       ...(maxzoom ? { maxzoom } : {}),
       layout: {
