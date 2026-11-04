@@ -170,7 +170,7 @@
               [
                 15,
                 20,
-                "#cbc5b5"
+                "#c2b8a2"
               ]
             ]
           },
@@ -248,7 +248,7 @@
               [
                 15,
                 20,
-                "#c4bca8"
+                "#c0b6a0"
               ]
             ]
           },
@@ -271,7 +271,7 @@
               [
                 0,
                 14,
-                "#9c9377"
+                "#857b5f"
               ],
               [
                 15,
@@ -369,12 +369,12 @@
               [
                 13,
                 14,
-                "#d6cdb8"
+                "#cdc4ad"
               ],
               [
                 15,
                 20,
-                "#cbc5b5"
+                "#c4baa2"
               ]
             ]
           },
@@ -985,11 +985,11 @@
             {
               "attr": "subclass",
               "values": [
-                "grassland"
+                "park"
               ],
-              "label": "travinno-bylinné porasty",
+              "label": "parky",
               "paint": {
-                "fill-color": "#bdd49e"
+                "fill-color": "#d0e8b4"
               }
             }
           ]
@@ -1017,6 +1017,37 @@
               }
             }
           ]
+        },
+        "landuse-cemetery": {
+          "paint": {
+            "fill-color": "#d2e6b4"
+          }
+        },
+        "landuse-school": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                14,
+                "#e1d4b6"
+              ],
+              [
+                15,
+                20,
+                "#efe7d7"
+              ]
+            ]
+          }
+        },
+        "landuse-military": {
+          "paint": {
+            "fill-color": "#d8cfbd"
+          }
+        },
+        "landcover-golf": {
+          "paint": {
+            "fill-color": "#cfe2b3"
+          }
         }
       },
       "poi": {
