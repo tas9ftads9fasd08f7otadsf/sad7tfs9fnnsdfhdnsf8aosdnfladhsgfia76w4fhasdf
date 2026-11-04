@@ -1141,7 +1141,7 @@ export const TRAIL_OFFSET_ZOOMS = [9, 11, 13, 14, 16, 20];
  * sedmina pixela, v ktorej presvital ich podklad.
  */
 export const TRAIL_STRIPE = [
-  [9, 0.9], [11, 1.11], [13, 1.54], [14, 1.9], [16, 2.6], [20, 6]
+  [9, 1.2], [11, 2.3], [13, 2.1], [14, 1.9], [16, 2], [20, 5.5]
 ];
 /** Rozostup dvoch trás = šírka pásika. Tá istá krivka, nie kópia. */
 export const TRAIL_PITCH = TRAIL_STRIPE;
