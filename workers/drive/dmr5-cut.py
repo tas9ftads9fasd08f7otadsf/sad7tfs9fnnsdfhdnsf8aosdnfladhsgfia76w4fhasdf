@@ -232,7 +232,8 @@ def to_wgs84(parts, dest, bbox_wgs, grid_m, work, env, geoid):
          "-te", *[repr(v) for v in bbox_wgs],
          "-tr", repr(grid_m * dx), repr(grid_m * dy),
          "-r", kernel, "-multi", "-wo", "NUM_THREADS=ALL_CPUS",
-         "-of", "COG", "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=3",
+         # a range the size of the Low Tatras passes 4 GB at 1 m
+         "-of", "COG", "-co", "BIGTIFF=YES", "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=3",
          # COG overviews halve, where a mean is honest (`AVERAGE_RATIO` is 2)
          "-co", "RESAMPLING=AVERAGE", "-co", "NUM_THREADS=ALL_CPUS",
          vrt, dest], env, label="converting to WGS84", watch=dest)
