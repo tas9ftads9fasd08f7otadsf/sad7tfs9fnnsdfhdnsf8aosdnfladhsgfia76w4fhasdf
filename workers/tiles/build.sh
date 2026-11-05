@@ -90,6 +90,12 @@ while : ; do
       --layer=housenumber --below="$HN_MIN"
   fi
 
+  # Planetiler fills a forest's small clearings and marshes below z13
+  python3 -c 'import pmtiles, mapbox_vector_tile, shapely' 2>/dev/null \
+    || python3 -m pip install --quiet --break-system-packages pmtiles mapbox-vector-tile shapely \
+    || python3 -m pip install --quiet pmtiles mapbox-vector-tile shapely
+  python3 workers/tiles/lift-landcover.py "$OUT"
+
   # traffic signs, as the roads carry them; without them the base map still draws
   workers/tiles/signs.sh "$OUT" "$Z" "${CLIP[@]}" \
     || echo "::warning::Traffic signs didn't get into the base map – it goes without them."

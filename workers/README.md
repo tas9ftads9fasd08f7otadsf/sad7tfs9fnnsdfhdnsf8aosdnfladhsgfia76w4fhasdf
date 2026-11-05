@@ -209,6 +209,13 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   otvorenie mapy ju muselo prečítať. Stráži to
   [`workers/lint/style.mjs`](lint/style.mjs) (bod 5).
 
+  **Krajinná pokrývka na z11 – z12 sa skladá zo z13.** Planetiler pod z13
+  zahodí v ploche každú dieru pod 8 px, takže les zaleje svoje čistinky a
+  mokrade (Šúr) a pri priblížení zrazu zosvetlie.
+  [`workers/tiles/lift-landcover.py`](tiles/lift-landcover.py) vrstvu
+  `landcover` na z11 – z12 poskladá zo štyroch dlaždíc o zoom vyššie, triedy
+  zlúči bez škár a zahodí len diery a kúsky pod 2 px.
+
   **Hranica sa pred rezom zjednoduší na 10 m.** `osmium extract --polygon`
   testuje každý uzol PBF proti každej úsečke hranice, takže čas rezu rastie
   s počtom bodov. Namerané na relácii Prešovského kraja (388271, plná geometria
