@@ -5279,6 +5279,8 @@ export function buildStyle({
       ]
     );
     // pramene, vodopády a studne – bodové vody, ktoré plocha nemá
+    // a spring's icon is drawn here alone: points no longer carries springs
+    const waterIcon = ["case", ["in", str("class"), ["literal", iconClasses]], ["concat", str("class"), suffix], ""];
     add(
       {
         id: "water-pkg-point-name",
@@ -5286,17 +5288,24 @@ export function buildStyle({
         source: "water",
         "source-layer": "water_point",
         minzoom: 13,
-        filter: ["has", "name"],
+        filter: ["any", ["has", "name"], ["in", str("class"), ["literal", iconClasses]]],
         layout: {
+          "icon-image": waterIcon,
+          "icon-size": zl([[13, 0.8 * (sdfIcons ? 1.35 : 1)], [18, 1.1 * (sdfIcons ? 1.35 : 1)]]),
+          "icon-optional": true,
           "text-field": nameExpr,
           "text-font": ITAL,
           "text-size": zl([[13, 9], [18, 12]]),
+          "text-offset": [0, 1.1],
+          "text-anchor": "top",
+          "text-optional": true,
           "text-max-width": 8
         },
         paint: {
           "text-color": c.waterText,
           "text-halo-color": c.textHalo,
-          "text-halo-width": 1
+          "text-halo-width": 1,
+          ...(sdfIcons ? { "icon-color": c.waterText, "icon-halo-color": c.textHalo, "icon-halo-width": 1 } : {})
         }
       },
       [
