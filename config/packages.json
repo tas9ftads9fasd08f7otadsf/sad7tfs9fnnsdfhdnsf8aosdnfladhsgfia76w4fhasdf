@@ -360,16 +360,16 @@
   },
   "shared": [
     {"tag": "place", "packages": ["boundaries", "names", "settlements"], "owner": "settlements", "why": "Settlements and Geographical names both, the app keeps one (rikimaps#2794); Boundaries drops it"},
-    {"tag": "natural=peak,volcano", "packages": ["landscape", "names", "points"], "owner": "landscape", "why": "role: Landscape the mark, Geographical names the name; Points drops it"},
-    {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points drops it"},
-    {"tag": "piste:type", "packages": ["landscape", "ski"], "owner": "ski", "why": "Landscape drops it"},
+    {"tag": "natural=peak,volcano", "packages": ["landscape", "names", "points"], "owner": "landscape", "why": "role: Landscape the mark, Geographical names the name; Points carries them for a range only, which has no base map"},
+    {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points carries them for a range only, whose Water draws no points"},
+    {"tag": "piste:type", "packages": ["landscape", "ski"], "owner": "ski", "why": "Landscape drops it once the published styles draw Ski & winter"},
     {"tag": "aerialway", "packages": ["paths", "railways", "ski"], "owner": "railways", "why": "ski lifts to Ski & winter, cable cars and gondolas to Railways; Paths drops them"},
-    {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
-    {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
-    {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them"},
-    {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
-    {"tag": "landuse=quarry", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
-    {"tag": "landuse=residential,commercial,retail", "packages": ["landscape", "settlements"], "owner": "settlements", "why": "Landscape's base map share drops them"},
+    {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
+    {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
+    {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them once History draws an embankment's edge"},
+    {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it once History draws an embankment's edge"},
+    {"tag": "landuse=quarry", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape's base map share drops it once the cut splits `landuse` by class"},
+    {"tag": "landuse=residential,commercial,retail", "packages": ["landscape", "settlements"], "owner": "settlements", "why": "Landscape's base map share drops them once the cut splits `landuse` by class"},
     {"tag": "building=ruins", "packages": ["history", "settlements"], "owner": "settlements", "why": "role: Settlements the building, Army & history the ruin's mark"}
   ]
 }
