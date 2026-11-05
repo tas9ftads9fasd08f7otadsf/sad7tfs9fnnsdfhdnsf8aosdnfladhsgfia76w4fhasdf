@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from load import worker
+from load import needs, worker
 
 
 def catalog():
@@ -68,6 +68,8 @@ class Owners(unittest.TestCase):
 
 class CutFromCatalog(unittest.TestCase):
     # 464 the cut reads its layers from the catalog, every package with a share gets its archive
+    # 470 the cut reads archives through pmtiles, which the stdlib job doesn't install
+    @needs("pmtiles")
     def test_the_cut_follows_the_catalog(self):
         cut = worker("tiles/cut.py")
         self.assertEqual(cut.owner("transportation", {"class": "path"}), "paths")
