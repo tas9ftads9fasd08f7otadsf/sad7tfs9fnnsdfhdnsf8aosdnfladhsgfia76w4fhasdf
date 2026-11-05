@@ -229,6 +229,17 @@ class Trails(unittest.TestCase):
         self.assertEqual(order, [4, 3, 1], "the unnamed part collapses into its named parent")
         self.assertEqual(order, [r["rel"] for r in self.t.Ways.lane_order(list(reversed(routes)))])
 
+    def test_colourless_route_rides_on_a_marked_one(self):
+        # 456 E8 has no colour of its own: near Svidník it drew a second, dark red line
+        base = {"route": "hiking", "colour": "red", "hex": "", "tier": "national", "ref": "0901", "name": ""}
+        e8 = dict(base, rel=192031, colour="", tier="international", ref="E8", name="E8")
+        order = [r["rel"] for r in self.t.Ways.lane_order([dict(base, rel=1), e8])]
+        self.assertEqual(order, [1])
+        # alone, or beside a route of another kind, it keeps its lane
+        self.assertEqual([r["rel"] for r in self.t.Ways.lane_order([e8])], [192031])
+        bike = dict(base, rel=2, route="bicycle")
+        self.assertEqual(sorted(r["rel"] for r in self.t.Ways.lane_order([bike, e8])), [2, 192031])
+
     def test_lane_slots_share_a_lane_per_colour(self):
         base = {"route": "hiking", "colour": "red", "hex": ""}
         lanes = [dict(base), dict(base), dict(base, colour="blue"),
