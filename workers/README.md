@@ -2348,7 +2348,7 @@ extraktov bez akéhokoľvek filtra ([`workers/routing/pbf.sh`](routing/pbf.sh)),
 takže `maxheight` a spol. v ňom vždy boli – chýbalo len to, aby si ich niekto
 vypýtal. Profil navigácie preto pozná rozmery vozidla (`vehicle_height`,
 `vehicle_weight`, `vehicle_width`, `vehicle_length`
-v [`workers/data/routing-profiles.json`](data/routing-profiles.json)): to isté
+v `profiles` v [`workers/data/routing.json`](data/routing.json)): to isté
 obmedzenie je tak v balíku `cesty` **na pozretie** („pod týmto mostom je
 3,8 m") a v grafe **na použitie** („trasa sa tomu podjazdu vyhne").
 
@@ -2358,7 +2358,7 @@ a na hranici kraja končil; namiesto neho ide do telefónu
 s OSM `id` uzlov a s tagmi, a cenu ráta telefón podľa profilu používateľa.
 Stavia to [`workers/routing/build.sh`](routing/build.sh) →
 [`tiles.py`](routing/tiles.py) zo slovníka
-[`workers/data/routing-tags.json`](data/routing-tags.json), výšku na uzol
+`tags` v [`workers/data/routing.json`](data/routing.json), výšku na uzol
 odoberá zo Sonnyho [`heights.py`](routing/heights.py), poradie uzlov pre
 CCH počíta [`workers/routing/order.py`](routing/order.py) a strážia to
 [`workers/lint/routing-tiles.py`](lint/routing-tiles.py)
@@ -3381,7 +3381,7 @@ v každom štýle inak.
 
 `{kraj}-rail-routing.pmtiles` je koľajová sieť na navigáciu vlakom: ten istý
 formát ako cestná sieť (`docs/routing-tiles.md`), ale vlastný slovník
-`workers/data/rail-routing-tags.json`, teda iné `id` – s cestnou sa nespája.
+`workers/data/routing.json` (`rail_tags`), teda iné `id` – s cestnou sa nespája.
 Stavia ju `workers/routing/tiles.py --dictionary=…`.
 
 `{kraj}-signs.json/.png` (+`@2x`) sú značky krajiny – návestidlá a tabule pri
@@ -4231,7 +4231,7 @@ polovica nová s polovicou starou už nemá ako vzniknúť.
 
 `navigacia` je **vlastná voľba**, lebo je vlastný balík — a je to zároveň
 jediné, čo sa mení pri zmene slovníka značiek
-(`workers/data/routing-tags.json`), takže prestavovať kvôli tomu dopravnú sieť
+(`workers/data/routing.json` (`tags`)), takže prestavovať kvôli tomu dopravnú sieť
 by bolo zbytočné.
 
 **Základná mapa a články z Wikipédie sa takto pregenerovať nedajú.** Mapa je

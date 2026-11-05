@@ -2,7 +2,7 @@
 """A road's speed context – which of its country's default limits applies on it."""
 import math
 
-# the order of `speed_context` in routing-tags.json
+# the order of `speed_context` in the `tags` of routing.json
 CONTEXTS = ("urban", "rural", "motorway", "urban_motorway", "motorroad",
             "urban_motorroad", "living_street")
 

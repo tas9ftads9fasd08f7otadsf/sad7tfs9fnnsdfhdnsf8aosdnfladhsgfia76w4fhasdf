@@ -40,7 +40,7 @@ def main():
     if args.region:
         lines = region(args.region, read("map-settings.json")["regions"], args.base)
     elif args.routing_area:
-        lines = routing(args.routing_area, read("routing-areas.json").get("areas") or {}, args.base)
+        lines = routing(args.routing_area, read("routing.json")["areas"].get("areas") or {}, args.base)
     else:
         lines = args.each.split()
     if args.out:

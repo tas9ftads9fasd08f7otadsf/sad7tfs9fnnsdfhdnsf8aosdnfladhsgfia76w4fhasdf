@@ -23,8 +23,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
 
-PROFILES = os.path.join(_DATA, "routing-profiles.json")
-VIGNETTES = os.path.join(_DATA, "vignettes.json")
+ROUTING = os.path.join(_DATA, "routing.json")
 
 # `required_on` are OSM classes; GraphHopper names them otherwise – translated only here
 GH_ROAD_CLASS = {
@@ -36,9 +35,9 @@ GH_ROAD_CLASS = {
 }
 
 
-def load(path):
+def load(section, path=ROUTING):
     with open(path, encoding="utf-8") as f:
-        return json.load(f)
+        return json.load(f)[section]
 
 
 def as_text(value):
@@ -57,8 +56,8 @@ class Profile:
     """A profile = mode + option values + vignette state. Nothing more."""
 
     def __init__(self, profiles=None, vignettes=None):
-        self.raw = profiles if profiles is not None else load(PROFILES)
-        self.vig = vignettes if vignettes is not None else load(VIGNETTES)
+        self.raw = profiles if profiles is not None else load("profiles")
+        self.vig = vignettes if vignettes is not None else load("vignettes")
         self.modes = public(self.raw["modes"])
         self.options = public(self.raw["options"])
         self.engines = public(self.raw["engines"])
@@ -104,7 +103,7 @@ class Profile:
         self.check_mode(mode)
         if key not in self.options:
             raise ValueError(f"option `{key}` isn't in the lookup. Add it to "
-                             f"`workers/data/routing-profiles.json`.")
+                             f"`profiles` in `workers/data/routing.json`.")
         if key not in self.modes[mode]["options"]:
             raise ValueError(
                 f"option `{key}` isn't offered in mode `{mode}`. Offered: "
@@ -145,7 +144,7 @@ class Profile:
         if stale:
             notes.append(
                 "UNVERIFIED VIGNETTE DATA: " + ", ".join(stale) +
-                ". `vignettes.json` has `state: unverified` for them – while it "
+                ". the `vignettes` of `routing.json` have `state: unverified` for them – while it "
                 "does, it must not reach the app as fact.")
         return avoid, notes
 
@@ -341,7 +340,7 @@ def main():
             code, _, text = item.partition("=")
             code = code.upper()
             if code not in p.countries:
-                raise ValueError(f"`vignettes.json` doesn't know country `{code}`. "
+                raise ValueError(f"the `vignettes` of `routing.json` don't know country `{code}`. "
                                  f"Add it there – not to the code.")
             text = {"ano": "yes", "nie": "no"}.get(text, text)
             vignettes[code] = text if text in ("yes", "no") else \

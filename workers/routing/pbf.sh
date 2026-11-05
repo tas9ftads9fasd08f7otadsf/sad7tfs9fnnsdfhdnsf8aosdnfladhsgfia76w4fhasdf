@@ -2,24 +2,24 @@
 # PBF for the routing graph – download and merge what the area lookup names, cutting nothing
 # (an edge missing its other end is a dead end). Not `plan/pbf.sh`, which cuts a region.
 #
-# In:  AREA (key in routing-areas.json), OSMFR_BASE
+# In:  AREA (key of `areas` in routing.json), OSMFR_BASE
 # Out: data/routing.osm.pbf and `pbf_mb` to GITHUB_OUTPUT
 
 set -euo pipefail
 mkdir -p data steps-out
 T=$(date +%s)
 
-: "${AREA:?give AREA – a key from workers/data/routing-areas.json}"
+: "${AREA:?give AREA – a key of `areas` in workers/data/routing.json}"
 BASE="${OSMFR_BASE:-https://download.openstreetmap.fr/extracts}"
 
 mapfile -t PBFS < <(python3 - "$AREA" <<'PY'
 import json, os, sys
-here = os.path.join("workers", "data", "routing-areas.json")
-areas = (json.load(open(here, encoding="utf-8")).get("areas") or {})
+here = os.path.join("workers", "data", "routing.json")
+areas = (json.load(open(here, encoding="utf-8"))["areas"].get("areas") or {})
 area = areas.get(sys.argv[1])
 if not area:
-    sys.exit(f"::error::Area `{sys.argv[1]}` isn't in workers/data/"
-             f"routing-areas.json. Known: {', '.join(sorted(areas))}.")
+    sys.exit(f"::error::Area `{sys.argv[1]}` isn't in the `areas` of workers/data/"
+             f"routing.json. Known: {', '.join(sorted(areas))}.")
 for p in area["pbf"]:
     print(p)
 PY

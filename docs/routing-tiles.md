@@ -114,7 +114,7 @@ tá istá vec bola povedaná dvakrát a raz by sa rozišla.
 
 ## Slovník značiek
 
-[`workers/data/routing-tags.json`](../workers/data/routing-tags.json) hovorí,
+`tags` v [`workers/data/routing.json`](../workers/data/routing.json) hovorí,
 podľa čoho je way cesta (`siet`) a čo sa o nej vezie (`kluce`). Čo tam nie je,
 sa do telefónu nedostane – je to zároveň páka na veľkosť archívu.
 
