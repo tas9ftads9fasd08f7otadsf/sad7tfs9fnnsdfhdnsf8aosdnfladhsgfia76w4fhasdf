@@ -119,6 +119,8 @@ export const MAP_TYPES = [
       // tak, ako ich dáva štýl. Ploty naopak až celkom zblízka, inak by
       // z okrajov obcí bola šeď.
       { match: { id: BARRIERS }, minzoomFloor: 16 },
+      // a power line across open country isn't Mapy's overview
+      { match: { id: INFRA }, minzoomFloor: 13 },
       // Chodníky sa objavia skôr než na základnej mape. Skaly tu pravidlo
       // NEMAJÚ: štýl ich kreslí od z11 (a pod ním pre ne nie sú ani dlaždice),
       // takže `minzoom: 8` by ich nezobrazilo skôr – len by tichým spôsobom

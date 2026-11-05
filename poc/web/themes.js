@@ -1460,7 +1460,7 @@ export function shieldShapeFor(id, fallback, overrides) {
 }
 
 /** Water line widths in px; Mapy's rivers are bold from afar, its streams from z12. */
-export const RIVER_WIDTH = [[8, 1], [11, 2.4], [12, 2.6], [16, 5], [20, 18]];
+export const RIVER_WIDTH = [[8, 1], [11, 2.4], [12, 3], [16, 5], [20, 18]];
 export const STREAM_WIDTH = [[11, 0.7], [12, 1.2], [14, 1.6], [16, 2.4], [20, 7]];
 export const STREAM_MINZOOM = 11;
 
