@@ -1,13 +1,29 @@
 # Planetiler custom schema – landscape points from OSM, own archive for its own package.
-# Same input and prefilter as `features.yml`; `centroid` since a cave is a node, a tower an area.
+# Same input and prefilter as `features.yml`; `centroid` since a spring is a node, a heap an area.
 schema_name: FricoMaps landscape points
 schema_description: >-
-  Caves, waterfalls, lookout towers, huts and survey points – OSM point features
-  the OpenMapTiles schema doesn't carry; springs are Water's, monuments and mines Army & history's
+  Springs, caves, waterfalls, lookout towers, huts, monuments, mining heritage
+  and survey points – OSM point features the OpenMapTiles schema doesn't carry
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
-# a region's build puts them past its maxzoom: its Landscape draws peaks and saddles already
+# a range carries these, having no base map, Water style point or Army & history; a region's
+# build sets each past its maxzoom, as its own owner draws them there
 args:
+  spring_minzoom:
+    description: zoom a range's springs start at
+    default: 12
+  heritage_minzoom:
+    description: zoom a range's archaeological sites, forts, manors and tombs start at
+    default: 12
+  wayside_minzoom:
+    description: zoom a range's wayside crosses, shrines and memorials start at
+    default: 14
+  marker_minzoom:
+    description: zoom a range's boundary stones, milestones and charcoal piles start at
+    default: 15
+  mining_minzoom:
+    description: zoom a range's mines and adits start at
+    default: 12
   peak_minzoom:
     description: zoom a range's peaks start at
     default: 10
@@ -27,6 +43,22 @@ tag_mappings:
 layers:
   - id: feature_point
     features:
+      # water in the terrain: OpenMapTiles takes a spring only as an area, so node springs are missing
+      - source: osm
+        geometry: centroid
+        min_zoom: ${ args.spring_minzoom }
+        include_when:
+          natural: spring
+        attributes:
+          - key: name
+          - key: ele
+          - key: class
+            value: spring
+          - key: osm_id
+            value: '${ feature.id }'
+            type: long
+          - key: osm_type
+            value: '${ feature.osm_type }'
       - source: osm
         geometry: centroid
         min_zoom: 11
@@ -88,6 +120,52 @@ layers:
           - key: name
           - key: class
             type: match_value
+
+      # monuments OpenMapTiles leaves out: it takes only `monument`, `castle` and `ruins`
+      - source: osm
+        geometry: centroid
+        min_zoom: ${ args.heritage_minzoom }
+        include_when:
+          historic: [archaeological_site, battlefield, fort, manor, tomb]
+        attributes:
+          - key: name
+          - key: class
+            type: match_value
+      - source: osm
+        geometry: centroid
+        min_zoom: ${ args.wayside_minzoom }
+        include_when:
+          historic: [wayside_cross, wayside_shrine, memorial]
+        attributes:
+          - key: name
+          - key: class
+            type: match_value
+      - source: osm
+        geometry: centroid
+        min_zoom: ${ args.marker_minzoom }
+        include_when:
+          historic: [boundary_stone, milestone, charcoal_pile]
+        attributes:
+          - key: name
+          - key: class
+            type: match_value
+
+      # mining heritage
+      - source: osm
+        geometry: centroid
+        min_zoom: ${ args.mining_minzoom }
+        include_when:
+          historic: [mine, mine_shaft, mineshaft, adit]
+          man_made: [adit, mineshaft]
+        attributes:
+          - key: name
+          - key: class
+            type: match_value
+          - key: osm_id
+            value: '${ feature.id }'
+            type: long
+          - key: osm_type
+            value: '${ feature.osm_type }'
 
       # hut: `wilderness_hut` isn't in OpenMapTiles, yet it's the hut a route is planned around
       - source: osm
@@ -210,3 +288,17 @@ examples:
           class: saddle
           name: Priečne sedlo
 
+  - name: A spring stays a landscape point
+    input:
+      source: osm
+      geometry: point
+      tags:
+        natural: spring
+        name: Studnička
+    output:
+      - layer: feature_point
+        geometry: point
+        min_zoom: 12
+        tags:
+          class: spring
+          name: Studnička

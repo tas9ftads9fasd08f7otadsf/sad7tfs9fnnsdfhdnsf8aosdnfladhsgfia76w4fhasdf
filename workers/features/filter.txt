@@ -3,7 +3,7 @@
 # `nwr/` = nodes, ways and relations (osmium pulls in multipolygon members).
 
 # embankments and cuttings
-nwr/man_made=embankment,cutline,pipeline,spoil_heap,tower,mast,water_tower,chimney,survey_point
+nwr/man_made=embankment,cutline,pipeline,spoil_heap,tower,mast,water_tower,chimney,adit,mineshaft,survey_point
 nwr/embankment
 nwr/cutting
 
@@ -13,8 +13,8 @@ nwr/barrier=wall,city_wall,retaining_wall,fence,guard_rail,handrail,hedge
 # power lines
 nwr/power=line,minor_line
 
-# terrain edges and vegetation; springs are Water's
-nwr/natural=tree_row,gully,earth_bank,shingle,cave_entrance,sinkhole,peak,volcano,saddle
+# terrain edges and vegetation
+nwr/natural=tree_row,gully,earth_bank,shingle,spring,cave_entrance,sinkhole,peak,volcano,saddle
 
 # water structures and waterfalls
 nwr/waterway=dam,weir,lock_gate,waterfall
@@ -23,6 +23,8 @@ nwr/waterway=dam,weir,lock_gate,waterfall
 nwr/amenity=parking
 nwr/landuse=landfill,farmyard,greenhouse_horticulture,brownfield
 
+# monuments and mining heritage beyond the OpenMapTiles `historic` three
+nwr/historic=archaeological_site,battlefield,fort,manor,tomb,wayside_cross,wayside_shrine,memorial,boundary_stone,milestone,charcoal_pile,mine,mine_shaft,mineshaft,adit
 
 # huts and mountain passes
 nwr/tourism=wilderness_hut
@@ -38,5 +40,6 @@ w/proposed:aerialway
 w/disused:aerialway
 w/abandoned:aerialway
 w/razed:aerialway
+
 # ski pistes, cross-country, ski touring
 nwr/piste:type

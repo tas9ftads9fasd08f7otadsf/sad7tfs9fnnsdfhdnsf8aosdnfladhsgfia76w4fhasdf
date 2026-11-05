@@ -291,7 +291,7 @@ jobs:
         id: features
         env:
           OPT_FEATURES_MAXZOOM: "15"
-          OPT_RANGE_PEAKS: "true"
+          OPT_RANGE_POINTS: "true"
           OPT_REGION_CLIP: "true"
           REGION_BBOX: ${{ needs.plan.outputs.bbox }}
           REGION_KEY: ${{ needs.plan.outputs.key }}
