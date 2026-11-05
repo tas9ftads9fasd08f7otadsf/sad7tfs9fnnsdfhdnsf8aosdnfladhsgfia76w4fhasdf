@@ -14,6 +14,8 @@ BUILD = os.path.join(_WORKERS, "ski", "build.sh")
 # the app switches each of these on and off by its layer id
 KINDS = ("area", "downhill", "nordic", "skitour", "sled", "hike", "lift")
 EVERY_BLOCK = ("class", "name", "osm_id")
+# set by `workers/lib/cable_cars.py` after the prefilter
+DERIVED = {"riki:mountain"}
 
 bad = []
 
@@ -63,7 +65,7 @@ def main():
             maps = conditions(b.get("include_when"))
             for m in maps:
                 for key, values in m.items():
-                    if key in ("name", "area", "type"):
+                    if key in ("name", "area", "type") or key in DERIVED:
                         continue
                     if key not in passes:
                         bad.append(f"{FILTER}: `{layer}` reads `{key}`, which the prefilter "
@@ -83,6 +85,8 @@ def main():
     if " -R " in build or "--omit-referenced" in build:
         bad.append(f"{BUILD}: `osmium tags-filter -R` drops relation members – ski areas and "
                    f"piste areas are multipolygons and would vanish.")
+    if "workers/lib/cable_cars.py" not in build:
+        bad.append(f"{BUILD}: no `workers/lib/cable_cars.py` – no cable car would be in the mountains.")
     if "region-cut.sh" not in build:
         bad.append(f"{BUILD}: the PBF isn't cut to the region (`workers/lib/region-cut.sh`), "
                    f"so far-off ski areas land in low-zoom tiles.")

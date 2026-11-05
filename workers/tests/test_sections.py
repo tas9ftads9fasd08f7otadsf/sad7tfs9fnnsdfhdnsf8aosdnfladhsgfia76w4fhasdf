@@ -15,8 +15,9 @@ class Kind(unittest.TestCase):
     def test_kind(self):
         self.assertIsNone(s.kind({"highway": "primary"}))
         self.assertIsNotNone(s.kind({"railway": "abandoned"}))
-        # 472 a lift is no track: lifts are Ski & winter's
-        self.assertIsNone(s.kind({"aerialway": "chair_lift"}))
+        # 473 a cable car is a section of its own again, a station none
+        self.assertEqual(s.kind({"aerialway": "gondola"}), ("aerialway",))
+        self.assertIsNone(s.kind({"aerialway": "station"}))
         self.assertNotEqual(s.kind(RAIL), s.kind({**RAIL, "voltage": "25000"}))
         self.assertEqual(s.kind(RAIL), s.kind({**RAIL, "maxspeed": "160"}))
 

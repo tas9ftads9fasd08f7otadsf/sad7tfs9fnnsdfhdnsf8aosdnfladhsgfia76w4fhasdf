@@ -122,5 +122,8 @@ test("ski draws the pistes and the lifts, from its own archive only", () => {
     "aerialway-construction"]) {
     assert.ok(drawn.includes(id), id);
   }
-  assert.ok(!ids(packageMap("railways")).some((l) => l.includes("lift") || l.startsWith("aerialway")));
+  // 473 Railways draw every cable car, no ski lift
+  const rail = ids(packageMap("railways"));
+  assert.ok(rail.includes("pkg-rail-lift-cabin") && rail.includes("pkg-rail-lift-station"));
+  assert.ok(!rail.some((l) => l.includes("chair") || l.startsWith("aerialway")));
 });

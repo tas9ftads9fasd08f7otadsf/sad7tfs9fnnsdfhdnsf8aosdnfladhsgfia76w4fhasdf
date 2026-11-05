@@ -62,7 +62,11 @@ EXPECTED = [
     ("ski", "downhill", {"class": "downhill", "difficulty": "easy"}),
     ("ski", "nordic", {"class": "nordic", "grooming": "classic", "name": "Bežkárska"}),
     ("ski", "lift", {"class": "chair_lift", "name": "Sedačka"}),
-    ("ski", "lift", {"class": "cable_car", "state": "active", "name": "Lanovka"}),
+    ("ski", "lift", {"class": "gondola", "state": "active", "name": "Kabínka"}),
+    ("ski", "lift", {"class": "station", "name": "Horná stanica"}),
+    ("rail", "aerialway", {"class": "cable_car", "state": "active", "name": "Lanovka"}),
+    ("rail", "aerialway", {"class": "gondola", "name": "Kabínka"}),
+    ("rail", "aerialway_station", {"name": "Horná stanica"}),
     ("buildings", "building", {"name": "Kostol"}),
     ("buildings", "building_name", {"name": "Kostol"}),
     ("buildings", "settlement_area", {}),
@@ -80,8 +84,9 @@ ABSENT = [("history", "embankment", {}),  # 469 embankments are Landscape's
           ("points", "peak", {}), ("points", "feature_point", {"class": "spring"}),
           ("points", "feature_point", {"class": "wayside_cross"}),
           # 472 every lift in service is Ski & winter's, one taken out of it Army & history's
-          ("paths", "paths", {"class": "cable_car"}), ("rail", "aerialway", {}),
-          ("ski", "lift", {"name": "Starý vlek"})]
+          ("paths", "paths", {"class": "cable_car"}), ("ski", "lift", {"name": "Starý vlek"}),
+          # 473 a town's cable car is Railways' alone, a ski lift Ski & winter's alone
+          ("ski", "lift", {"name": "Lanovka"}), ("rail", "aerialway", {"class": "chair_lift"})]
 OUTSIDE_NAMES = {"Vonku", "Cudzie jazero"}
 
 

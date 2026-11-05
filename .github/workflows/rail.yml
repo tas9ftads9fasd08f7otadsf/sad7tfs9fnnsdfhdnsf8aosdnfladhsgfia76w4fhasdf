@@ -78,7 +78,7 @@ env:
 
 jobs:
   rail:
-    name: Railways
+    name: Railways and cable cars
     runs-on: ubuntu-latest
     outputs:
       enabled: ${{ steps.rail.outputs.enabled }}
@@ -135,7 +135,7 @@ jobs:
         run: workers/lib/verify-schema.sh workers/rail/rail.yml
 
       # described in `workers/rail/build.sh`
-      - name: Railways from OSM → PMTiles
+      - name: Railways and cable cars from OSM → PMTiles
         id: rail
         env:
           OPT_RAIL_MAXZOOM: ${{ inputs.maxzoom }}

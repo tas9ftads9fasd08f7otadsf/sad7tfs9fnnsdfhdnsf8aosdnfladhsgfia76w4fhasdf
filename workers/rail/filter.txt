@@ -6,3 +6,8 @@ nwr/railway
 
 # lines carry the colour and number `lines.py` copies onto tracks
 r/route=tram,subway,light_rail,monorail,train,railway,funicular
+
+# cable cars, being built or planned too, and every station: `cable_cars.py` finds theirs
+nwr/aerialway
+w/construction:aerialway
+w/proposed:aerialway

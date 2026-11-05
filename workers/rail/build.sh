@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Railways from OSM → `{region}-rail.pmtiles` and `{region}-rail-routing.pmtiles`.
+# Railways and cable cars from OSM → `{region}-rail.pmtiles` and `{region}-rail-routing.pmtiles`.
 # Its share of the page size comes from `BUDGET_RAIL_PCT`.
 
 set -euo pipefail
@@ -44,7 +44,9 @@ fi
 
 mapfile -t CLIP < <(workers/lib/region-clip.sh "$REGION_BBOX")
 
-python3 workers/rail/lines.py --pbf=data/rail.osm.pbf --out=data/rail-lines.osm.pbf
+# a cable car's stations, apart from a ski lift's
+python3 workers/lib/cable_cars.py --pbf=data/rail.osm.pbf --out=data/rail-marked.osm.pbf
+python3 workers/rail/lines.py --pbf=data/rail-marked.osm.pbf --out=data/rail-lines.osm.pbf
 
 T_PM=$(date +%s)
 OUT="_site/tiles/${REGION_KEY}-rail.pmtiles"

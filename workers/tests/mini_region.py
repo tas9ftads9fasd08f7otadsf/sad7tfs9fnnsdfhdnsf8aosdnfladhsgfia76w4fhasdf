@@ -183,6 +183,8 @@ def build():
     # a ski area with its lift
     o.way(o.ring(square(17.183, 48.142, 500), every_m=20), landuse="winter_sports", name="Stredisko")
     o.way(o.line([(17.182, 48.139), (17.186, 48.145)], every_m=20), aerialway="chair_lift", name="Sedačka")
+    o.way(o.line([(17.181, 48.141), (17.184, 48.143)], every_m=20), aerialway="gondola", name="Kabínka")
+    o.node(17.184, 48.143, aerialway="station", name="Horná stanica")
     o.way(o.line([(17.176, 48.139), (17.178, 48.145)], every_m=20), aerialway="drag_lift", disused="yes",
           name="Starý vlek")
     o.node(17.185, 48.148, natural="peak", ele="512", name="Vrch", wikipedia="sk:Vrch")
