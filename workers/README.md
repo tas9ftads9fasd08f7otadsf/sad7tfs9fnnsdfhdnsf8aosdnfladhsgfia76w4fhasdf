@@ -157,10 +157,10 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   alebo ktorýkoľvek zo 14 krajov, celé Rakúsko alebo ktorákoľvek z 9 spolkových
   krajín. Česko a Rakúsko výškový model zatiaľ
   nepokrýva, takže majú vrstevnice, skaly a tieňovanie vypnuté v
-  [workers/data/map-settings.json](data/map-settings.json), všetko z OSM sa urobí. Zdroj je
+  [config/map-settings.json](../config/map-settings.json), všetko z OSM sa urobí. Zdroj je
   [osm.fr](https://download.openstreetmap.fr/extracts/europe/slovakia/)
   (denne aktualizované); mapovanie, `osm_name`, `admin_level` a bboxy sú vo
-  `regions` v [workers/data/map-settings.json](data/map-settings.json). Každý región tam má `id`
+  `regions` v [config/map-settings.json](../config/map-settings.json). Každý región tam má `id`
   jedinečné v celom katalógu – cesta na osm.fr pod kontinentom, priečinky
   spojené `-` (`slovakia-banskobystricky`); `maps.json` ho nesie pri každom
   uzle a mapy v Riki Maps sa naň odvolávajú. **Kraj sa REŽE z rodiča** –
@@ -1042,7 +1042,7 @@ viac ani nejde (1° v 1 m má ~48 GB). Pohorie je ale malé, tak sa preň robí
 | skaly | `rock_res: auto` | to isté, z toho istého sklonu |
 | výškový model (tieňovanie, 3D) | 5 m dlaždice, z13 – z15 | **výrez v 1 m**, do **z17** |
 
-Pohoria sú vo `maps.mountains.ranges` v [`workers/data/map-settings.json`](data/map-settings.json): krajina
+Pohoria sú vo `maps.mountains.ranges` v [`config/map-settings.json`](../config/map-settings.json): krajina
 a výrez z `areas` nastavení (meno, bbox a DMR 5.0 v 1 m pod tým istým menom, aký
 si berie testovací výrez). Workflow volá **ten istý `dem-layers.yml`** ako
 build mapy, s `mountain: true` – vtedy si aj tieňovanie berie model vo tvare
@@ -1121,7 +1121,7 @@ do pohoria len polovica s bodmi.
 
 **Letecké snímky** (`aerial_summer`, `aerial_winter`) sú JPEG dlaždice
 zdroja, ktorý pohorie vyberie nastavením `aerial_summer` / `aerial_winter`
-v [`workers/data/map-settings.json`](data/map-settings.json) (zdroje sú v
+v [`config/map-settings.json`](../config/map-settings.json) (zdroje sú v
 `sources.aerial` aj s adresou, zoomami a autormi), zabalené do rastrového
 `.pmtiles` (`workers/mountain/aerial.py`). Leto je ortofotomozaika
 `ofmozaika_sk` (`ofmozaika2c.tiles.freemap.sk`) do z17 – nad Tatrami ~0,5 GB;
@@ -1659,7 +1659,7 @@ farieb nemá zmysel čakať polhodinu na celý kraj, keď ťa zaujíma jedno poh
 
 *(plochy sú po orezaní na Prešovský kraj)*
 
-Pomenované výrezy sú vo `areas` v [`workers/data/map-settings.json`](data/map-settings.json) – zatiaľ
+Pomenované výrezy sú vo `areas` v [`config/map-settings.json`](../config/map-settings.json) – zatiaľ
 Tatry (celé aj po častiach), Nízke Tatry, Slovenský raj, Pieniny, Malá aj
 Veľká Fatra, Súľovské skaly, Slovenský kras, Muránska planina, Vihorlat,
 Strážovské vrchy a Malé Karpaty. Namiesto názvu sa dá zadať aj bbox
@@ -1792,7 +1792,7 @@ hranicu časti, takže susedné kusy na seba nadväzujú bez medzery ani prekryv
 30 minút. **Mriežka 1 m sa oplatí len na `crop_bbox`; pre kraj by to boli
 ~2 hodiny.**
 
-Ovládanie v [map-settings.json](data/map-settings.json): `rock_source` (z ktorého
+Ovládanie v [map-settings.json](../config/map-settings.json): `rock_source` (z ktorého
 modelu – alebo `none`, čím sa skaly vypnú), `rock_slope` (od akého sklonu je
 terén skala, default 50°) a mriežka obrysu `rock_res` (číslo v metroch alebo
 `auto`, default `auto`).
@@ -2212,7 +2212,7 @@ príslušný ZIP navrch: cesty vnútri sú tie isté ako v `_site`, takže sa d�
 rozbaliť jeden cez druhý.
 
 **KTORÉ BALÍKY SÚ, JE NAPÍSANÉ NA JEDNOM MIESTE** –
-[`workers/data/packages.json`](data/packages.json), číta ho
+[`config/packages.json`](../config/packages.json), číta ho
 [`workers/deploy/baliky.py`](deploy/baliky.py). Ten istý zoznam berie packer
 (čo je v ktorom balíku), formulár „Pregeneruj vrstvu kraja", dávka nad celou
 krajinou, kontroly – a cez `maps.json` (kľúče `app`, `symbol` a `detail`) aj
@@ -2290,7 +2290,7 @@ Obrázky sú sprite `<kraj>-roadsigns.json/.png` (+`@2x`), ktorý
 [`sprite.py`](transport/sprite.py) kreslí zo zbierky
 [skifahrer/traffic-signs](https://github.com/skifahrer/traffic-signs) – tá je
 len zdroj obrázkov po krajinách. **Ktorá hodnota z OSM je ktorý obrázok, hovorí
-[`data/road-signs.json`](data/road-signs.json)** (po krajinách: `SK:253[50]`,
+[`config/road-signs.json`](../config/road-signs.json)** (po krajinách: `SK:253[50]`,
 `stop`, `maxspeed=50`, `city_limit=end`, `highway=stop` → `regulatory/…`);
 čo v ňom nie je, sa nekreslí. **Značka s kódom inej krajiny sa kreslí ako
 domáca značka toho istého významu**: `AT:53.8a` na Slovensku je podľa
@@ -2348,7 +2348,7 @@ extraktov bez akéhokoľvek filtra ([`workers/routing/pbf.sh`](routing/pbf.sh)),
 takže `maxheight` a spol. v ňom vždy boli – chýbalo len to, aby si ich niekto
 vypýtal. Profil navigácie preto pozná rozmery vozidla (`vehicle_height`,
 `vehicle_weight`, `vehicle_width`, `vehicle_length`
-v `profiles` v [`workers/data/routing.json`](data/routing.json)): to isté
+v `profiles` v [`config/routing.json`](../config/routing.json)): to isté
 obmedzenie je tak v balíku `cesty` **na pozretie** („pod týmto mostom je
 3,8 m") a v grafe **na použitie** („trasa sa tomu podjazdu vyhne").
 
@@ -2358,7 +2358,7 @@ a na hranici kraja končil; namiesto neho ide do telefónu
 s OSM `id` uzlov a s tagmi, a cenu ráta telefón podľa profilu používateľa.
 Stavia to [`workers/routing/build.sh`](routing/build.sh) →
 [`tiles.py`](routing/tiles.py) zo slovníka
-`tags` v [`workers/data/routing.json`](data/routing.json), výšku na uzol
+`tags` v [`config/routing.json`](../config/routing.json), výšku na uzol
 odoberá zo Sonnyho [`heights.py`](routing/heights.py), poradie uzlov pre
 CCH počíta [`workers/routing/order.py`](routing/order.py) a strážia to
 [`workers/lint/routing-tiles.py`](lint/routing-tiles.py)
@@ -2371,7 +2371,7 @@ dopočíta ho sám a uloží – prvý kraj štafety ho vyrobí, ostatné ho vez
 Skôr ho prepočíta **„Navigácia · poradie uzlov"**
 ([`routing-order.yml`](../.github/workflows/routing-order.yml)). Ktoré
 územie to je, hovorí `routing_area` pri krajine v
-`regions` v [`workers/data/map-settings.json`](data/map-settings.json). Graf Valhally ostáva ako
+`regions` v [`config/map-settings.json`](../config/map-settings.json). Graf Valhally ostáva ako
 CELOŠTÁTNA referenčná stavba (`navigation.yml`), proti ktorej sa nový motor dá
 krížom skontrolovať – po krajoch sa už nestavia.
 
@@ -2524,7 +2524,7 @@ už nesie (pravidlo 1).
 km² nedala pomýliť s ostrou, a aby ju **neprepísala**.
 
 Robí to [`workers/deploy/publish-map.py`](deploy/publish-map.py), vypnúť sa to dá
-nastavením `publish: false` v [map-settings.json](data/map-settings.json) a pozrieť si balíky lokálne ide bez
+nastavením `publish: false` v [map-settings.json](../config/map-settings.json) a pozrieť si balíky lokálne ide bez
 Drive. **Ako sa balík volá a kam patrí** je vedľa, vo
 [`workers/deploy/mena.py`](deploy/mena.py) — meno na Drive je stále, takže je
 to sľub, a sľuby sú na jednom mieste:
@@ -2577,7 +2577,7 @@ leží**. Zoznam vzniká z troch zdrojov a každý rieši inú vec:
 | zdroj | čo dáva | prečo |
 |---|---|---|
 | vždy `en` | anglický článok | jediný jazyk, v ktorom je článok skoro o všetkom |
-| krajina regiónu | `sk` pre slovenské kraje | to, čo číta domáci. Tabuľka je [`workers/data/wiki-languages.json`](data/wiki-languages.json), kľúč je `country` z `regions` nastavení – tá istá hodnota, ktorá rozhoduje o priečinku na Drive |
+| krajina regiónu | `sk` pre slovenské kraje | to, čo číta domáci. Tabuľka je [`config/wiki-languages.json`](../config/wiki-languages.json), kľúč je `country` z `regions` nastavení – tá istá hodnota, ktorá rozhoduje o priečinku na Drive |
 | tag objektu | `wikipedia=pl:Rysy` → `pl` | bod na poľskej strane hrebeňa dostane poľský článok bez toho, aby o Poľsku niekto musel vedieť vopred |
 
 **Krajina bodu sa berie z regiónu, nie z bodu.** Extrakt kraja je rezaný jeho
@@ -2753,7 +2753,7 @@ kontroluje oba súbory pri každej zmene.
 **Hlavný kľúč je krajina** – rovno v koreni, bez obálky. Metadáta katalógu ležia
 vedľa nej a poznať ich je po čom: začínajú podčiarkovníkom (`_comment`,
 `_updated_at`, `_updated_ts`). Je to tá istá konvencia ako vo
-`areas` v [`workers/data/map-settings.json`](data/map-settings.json), kde sú kľúče pohorí tiež v koreni
+`areas` v [`config/map-settings.json`](../config/map-settings.json), kde sú kľúče pohorí tiež v koreni
 a `_comment` medzi nimi – kto katalóg číta, preskočí kľúče na `_`.
 
 **Zvyšok štruktúry sedí s cestou na Drive** (krajina → kraj `regions` → výsek
@@ -2861,7 +2861,7 @@ Celý balík `basic` na z6 vyšiel na **3,3 MB** vrátane štýlov a písma.
 
 **Podoba nie je druhá schéma.** `world.yml` ostáva jediný popis toho, čo sa
 vyrába; [`variant.py`](world/variant.py) z neho vyberie vrstvy podoby (číselník
-[`workers/data/world-variants.json`](data/world-variants.json)) a zloží schému,
+[`config/world-variants.json`](../config/world-variants.json)) a zloží schému,
 ktorú Planetiler dostane. Zo `sources:` tej orezanej schémy zároveň vypadne,
 ktoré podklady sa vôbec sťahujú – basic tak nesťahuje 60 MB vodných polygónov
 ani nepotrebuje GDAL. Štýl si z toho istého číselníka berie, ktoré vrstvy
@@ -2967,7 +2967,7 @@ celý formulár a označí, čo bolo iné než predvolené:
 | `test` | `true` | default |
 
 Potom **nastavenia tohto behu** zo
-[workers/data/map-settings.json](data/map-settings.json) – každý kľúč, jeho
+[config/map-settings.json](../config/map-settings.json) – každý kľúč, jeho
 hodnota a odkiaľ prišla; čo nie je z `defaults`, je tučné:
 
 | setting | value | from |
@@ -3258,7 +3258,7 @@ Preto sa z toho istého PBF ťahajú druhýkrát, vlastnou schémou a do vlastn�
 `.pmtiles` – rovnaký vzor ako značené trasy a skaly. Bodové prvky idú do
 VLASTNÉHO súboru (`workers/features/points.yml`), presne kvôli balíku na
 stiahnutie, ktorý appka ponúka zvlášť od línií a plôch (balík `body`,
-`workers/data/packages.json`) – rovnaký predfilter, len druhý
+`config/packages.json`) – rovnaký predfilter, len druhý
 beh Planetileru:
 
 ```
@@ -3381,7 +3381,7 @@ v každom štýle inak.
 
 `{kraj}-rail-routing.pmtiles` je koľajová sieť na navigáciu vlakom: ten istý
 formát ako cestná sieť (`docs/routing-tiles.md`), ale vlastný slovník
-`workers/data/routing.json` (`rail_tags`), teda iné `id` – s cestnou sa nespája.
+`config/routing.json` (`rail_tags`), teda iné `id` – s cestnou sa nespája.
 Stavia ju `workers/routing/tiles.py --dictionary=…`.
 
 `{kraj}-signs.json/.png` (+`@2x`) sú značky krajiny – návestidlá a tabule pri
@@ -3969,7 +3969,7 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
    | `publish_pages` | **switch** | nasadiť mapu aj na GitHub Pages (odškrtnuté = len Drive) |
 
    **Všetko ostatné – s čím sa mapa robí – je v
-   [workers/data/map-settings.json](data/map-settings.json)**: výškové modely
+   [config/map-settings.json](../config/map-settings.json)**: výškové modely
    (`contour_source`, `rock_source`, `shading_source`), sklon skál
    (`rock_slope`), interval a zoomy vrstevníc, rozpočet, vypínače vrstiev,
    letecké snímky pohorí. Hodnota sa hľadá od najpresnejšieho miesta:
@@ -4001,12 +4001,12 @@ pre celé Slovensko nechaj pipeline zvoliť najvyšší zoom, ktorý sa zmestí.
 
    `dmr5` má dve podoby a rozhoduje rozsah, nie ďalší výber: s vyplneným
    `area` plné 1 m, bez neho dlaždice na 5 m. Že sa v nastaveniach nepoužije
-   zdroj, ktorý `sources.dem` v [map-settings.json](data/map-settings.json) pre
+   zdroj, ktorý `sources.dem` v [map-settings.json](../config/map-settings.json) pre
    tú vrstvu nemá, a že sa do formulára nevráti pole s nastavením, stráži
    [workers/lint/settings.py](lint/settings.py).
 
    Zoznam pohorí v `area` sa berie z
-   `areas` v [workers/data/map-settings.json](data/map-settings.json) – keď tam pribudne pohorie, treba
+   `areas` v [config/map-settings.json](../config/map-settings.json) – keď tam pribudne pohorie, treba
    ho dopísať aj do výberu vo workflowe. Vlastný bbox je `area_bbox` v
    nastaveniach.
 
@@ -4061,7 +4061,7 @@ dispečer: zadáš krajinu, ona spustí beh pre každý jej kraj, jeden po druho
 a nechá ťa tak.
 
 **Zoznam krajov je z číselníka, nie z formulára.** Kraj krajiny je položka
-`regions` vo `workers/data/map-settings.json` s `admin_level: 4` a `country` rovným krajine
+`regions` vo `config/map-settings.json` s `admin_level: 4` a `country` rovným krajine
 (`workers/state/queue.py`). Keby bol zoznam napísaný vo workflowe, pribudnutý
 kraj by v dávke ticho chýbal a dávka by skončila zelená s mapou o jeden kraj
 menšou. Poradie je poradie číselníka — od západu na východ, takže v zozname
@@ -4134,7 +4134,7 @@ prísne). Ako sa hotová vrstva hľadá, je v [`workers/plan/cache-keys.sh`](pla
 rozhodnutie „počítať, alebo nie" je v [`workers/plan/hotova-vrstva.sh`](plan/hotova-vrstva.sh).
 
 Nastavenia si každý kraj berie sám zo
-[workers/data/map-settings.json](data/map-settings.json) – tie isté, ako keby
+[config/map-settings.json](../config/map-settings.json) – tie isté, ako keby
 ho niekto pustil ručne. Dávka podáva ďalej len to málo, čo formulár má:
 `rebuild` a rýchly test. Že `relay.sh` naozaj podá každé pole, ktoré sa dávka
 spýtala, stráži `workers/lint/state.py`. Prvý krok každého článku vypíše
@@ -4208,7 +4208,7 @@ susedmi (napr. 34,5), ostatné si nechajú svoje. Inak by jedna nová vrstva pos
 (Riki Maps TestFlight AIlA). Zoznam sa prepisuje len vedome; potom sa raz nahrá všetko.
 
 **Zoznam je číselník, nie `case` v skripte**: ktoré balíky sú, drží
-`workers/data/packages.json` (kľúč `regeneruj` hovorí, čo sa dá postaviť bez
+`config/packages.json` (kľúč `regeneruj` hovorí, čo sa dá postaviť bez
 celého buildu mapy) a `workers/state/jobs.py` k tomu dopĺňa len to, čo je vec
 dávky – poradie vo formulári, vetu do súhrnu a ktorý workflow to nad krajom
 spraví. Tú istú otázku si inak kladie formulár dávky, formulár nad
@@ -4231,7 +4231,7 @@ polovica nová s polovicou starou už nemá ako vzniknúť.
 
 `navigacia` je **vlastná voľba**, lebo je vlastný balík — a je to zároveň
 jediné, čo sa mení pri zmene slovníka značiek
-(`workers/data/routing.json` (`tags`)), takže prestavovať kvôli tomu dopravnú sieť
+(`config/routing.json` (`tags`)), takže prestavovať kvôli tomu dopravnú sieť
 by bolo zbytočné.
 
 **Základná mapa a články z Wikipédie sa takto pregenerovať nedajú.** Mapa je

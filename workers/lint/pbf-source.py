@@ -17,7 +17,7 @@ import json
 import re
 import sys
 
-REGIONS = "workers/data/map-settings.json"
+REGIONS = "config/map-settings.json"
 PBF = "workers/plan/pbf.sh"
 
 bad = []

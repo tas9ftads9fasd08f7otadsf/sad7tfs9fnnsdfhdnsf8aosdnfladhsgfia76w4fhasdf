@@ -44,7 +44,7 @@ import {
 } from "../../poc/web/themes.js";
 import { allIconSources } from "../../poc/web/icon-sources.js";
 
-// lookups are in the sibling `workers/data/`
+// lookups are in `config/` at the root
 const SELF = dirname(fileURLToPath(import.meta.url));
 
 const args = Object.fromEntries(
@@ -116,7 +116,7 @@ if (!baseUrl) {
 }
 
 const regions = JSON.parse(
-  readFileSync(join(SELF, "..", "data", "map-settings.json"), "utf8")
+  readFileSync(join(SELF, "..", "..", "config", "map-settings.json"), "utf8")
 ).regions;
 // a custom osm.fr region isn't in `regions` of map-settings.json – then the name from `--name`
 const regionName = regions[region]?.name || args.name || region;

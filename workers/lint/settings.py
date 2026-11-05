@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`workers/data/map-settings.json` resolves for every map a form can build, and no form goes around it."""
+"""`config/map-settings.json` resolves for every map a form can build, and no form goes around it."""
 import importlib.util
 import json
 import os
@@ -7,7 +7,7 @@ import sys
 
 import yaml
 
-SETTINGS = "workers/data/map-settings.json"
+SETTINGS = "config/map-settings.json"
 OPTIONS_PY = "workers/plan/options.py"
 REGION_WF = ".github/workflows/build-map-region.yml"
 MOUNTAIN_WF = ".github/workflows/mountain.yml"

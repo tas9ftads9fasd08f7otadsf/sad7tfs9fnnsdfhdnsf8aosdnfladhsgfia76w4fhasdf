@@ -13,7 +13,6 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
 
 sys.path.insert(0, os.path.join(_WORKERS, "plan"))
 import area  # noqa: E402
@@ -44,7 +43,7 @@ def outline(bbox):
 
 
 def outline_file(key):
-    path = os.path.join(_DATA, "outlines", f"{key}.geojson")
+    path = os.path.join(_WORKERS, "data", "outlines", f"{key}.geojson")
     return path if os.path.isfile(path) else None
 
 
@@ -93,7 +92,7 @@ def plan(key, test_km2=0.0, test_at="", mountains=None, areas=None, regions=None
     regions = registry("regions") if regions is None else regions
     if key not in mountains:
         raise SystemExit(f"::error::Unknown mountain “{key}”. Known "
-                         f"(`maps.mountains.ranges` of workers/data/map-settings.json): {', '.join(sorted(mountains))}.")
+                         f"(`maps.mountains.ranges` of config/map-settings.json): {', '.join(sorted(mountains))}.")
     entry = mountains[key]
     country, cut = entry["country"], entry["area"]
     if country not in regions:

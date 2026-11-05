@@ -15,7 +15,7 @@ run-name: "${{ github.workflow }} · ${{ inputs.region }}"
 # Published by the same script as the build, with `--only=<package>`: the
 # `maps.json` entry is added to, other packages stay. Nothing goes to Pages;
 # `.aar` is redone too, hence the second job. A whole country: “Map · Regenerate state”.
-# Settings are the region's in `workers/data/map-settings.json`, as for the build.
+# Settings are the region's in `config/map-settings.json`, as for the build.
 
 on:
   workflow_dispatch:

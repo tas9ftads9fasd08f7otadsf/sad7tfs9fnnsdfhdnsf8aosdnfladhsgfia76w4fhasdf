@@ -49,7 +49,7 @@ def errors_in(path, text, style):
     # python: os.path.join(_HERE | _WORKERS | _DATA | _DRIVE, "…")
     # literal calls only – a variable argument can't be resolved statically
     base = {"_HERE": here, "_WORKERS": workers,
-            "_DATA": os.path.join(workers, "data"),
+            "_DATA": os.path.join(os.path.dirname(workers), "config"),
             "_DRIVE": os.path.join(workers, "drive")}
     for m in re.finditer(
             r'os\.path\.join\(\s*(_HERE|_WORKERS|_DATA|_DRIVE)\s*,\s*'

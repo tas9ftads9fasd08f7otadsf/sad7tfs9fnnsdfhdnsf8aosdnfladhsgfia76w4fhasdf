@@ -21,7 +21,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 ROUTING = os.path.join(_DATA, "routing.json")
 
@@ -103,7 +103,7 @@ class Profile:
         self.check_mode(mode)
         if key not in self.options:
             raise ValueError(f"option `{key}` isn't in the lookup. Add it to "
-                             f"`profiles` in `workers/data/routing.json`.")
+                             f"`profiles` in `config/routing.json`.")
         if key not in self.modes[mode]["options"]:
             raise ValueError(
                 f"option `{key}` isn't offered in mode `{mode}`. Offered: "

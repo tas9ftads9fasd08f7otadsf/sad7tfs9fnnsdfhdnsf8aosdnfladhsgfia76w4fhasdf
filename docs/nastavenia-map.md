@@ -1,7 +1,7 @@
 # Nastavenia máp v jednom JSON
 
 Tiket 381 (október 2026). Jeden súbor
-[`workers/data/map-settings.json`](../workers/data/map-settings.json) hovorí,
+[`config/map-settings.json`](../config/map-settings.json) hovorí,
 s čím sa mapa robí: pre krajinu a presnejšie pre jej kraj, a vedľa krajín pre
 pohoria ako celok a presnejšie pre každé pohorie – výškové modely, sklon skál,
 vrstevnice, zoomy, rozpočet, vypínače vrstiev, letecké snímky. Formuláre
@@ -107,8 +107,8 @@ má svoj výrez (`area`), krajiny (`countries`), OSM výrezy (`osm`) a obrys
 **Čo zmizlo:** `aerial.json`, `dem-sources.json`, `credits.json`,
 `regions.json`, `areas.json`, `mountains.json`, `dem: false`, hodnoty z
 `DEFAULTS` v `options.py` (ostali `DESCRIPTIONS` – čo kľúč znamená),
-`MOUNTAIN_OPTIONS` a natvrdo `dmr5` z `mountain.yml`. Iné súbory vo
-`workers/data/` (`packages.json`, smerovanie, značky, wiki jazyky) nie sú
+`MOUNTAIN_OPTIONS` a natvrdo `dmr5` z `mountain.yml`. Iné súbory v
+`config/` (`packages.json`, `routing.json`, značky, wiki jazyky) nie sú
 nastavenia mapy a ostali.
 
 **Kredit patrí zdroju, nie balíku.** Balík v `packages.json` povie len druh

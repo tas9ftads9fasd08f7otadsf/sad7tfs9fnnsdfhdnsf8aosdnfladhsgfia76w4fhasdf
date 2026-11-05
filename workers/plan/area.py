@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Resolve the input `area` to bbox, key and name – in one place, always within the region.
 
-The input is a range from `areas` of `workers/data/map-settings.json`, a bbox `W,S,E,N`, or empty
+The input is a range from `areas` of `config/map-settings.json`, a bbox `W,S,E,N`, or empty
 (the whole region). `--test-km2` cuts a small square around the centre; its key
 gets `_test4`, so a test never lands in a real run's cache or asset.
 
@@ -96,7 +96,7 @@ def main():
         if raw not in areas or raw.startswith("_"):
             known = ", ".join(k for k in areas if not k.startswith("_"))
             print(f"::error::Unknown cut-out '{raw}'. Known cut-outs "
-                  f"(`areas` of workers/data/map-settings.json): {known}. Or give a bbox W,S,E,N.",
+                  f"(`areas` of config/map-settings.json): {known}. Or give a bbox W,S,E,N.",
                   file=sys.stderr)
             return 1
         key = re.sub(r"[^a-zA-Z0-9]", "_", raw)

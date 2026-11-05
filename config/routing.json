@@ -971,7 +971,7 @@
       "vignettes": {
         "name": "Motorway vignette per country",
         "type": "vignettes",
-        "data": "workers/data/routing.json, `vignettes`",
+        "data": "config/routing.json, `vignettes`",
         "valhalla": {
           "unsupported": [
             "Valhalla's costing has no notion of country (only `country_crossing_penalty`),",

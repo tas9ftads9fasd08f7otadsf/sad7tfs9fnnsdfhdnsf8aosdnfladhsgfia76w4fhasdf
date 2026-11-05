@@ -68,7 +68,7 @@ class Raster(unittest.TestCase):
             raster.clamp_to_raster((5000, 5000, 6000, 6000), self.INFO, 4, log.append)
 
     def test_resolve_area(self):
-        areas = os.path.join(WORKERS, "data", "map-settings.json")
+        areas = os.path.join(os.path.dirname(WORKERS), "config", "map-settings.json")
         self.assertEqual(raster.resolve_area("cele_slovensko", areas), ("whole country", None))
         self.assertEqual(raster.resolve_area("20,49,20.5,49.5", areas)[1], (20, 49, 20.5, 49.5))
         with open(areas) as f:

@@ -240,7 +240,7 @@ def main():
             print(f"::warning::{url} gave no tile over {args.bbox} – no {args.season} photos.")
     else:
         print(f"::notice::No {args.season} aerial photos: the range's `aerial_{args.season}` "
-              f"in workers/data/map-settings.json is empty.")
+              f"in config/map-settings.json is empty.")
     if args.github_output:
         with open(args.github_output, "a") as f:
             f.write("".join(f"{k}={v}\n" for k, v in out.items()))

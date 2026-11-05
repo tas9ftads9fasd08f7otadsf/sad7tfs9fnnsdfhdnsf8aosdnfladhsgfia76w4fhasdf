@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """What can be regenerated across a country – and which workflow does it over a region.
 
-Packages come from `workers/data/packages.json`; this adds form order, a summary
+Packages come from `config/packages.json`; this adds form order, a summary
 line and the workflow. `workers/lint/regenerate.py` guards the form's `choice`.
 
     python3 workers/state/jobs.py --list | --workflow=points | --name=points

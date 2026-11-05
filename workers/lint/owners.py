@@ -7,7 +7,7 @@ from collections import defaultdict
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _ROOT = os.path.dirname(os.path.dirname(_HERE))
-CATALOG = os.path.join(_ROOT, "workers", "data", "packages.json")
+CATALOG = os.path.join(_ROOT, "config", "packages.json")
 
 
 def atoms(tag):

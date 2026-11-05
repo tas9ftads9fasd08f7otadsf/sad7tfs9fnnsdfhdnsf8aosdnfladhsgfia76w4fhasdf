@@ -20,9 +20,9 @@ from types import SimpleNamespace
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 ROUTING = os.path.join(_DATA, "routing.json")
-REL_TAGS = "workers/data/routing.json (`tags`)"
+REL_TAGS = "config/routing.json (`tags`)"
 
 
 def load(name, filename, folder):

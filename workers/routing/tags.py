@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Routing tag dictionary – the one way into the `tags` of `workers/data/routing.json`."""
+"""Routing tag dictionary – the one way into the `tags` of `config/routing.json`."""
 import hashlib
 import json
 import os
@@ -9,7 +9,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
 import context                                                    # noqa: E402
 
-ROUTING = os.path.join(os.path.dirname(_HERE), "data", "routing.json")
+ROUTING = os.path.join(os.path.dirname(os.path.dirname(_HERE)), "config", "routing.json")
 # a dictionary by name, a section of `routing.json`; a path reads a file of its own (fixtures)
 SECTIONS = {"road": "tags", "rail": "rail_tags"}
 LOOKUP = "road"
@@ -56,7 +56,7 @@ class Dictionary:
                 kind, values = FREE, []
             else:
                 raise SystemExit(
-                    f"::error file=workers/data/routing.json::`tags` key "
+                    f"::error file=config/routing.json::`tags` key "
                     f"`{key}` has no kind (`values`, `number`, `free`, "
                     f"`access` or `from_network`). Without one it can't be encoded "
                     f"or read – the phone would read another number there.")

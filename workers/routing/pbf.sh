@@ -9,16 +9,16 @@ set -euo pipefail
 mkdir -p data steps-out
 T=$(date +%s)
 
-: "${AREA:?give AREA – a key of `areas` in workers/data/routing.json}"
+: "${AREA:?give AREA – a key of `areas` in config/routing.json}"
 BASE="${OSMFR_BASE:-https://download.openstreetmap.fr/extracts}"
 
 mapfile -t PBFS < <(python3 - "$AREA" <<'PY'
 import json, os, sys
-here = os.path.join("workers", "data", "routing.json")
+here = os.path.join("config", "routing.json")
 areas = (json.load(open(here, encoding="utf-8"))["areas"].get("areas") or {})
 area = areas.get(sys.argv[1])
 if not area:
-    sys.exit(f"::error::Area `{sys.argv[1]}` isn't in the `areas` of workers/data/"
+    sys.exit(f"::error::Area `{sys.argv[1]}` isn't in the `areas` of config/"
              f"routing.json. Known: {', '.join(sorted(areas))}.")
 for p in area["pbf"]:
     print(p)

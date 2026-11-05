@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # a folder is a job, a file a step; shared things live a level up
 _WORKERS = os.path.dirname(_HERE)          # workers/
-_DATA = os.path.join(_WORKERS, "data")     # registries (areas, regions, sources)
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")     # registries (areas, regions, sources)
 
 # the source's projection and heights, here because only `gdalwarp` in this module converts
 SRC_EPSG = 3046           # ETRS89 / TM zone N34, straight from the GeoTIFF tags

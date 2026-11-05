@@ -16,7 +16,7 @@ import tempfile
 import zipfile
 
 PUBLISH = "workers/deploy/publish-map.py"
-REGISTRY = "workers/data/packages.json"
+REGISTRY = "config/packages.json"
 FILES = "workers/deploy/files.py"
 SITE = "workers/deploy/site.sh"
 WORLD_STYLE = "workers/world/style.mjs"

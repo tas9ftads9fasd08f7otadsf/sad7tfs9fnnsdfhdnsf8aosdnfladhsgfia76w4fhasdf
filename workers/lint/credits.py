@@ -8,7 +8,7 @@ sys.path.insert(0, "workers/lib")
 import map_settings  # noqa: E402
 
 CREDITS = f"`credits` of {map_settings.NAME}"
-PACKAGES = "workers/data/packages.json"
+PACKAGES = "config/packages.json"
 KEYS = {"holder", "work", "license", "license_url", "source_url", "changes",
         "copyright"}
 

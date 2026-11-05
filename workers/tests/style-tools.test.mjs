@@ -28,6 +28,7 @@ function shadowRepo(script, keep = []) {
     if (f !== job) symlinkSync(join(ROOT, "workers", f), join(dir, "workers", f));
   }
   copyFileSync(join(ROOT, "workers", script), join(dir, "workers", script));
+  symlinkSync(join(ROOT, "config"), join(dir, "config"));
   return dir;
 }
 

@@ -114,7 +114,7 @@ tá istá vec bola povedaná dvakrát a raz by sa rozišla.
 
 ## Slovník značiek
 
-`tags` v [`workers/data/routing.json`](../workers/data/routing.json) hovorí,
+`tags` v [`config/routing.json`](../config/routing.json) hovorí,
 podľa čoho je way cesta (`siet`) a čo sa o nej vezie (`kluce`). Čo tam nie je,
 sa do telefónu nedostane – je to zároveň páka na veľkosť archívu.
 
@@ -155,7 +155,7 @@ alebo je staršie než 30 dní (`order_max_age_days`), **dopočíta ho sám a ul
 takže prvý kraj štafety ho vyrobí a ostatné ho vezmú. Ručne ho skôr prepočíta
 **„Navigácia · poradie uzlov"** ([`routing-order.yml`](../.github/workflows/routing-order.yml))
 tým istým skriptom. Ktoré územie to je, hovorí `routing_area` pri krajine
-vo `regions` vo `workers/data/map-settings.json` – všetky kraje krajiny musia stáť na tom istom.
+vo `regions` vo `config/map-settings.json` – všetky kraje krajiny musia stáť na tom istom.
 Že kľúč znie na všetkých stranách rovnako, stráži
 [`workers/lint/navigation.py`](../workers/lint/navigation.py): keby sa rozišiel,
 build kraja by nenašiel nič, archívy by šli bez poradia a nespadlo by pri tom
@@ -198,13 +198,13 @@ Kraj: job `navigacia` v „Mapa · Build map region" volá
 `data/region.osm.pbf`, z akého je mapa. Archív ide do `_site/tiles/` ako každá
 iná vrstva, do manifestu pod `routing` a odtiaľ do **základnej mapy** (časť
 `navigacia`, `casti_baliku` vo `workers/deploy/subory.py`) **aj do balíka
-`cesty`** (`workers/data/packages.json`): kto má mapu, dá sa v nej doviezť, a
+`cesty`** (`config/packages.json`): kto má mapu, dá sa v nej doviezť, a
 kto si berie len siete, dostane aj tú, po ktorej sa počíta trasa. Vlastný
 balík `navigacia` zanikol (`zrusene`). Predfilter PBF si berie zoznam tried zo
 slovníka (`tags.py --filter`), takže druhý zoznam neexistuje, a hotový archív
 beh overí tou istou kontrolou, aká beží v lintoch.
 
-Krajina hrany (`krajina`) sa berie z `iso` v `regions` vo `workers/data/map-settings.json` cez
+Krajina hrany (`krajina`) sa berie z `iso` v `regions` vo `config/map-settings.json` cez
 `country` kraja – bez nej nemá diaľničná známka na čom stáť.
 
 Graf Valhally (`workers/routing/graph.sh`,

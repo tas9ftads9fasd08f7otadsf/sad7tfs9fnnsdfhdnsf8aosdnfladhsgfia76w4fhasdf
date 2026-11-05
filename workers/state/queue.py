@@ -9,8 +9,8 @@ import json
 import os
 import sys
 
-_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "data")
+_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                     "config")
 SETTINGS = os.path.join(_DATA, "map-settings.json")
 # the same number decides whether a package gets a region folder on Drive
 REGION_LEVEL = 4

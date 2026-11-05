@@ -150,7 +150,7 @@ export function write(country, base) {
 }
 
 const readData = (name) => JSON.parse(readFileSync(
-  join(dirname(fileURLToPath(import.meta.url)), "..", "data", name), "utf8"));
+  join(dirname(fileURLToPath(import.meta.url)), "..", "..", "config", name), "utf8"));
 
 /** The region's lower-case ISO country code; a region takes its country's, an area by position. */
 export function regionCountry(key, regions = readData("map-settings.json").regions, areas = readData("map-settings.json").areas) {

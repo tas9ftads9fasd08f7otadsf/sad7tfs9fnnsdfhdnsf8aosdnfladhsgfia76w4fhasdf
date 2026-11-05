@@ -1,10 +1,10 @@
-"""The one reader of `workers/data/map-settings.json`: settings, places, sources and their authors."""
+"""The one reader of `config/map-settings.json`: settings, places, sources and their authors."""
 import json
 import os
 
-NAME = "workers/data/map-settings.json"
-PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data",
-                    "map-settings.json")
+NAME = "config/map-settings.json"
+PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                    "config", "map-settings.json")
 
 
 def load(path=None):

@@ -13,7 +13,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 
 def load(name, filename, folder):
@@ -93,8 +93,8 @@ def main():
     lint = Lint()
     prof = load("routing_profile", "profile.py", "routing")
     p = prof.Profile()
-    rel_prof = "workers/data/routing.json (`profiles`)"
-    rel_vig = "workers/data/routing.json (`vignettes`)"
+    rel_prof = "config/routing.json (`profiles`)"
+    rel_vig = "config/routing.json (`vignettes`)"
 
     engines = sorted(p.engines)
 

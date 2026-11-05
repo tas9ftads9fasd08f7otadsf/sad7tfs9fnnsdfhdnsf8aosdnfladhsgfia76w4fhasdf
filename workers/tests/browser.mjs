@@ -40,7 +40,7 @@ const pkg = (name) => join(deps, "node_modules", name);
 /** `work/_site` as a deploy: the viewer, sprites and glyphs from the assets job, the packages, a manifest. */
 function site() {
   const out = join(work, "_site");
-  for (const link of ["workers", "poc"]) {
+  for (const link of ["workers", "poc", "config"]) {
     if (!existsSync(join(work, link))) symlinkSync(join(ROOT, link), join(work, link));
   }
   const env = { ...process.env, GITHUB_OUTPUT: join(work, "assets.out"),

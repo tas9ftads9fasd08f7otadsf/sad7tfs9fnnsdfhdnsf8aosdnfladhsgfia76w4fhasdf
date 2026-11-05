@@ -26,7 +26,7 @@ import time
 _HERE = os.path.dirname(os.path.abspath(__file__))
 # a folder is a job, a file a step; shared things live a level up
 _WORKERS = os.path.dirname(_HERE)          # workers/
-_DATA = os.path.join(_WORKERS, "data")     # registries (areas, regions, sources)
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")     # registries (areas, regions, sources)
 
 # the resampling – one answer for the whole pipeline, see `lib/cell.py`
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))

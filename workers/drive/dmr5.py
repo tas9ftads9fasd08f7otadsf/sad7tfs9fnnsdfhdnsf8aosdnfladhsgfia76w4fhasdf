@@ -24,7 +24,7 @@ import time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 # where DMR 5.0 lies – a folder, what really moves and is shared; the token is the secret
 FOLDER_ID = "1H62op_LMUYDqKeFf-_sXS-46PLEmxDyd"
@@ -416,7 +416,7 @@ def main():
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--area", default="whole_country",
-                    help="a key of `areas` in workers/data/map-settings.json, `whole_country`, or a bbox W,S,E,N")
+                    help="a key of `areas` in config/map-settings.json, `whole_country`, or a bbox W,S,E,N")
     ap.add_argument("--grid-m", type=float, default=1.0)
     ap.add_argument("--out", default="out")
     ap.add_argument("--work", default="drive-work")

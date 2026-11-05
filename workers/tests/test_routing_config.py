@@ -9,7 +9,7 @@ from load import WORKERS, worker
 class RoutingConfig(unittest.TestCase):
     # 465 one file, a section for each former one
     def test_every_section_is_there(self):
-        with open(os.path.join(WORKERS, "data", "routing.json"), encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(WORKERS), "config", "routing.json"), encoding="utf-8") as f:
             routing = json.load(f)
         self.assertEqual({k for k in routing if not k.startswith("_")},
                          {"tags", "rail_tags", "profiles", "areas", "vignettes"})
@@ -24,7 +24,7 @@ class RoutingConfig(unittest.TestCase):
     # 465 a fixture's dictionary still reads from a file of its own
     def test_a_dictionary_file_still_reads(self):
         tags = worker("routing/tags.py", name="tags")
-        with open(os.path.join(WORKERS, "data", "routing.json"), encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(WORKERS), "config", "routing.json"), encoding="utf-8") as f:
             rail = json.load(f)["rail_tags"]
         path = os.path.join(tempfile.mkdtemp(), "rail.json")
         with open(path, "w", encoding="utf-8") as f:

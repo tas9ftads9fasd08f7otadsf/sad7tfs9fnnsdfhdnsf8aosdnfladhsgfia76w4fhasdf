@@ -6,7 +6,7 @@
 #   area          always `whole_region` – one range for eight regions makes no sense
 #   publish_pages always off – Pages holds one map, eight runs would overwrite it
 #
-# Every setting is each region's own in `workers/data/map-settings.json`; the
+# Every setting is each region's own in `config/map-settings.json`; the
 # form's few fields are passed on whole every time, `workers/lint/state.py` guards it.
 #
 # From the environment (see `.github/workflows/build-map-state.yml`):

@@ -15,7 +15,7 @@ from collections import Counter, defaultdict
 from itertools import combinations
 
 _WORKERS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REGISTRY = os.path.join(_WORKERS, "data", "packages.json")
+REGISTRY = os.path.join(os.path.dirname(_WORKERS), "config", "packages.json")
 OSM_TYPES = {1: "node", 2: "way", 3: "relation"}
 # archives no style draws
 SKIPPED_SUFFIXES = ("-routing.pmtiles", "-terrain.pmtiles", "-contours.pmtiles", "-rocks.pmtiles",

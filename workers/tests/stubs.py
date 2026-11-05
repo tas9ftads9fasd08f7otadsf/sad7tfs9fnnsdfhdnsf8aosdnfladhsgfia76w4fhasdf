@@ -83,6 +83,10 @@ def shadow_workers(root, replace):
     workers = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     shadow = os.path.join(root, "workers")
     os.makedirs(shadow, exist_ok=True)
+    # scripts find the configs beside `workers/`, as in the repository
+    config = os.path.join(root, "config")
+    if not os.path.lexists(config):
+        os.symlink(os.path.join(os.path.dirname(workers), "config"), config)
     for job in os.listdir(workers):
         mine = {r.split("/", 1)[1]: t for r, t in replace.items() if r.startswith(job + "/")}
         if not mine:

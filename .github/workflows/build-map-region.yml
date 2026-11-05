@@ -5,7 +5,7 @@ run-name: "${{ github.workflow }} · ${{ inputs.region }}"
 # PBF export of the chosen region from osm.fr → Planetiler → PMTiles → GitHub Pages.
 #
 # The form asks only what to build; every setting is the region's in
-# `workers/data/map-settings.json`, printed by the first job. Planetiler caps
+# `config/map-settings.json`, printed by the first job. Planetiler caps
 # `maxzoom <= 16`; MapLibre overzooms past it, so the top zoom is made without
 # simplification. Another region: `custom_pbf_url` + `custom_name` there.
 
@@ -14,7 +14,7 @@ on:
     inputs:
       # the default is the region being worked on – the form resets on opening
       region:
-        description: "Region – its settings are in workers/data/map-settings.json"
+        description: "Region – its settings are in config/map-settings.json"
         required: true
         default: bratislavsky
         type: choice
@@ -478,7 +478,7 @@ jobs:
             # rocks from hillshading are foreign server tiles – hundreds of
             # thousands for a whole region, so only ranges
             if [ '${{ steps.opts.outputs.opt_rock_source }}' = 'shading' ]; then
-              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or give the region a height model as rock_source in workers/data/map-settings.json."
+              echo "::error::rock_source: shading downloads finished hillshading tiles, which makes sense only for a cut-out. Fill in the input “area” (e.g. vysoke_tatry), or give the region a height model as rock_source in config/map-settings.json."
               exit 1
             fi
           fi

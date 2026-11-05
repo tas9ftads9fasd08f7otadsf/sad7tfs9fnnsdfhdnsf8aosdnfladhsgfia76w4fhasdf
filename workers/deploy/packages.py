@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Package list access – the one answer to "what gets published" (`workers/data/packages.json`)."""
+"""Package list access – the one answer to "what gets published" (`config/packages.json`)."""
 import json
 import os
 import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_DATA = os.path.join(os.path.dirname(_HERE), "data")
+_DATA = os.path.join(os.path.dirname(os.path.dirname(_HERE)), "config")
 REGISTRY = os.path.join(_DATA, "packages.json")
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import map_settings  # noqa: E402

@@ -2,7 +2,7 @@
 """Every store the pipeline asks for is in the list of known stores.
 
 Three places say which stores exist: `drive/store.py` (`KNOWN`),
-`sources.dem` of `data/map-settings.json` and workflow `env:`. When they drift it fails only after
+`sources.dem` of `config/map-settings.json` and workflow `env:`. When they drift it fails only after
 the work – on upload.
 """
 import glob
