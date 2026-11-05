@@ -75,7 +75,10 @@ EXPECTED = [
 # its village point already says the name
 ABSENT = [("history", "embankment", {}),  # 469 embankments are Landscape's
           ("boundaries", "boundary_label", {"name": "Malá Obec"}),
-          ("boundaries", "boundary", {"name": "Osada"}), ("boundaries", "boundary", {"name": "Národný park"})]
+          ("boundaries", "boundary", {"name": "Osada"}), ("boundaries", "boundary", {"name": "Národný park"}),
+          # 468 one owner each: a region's peaks are Landscape's, springs Water's, monuments History's
+          ("points", "peak", {}), ("points", "feature_point", {"class": "spring"}),
+          ("points", "feature_point", {"class": "wayside_cross"})]
 OUTSIDE_NAMES = {"Vonku", "Cudzie jazero"}
 
 

@@ -3,7 +3,7 @@ import os
 import tempfile
 import unittest
 
-from load import worker
+from load import needs, worker
 
 
 def catalog():
@@ -68,6 +68,8 @@ class Owners(unittest.TestCase):
 
 class CutFromCatalog(unittest.TestCase):
     # 464 the cut reads its layers from the catalog, every package with a share gets its archive
+    # 470 the cut reads archives through pmtiles, which the stdlib job doesn't install
+    @needs("pmtiles")
     def test_the_cut_follows_the_catalog(self):
         cut = worker("tiles/cut.py")
         self.assertEqual(cut.owner("transportation", {"class": "path"}), "paths")
@@ -78,6 +80,20 @@ class CutFromCatalog(unittest.TestCase):
         self.assertEqual(set(cut.PACKAGES), {"landscape", "points", "roads", "paths", "railways", "water",
                                              "boundaries", "settlements"})
 
+
+    # 471 a class another package draws from its own archive leaves Landscape's share
+    @needs("mapbox_vector_tile")
+    def test_a_dropped_class_is_in_no_share(self):
+        import mapbox_vector_tile as mvt
+        cut = worker("tiles/cut.py")
+        raw = mvt.encode([{"name": "landuse", "features": [
+            {"geometry": "POINT(1 1)", "properties": {"class": c}}
+            for c in ("cemetery", "quarry", "residential", "retail")]}])
+        shares = cut.cut_tile(raw)
+        self.assertEqual(set(shares), {"landscape"})
+        kept = mvt.decode(shares["landscape"])["landuse"]["features"]
+        self.assertEqual([f["properties"]["class"] for f in kept], ["cemetery"])
+        self.assertIsNone(cut.owner("landuse", {"class": "quarry"}))
 
 if __name__ == "__main__":
     unittest.main()

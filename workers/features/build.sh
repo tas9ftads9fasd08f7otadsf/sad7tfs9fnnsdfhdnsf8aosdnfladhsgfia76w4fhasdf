@@ -4,7 +4,7 @@
 # Points share the `BUDGET_FEATURES_PCT` share of the page size.
 
 set -euo pipefail
-mkdir -p _site/tiles data
+mkdir -p _site/tiles data steps-out
 sudo apt-get update -qq
 sudo apt-get install -y -qq osmium-tool
 
@@ -59,9 +59,13 @@ MB=$(( $(stat -c%s "$OUT") / 1048576 ))
 
 # points: a second pass over the same PBF, its own file for its own package
 POUT="_site/tiles/${REGION_KEY}-points.pmtiles"
+# what a region's other packages draw (Landscape, Water, Army & history) only a range keeps here
+ONLY_RANGE=(--spring_minzoom=99 --heritage_minzoom=99 --wayside_minzoom=99 --marker_minzoom=99
+            --mining_minzoom=99 --peak_minzoom=99 --saddle_minzoom=99)
+if [ "${OPT_RANGE_POINTS:-false}" = true ]; then ONLY_RANGE=(); fi
 java -Xmx4g -jar planetiler.jar generate-custom \
   --schema=workers/features/points.yml \
-  "${CLIP[@]}" \
+  "${CLIP[@]}" "${ONLY_RANGE[@]}" \
   --output="$POUT" \
   --maxzoom="$FZ" --render_maxzoom="$FZ" \
   --simplify_tolerance_at_max_zoom=0 \

@@ -6,6 +6,31 @@ schema_description: >-
   and survey points – OSM point features the OpenMapTiles schema doesn't carry
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
+# a range carries these, having no base map, Water style point or Army & history; a region's
+# build sets each past its maxzoom, as its own owner draws them there
+args:
+  spring_minzoom:
+    description: zoom a range's springs start at
+    default: 12
+  heritage_minzoom:
+    description: zoom a range's archaeological sites, forts, manors and tombs start at
+    default: 12
+  wayside_minzoom:
+    description: zoom a range's wayside crosses, shrines and memorials start at
+    default: 14
+  marker_minzoom:
+    description: zoom a range's boundary stones, milestones and charcoal piles start at
+    default: 15
+  mining_minzoom:
+    description: zoom a range's mines and adits start at
+    default: 12
+  peak_minzoom:
+    description: zoom a range's peaks start at
+    default: 10
+  saddle_minzoom:
+    description: zoom a range's saddles start at
+    default: 12
+
 sources:
   osm:
     type: osm
@@ -21,7 +46,7 @@ layers:
       # water in the terrain: OpenMapTiles takes a spring only as an area, so node springs are missing
       - source: osm
         geometry: centroid
-        min_zoom: 12
+        min_zoom: ${ args.spring_minzoom }
         include_when:
           natural: spring
         attributes:
@@ -99,7 +124,7 @@ layers:
       # monuments OpenMapTiles leaves out: it takes only `monument`, `castle` and `ruins`
       - source: osm
         geometry: centroid
-        min_zoom: 12
+        min_zoom: ${ args.heritage_minzoom }
         include_when:
           historic: [archaeological_site, battlefield, fort, manor, tomb]
         attributes:
@@ -108,7 +133,7 @@ layers:
             type: match_value
       - source: osm
         geometry: centroid
-        min_zoom: 14
+        min_zoom: ${ args.wayside_minzoom }
         include_when:
           historic: [wayside_cross, wayside_shrine, memorial]
         attributes:
@@ -117,7 +142,7 @@ layers:
             type: match_value
       - source: osm
         geometry: centroid
-        min_zoom: 15
+        min_zoom: ${ args.marker_minzoom }
         include_when:
           historic: [boundary_stone, milestone, charcoal_pile]
         attributes:
@@ -128,7 +153,7 @@ layers:
       # mining heritage
       - source: osm
         geometry: centroid
-        min_zoom: 12
+        min_zoom: ${ args.mining_minzoom }
         include_when:
           historic: [mine, mine_shaft, mineshaft, adit]
           man_made: [adit, mineshaft]
@@ -195,12 +220,12 @@ layers:
           - key: osm_type
             value: '${ feature.osm_type }'
 
-  # a range's peaks and saddles: the base map's `mountain_peak` has them, a range has no base map
+  # a range's peaks and saddles: a region's base map has them in `mountain_peak`, a range has no base map
   - id: peak
     features:
       - source: osm
         geometry: centroid
-        min_zoom: 10
+        min_zoom: ${ args.peak_minzoom }
         include_when:
           natural: [peak, volcano]
         attributes:
@@ -215,7 +240,7 @@ layers:
             value: '${ feature.osm_type }'
       - source: osm
         geometry: centroid
-        min_zoom: 12
+        min_zoom: ${ args.saddle_minzoom }
         include_when:
           natural: saddle
         attributes:

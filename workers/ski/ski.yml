@@ -17,7 +17,7 @@ definitions:
       - area: ["yes"]
       - type: [multipolygon]
   - &downhill_tags
-    "piste:type": [downhill, snow_park]
+    "piste:type": [downhill, snow_park, connection]
   - &nordic_tags
     "piste:type": [nordic]
   - &skitour_tags
@@ -111,7 +111,7 @@ layers:
           __all__: [{ landuse: [winter_sports] }, { name: __any__ }]
         attributes: *area_attrs
 
-  # 2. downhill pistes and snow parks
+  # 2. downhill pistes, snow parks and the connections between them
   - id: downhill
     features:
       - source: osm
@@ -237,6 +237,19 @@ examples:
         tags:
           class: downhill
           difficulty: easy
+
+  - name: A connection between pistes is downhill
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: connection
+    output:
+      - layer: downhill
+        geometry: line
+        min_zoom: 11
+        tags:
+          class: connection
 
   - name: A cross-country trail keeps its grooming and direction
     input:
