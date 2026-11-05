@@ -463,7 +463,7 @@ jobs:
 
   # the same workflow the map build calls (`workers/rail/rail.yml`)
   railways:
-    name: Railways and cable cars
+    name: Railways
     needs: plan
     if: ${{ !cancelled() && needs.plan.result == 'success' && inputs.what == 'railways' }}
     uses: ./.github/workflows/rail.yml

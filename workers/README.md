@@ -33,8 +33,8 @@ Mapa · Build map region      deväť jobov, tie dlhé bežia súbežne:
                                trails   značené trasy z OSM relácií
                                transport cesty, kam vojde auto (aj poľné
                                         a trajekty), s obmedzeniami na ceste
-                                        ─► balík `roads`; chodníky, schody,
-                                        pešie zóny a lanovky ─► balík `paths`
+                                        ─► balík `roads`; chodníky, schody
+                                        a pešie zóny ─► balík `paths`
                                hranice  hranice území a ich názvy ─► balík
                                         `hranice`
                                vodstvo  rieky, jazerá, more ─► balík `vodstvo`
@@ -2245,7 +2245,7 @@ o veľkosť sťahovania:
 | balík | čo v ňom je | z ktorých `.pmtiles` |
 |---|---|---|
 | `roads` | cesty, kam vojde auto – od diaľnice po poľnú cestu, aj trajekty – **s obmedzeniami na ceste** (výška podjazdu, šírka, hmotnosť, rýchlosť, pruhy, stúpanie) a dopravnými značkami | `-transport` (+ sprite `-roadsigns` a `-regulations.json`, oboje aj v základnej mape) |
-| `paths` | kam auto nevojde: chodníky, cestičky, cyklotrasy, schody, pešie zóny, ferraty a lanovky – s povrchom, prístupom a náročnosťou (`sac_scale`) | `-paths` |
+| `paths` | kam auto nevojde: chodníky, cestičky, cyklotrasy, schody, pešie zóny a ferraty – s povrchom, prístupom a náročnosťou (`sac_scale`) | `-paths` |
 | `body` | pramene, jaskyne, rozhľadne, pamiatky, banské dedičstvo, geodetické body | `-points` |
 | `hranice` | štát, kraj, okres a obec ako plochy aj čiary, s menom a úrovňou, plus body sídel | `-boundaries` |
 | `vodstvo` | rieky, potoky, kanály, jazerá, priehrady, zálivy, pobrežie – každý prvok aj s menom | `-water` |
@@ -2255,9 +2255,9 @@ o veľkosť sťahovania:
 (balík `roads`, [`transport.yml`](transport/transport.yml)) sú cesty od diaľnice
 po poľnú a lesnú cestu a trajekty; `-paths.pmtiles` (balík `paths`,
 [`paths.yml`](transport/paths.yml)) chodníky, cestičky, cyklotrasy, schody,
-pešie zóny, ferraty a lanovky. Oba z jedného predfiltrovaného PBF v jednom
+pešie zóny a ferraty. Oba z jedného predfiltrovaného PBF v jednom
 jobe, so spoločným rozpočtom `BUDGET_TRANSPORT_PCT`; žiadna trieda nie je
-v oboch (stráži `workers/lint/transport.py`). Železnice nesie balík `railways`.
+v oboch (stráži `workers/lint/transport.py`). Železnice nesie balík `railways`, lanovky `ski`.
 Cestná sieť v mape je vrstva `transportation` schémy OpenMapTiles: stavaná na
 **kreslenie**, so zjednodušenou geometriou a v jednom archíve s vodstvom,
 krajinnou pokrývkou a popismi – takže „chcem len siete, po ktorých sa dá
@@ -3249,7 +3249,7 @@ koľkých cestách vedú a koľko z tých ciest nesie viac trás naraz.
 **Schéma sa pozerá len na tridsať kľúčov.** V celom
 `openmaptiles/planetiler-openmaptiles` sa slovo `embankment` nevyskytuje ani
 raz. To isté platí pre `barrier` ako líniu (múr, plot, živý plot), `power`
-(elektrické vedenie), `man_made=cutline`, `piste:type` (zjazdovky),
+(elektrické vedenie), `man_made=cutline`,
 `natural=cave_entrance` aj `man_made=tower` (rozhľadňa sa do dlaždíc dostane
 jedine vtedy, keď má navyše `tourism=viewpoint`). Nedá sa to zapnúť – tie
 prvky v základných dlaždiciach jednoducho **nie sú**.
@@ -3275,9 +3275,8 @@ data/region.osm.pbf
 
 | súbor | vrstva | čo v nej je | od zoomu |
 |---|---|---|--:|
-| `features.pmtiles` | `feature_line` | **násyp**, zárez, múr, hradby, plot, živý plot, elektrické vedenie, **plánovaná cesta**, **lanovka mimo prevádzky** (`aerialway_construction`, `aerialway_proposed`, `aerialway_disused`), priesek, nadzemné potrubie, stromoradie, priehradný múr, hať, výmoľ | 11–15 |
+| `features.pmtiles` | `feature_line` | **násyp**, zárez, múr, hradby, plot, živý plot, elektrické vedenie, **plánovaná cesta**, priesek, nadzemné potrubie, stromoradie, priehradný múr, hať, výmoľ | 11–15 |
 | `features.pmtiles` | `feature_area` | parkovisko, skládka, halda, hospodársky dvor, skleníky, opustený priemysel, kamenné pole | 11–14 |
-| `features.pmtiles` | `piste` | zjazdovka, bežkárska trať, skialp, sánkarská dráha – čiara aj plocha, s obťažnosťou | 11 |
 | `points.pmtiles` | `feature_point` | prameň, vodopád, jaskyňa, závrt, rozhľadňa, stožiar, vodojem, kríž pri ceste, pomník, archeologické nálezisko, štôlňa, útulňa, horský priechod, núdzový bod, geodetický bod | 11–15 |
 
 **Zoomy sú tu hlavné rozhodnutie, nie estetika.** Plotov je v OSM viac než
@@ -3303,11 +3302,7 @@ robia druhou čiarou: širokou, prerušovanou a odsunutou nabok (`line-offset`),
 z čoho pri hrane ostanú krátke hrubé kúsky. Kladný offset je vpravo v smere
 čiary a presne tam je podľa konvencie OSM dolná strana.
 
-**Zjazdovka je raz čiara a raz plocha.** Uzavretá cesta s `piste:type` vyjde
-ako plocha aj ako čiara, takže dostane výplň s obrysom; otvorená len čiaru
-(os zjazdovky). Farba je podľa `piste:difficulty` – modrá, červená, čierna,
-tie isté odtiene ako pri značkách trás, aby sa mapa nerozpadla na dve sady
-farieb.
+Zjazdovky a lanovky sú v balíku `ski` (Lyžovanie a zima).
 
 ### Čo sem NEPATRÍ, hoci to tak vyzerá
 
@@ -3336,13 +3331,13 @@ schémy)**, farby v rovnomennej skupine palety. Job sa **necachuje** a beží
 súbežne so všetkým ostatným; podiel na rozpočte stránky je
 `BUDGET_FEATURES_PCT` (4 %).
 
-## Železnice a lanovky (balík `zeleznice`)
+## Železnice (balík `zeleznice`)
 
 Všetky koľaje z OSM v `{kraj}-rail.pmtiles` – trate, vlečky, električky,
 metro, ozubnice aj zrušené, nepoužívané a plánované trate – a k nim stanice
 s menami a značky na trati (priecestia, návestidlá, výhybky, kilometrovníky).
-V tom istom archíve sú **lanovky a vleky** v každom stave: v prevádzke,
-rozostavané, plánované, nepoužívané aj zrušené. Schéma je
+Lanovky a vleky sem nepatria: tie v prevádzke, rozostavané a plánované sú
+v balíku `ski`, nepoužívané a zrušené v balíku `history`. Schéma je
 `workers/rail/rail.yml`, stavia ju job `zeleznice` (`rail.yml`) pri každom
 builde kraja aj krajiny. Kľúč balíka ostal `zeleznice`, aby staré mapy
 a manifesty platili.
@@ -3353,12 +3348,6 @@ a manifesty platili.
 | `railway_area` | nástupištia a stanice ako plochy |
 | `railway_point` | značky na trati; `position` je poloha kilometrovníka, `switch_type` druh výhybky, `signal_main`, `signal_distant`, `signal_combined`, `signal_shunting`, `signal_minor` druh návestidla |
 | `station` | stanice, zastávky a električkové zastávky s menom, `network`, `colour`, `wikidata`, `wikipedia` |
-| `aerialway` | lanovky a vleky; `class` je druh (`cable_car`, `gondola`, `chair_lift`, `drag_lift`, …), `state` je `active`, `construction`, `proposed`, `disused` alebo `abandoned`; `occupancy`, `capacity`, `duration`, `name`, `operator` |
-| `aerialway_station` | stanice lanoviek s menom |
-
-Druh rozostavanej, plánovanej či zrušenej lanovky je v OSM dvojako –
-`aerialway=proposed` + `proposed=gondola`, alebo `proposed:aerialway=gondola`;
-berú sa oba. Lanovka v prevádzke s plánovanou náhradou ostáva `active`.
 
 Farbu linky (`colour`) a čísla liniek (`route_ref`) nesie v OSM `type=route`
 relácia, nie koľaj. `workers/rail/lines.py` ich pred Planetilerom prepíše na
@@ -3407,7 +3396,7 @@ Všetko vojenské, historické, banské a opustené z OSM v
 | `army` | `military=*`, `landuse=military`, `building=bunker/military/barracks` – výcvikové priestory, kasárne, bunkre, zákopy |
 | `mining` | `man_made=mineshaft/adit/spoil_heap`, `industrial=mine`, `landuse=quarry`, `historic=mine/mine_shaft/mine_adit/mining` – šachty, štôlne, haldy, lomy |
 | `history` | `historic=*`, `heritage=*`, `ruins=yes`, `building=ruins` – hrady, zrúcaniny, pamätníky, archeologické náleziská, pamiatky |
-| `gone` | čo je opustené alebo nepoužívané a nepatrí do vrstvy vyššie: `abandoned:*`, `disused:*`, `abandoned=yes`, `disused=yes` a hodnoty `abandoned`/`disused` (`railway=abandoned`) |
+| `gone` | čo je opustené alebo nepoužívané a nepatrí do vrstvy vyššie: `abandoned:*`, `disused:*`, `abandoned=yes`, `disused=yes` a hodnoty `abandoned`/`disused`; aj vleky a lanovky mimo prevádzky či odstránené (`razed:aerialway`, `was:aerialway`, …). Železnice nie: tie aj zrušené kreslí balík `railways` |
 
 Objekt je len v jednej vrstve, v poradí z tabuľky: opustený bunker je v
 `army`, historická štôlňa v `mining`. Násypy a hrádze sú Krajiny
@@ -3463,10 +3452,15 @@ volá stavba mapy aj `mountain.yml`). Vrstva na druh, ktorý aplikácia zapína 
 | `skitour` | skialpinistické trasy | 11 |
 | `sled` | sánkarské dráhy | 12 |
 | `hike` | zimné chodníky (`piste:type=hike`, `fatbike`) | 12 |
-| `lift` | vleky a lanovky v prevádzke, stanice od z13 | 11 |
+| `lift` | každý vlek a lanovka v prevádzke, rozostavaná aj plánovaná; stanice od z12 | 10 |
 
 Atribúty: `class`, `name`, `piste_name`, `name:xx`, `difficulty`, `grooming`, `ref`,
-`oneway`, `occupancy`, `osm_id`. Štýl kreslí aplikácia.
+`oneway`, `occupancy`, `osm_id`. Lanovka má `class` druh (`cable_car`, `gondola`,
+`chair_lift`, `drag_lift`, …) a `state` `active`, `construction` alebo `proposed`;
+druh rozostavanej či plánovanej je v OSM dvojako – `aerialway=proposed` +
+`proposed=gondola`, alebo `proposed:aerialway=gondola` – berú sa oba. Nepoužívanú
+a zrušenú nesie balík `history`. Webový štýl kreslí balík s `--ski=true`, aplikácia
+vlastným štýlom.
 
 Ovládanie: `ski=false` balík vypne, `ski_maxzoom` (14) je strop dlaždíc, `BUDGET_SKI_PCT`
 podiel na rozpočte stránky. Výrez bez lyžovania balík nespraví.

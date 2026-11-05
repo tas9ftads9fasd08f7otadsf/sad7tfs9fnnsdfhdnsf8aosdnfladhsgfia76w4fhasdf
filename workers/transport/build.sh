@@ -21,7 +21,7 @@ printf '%s\t%s\t%s\t%s\n' "61" "Transport network prefilter" "$(( $(date +%s) - 
 
 # empty isn't an error for a small test; `contents.json` says the package is absent
 if [ "$AFTER" -lt 2000 ]; then
-  echo "::warning::This area has no road, path, ferry or aerialway – neither \`roads\` nor \`paths\` is made."
+  echo "::warning::This area has no road, path or ferry – neither \`roads\` nor \`paths\` is made."
   echo "enabled=false" >> "$GITHUB_OUTPUT"
   exit 0
 fi

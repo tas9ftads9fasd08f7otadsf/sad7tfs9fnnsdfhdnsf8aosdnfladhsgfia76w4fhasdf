@@ -101,8 +101,8 @@
       "app": "Landscape",
       "symbol": "leaf.fill",
       "part_of": "base",
-      "app_detail": "Land, parks, peaks, landscape lines, pistes and airports",
-      "description": "the base map's land cover and use, protected areas, peaks, ridges and cliffs, airports, and the landscape lines and areas OpenMapTiles lacks – embankments, power lines, fences, walls, pistes (.pmtiles)",
+      "app_detail": "Land, parks, peaks, landscape lines and airports",
+      "description": "the base map's land cover and use, protected areas, peaks, ridges and cliffs, airports, and the landscape lines and areas OpenMapTiles lacks – embankments, power lines, fences, walls (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["omt_landscape", "features"],
       "suffixes": ["-omt-landscape.pmtiles", "-features.pmtiles"],
@@ -112,7 +112,7 @@
                "barrier", "man_made=embankment,dyke,cutline,pipeline,spoil_heap,tower,survey_point",
                "embankment", "cutting", "power=line,minor_line",
                "waterway=dam,weir,lock_gate,waterfall", "amenity=parking", "mountain_pass",
-               "highway=emergency_access_point,proposed", "piste:type"]
+               "highway=emergency_access_point,proposed"]
     },
     {
       "key": "roads",
@@ -138,8 +138,8 @@
       "app": "Paths",
       "symbol": "figure.walk",
       "part_of": "base",
-      "app_detail": "Footways, cycleways, steps and lifts",
-      "description": "the OSM ways cars don't fit – footways, paths, cycleways, bridleways, steps, pedestrian streets, via ferratas and aerialways – with surface, access and how hard a path is, the base map's paths and their signs – and what the region needs drawn at all: styles, sprites, waymarked trails, the manifest (.pmtiles)",
+      "app_detail": "Footways, cycleways, steps and via ferratas",
+      "description": "the OSM ways cars don't fit – footways, paths, cycleways, bridleways, steps, pedestrian streets and via ferratas – with surface, access and how hard a path is, the base map's paths and their signs – and what the region needs drawn at all: styles, sprites, waymarked trails, the manifest (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["paths", "omt_paths"],
       "suffixes": ["-paths.pmtiles", "-omt-paths.pmtiles"],
@@ -147,8 +147,7 @@
       "rest": true,
       "regenerate": "paths",
       "reads": ["workers/transport/filter.txt"],
-      "owns": ["highway=path,footway,cycleway,bridleway,steps,pedestrian,corridor,elevator,ladder,via_ferrata",
-               "aerialway"]
+      "owns": ["highway=path,footway,cycleway,bridleway,steps,pedestrian,corridor,elevator,ladder,via_ferrata"]
     },
     {
       "key": "trails",
@@ -217,11 +216,11 @@
     },
     {
       "key": "railways",
-      "app": "Railways & cable cars",
+      "app": "Railways",
       "symbol": "train.side.front.car",
       "part_of": "base",
-      "app_detail": "Railways, trams and cable cars, with stations",
-      "description": "every OSM railway and cable car including those under construction, planned and abandoned, named stations, line signs and the track network the phone routes trains on, and the base map's rails and lifts (.pmtiles)",
+      "app_detail": "Railways and trams, with stations",
+      "description": "every OSM railway including those under construction, planned and abandoned, named stations, line signs and the track network the phone routes trains on, and the base map's rails (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["rail", "rail_routing", "rail_signs", "omt_railways"],
       "suffixes": ["-rail.pmtiles", "-rail-routing.pmtiles", "-signs.json", "-signs.png",
@@ -231,16 +230,15 @@
       "regenerate": "railways",
       "legacy": ["zeleznice"],
       "reads": ["workers/rail/filter.txt"],
-      "owns": ["railway", "route=tram,subway,light_rail,monorail,train,railway,funicular",
-               "aerialway"]
+      "owns": ["railway", "route=tram,subway,light_rail,monorail,train,railway,funicular"]
     },
     {
       "key": "history",
       "app": "Army & history",
       "symbol": "shield.lefthalf.filled",
       "part_of": "base",
-      "app_detail": "Military, historic and abandoned places",
-      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, and everything abandoned or disused – as points, lines and areas (.pmtiles)",
+      "app_detail": "Military, historic and abandoned places, old lifts",
+      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, and everything abandoned or disused – lifts and cable cars too, railways not – as points, lines and areas (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["history"],
       "suffixes": ["-history.pmtiles"],
@@ -249,7 +247,8 @@
       "reads": ["workers/history/filter.txt"],
       "owns": ["military", "landuse=military,quarry", "building=bunker,military,barracks,ruins",
                "man_made=mineshaft,adit,spoil_heap", "industrial=mine",
-               "historic", "heritage", "ruins", "abandoned:*", "disused:*"]
+               "historic", "heritage", "ruins", "abandoned:*", "disused:*",
+               "razed:aerialway", "removed:aerialway", "demolished:aerialway", "was:aerialway"]
     },
     {
       "key": "names",
@@ -270,8 +269,8 @@
       "key": "ski",
       "app": "Ski & winter",
       "symbol": "figure.skiing.downhill",
-      "app_detail": "Ski areas, pistes, lifts and winter paths",
-      "description": "OSM ski areas, downhill pistes by difficulty, cross-country trails, ski tours, sledging runs, winter paths and lifts with their stations – a layer per kind (.pmtiles); a region carries it, and so does a range",
+      "app_detail": "Ski areas, pistes, lifts, cable cars and winter paths",
+      "description": "OSM ski areas, downhill pistes by difficulty, cross-country trails, ski tours, sledging runs, winter paths, and every lift and cable car in service, being built or planned, with their stations – a layer per kind (.pmtiles); a region carries it, and so does a range",
       "sources": ["osm"],
       "manifest": ["ski"],
       "suffixes": ["-ski.pmtiles"],
@@ -327,14 +326,12 @@
       "mountain_peak": "landscape",
       "aeroway": "landscape",
       "aerodrome_label": "landscape",
-      "poi": "points",
       "water": "water",
       "water_name": "water",
       "waterway": "water",
       "boundary": "boundaries",
       "building": "settlements",
       "place": "settlements",
-      "transportation_name": "roads",
       "housenumber": "roads"
     },
     "split": {
@@ -350,10 +347,22 @@
           "path": "paths",
           "pedestrian": "paths",
           "rail": "railways",
-          "transit": "railways",
-          "aerialway": "railways"
+          "transit": "railways"
         },
-        "else": "roads"
+        "else": "roads",
+        "drop": ["aerialway"]
+      },
+      "transportation_name": {
+        "tag": "class",
+        "to": {},
+        "else": "roads",
+        "drop": ["aerialway"]
+      },
+      "poi": {
+        "tag": "class",
+        "to": {},
+        "else": "points",
+        "drop": ["aerialway"]
       },
       "traffic_sign": {
         "tag": "way",
@@ -368,8 +377,6 @@
     {"tag": "place", "packages": ["boundaries", "names", "settlements"], "owner": "settlements", "why": "Settlements and Geographical names both, the app keeps one (rikimaps#2794); Boundaries drops it"},
     {"tag": "natural=peak,volcano", "packages": ["landscape", "names", "points"], "owner": "landscape", "why": "role: Landscape the mark, Geographical names the name; Points carries them for a range only, which has no base map"},
     {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points carries them for a range only, whose Water draws no points"},
-    {"tag": "piste:type", "packages": ["landscape", "ski"], "owner": "ski", "why": "Landscape drops it once the published styles draw Ski & winter"},
-    {"tag": "aerialway", "packages": ["paths", "railways", "ski"], "owner": "railways", "why": "ski lifts to Ski & winter, cable cars and gondolas to Railways; Paths drops them"},
     {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},

@@ -32,14 +32,3 @@ nwr/mountain_pass
 
 # mountain rescue points and proposed roads (OpenMapTiles has no `proposed` class)
 nwr/highway=emergency_access_point,proposed
-
-# aerialways out of service (OpenMapTiles has those in service)
-w/aerialway=construction,proposed,disused,abandoned
-w/construction:aerialway
-w/proposed:aerialway
-w/disused:aerialway
-w/abandoned:aerialway
-w/razed:aerialway
-
-# ski pistes, cross-country, ski touring
-nwr/piste:type

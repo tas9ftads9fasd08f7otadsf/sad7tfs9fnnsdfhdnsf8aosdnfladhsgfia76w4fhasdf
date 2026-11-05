@@ -72,7 +72,7 @@ DESCRIPTIONS = {
     "routing": ("build the routing network of this region – it rides "
                         "in the base map and in package `roads`"),
     "transport": ("make roads with road limits and ferries – package "
-                          "`roads` – and paths, steps and lifts – package `paths`"),
+                          "`roads` – and paths and steps – package `paths`"),
     # 14, not 15: the schema's highest `min_zoom` is 14
     "transport_maxzoom": "max zoom of road network tiles",
     "boundaries": ("make area boundaries and their names – package "

@@ -6,15 +6,3 @@ nwr/railway
 
 # lines carry the colour and number `lines.py` copies onto tracks
 r/route=tram,subway,light_rail,monorail,train,railway,funicular
-
-# aerialways and lifts, also under construction, proposed and gone
-nwr/aerialway
-w/construction:aerialway
-w/proposed:aerialway
-w/disused:aerialway
-w/abandoned:aerialway
-w/razed:aerialway
-w/was:aerialway
-w/removed:aerialway
-w/demolished:aerialway
-w/historic:aerialway

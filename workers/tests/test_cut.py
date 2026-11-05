@@ -55,7 +55,9 @@ class Cut(unittest.TestCase):
 
         self.assertEqual(classes("roads", "transportation"), ["primary", "track"])
         self.assertEqual(classes("paths", "transportation"), ["path", "pedestrian"])
-        self.assertEqual(classes("railways", "transportation"), ["aerialway", "rail"])
+        # 472 a lift is Ski & winter's, no share of the base map carries it
+        self.assertEqual(classes("railways", "transportation"), ["rail"])
+        self.assertNotIn("aerialway", [c for p in written for c in classes(p, "transportation")])
         self.assertEqual(classes("paths", "traffic_sign", "sign"), ["a"])
         self.assertEqual(classes("roads", "traffic_sign", "sign"), ["b"])
         self.assertEqual(classes("landscape", "landcover"), ["wood"])

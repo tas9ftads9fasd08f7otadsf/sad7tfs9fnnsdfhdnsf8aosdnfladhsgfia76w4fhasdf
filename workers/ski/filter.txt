@@ -7,5 +7,7 @@ nwr/landuse=winter_sports
 # pistes, cross-country trails, ski tours, sledging and winter paths
 nwr/piste:type
 
-# lifts and their stations
+# lifts and cable cars, in service, being built or planned, and their stations
 nwr/aerialway
+w/construction:aerialway
+w/proposed:aerialway

@@ -640,7 +640,7 @@ jobs:
           if-no-files-found: ignore
 
   # landscape features outside the OpenMapTiles schema (embankments, walls,
-  # fences, power lines, springs, lookouts, pistes) – a job of its own like trails
+  # fences, power lines, springs, lookouts) – a job of its own like trails
   features:
     name: Landscape features
     needs: plan
@@ -774,7 +774,7 @@ jobs:
 
   # railways with the track network for navigation – `workers/rail/rail.yml`
   railways:
-    name: Railways and cable cars
+    name: Railways
     needs: plan
     if: ${{ !cancelled() && needs.plan.outputs.opt_rail == 'true' }}
     uses: ./.github/workflows/rail.yml
@@ -1123,6 +1123,8 @@ jobs:
             --water-maxzoom='${{ needs.water.outputs.maxzoom || '14' }}' \
             --buildings='${{ needs.settlements.outputs.enabled || 'false' }}' \
             --buildings-maxzoom='${{ needs.settlements.outputs.maxzoom || '14' }}' \
+            --ski='${{ needs.ski.outputs.enabled || 'false' }}' \
+            --ski-maxzoom='${{ needs.ski.outputs.maxzoom || '14' }}' \
             --dem-source='${{ needs.dem.outputs.contours_dem_source || 'sonny' }}' \
             --dem-tiles-source='${{ needs.dem.outputs.terrain_dem_source || needs.dem.outputs.contours_dem_source || 'sonny' }}' \
             --dem-bounds='${{ needs.plan.outputs.test_bbox }}' \

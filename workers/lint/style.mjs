@@ -30,7 +30,7 @@ const MIXED = {
     "roads and paths are lines, but pedestrian areas, piers and bridge bodies polygons",
   aeroway: "runways and taxiways are lines, aprons polygons",
   park: "the outline is a polygon, with a point for the label (pointOnSurface)",
-  piste: "workers/features/features.yml passes a piste as an area AND an axis (line)",
+  downhill: "workers/ski/ski.yml passes a piste as an area AND an axis (line)",
   mountain_peak: "peaks are points, but `cliff`, `ridge` and `arete` lines"
 };
 
