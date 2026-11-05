@@ -774,7 +774,7 @@ jobs:
 
   # railways with the track network for navigation – `workers/rail/rail.yml`
   railways:
-    name: Railways
+    name: Railways and cable cars
     needs: plan
     if: ${{ !cancelled() && needs.plan.outputs.opt_rail == 'true' }}
     uses: ./.github/workflows/rail.yml

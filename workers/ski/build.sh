@@ -7,6 +7,8 @@ set -euo pipefail
 mkdir -p _site/tiles data steps-out
 sudo apt-get update -qq
 sudo apt-get install -y -qq osmium-tool
+python3 -c 'import osmium' 2>/dev/null \
+  || python3 -m pip install --quiet --break-system-packages 'osmium>=3.6,<5'
 
 T_F=$(date +%s)
 osmium tags-filter --overwrite -o data/ski.osm.pbf \
@@ -43,6 +45,9 @@ if [ "${TOPZ:-0}" -gt "$SZ_" ]; then
 fi
 
 mapfile -t CLIP < <(workers/lib/region-clip.sh "$REGION_BBOX")
+
+# a cable car is Ski & winter's in the mountains only
+python3 workers/lib/cable_cars.py --pbf=data/ski.osm.pbf --out=data/ski-marked.osm.pbf
 
 # names in the app's languages, as the base map has them
 workers/lib/name-languages.sh workers/ski/ski.yml data/ski.yml

@@ -51,9 +51,9 @@ Proposals, each a ticket of its own:
   drops `peak` and `saddle`.
 - **Springs**: Water bodies; `points.yml` drops `natural=spring`.
 - **Pistes**: Ski & winter; `features.yml` drops `piste` (done in #472).
-- **Lifts and stations**: Ski & winter for every lift and cable car in service, being built or
-  planned; Army & history for those out of service; Railways, Paths and the base map's cuts drop
-  them (done in #472).
+- **Lifts and stations**: Ski & winter for every ski lift, Railways for every cable car, Ski &
+  winter also for a cable car in the mountains (`workers/lib/cable_cars.py`); Army & history for
+  those out of service; Paths and the base map's cuts drop them (#472, #473).
 - **Place names**: `boundaries.yml` drops `place`.
 - **Memorials, adits, wayside crosses, embankments, quarries**: Army & history; `points.yml` and
   `features.yml` drop them.

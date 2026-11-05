@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rail: the filter passes what the schema wants, routing runs on what the map draws; no lifts."""
+"""Rail: the filter passes what the schema wants, routing runs on what the map draws; no ski lift."""
 import json
 import os
 import sys
@@ -15,11 +15,14 @@ ROUTING = os.path.join(os.path.dirname(_WORKERS), "config", "routing.json")
 DICTIONARY = "config/routing.json (`rail_tags`)"
 
 # keys `lines.py` adds to points – the prefilter needn't pass them
-DERIVED = {"rail_speed"}
+DERIVED = {"rail_speed", "riki:cabin", "riki:mountain"}
 
 # what the package promises in the app
 PROMISED = {"rail", "tram", "subway", "light_rail", "abandoned", "disused",
          "station", "halt", "level_crossing"}
+# every cable car is Railways', a ski lift Ski & winter's alone
+PROMISED_AERIAL = {"cable_car", "gondola", "goods", "station"}
+SKI_LIFTS = {"chair_lift", "drag_lift", "t-bar", "j-bar", "platter", "rope_tow", "magic_carpet"}
 
 
 def filter_keys(path):
@@ -36,12 +39,14 @@ def filter_keys(path):
 
 
 def conditions(when):
-    """Key → values pairs of `include_when`, also under `__all__`."""
+    """Key → values pairs of `include_when`, also under `__all__` and `__any__`."""
     if not when:
         return []
-    if "__all__" in when:
-        return [p for c in when["__all__"] for p in conditions(c)]
-    return [(k, v if isinstance(v, list) else [v]) for k, v in when.items()]
+    if isinstance(when, list):
+        return [p for c in when for p in conditions(c)]
+    nested = [p for k in ("__all__", "__any__") for p in conditions(when.get(k))]
+    return nested + [(k, v if isinstance(v, list) else [v]) for k, v in when.items()
+                     if not k.startswith("__")]
 
 
 def main():
@@ -68,9 +73,10 @@ def main():
         bad.append(f"{SCHEMA}: `railway={promise}` isn't in the schema, yet the "
                    f"package promises it.")
 
-    # lifts and cable cars are Ski & winter's, the ones out of service Army & history's
-    if aerial or "aerialway" in passes:
-        bad.append(f"{SCHEMA}: aerialways are back in railways – they are Ski & winter's.")
+    for promise in sorted(PROMISED_AERIAL - aerial):
+        bad.append(f"{SCHEMA}: `aerialway={promise}` isn't in the schema, yet the package promises it.")
+    for lift in sorted(aerial & SKI_LIFTS):
+        bad.append(f"{SCHEMA}: `aerialway={lift}` is a ski lift – Ski & winter's alone.")
 
     with open(ROUTING, encoding="utf-8") as f:
         network = set(json.load(f)["rail_tags"]["network"]["railway"])
@@ -97,7 +103,7 @@ def main():
         print(f"::error::{b}")
     if not bad:
         print(f"rail ✓ ({len(blocks)} blocks, {len(classes)} classes, "
-              f"network of {len(network)} classes)")
+              f"{len(aerial)} aerialway kinds, network of {len(network)} classes)")
     return 1 if bad else 0
 
 

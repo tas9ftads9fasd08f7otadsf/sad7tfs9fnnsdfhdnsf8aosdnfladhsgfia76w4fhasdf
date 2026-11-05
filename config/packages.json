@@ -216,11 +216,11 @@
     },
     {
       "key": "railways",
-      "app": "Railways",
+      "app": "Railways & cable cars",
       "symbol": "train.side.front.car",
       "part_of": "base",
-      "app_detail": "Railways and trams, with stations",
-      "description": "every OSM railway including those under construction, planned and abandoned, named stations, line signs and the track network the phone routes trains on, and the base map's rails (.pmtiles)",
+      "app_detail": "Railways, trams and cable cars, with stations",
+      "description": "every OSM railway including those under construction, planned and abandoned, every cable car in service, being built or planned, named stations, line signs and the track network the phone routes trains on, and the base map's rails (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["rail", "rail_routing", "rail_signs", "omt_railways"],
       "suffixes": ["-rail.pmtiles", "-rail-routing.pmtiles", "-signs.json", "-signs.png",
@@ -230,7 +230,8 @@
       "regenerate": "railways",
       "legacy": ["zeleznice"],
       "reads": ["workers/rail/filter.txt"],
-      "owns": ["railway", "route=tram,subway,light_rail,monorail,train,railway,funicular"]
+      "owns": ["railway", "route=tram,subway,light_rail,monorail,train,railway,funicular",
+               "aerialway=cable_car,gondola,mixed_lift,goods,station"]
     },
     {
       "key": "history",
@@ -270,7 +271,7 @@
       "app": "Ski & winter",
       "symbol": "figure.skiing.downhill",
       "app_detail": "Ski areas, pistes, lifts, cable cars and winter paths",
-      "description": "OSM ski areas, downhill pistes by difficulty, cross-country trails, ski tours, sledging runs, winter paths, and every lift and cable car in service, being built or planned, with their stations – a layer per kind (.pmtiles); a region carries it, and so does a range",
+      "description": "OSM ski areas, downhill pistes by difficulty, cross-country trails, ski tours, sledging runs, winter paths, every ski lift and the cable cars in the mountains, in service, being built or planned, with their stations – a layer per kind (.pmtiles); a region carries it, and so does a range",
       "sources": ["osm"],
       "manifest": ["ski"],
       "suffixes": ["-ski.pmtiles"],
@@ -377,6 +378,7 @@
     {"tag": "place", "packages": ["boundaries", "names", "settlements"], "owner": "settlements", "why": "Settlements and Geographical names both, the app keeps one (rikimaps#2794); Boundaries drops it"},
     {"tag": "natural=peak,volcano", "packages": ["landscape", "names", "points"], "owner": "landscape", "why": "role: Landscape the mark, Geographical names the name; Points carries them for a range only, which has no base map"},
     {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points carries them for a range only, whose Water draws no points"},
+    {"tag": "aerialway=cable_car,gondola,mixed_lift,station", "packages": ["railways", "ski"], "owner": "railways", "why": "Railways carries every cable car, Ski & winter those in the mountains (workers/lib/cable_cars.py)"},
     {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},

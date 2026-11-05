@@ -2257,7 +2257,7 @@ po poľnú a lesnú cestu a trajekty; `-paths.pmtiles` (balík `paths`,
 [`paths.yml`](transport/paths.yml)) chodníky, cestičky, cyklotrasy, schody,
 pešie zóny a ferraty. Oba z jedného predfiltrovaného PBF v jednom
 jobe, so spoločným rozpočtom `BUDGET_TRANSPORT_PCT`; žiadna trieda nie je
-v oboch (stráži `workers/lint/transport.py`). Železnice nesie balík `railways`, lanovky `ski`.
+v oboch (stráži `workers/lint/transport.py`). Železnice a lanovky nesie balík `railways`, vleky `ski`.
 Cestná sieť v mape je vrstva `transportation` schémy OpenMapTiles: stavaná na
 **kreslenie**, so zjednodušenou geometriou a v jednom archíve s vodstvom,
 krajinnou pokrývkou a popismi – takže „chcem len siete, po ktorých sa dá
@@ -3331,13 +3331,14 @@ schémy)**, farby v rovnomennej skupine palety. Job sa **necachuje** a beží
 súbežne so všetkým ostatným; podiel na rozpočte stránky je
 `BUDGET_FEATURES_PCT` (4 %).
 
-## Železnice (balík `zeleznice`)
+## Železnice a lanovky (balík `zeleznice`)
 
 Všetky koľaje z OSM v `{kraj}-rail.pmtiles` – trate, vlečky, električky,
 metro, ozubnice aj zrušené, nepoužívané a plánované trate – a k nim stanice
 s menami a značky na trati (priecestia, návestidlá, výhybky, kilometrovníky).
-Lanovky a vleky sem nepatria: tie v prevádzke, rozostavané a plánované sú
-v balíku `ski`, nepoužívané a zrušené v balíku `history`. Schéma je
+Sú tu aj **všetky lanovky** (`cable_car`, `gondola`, `mixed_lift`, nákladné `goods`)
+v prevádzke, rozostavané aj plánované, so stanicami; tie v horách má aj balík `ski`.
+Vleky a sedačky sú len v `ski`, nepoužívané a zrušené lanovky v `history`. Schéma je
 `workers/rail/rail.yml`, stavia ju job `zeleznice` (`rail.yml`) pri každom
 builde kraja aj krajiny. Kľúč balíka ostal `zeleznice`, aby staré mapy
 a manifesty platili.
@@ -3348,6 +3349,8 @@ a manifesty platili.
 | `railway_area` | nástupištia a stanice ako plochy |
 | `railway_point` | značky na trati; `position` je poloha kilometrovníka, `switch_type` druh výhybky, `signal_main`, `signal_distant`, `signal_combined`, `signal_shunting`, `signal_minor` druh návestidla |
 | `station` | stanice, zastávky a električkové zastávky s menom, `network`, `colour`, `wikidata`, `wikipedia` |
+| `aerialway` | lanovky; `class` je druh, `state` `active`, `construction` alebo `proposed`; `occupancy`, `capacity`, `duration`, `name`, `operator`, `_section` |
+| `aerialway_station` | stanice lanoviek s menom (`riki:cabin` z `workers/lib/cable_cars.py`) |
 
 Farbu linky (`colour`) a čísla liniek (`route_ref`) nesie v OSM `type=route`
 relácia, nie koľaj. `workers/rail/lines.py` ich pred Planetilerom prepíše na
@@ -3452,14 +3455,17 @@ volá stavba mapy aj `mountain.yml`). Vrstva na druh, ktorý aplikácia zapína 
 | `skitour` | skialpinistické trasy | 11 |
 | `sled` | sánkarské dráhy | 12 |
 | `hike` | zimné chodníky (`piste:type=hike`, `fatbike`) | 12 |
-| `lift` | každý vlek a lanovka v prevádzke, rozostavaná aj plánovaná; stanice od z12 | 10 |
+| `lift` | každý vlek a lanovky v horách, v prevádzke, rozostavané aj plánované; stanice od z12 | 10 |
 
 Atribúty: `class`, `name`, `piste_name`, `name:xx`, `difficulty`, `grooming`, `ref`,
 `oneway`, `occupancy`, `osm_id`. Lanovka má `class` druh (`cable_car`, `gondola`,
 `chair_lift`, `drag_lift`, …) a `state` `active`, `construction` alebo `proposed`;
 druh rozostavanej či plánovanej je v OSM dvojako – `aerialway=proposed` +
 `proposed=gondola`, alebo `proposed:aerialway=gondola` – berú sa oba. Nepoužívanú
-a zrušenú nesie balík `history`. Webový štýl kreslí balík s `--ski=true`, aplikácia
+a zrušenú nesie balík `history`. Lanovka je v horách, keď sa dotkne lyžiarskeho strediska,
+končí do 300 m od zjazdovky či vleku, alebo prechádza pohorím z `maps.mountains`; značí ju
+`workers/lib/cable_cars.py` (`riki:mountain`). Lanovky mimo hôr nesie len balík `railways`.
+Webový štýl kreslí balík s `--ski=true`, aplikácia
 vlastným štýlom.
 
 Ovládanie: `ski=false` balík vypne, `ski_maxzoom` (14) je strop dlaždíc, `BUDGET_SKI_PCT`

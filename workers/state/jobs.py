@@ -53,8 +53,8 @@ COST = {
                    "state, region, district and municipality boundaries with their names"),
     "water": ("Water bodies",
               "rivers, streams, lakes, reservoirs and the sea with their names"),
-    "railways": ("Railways",
-                 "every railway, planned and abandoned too, named "
+    "railways": ("Railways & cable cars",
+                 "every railway and cable car, planned and abandoned railways too, named "
                  "stations, line signs and the track network for navigation"),
     "history": ("Army & history",
                 "military sites, historic places, mines, embankments, and everything "

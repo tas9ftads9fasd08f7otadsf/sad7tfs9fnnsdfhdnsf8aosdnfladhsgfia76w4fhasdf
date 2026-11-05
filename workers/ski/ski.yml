@@ -10,7 +10,7 @@ attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap 
 sources:
   osm:
     type: osm
-    local_path: data/ski.osm.pbf
+    local_path: data/ski-marked.osm.pbf
 
 definitions:
   - &an_area
@@ -31,6 +31,15 @@ definitions:
              rope_tow, magic_carpet, zip_line, goods, canopy, explosive, wire_cable, "yes", unknown]
   - &lift_tags
     aerialway: *lifts
+  # a ski lift is always Ski & winter's, a cable car only in the mountains; Railways has every one
+  - &ski_lift_tags
+    aerialway: [chair_lift, drag_lift, t-bar, j-bar, platter, rope_tow, magic_carpet, zip_line,
+                canopy, explosive, wire_cable, "yes", unknown]
+  - &cable_car_tags
+    aerialway: [cable_car, gondola, mixed_lift]
+  # set by `workers/lib/cable_cars.py`
+  - &in_mountains
+    "riki:mountain": ["yes"]
   # a lift out of service keeps `aerialway=*` with `disused=yes`; it is Army & history's
   - &out_of_service
     __any__:
@@ -218,19 +227,27 @@ layers:
         exclude_when: *an_area
         attributes: *piste_attrs
 
-  # 7. every lift and cable car in service, being built or planned, and their stations
+  # 7. every ski lift, cable cars in the mountains; in service, being built or planned; stations
   - id: lift
     features:
       - source: osm
         geometry: line
         min_zoom: 10
-        include_when: *lift_tags
+        include_when: *ski_lift_tags
         exclude_when: *out_of_service
         attributes: *lift_attrs
       - source: osm
         geometry: line
         min_zoom: 10
-        include_when: *planned_tags
+        include_when:
+          __all__: [*cable_car_tags, *in_mountains]
+        exclude_when: *out_of_service
+        attributes: *lift_attrs
+      - source: osm
+        geometry: line
+        min_zoom: 10
+        include_when:
+          __all__: [*planned_tags, *in_mountains]
         exclude_when:
           __any__: [*lift_tags, *out_of_service]
         attributes: *lift_attrs
@@ -238,14 +255,14 @@ layers:
         geometry: point
         min_zoom: 12
         include_when:
-          aerialway: [station]
+          __all__: [{aerialway: [station]}, *in_mountains]
         exclude_when: *out_of_service
         attributes: *station_attrs
       - source: osm
         geometry: polygon_centroid
         min_zoom: 12
         include_when:
-          aerialway: [station]
+          __all__: [{aerialway: [station]}, *in_mountains]
         exclude_when: *out_of_service
         attributes: *station_attrs
 
@@ -399,6 +416,7 @@ examples:
       tags:
         aerialway: station
         name: Solisko
+        riki:mountain: "yes"
     output:
       - layer: lift
         geometry: point
@@ -433,6 +451,7 @@ examples:
         aerialway: cable_car
         name: Lomnický štít
         aerialway:capacity: "15"
+        riki:mountain: "yes"
     output:
       - layer: lift
         geometry: line
@@ -450,6 +469,7 @@ examples:
       tags:
         aerialway: construction
         construction:aerialway: gondola
+        riki:mountain: "yes"
     output:
       - layer: lift
         geometry: line
@@ -457,3 +477,29 @@ examples:
         tags:
           class: gondola
           state: construction
+
+  - name: A town's cable car is Railways' alone
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: gondola
+        name: Mestská kabínka
+    output: []
+
+  - name: A town cable car's station is Railways' alone
+    input:
+      source: osm
+      geometry: point
+      tags:
+        aerialway: station
+    output: []
+
+  - name: A goods ropeway is Railways', even in the mountains
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: goods
+        riki:mountain: "yes"
+    output: []

@@ -1,4 +1,5 @@
 /** Maps of one package each; who owns a layer follows the app's `MapOverlay.claimant`. */
+import { LIFT_WIDTH, LIFT_DASH, liftWidthStops } from "./lifts.js";
 
 export const BASE_PACKAGE = "base";
 
@@ -26,13 +27,13 @@ export const PACKAGES = [
   },
   {
     id: "railways",
-    label: "Železnice",
-    note: "Železnice a električky – aj plánované a zrušené – so stanicami."
+    label: "Železnice a lanovky",
+    note: "Železnice, električky a lanovky – aj plánované, zrušené trate tiež – so stanicami."
   },
   {
     id: "ski",
     label: "Lyžovanie a zima",
-    note: "Strediská, zjazdovky, bežky, vleky a lanovky v prevádzke.",
+    note: "Strediská, zjazdovky, bežky, vleky a lanovky v horách.",
     needs: "ski"
   },
   {
@@ -191,6 +192,9 @@ const INK = {
   railLabel: ["#4A443E", "#D9CFC5"],
   halo: ["#FFFFFF", "#000000"],
   markInk: ["#2B2723", "#F0EFEB"],
+  liftInk: ["#4A443E", "#C9C3BD"],
+  liftCabin: ["#FFFFFF", "#1A1A22"],
+  liftGoods: ["#8D5A3B", "#C99A74"],
   army: ["#6B7A3A", "#A3B46A"],
   mining: ["#7A5536", "#C0956C"],
   heritage: ["#9C3D2A", "#D9826C"],
@@ -206,6 +210,8 @@ const NARROW = ["any", ["==", ["get", "class"], "narrow_gauge"],
   ["all", [">", GAUGE_MM, 0], ["<", GAUGE_MM, 1435]]];
 const GAUGE_SCALE = ["case", BROAD, 1.35, NARROW, 0.65, 1];
 const SERVICE = ["has", "service"];
+const GOODS = ["==", ["get", "class"], "goods"];
+const liftWidth = (w) => liftWidthStops(w).flat();
 
 const zoomed = (stops, scale) => [
   "interpolate", ["linear"], ["zoom"],
@@ -225,6 +231,21 @@ function railLine(id, classes, paint, { extra, minzoom, dash, scale, layer = "ra
   };
   if (dash) made.paint["line-dasharray"] = dash;
   if (minzoom != null) made.minzoom = minzoom;
+  return made;
+}
+
+function liftLine(id, states, color, { extra, dash, width = [10, 0.8, 16, 1.8] } = {}) {
+  const byState = ["match", ["get", "state"], states, true, false];
+  const made = {
+    id: `pkg-rail-${id}`,
+    type: "line",
+    source: "rail",
+    "source-layer": "aerialway",
+    filter: extra ? ["all", byState, extra] : byState,
+    layout: { "line-cap": dash ? "butt" : "round", "line-join": "round" },
+    paint: { "line-color": color, "line-width": zoomed(width) }
+  };
+  if (dash) made.paint["line-dasharray"] = dash;
   return made;
 }
 
@@ -271,7 +292,15 @@ export function railLayers(dark, { bold = "Noto Sans Bold" } = {}) {
       { extra: ["!", SERVICE], scale: GAUGE_SCALE }),
     railLine("main", MAIN, { color: k("railGround"), width: [8, 0.4, 16, 2.6] },
       { extra: ["!", SERVICE], scale: GAUGE_SCALE, dash: [3, 3], minzoom: 8 }),
-    railLine("urban", URBAN, { color: urbanInk, width: [10, 0.8, 16, 2.6] })
+    railLine("urban", URBAN, { color: urbanInk, width: [10, 0.8, 16, 2.6] }),
+    // every cable car; ski lifts are Ski & winter's
+    liftLine("lift-cabin-casing", ["active"], k("liftInk"),
+      { extra: ["!", GOODS], width: liftWidth(LIFT_WIDTH.cabinCasing) }),
+    liftLine("lift-cabin", ["active"], k("liftCabin"),
+      { extra: ["!", GOODS], width: liftWidth(LIFT_WIDTH.cabin), dash: LIFT_DASH.cabin }),
+    liftLine("lift-goods", ["active"], k("liftGoods"), { extra: GOODS }),
+    liftLine("lift-construction", ["construction"], k("liftInk"), { dash: [3, 2] }),
+    liftLine("lift-proposed", ["proposed"], k("railProposed"), { dash: [1, 2] })
   ];
   const ink = k("markInk");
   const halo = k("halo");
@@ -300,6 +329,23 @@ export function railLayers(dark, { bold = "Noto Sans Bold" } = {}) {
         "text-size": ["interpolate", ["linear"], ["zoom"], 9, 10, 16, 13],
         "text-anchor": "top", "text-offset": [0, 0.8], "text-max-width": 8, "text-optional": true
       }
+    }),
+    {
+      id: "pkg-rail-lift-station",
+      type: "circle",
+      source: "rail",
+      "source-layer": "aerialway_station",
+      minzoom: 12,
+      paint: {
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 2, 16, 4.5],
+        "circle-color": halo,
+        "circle-stroke-color": ink,
+        "circle-stroke-width": 1.5
+      }
+    },
+    label("pkg-rail-lift-label", "rail", "aerialway", k("railLabel"), halo, bold, {
+      top: { minzoom: 13, filter: ["has", "name"] },
+      layout: { "symbol-placement": "line", "text-size": 10, "text-offset": [0, -0.8] }
     })
   ];
   return { ground, marks };
