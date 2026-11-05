@@ -81,5 +81,19 @@ class CutFromCatalog(unittest.TestCase):
                                              "boundaries", "settlements"})
 
 
+    # 471 a class another package draws from its own archive leaves Landscape's share
+    @needs("mapbox_vector_tile")
+    def test_a_dropped_class_is_in_no_share(self):
+        import mapbox_vector_tile as mvt
+        cut = worker("tiles/cut.py")
+        raw = mvt.encode([{"name": "landuse", "features": [
+            {"geometry": "POINT(1 1)", "properties": {"class": c}}
+            for c in ("cemetery", "quarry", "residential", "retail")]}])
+        shares = cut.cut_tile(raw)
+        self.assertEqual(set(shares), {"landscape"})
+        kept = mvt.decode(shares["landscape"])["landuse"]["features"]
+        self.assertEqual([f["properties"]["class"] for f in kept], ["cemetery"])
+        self.assertIsNone(cut.owner("landuse", {"class": "quarry"}))
+
 if __name__ == "__main__":
     unittest.main()

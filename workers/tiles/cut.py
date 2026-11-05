@@ -36,7 +36,10 @@ def owner(layer, tags):
     """The package of a feature of `layer` with `tags`."""
     rule = SPLIT.get(layer)
     if rule:
-        return rule["to"].get(tags.get(rule["tag"]), rule["else"])
+        value = tags.get(rule["tag"])
+        if value in rule.get("drop", ()):
+            return None
+        return rule["to"].get(value, rule["else"])
     return LAYERS.get(layer)
 
 
@@ -91,7 +94,8 @@ def split_layer(body):
     for field, _w, start, end, at in parts:
         if field == 2:
             package = owner(name, feature_tags(payload(body, at), keys, values))
-            features.setdefault(package, bytearray()).extend(body[start:end])
+            if package:
+                features.setdefault(package, bytearray()).extend(body[start:end])
         else:
             head += body[start:end]
     return {p: bytes(head + f) for p, f in features.items()}
