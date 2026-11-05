@@ -46,6 +46,7 @@ def fill(site):
                 "tiles/region-paths.pmtiles",
                 "tiles/region-history.pmtiles",
                 "tiles/region-names.pmtiles",
+                "tiles/region-ski.pmtiles",
                 "tiles/region-buildings.pmtiles",
                 "tiles/region-routing.pmtiles",
                 "tiles/region-regulations.json",
@@ -197,6 +198,7 @@ for kind, name in (("contours", "tiles/region-contours.pmtiles"),
                    ("water", "tiles/region-water.pmtiles"),
                    ("history", "tiles/region-history.pmtiles"),
                    ("names", "tiles/region-names.pmtiles"),
+                   ("ski", "tiles/region-ski.pmtiles"),
                    ("settlements", "tiles/region-buildings.pmtiles")):
     if not packages:
         break

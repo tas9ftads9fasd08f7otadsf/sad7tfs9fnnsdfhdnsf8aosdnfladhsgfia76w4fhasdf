@@ -1,0 +1,335 @@
+# Planetiler custom schema – ski & winter from OSM in one `.pmtiles`, a layer per kind.
+# A piste drawn as an area (`area=yes` or a multipolygon) is an area; otherwise a line.
+schema_name: FricoMaps ski and winter
+schema_description: >-
+  Ski areas, downhill pistes by difficulty, cross-country trails, ski tours,
+  sledging runs, winter paths and lifts with their stations, from OSM
+attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
+
+sources:
+  osm:
+    type: osm
+    local_path: data/ski.osm.pbf
+
+definitions:
+  - &an_area
+    __any__:
+      - area: ["yes"]
+      - type: [multipolygon]
+  - &downhill_tags
+    "piste:type": [downhill, snow_park]
+  - &nordic_tags
+    "piste:type": [nordic]
+  - &skitour_tags
+    "piste:type": [skitour]
+  - &sled_tags
+    "piste:type": [sled, sleigh]
+  - &hike_tags
+    "piste:type": [hike, fatbike]
+  - &lift_tags
+    aerialway: [cable_car, gondola, mixed_lift, chair_lift, drag_lift, t-bar, j-bar, platter,
+                rope_tow, magic_carpet]
+
+  - &piste_attrs
+    - key: class
+      value:
+        tag_value: "piste:type"
+    - key: name
+    # many pistes are named only here; the app reads it when `name` is missing
+    - key: piste_name
+      value:
+        tag_value: "piste:name"
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    # novice, easy, intermediate, advanced, expert, freeride – the first thing a skier looks for
+    - key: difficulty
+      value:
+        tag_value: "piste:difficulty"
+    - key: grooming
+      value:
+        tag_value: "piste:grooming"
+    - key: ref
+      value:
+        coalesce:
+          - tag_value: "piste:ref"
+          - tag_value: ref
+    - key: oneway
+      value:
+        coalesce:
+          - tag_value: "piste:oneway"
+          - tag_value: oneway
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+    - key: osm_type
+      value: '${ feature.osm_type }'
+  - &lift_attrs
+    - key: class
+      type: match_value
+    - key: name
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    - key: ref
+    - key: occupancy
+      value:
+        tag_value: "aerialway:occupancy"
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+    - key: osm_type
+      value: '${ feature.osm_type }'
+  - &area_attrs
+    - key: class
+      value: winter_sports
+    - key: name
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    - key: website
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+    - key: osm_type
+      value: '${ feature.osm_type }'
+
+layers:
+  # 1. ski areas: the resort's ground, and its name once inside
+  - id: area
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 9
+        include_when:
+          landuse: [winter_sports]
+        attributes: *area_attrs
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 9
+        include_when:
+          __all__: [{ landuse: [winter_sports] }, { name: __any__ }]
+        attributes: *area_attrs
+
+  # 2. downhill pistes and snow parks
+  - id: downhill
+    features:
+      - source: osm
+        geometry: polygon
+        min_zoom: 11
+        include_when:
+          __all__: [*downhill_tags, *an_area]
+        attributes: *piste_attrs
+      - source: osm
+        geometry: line
+        min_zoom: 11
+        include_when: *downhill_tags
+        exclude_when: *an_area
+        attributes: *piste_attrs
+
+  # 3. cross-country trails
+  - id: nordic
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 11
+        include_when: *nordic_tags
+        exclude_when: *an_area
+        attributes: *piste_attrs
+
+  # 4. ski tours
+  - id: skitour
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 11
+        include_when: *skitour_tags
+        exclude_when: *an_area
+        attributes: *piste_attrs
+
+  # 5. sledging runs
+  - id: sled
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 12
+        include_when: *sled_tags
+        exclude_when: *an_area
+        attributes: *piste_attrs
+
+  # 6. winter paths: walked or ridden on snow
+  - id: hike
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 12
+        include_when: *hike_tags
+        exclude_when: *an_area
+        attributes: *piste_attrs
+
+  # 7. lifts in service and their stations
+  - id: lift
+    features:
+      - source: osm
+        geometry: line
+        min_zoom: 11
+        include_when: *lift_tags
+        attributes: *lift_attrs
+      - source: osm
+        geometry: point
+        min_zoom: 13
+        include_when:
+          aerialway: [station]
+        attributes: *lift_attrs
+
+# TESTS: `workers/lib/verify-schema.sh workers/ski/ski.yml`
+examples:
+  - name: A ski area is an area with its name inside
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        landuse: winter_sports
+        name: Štrbské Pleso
+    output:
+      - layer: area
+        geometry: polygon
+        min_zoom: 9
+        tags:
+          class: winter_sports
+          name: Štrbské Pleso
+      - layer: area
+        geometry: point
+        min_zoom: 9
+        tags:
+          class: winter_sports
+          name: Štrbské Pleso
+
+  - name: A downhill piste is a line with its difficulty
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: downhill
+        piste:difficulty: intermediate
+        piste:name: Interkontinentál
+    output:
+      - layer: downhill
+        geometry: line
+        min_zoom: 11
+        tags:
+          class: downhill
+          piste_name: Interkontinentál
+          difficulty: intermediate
+
+  - name: A downhill piste drawn as an area is an area
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        piste:type: downhill
+        piste:difficulty: easy
+        area: "yes"
+    output:
+      - layer: downhill
+        geometry: polygon
+        min_zoom: 11
+        tags:
+          class: downhill
+          difficulty: easy
+
+  - name: A cross-country trail keeps its grooming and direction
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: nordic
+        piste:grooming: classic+skating
+        piste:oneway: "yes"
+    output:
+      - layer: nordic
+        geometry: line
+        min_zoom: 11
+        tags:
+          class: nordic
+          grooming: classic+skating
+          oneway: "yes"
+
+  - name: A ski tour is its own kind
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: skitour
+    output:
+      - layer: skitour
+        geometry: line
+        min_zoom: 11
+        tags:
+          class: skitour
+
+  - name: A sledging run is a sled line
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: sled
+    output:
+      - layer: sled
+        geometry: line
+        min_zoom: 12
+        tags:
+          class: sled
+
+  - name: A winter path is a hike line
+    input:
+      source: osm
+      geometry: line
+      tags:
+        piste:type: hike
+    output:
+      - layer: hike
+        geometry: line
+        min_zoom: 12
+        tags:
+          class: hike
+
+  - name: A chair lift is a lift with its name
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: chair_lift
+        name: Solisko
+        aerialway:occupancy: "4"
+    output:
+      - layer: lift
+        geometry: line
+        min_zoom: 11
+        tags:
+          class: chair_lift
+          name: Solisko
+          occupancy: "4"
+
+  - name: A lift's station is a point
+    input:
+      source: osm
+      geometry: point
+      tags:
+        aerialway: station
+        name: Solisko
+    output:
+      - layer: lift
+        geometry: point
+        min_zoom: 13
+        tags:
+          class: station
+          name: Solisko
+
+  - name: A disused lift is left out
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: disused
+    output: []

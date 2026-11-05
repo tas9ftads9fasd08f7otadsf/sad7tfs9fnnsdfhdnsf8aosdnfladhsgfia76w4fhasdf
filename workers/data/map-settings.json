@@ -63,6 +63,8 @@
     "history_maxzoom": 14,
     "names": true,
     "names_maxzoom": 14,
+    "ski": true,
+    "ski_maxzoom": 14,
     "buildings": true,
     "buildings_maxzoom": 14,
     "maxzoom": 16,

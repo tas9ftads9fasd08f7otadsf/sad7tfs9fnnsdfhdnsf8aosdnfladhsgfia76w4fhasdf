@@ -320,6 +320,20 @@ jobs:
       size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
       day: ${{ needs.plan.outputs.day }}
 
+  # ski areas, pistes, lifts and winter paths: the map build's workflow over the range's PBF
+  ski:
+    name: Ski & winter
+    needs: [plan, osm]
+    uses: ./.github/workflows/ski.yml
+    secrets: inherit
+    with:
+      region_key: ${{ needs.plan.outputs.key }}
+      region_bbox: ${{ needs.plan.outputs.bbox }}
+      region_clip: ${{ 'true' }}
+      maxzoom: "15"
+      size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
+      day: ${{ needs.plan.outputs.day }}
+
   # settlements down to their parts, parks, ranges, ridges and valleys (`workers/boundaries/range.yml`)
   boundaries:
     name: Borders and natural areas
@@ -461,9 +475,9 @@ jobs:
 
   publish:
     name: Package to Drive and the catalog
-    needs: [plan, dem, transport, points, water, boundaries, aerial]
+    needs: [plan, dem, transport, points, water, ski, boundaries, aerial]
     # half a new range would be a lying package
-    if: ${{ !cancelled() && needs.dem.result == 'success' && needs.transport.result == 'success' && needs.points.result == 'success' && needs.water.result == 'success' && needs.boundaries.result == 'success' && needs.aerial.result == 'success' && needs.plan.outputs.opt_publish == 'true' }}
+    if: ${{ !cancelled() && needs.dem.result == 'success' && needs.transport.result == 'success' && needs.points.result == 'success' && needs.water.result == 'success' && needs.ski.result != 'failure' && needs.boundaries.result == 'success' && needs.aerial.result == 'success' && needs.plan.outputs.opt_publish == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       # `maps.json`, the one place anything reaches the repository
@@ -493,6 +507,8 @@ jobs:
       TRANSPORT_MAXZOOM: ${{ needs.transport.outputs.maxzoom }}
       WATER_ENABLED: ${{ needs.water.outputs.enabled || 'false' }}
       WATER_MAXZOOM: ${{ needs.water.outputs.maxzoom }}
+      SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
+      SKI_MAXZOOM: ${{ needs.ski.outputs.maxzoom }}
       POINTS_ENABLED: ${{ needs.points.outputs.enabled || 'false' }}
       POINTS_MAXZOOM: "15"
       BOUNDARIES_ENABLED: ${{ needs.boundaries.outputs.enabled || 'false' }}
@@ -554,7 +570,7 @@ jobs:
 
   apple-archive:
     name: Package as Apple Archive (.aar)
-    needs: [plan, dem, transport, points, water, boundaries, aerial, publish]
+    needs: [plan, dem, transport, points, water, ski, boundaries, aerial, publish]
     if: ${{ !cancelled() && needs.publish.outputs.published == 'success' && needs.plan.outputs.opt_apple_archive == 'true' }}
     # intel: arm runners left `.aar` jobs waiting for one
     runs-on: macos-15-intel
@@ -576,6 +592,7 @@ jobs:
       TRANSPORT_ENABLED: ${{ needs.transport.outputs.enabled || 'false' }}
       PATHS_ENABLED: ${{ needs.transport.outputs.paths_enabled || 'false' }}
       WATER_ENABLED: ${{ needs.water.outputs.enabled || 'false' }}
+      SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
       POINTS_ENABLED: ${{ needs.points.outputs.enabled || 'false' }}
       BOUNDARIES_ENABLED: ${{ needs.boundaries.outputs.enabled || 'false' }}
     steps:

@@ -27,6 +27,7 @@ KNOWN = {
     "rail": "workflow “Map · railways” (rail.yml)",
     "history": "workflow “Map · history” (history.yml)",
     "names": "workflow “Map · names” (names.yml)",
+    "ski": "workflow “Map · ski” (ski.yml)",
     "buildings": "workflow “Map · settlements” (buildings.yml)",
     "routing": "routing: profile, routing tiles and node order",
     "tiles": "job `tiles`",

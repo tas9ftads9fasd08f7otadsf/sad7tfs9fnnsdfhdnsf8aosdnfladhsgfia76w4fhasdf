@@ -3433,6 +3433,27 @@ Ovládanie: `names=false` balík vypne, `names_maxzoom` (14) je strop dlaždíc,
 `BUDGET_NAMES_PCT` podiel na rozpočte stránky. Prázdny výrez nie je chyba:
 balík sa nespraví.
 
+## Lyžovanie a zima (balík `ski`)
+
+`workers/ski/` robí `{kraj}-ski.pmtiles` pre kraj aj pre pohorie (workflow `ski.yml`
+volá stavba mapy aj `mountain.yml`). Vrstva na druh, ktorý aplikácia zapína zvlášť:
+
+| Vrstva | Čo v nej je | Od zoomu |
+|---|---|---|
+| `area` | lyžiarske strediská (`landuse=winter_sports`) a ich názov | 9 |
+| `downhill` | zjazdovky a snowparky, čiara aj plocha | 11 |
+| `nordic` | bežecké trate | 11 |
+| `skitour` | skialpinistické trasy | 11 |
+| `sled` | sánkarské dráhy | 12 |
+| `hike` | zimné chodníky (`piste:type=hike`, `fatbike`) | 12 |
+| `lift` | vleky a lanovky v prevádzke, stanice od z13 | 11 |
+
+Atribúty: `class`, `name`, `piste_name`, `name:xx`, `difficulty`, `grooming`, `ref`,
+`oneway`, `occupancy`, `osm_id`. Štýl kreslí aplikácia.
+
+Ovládanie: `ski=false` balík vypne, `ski_maxzoom` (14) je strop dlaždíc, `BUDGET_SKI_PCT`
+podiel na rozpočte stránky. Výrez bez lyžovania balík nespraví.
+
 ## Typy máp – čo ktorá mapa ukazuje
 
 Jedna mapa nemôže byť dobrá turistická aj dobrá cestná naraz. Turista chce

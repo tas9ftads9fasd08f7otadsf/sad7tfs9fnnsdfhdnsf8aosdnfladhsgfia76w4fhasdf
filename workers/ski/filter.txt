@@ -1,0 +1,11 @@
+# PBF prefilter for `ski.yml` (`osmium tags-filter --expressions`).
+# `r/` pulls the member ways of multipolygons; `workers/lint/ski.py` guards the schema side.
+
+# ski areas
+nwr/landuse=winter_sports
+
+# pistes, cross-country trails, ski tours, sledging and winter paths
+nwr/piste:type
+
+# lifts and their stations
+nwr/aerialway
