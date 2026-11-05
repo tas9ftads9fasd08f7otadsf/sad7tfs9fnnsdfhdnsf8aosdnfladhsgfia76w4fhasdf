@@ -1,10 +1,10 @@
 # Planetiler custom schema – army and history from OSM in one `.pmtiles`.
-# One object, one layer: army, then mining, embankments, history, and last whatever was left
+# One object, one layer: army, then mining, history, and last whatever was left
 # abandoned or disused. A closed way is an area unless its tags say it's a line.
 schema_name: FricoMaps army and history
 schema_description: >-
   Military sites, historic places, mines, shafts, adits and quarries,
-  embankments and dykes, and everything abandoned or disused, from OSM
+  and everything abandoned or disused – lifts too, railways not – from OSM; embankments and dykes are Landscape's
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
 sources:
@@ -23,9 +23,6 @@ definitions:
     industrial: [mine]
     landuse: [quarry]
     historic: [mine, mine_shaft, mine_adit, mining]
-  - &embankment_tags
-    man_made: [embankment, dyke]
-    embankment: __any__
   - &history_tags
     historic: __any__
     heritage: __any__
@@ -210,31 +207,7 @@ layers:
         exclude_when: *army_tags
         attributes: *theme_attrs
 
-  # 3. embankments and dykes – always lines; `embankment=yes` sits on roads and railways
-  - id: embankment
-    features:
-      - source: osm
-        geometry: line
-        min_zoom: 12
-        include_when:
-          man_made: [embankment, dyke]
-        exclude_when:
-          __any__: [*army_tags, *mining_tags]
-        attributes: *theme_attrs
-      - source: osm
-        geometry: line
-        min_zoom: 13
-        include_when:
-          embankment: __any__
-        exclude_when:
-          __any__:
-            - *army_tags
-            - *mining_tags
-            - man_made: [embankment, dyke]
-            - embankment: ["no"]
-        attributes: *theme_attrs
-
-  # 4. history: castles, ruins, memorials, archaeological sites, listed buildings
+  # 3. history: castles, ruins, memorials, archaeological sites, listed buildings
   - id: history
     features:
       - source: osm
@@ -242,7 +215,7 @@ layers:
         min_zoom: 11
         include_when: *history_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *linear]
+          __any__: [*army_tags, *mining_tags, *linear]
         attributes: *theme_attrs
       - source: osm
         geometry: line
@@ -250,17 +223,17 @@ layers:
         include_when:
           __all__: [*history_tags, *linear]
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags]
+          __any__: [*army_tags, *mining_tags]
         attributes: *theme_attrs
       - source: osm
         geometry: point
         min_zoom: 12
         include_when: *history_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags]
+          __any__: [*army_tags, *mining_tags]
         attributes: *theme_attrs
 
-  # 5. abandoned and disused – whatever no theme above took
+  # 4. abandoned and disused – whatever no theme above took
   - id: gone
     features:
       - source: osm
@@ -268,7 +241,7 @@ layers:
         min_zoom: 12
         include_when: *gone_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags, *linear]
+          __any__: [*army_tags, *mining_tags, *history_tags, *railway_tags, *linear]
         attributes: *gone_attrs
       # abandoned roads and lifts read as lines across the land from z10
       - source: osm
@@ -277,14 +250,14 @@ layers:
         include_when:
           __all__: [*gone_tags, *linear]
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags]
+          __any__: [*army_tags, *mining_tags, *history_tags, *railway_tags]
         attributes: *gone_attrs
       - source: osm
         geometry: point
         min_zoom: 13
         include_when: *gone_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags]
+          __any__: [*army_tags, *mining_tags, *history_tags, *railway_tags]
         attributes: *gone_attrs
 
 # TESTS: `java -jar planetiler.jar verify workers/history/history.yml`
@@ -397,43 +370,6 @@ examples:
         tags:
           class: quarry
           family: landuse
-
-  - name: A dyke is an embankment line
-    input:
-      source: osm
-      geometry: line
-      tags:
-        man_made: dyke
-    output:
-      - layer: embankment
-        geometry: line
-        min_zoom: 12
-        tags:
-          class: dyke
-          family: man_made
-
-  - name: A road on an embankment is an embankment line from z13
-    input:
-      source: osm
-      geometry: line
-      tags:
-        highway: track
-        embankment: "yes"
-    output:
-      - layer: embankment
-        geometry: line
-        min_zoom: 13
-        tags:
-          class: "yes"
-          family: embankment
-
-  - name: A closed embankment stays a line, never an area
-    input:
-      source: osm
-      geometry: polygon
-      tags:
-        man_made: embankment
-    output: []
 
   - name: A castle ruin is history
     input:

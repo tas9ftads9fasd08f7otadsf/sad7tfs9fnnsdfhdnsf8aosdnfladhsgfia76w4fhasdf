@@ -74,12 +74,14 @@ test("railways draw from their archive, else from the base map", () => {
   assert.ok(!base.some((l) => l.startsWith("pkg-rail-")));
 });
 
-test("history draws its five themes and nothing of the base map", () => {
+test("history draws its four themes and nothing of the base map", () => {
   const style = packageMap("history");
   assert.deepEqual(Object.keys(style.sources).sort(), ["dem", "history"]);
-  for (const theme of ["army", "mining", "embankment", "history", "gone"]) {
+  for (const theme of ["army", "mining", "history", "gone"]) {
     assert.ok(ids(style).includes(`pkg-history-${theme}-fill`), theme);
   }
+  // 469 embankments are Landscape's, drawn with their edge
+  assert.ok(!ids(style).some((id) => id.includes("embankment")));
 });
 
 test("the base map is the style as built", () => {

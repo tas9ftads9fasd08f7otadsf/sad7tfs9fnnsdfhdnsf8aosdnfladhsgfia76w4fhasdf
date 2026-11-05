@@ -23,8 +23,9 @@ printf '%s\t%s\t%s\t%s\n' "71" "Army and history prefilter" "$(( $(date +%s) - T
   >> steps-out/history.tsv
 
 # empty isn't an error for a small test; `contents.json` says the layer is absent
-if [ "$AFTER" -lt 2000 ]; then
-  echo "::warning::This area has nothing military, historic, mined, embanked, abandoned or disused – the \`history\` package isn't made."
+# counted, not weighed: a castle and a bunker make a file smaller than a size floor
+if [ "$(osmium fileinfo -e -g data.count.nodes data/history.osm.pbf)" -eq 0 ]; then
+  echo "::warning::This area has nothing military, historic, mined, abandoned or disused – the \`history\` package isn't made."
   echo "enabled=false" >> "$GITHUB_OUTPUT"
   exit 0
 fi

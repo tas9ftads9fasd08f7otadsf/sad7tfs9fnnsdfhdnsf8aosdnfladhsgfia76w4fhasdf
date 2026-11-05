@@ -3,7 +3,7 @@
 # `nwr/` = nodes, ways and relations (osmium pulls in multipolygon members).
 
 # embankments and cuttings
-nwr/man_made=embankment,cutline,pipeline,spoil_heap,tower,mast,water_tower,chimney,adit,mineshaft,survey_point
+nwr/man_made=embankment,dyke,cutline,pipeline,spoil_heap,tower,mast,water_tower,chimney,adit,mineshaft,survey_point
 nwr/embankment
 nwr/cutting
 

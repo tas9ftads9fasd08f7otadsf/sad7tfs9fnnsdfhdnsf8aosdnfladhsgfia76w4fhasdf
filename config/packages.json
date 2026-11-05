@@ -109,7 +109,7 @@
       "origin": "site",
       "reads": ["workers/features/filter.txt"],
       "owns": ["landuse", "natural", "leisure", "aeroway", "boundary=national_park,protected_area",
-               "barrier", "man_made=embankment,cutline,pipeline,spoil_heap,tower,survey_point",
+               "barrier", "man_made=embankment,dyke,cutline,pipeline,spoil_heap,tower,survey_point",
                "embankment", "cutting", "power=line,minor_line",
                "waterway=dam,weir,lock_gate,waterfall", "amenity=parking", "mountain_pass",
                "highway=emergency_access_point,proposed"]
@@ -238,7 +238,7 @@
       "symbol": "shield.lefthalf.filled",
       "part_of": "base",
       "app_detail": "Military, historic and abandoned places, old lifts",
-      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, embankments and dykes, and everything abandoned or disused – lifts and cable cars too, railways not – as points, lines and areas (.pmtiles)",
+      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, and everything abandoned or disused – lifts and cable cars too, railways not – as points, lines and areas (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["history"],
       "suffixes": ["-history.pmtiles"],
@@ -246,8 +246,8 @@
       "regenerate": "history",
       "reads": ["workers/history/filter.txt"],
       "owns": ["military", "landuse=military,quarry", "building=bunker,military,barracks,ruins",
-               "man_made=mineshaft,adit,spoil_heap,embankment,dyke", "industrial=mine",
-               "embankment", "historic", "heritage", "ruins", "abandoned:*", "disused:*",
+               "man_made=mineshaft,adit,spoil_heap", "industrial=mine",
+               "historic", "heritage", "ruins", "abandoned:*", "disused:*",
                "razed:aerialway", "removed:aerialway", "demolished:aerialway", "was:aerialway"]
     },
     {
@@ -379,8 +379,7 @@
     {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points carries them for a range only, whose Water draws no points"},
     {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
-    {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them once History draws an embankment's edge"},
-    {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it once History draws an embankment's edge"},
+    {"tag": "man_made=spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
     {"tag": "building=ruins", "packages": ["history", "settlements"], "owner": "settlements", "why": "role: Settlements the building, Army & history the ruin's mark"}
   ]
 }
