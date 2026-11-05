@@ -10,7 +10,7 @@
 
 set -euo pipefail
 mkdir -p data steps-out
-: "${AREA:?give AREA – a key of `areas` in workers/data/routing.json}"
+: "${AREA:?give AREA – a key of `areas` in config/routing.json}"
 OUT=data/routing-order.json
 MAX_AGE="${ORDER_MAX_AGE_DAYS:-30}"
 

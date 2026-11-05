@@ -608,7 +608,7 @@
         180,
         85.05
       ],
-      "note": "The world map in its `basic` form – state borders and download regions only, no water or lakes (input `variant` in world-map.yml, lookup workers/data/world-variants.json). ITS OWN KEY, not a suffix to `svet`, by rule 2 of CLAUDE.md: a name is a promise about extent, so `basic` must not land on `svet.zip` or its node in `maps.json` – whoever downloads “the world map” from the catalog must not get a map without seas. So `country` is `svet_basic` too: the package sits in its own Drive folder and is its own root node in the catalog, beside `svet`."
+      "note": "The world map in its `basic` form – state borders and download regions only, no water or lakes (input `variant` in world-map.yml, lookup config/world-variants.json). ITS OWN KEY, not a suffix to `svet`, by rule 2 of CLAUDE.md: a name is a promise about extent, so `basic` must not land on `svet.zip` or its node in `maps.json` – whoever downloads “the world map” from the catalog must not get a map without seas. So `country` is `svet_basic` too: the package sits in its own Drive folder and is its own root node in the catalog, beside `svet`."
     },
     "svet_ground": {
       "id": "world_ground",
@@ -636,7 +636,7 @@
         22.57,
         49.61
       ],
-      "note": "The routing GRAPH (Valhalla), not a map – `navigation.yml`, extent from the `areas` of workers/data/routing.json. `osmfr` is deliberately ABSENT: `workers/routing/pbf.sh` downloads the PBF by that lookup, since the graph's extent is another question than the map's – the graph is NOT split by region (see there). `admin_level: 2` means the package sits on Drive directly in `navigacia_slovensko/`, with no region level. And `country` EQUALS the key – not a shared `navigacia` for every scope: `admin_level: 2` makes the country a catalog node too, so two scopes under one `navigacia` would OVERWRITE each other's item (both packages on Drive, the catalog knowing the second). The same decision for the same reason as `svet_basic`."
+      "note": "The routing GRAPH (Valhalla), not a map – `navigation.yml`, extent from the `areas` of config/routing.json. `osmfr` is deliberately ABSENT: `workers/routing/pbf.sh` downloads the PBF by that lookup, since the graph's extent is another question than the map's – the graph is NOT split by region (see there). `admin_level: 2` means the package sits on Drive directly in `navigacia_slovensko/`, with no region level. And `country` EQUALS the key – not a shared `navigacia` for every scope: `admin_level: 2` makes the country a catalog node too, so two scopes under one `navigacia` would OVERWRITE each other's item (both packages on Drive, the catalog knowing the second). The same decision for the same reason as `svet_basic`."
     },
     "navigacia_slovensko_susedia": {
       "id": "navigation_slovakia_neighbours",
@@ -672,7 +672,7 @@
           "slovakia-latest"
         ]
       },
-      "note": "All of Slovakia as one region – and the PARENT of its regions: each has `osmfr.parent: slovensko` and `workers/plan/pbf.sh` cuts it out of this extract (`osmium extract -s smart`). osm.fr's ready `{region}-latest.osm.pbf` is NOT USED – it isn't referentially complete, so an area reaching into a neighbouring region (CHKO Malé Karpaty, CHKO Záhorie, the Záhorie forests) lacks members and Planetiler drops it WHOLE, the in-region part too. Measured, with figures in the pbf.sh header. `iso` is the two-letter country code, here for ROUTING: an archive edge carries its country, or the vignette has nothing to stand on (`workers/data/vignettes.json`). Regions take it through their `country`, so it's written once. `routing_area` is the key in `workers/data/routing-areas.json` the CCH NODE ORDER is computed over – every region of a country must stand on the same one, or their archives must not be joined on the phone."
+      "note": "All of Slovakia as one region – and the PARENT of its regions: each has `osmfr.parent: slovensko` and `workers/plan/pbf.sh` cuts it out of this extract (`osmium extract -s smart`). osm.fr's ready `{region}-latest.osm.pbf` is NOT USED – it isn't referentially complete, so an area reaching into a neighbouring region (CHKO Malé Karpaty, CHKO Záhorie, the Záhorie forests) lacks members and Planetiler drops it WHOLE, the in-region part too. Measured, with figures in the pbf.sh header. `iso` is the two-letter country code, here for ROUTING: an archive edge carries its country, or the vignette has nothing to stand on (the `vignettes` of `config/routing.json`). Regions take it through their `country`, so it's written once. `routing_area` is the key of `areas` in `config/routing.json` the CCH NODE ORDER is computed over – every region of a country must stand on the same one, or their archives must not be joined on the phone."
     },
     "bratislavsky": {
       "id": "slovakia-bratislavsky",
@@ -882,7 +882,7 @@
           "czech_republic-latest"
         ]
       },
-      "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `workers/data/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
+      "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `config/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
     },
     "jihocesky": {
       "id": "czech_republic-jihocesky",
@@ -1184,7 +1184,7 @@
           "austria-latest"
         ]
       },
-      "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `workers/data/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
+      "note": "Like `slovensko`: the whole country and the PARENT its regions are cut from. No elevation model covers it yet: `config/map-settings.json` turns contours, rocks and hillshading off for it and its regions; the OSM layers are built as anywhere."
     },
     "burgenland": {
       "id": "austria-burgenland",

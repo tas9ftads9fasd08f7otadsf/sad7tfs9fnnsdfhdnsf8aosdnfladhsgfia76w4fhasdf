@@ -23,11 +23,14 @@ SUDO = '#!/bin/sh\n[ "$1" = apt-get ] && exit 0\nexec "$@"\n'
 
 
 def prepare(work, jar):
-    """`work/` as a build sees the repository root: workers, data, planetiler.jar."""
+    """`work/` as a build sees the repository root: workers, config, data, planetiler.jar."""
     os.makedirs(os.path.join(work, "data"), exist_ok=True)
     link = os.path.join(work, "workers")
     if not os.path.exists(link):
         os.symlink(_WORKERS, link)
+    config = os.path.join(work, "config")
+    if not os.path.exists(config):
+        os.symlink(os.path.join(os.path.dirname(_WORKERS), "config"), config)
     if not os.path.exists(os.path.join(work, "planetiler.jar")):
         os.symlink(os.path.abspath(jar), os.path.join(work, "planetiler.jar"))
     osm = os.path.join(work, "data", "mini-region.osm")
@@ -162,7 +165,7 @@ def rocks_side(work, stubs):
     """Rocks from the hill, then the same with a failing computation in a copy of `work`."""
     fail = os.path.join(work, "rocks-failed")
     os.makedirs(fail, exist_ok=True)
-    for name in ("data", "dem", "stubs", "planetiler.jar"):
+    for name in ("data", "dem", "stubs", "planetiler.jar", "config"):
         if not os.path.exists(os.path.join(fail, name)):
             os.symlink(os.path.join(work, name), os.path.join(fail, name))
     if not os.path.exists(os.path.join(fail, "workers")):

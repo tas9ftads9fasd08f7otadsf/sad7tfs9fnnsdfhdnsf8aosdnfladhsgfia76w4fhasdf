@@ -18,7 +18,7 @@ name: Routing · node order
 on:
   workflow_dispatch:
     inputs:
-      # the list is the `areas` of `workers/data/routing.json`; GitHub's `choice` can't
+      # the list is the `areas` of `config/routing.json`; GitHub's `choice` can't
       # read a file, so it's written here too and the lint compares them
       area:
         description: "The area the order is computed over"

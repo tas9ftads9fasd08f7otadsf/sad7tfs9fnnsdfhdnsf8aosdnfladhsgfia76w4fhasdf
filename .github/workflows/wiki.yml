@@ -272,7 +272,7 @@ jobs:
           set -euo pipefail
           if [ -z "$WIKI_COUNTRY" ]; then
             WIKI_COUNTRY=$(jq -r --arg r "$REGION" '.regions[$r].country // ""' \
-              workers/data/map-settings.json)
+              config/map-settings.json)
           fi
           export WIKI_COUNTRY
           echo "Country for the local language: ${WIKI_COUNTRY:-(unknown)}"
@@ -355,7 +355,7 @@ jobs:
             echo "| size | ${MB:-0} MB |"
             echo
             echo "Languages are English and the country language (lookup"
-            echo "\`workers/data/wiki-languages.json\`) plus what objects name"
+            echo "\`config/wiki-languages.json\`) plus what objects name"
             echo "themselves in tags. Text is from Wikipedia (CC BY-SA)."
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -104,7 +104,7 @@ fi
 
 COUNTRY="${ROUTING_COUNTRY:-}"
 if [ -z "$COUNTRY" ]; then
-  echo "::warning::The region has no ISO country code (\`iso\` in regions of workers/data/map-settings.json), so archive edges say nothing of their country and the vignette has nothing to stand on."
+  echo "::warning::The region has no ISO country code (\`iso\` in regions of config/map-settings.json), so archive edges say nothing of their country and the vignette has nothing to stand on."
 fi
 
 T_A=$(date +%s)
@@ -132,7 +132,7 @@ LIMIT_MB="$SIZE_LIMIT_MB"
 case "$LIMIT_MB" in ''|*[!0-9]*) LIMIT_MB=900 ;; esac
 RBUDGET_MB=$(( LIMIT_MB * BUDGET_ROUTING_PCT / 100 ))
 if [ "$MB" -gt "$RBUDGET_MB" ]; then
-  echo "::warning::The routing network takes ${MB} MB, above its ${RBUDGET_MB} MB share of the page budget. The lever is the tag dictionary (`tags` in workers/data/routing.json) – what isn't in it doesn't travel."
+  echo "::warning::The routing network takes ${MB} MB, above its ${RBUDGET_MB} MB share of the page budget. The lever is the tag dictionary (`tags` in config/routing.json) – what isn't in it doesn't travel."
 fi
 
 echo "enabled=true" >> "$GITHUB_OUTPUT"

@@ -7,7 +7,7 @@ name: Map · Build world
 on:
   workflow_dispatch:
     inputs:
-      # variants live in `workers/data/world-variants.json`; `choice` can't read a file
+      # variants live in `config/world-variants.json`; `choice` can't read a file
       # basic = state and region borders, ground = sea, lakes and state borders
       variant:
         description: "Map variant (full, basic = borders only, ground = sea, lakes and borders)"

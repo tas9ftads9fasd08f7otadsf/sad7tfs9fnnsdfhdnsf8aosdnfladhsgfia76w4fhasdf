@@ -5,8 +5,8 @@ steps-out/
 # Bez toho by `git add -A` po jednom behu mapy sveta pribalil megabajty dlaždíc.
 #
 # LOMKA NA ZAČIATKU JE TU PODSTATNÁ: `data/` bez nej znamená „hocijaký
-# priečinok data kdekoľvek" a zmizli by aj číselníky vo `workers/data/` –
-# teda `git status` čistý a `map-settings.json` mimo repozitára.
+# priečinok data kdekoľvek" a zmizli by aj obrysy pohorí vo `workers/data/` –
+# teda `git status` čistý a obrysy mimo repozitára.
 /_site/
 /data/
 /planetiler.jar

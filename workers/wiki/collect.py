@@ -27,8 +27,8 @@ KEYS = ("wikipedia", "wikidata")
 # one file, one article a line – ~32 % smaller zipped than a file per article
 NDJSON = "articles.ndjson"
 
-_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "data")
+_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                     "config")
 
 
 def languages(country, extra, table):

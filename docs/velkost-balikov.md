@@ -220,7 +220,7 @@ skôr, než sa o ňom rozhodne.
 ## Nález 5 – balíkov bolo osem názvov pre šesť otázok ✅ opravené
 
 > Opravené: zoznam balíkov drží **jedno miesto**
-> (`workers/data/packages.json`, číta ho `workers/deploy/baliky.py`) a berie
+> (`config/packages.json`, číta ho `workers/deploy/baliky.py`) a berie
 > ho odtiaľ pipeline, formulár pregenerovania, dávka nad krajinou aj katalóg –
 > a cez `maps.json` (`app`, `symbol`) aj aplikácia.
 

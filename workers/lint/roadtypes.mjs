@@ -2,7 +2,7 @@
 /**
  * A road type the profile can turn off must be one the map can draw too.
  *
- * The road types are in `workers/data/routing.json` (`tags.network`) and the app
+ * The road types are in `config/routing.json` (`tags.network`) and the app
  * makes toggles from them – each with a line as the map draws it. When the two
  * lists drift, nothing fails: a toggle has no preview, or the map shows a road
  * that can't be turned off.
@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import { THEMES, buildStyle } from "../../poc/web/themes.js";
 import { MAP_TYPE_IDS } from "../../poc/web/map-types.js";
 
-const TAGS = "workers/data/routing.json";
+const TAGS = "config/routing.json";
 
 /**
  * OSM → class (and subclass) in the `transportation` layer.

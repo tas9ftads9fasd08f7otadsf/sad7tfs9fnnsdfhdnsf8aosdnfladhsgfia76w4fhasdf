@@ -8,7 +8,7 @@ import sys
 import yaml
 
 # package kinds come from the registry publish-map.py packs by; retired ones may linger
-with open("workers/data/packages.json", encoding="utf-8") as _f:
+with open("config/packages.json", encoding="utf-8") as _f:
     _REGISTRY = json.load(_f)
 KINDS = {p["key"] for p in _REGISTRY.get("packages") or []}
 RETIRED = {r["key"] for r in _REGISTRY.get("retired") or []}
@@ -41,7 +41,7 @@ bad = []
 _PARTS = {p["key"]: p.get("part_of") for p in _REGISTRY.get("packages") or []}
 for _k, _c in _PARTS.items():
     if _c and (_c not in _PARTS or _PARTS[_c]):
-        bad.append(f"workers/data/packages.json: `{_k}` is part of `{_c}`, but "
+        bad.append(f"config/packages.json: `{_k}` is part of `{_c}`, but "
                    f"`{_c}` is no package that could have subpackages.")
 
 try:

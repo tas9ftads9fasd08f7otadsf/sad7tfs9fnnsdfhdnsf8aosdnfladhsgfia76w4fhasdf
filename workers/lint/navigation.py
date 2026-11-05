@@ -31,7 +31,7 @@ import yaml
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 ROUTING = os.path.join(_DATA, "routing.json")
 REGIONS = os.path.join(_DATA, "map-settings.json")
@@ -58,8 +58,8 @@ def err(path, msg):
 
 def national_graph(areas, regions, countries):
     """Valhalla over a whole state – the reference build that stays."""
-    rel_areas = "workers/data/routing.json (`areas`)"
-    rel_regions = "workers/data/map-settings.json"
+    rel_areas = "config/routing.json (`areas`)"
+    rel_regions = "config/map-settings.json"
 
     for key, area in areas.items():
         rk = area.get("region_key")
@@ -232,13 +232,13 @@ def node_order(areas, regions):
     region build just never finds anything, archives go without an order and
     nothing fails.
     """
-    rel_regions = "workers/data/map-settings.json"
+    rel_regions = "config/map-settings.json"
     for key, r in regions.items():
         area = r.get("routing_area")
         if area and area not in areas:
             err(rel_regions,
                 f"`{key}` has `routing_area: {area}`, which "
-                f"the `areas` of `workers/data/routing.json` lack. The region build would "
+                f"the `areas` of `config/routing.json` lack. The region build would "
                 f"look for an order nobody computes.")
 
     if not os.path.exists(ORDER_WORKFLOW):
@@ -293,35 +293,35 @@ def _cache_keys(text):
 def package():
     """Routing rides in the map and in `roads`; its own `routing` package is retired."""
     if not os.path.exists(REGISTRY):
-        err("workers/data/packages.json", "the package registry doesn't exist.")
+        err("config/packages.json", "the package registry doesn't exist.")
         return
     with open(REGISTRY, encoding="utf-8") as f:
         reg = json.load(f)
     packages = {p["key"]: p for p in reg.get("packages") or []}
     retired = {r["key"] for r in reg.get("retired") or []}
     if "routing" in packages:
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "package `routing` is alive again. Routing rides in the map and in "
             "`roads`; a third ZIP would be downloaded for nothing.")
     if "routing" not in retired:
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "`routing` isn't in `retired`, so the old `-navigacia.zip` stays on "
             "Drive and the catalog keeps offering it.")
     roads = packages.get("roads")
     if not roads:
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "package `roads` isn't in the registry – “the networks to travel on, "
             "not the rest of the map” has no answer.")
     elif "transport" not in (roads.get("manifest") or []):
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "package `roads` doesn't take `transport` from the manifest – an empty "
             "package with a promise in its name.")
     elif "routing" not in (roads.get("manifest") or []):
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "package `roads` doesn't take `routing` from the manifest. Who takes "
             "only the networks must get the one routes are computed on.")
     elif "-routing.pmtiles" not in (roads.get("suffixes") or []):
-        err("workers/data/packages.json",
+        err("config/packages.json",
             "package `roads` has no suffix fallback (`-routing.pmtiles`). "
             "Regenerating one layer runs without a manifest, so it would come out "
             "without the network.")

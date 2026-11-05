@@ -46,6 +46,7 @@ class RegionPbf(unittest.TestCase):
         work = os.path.join(self.tmp, f"w{len(os.listdir(self.tmp))}")
         os.makedirs(os.path.join(work, "steps-out"))
         os.symlink(WORKERS, os.path.join(work, "workers"))
+        os.symlink(os.path.join(os.path.dirname(WORKERS), "config"), os.path.join(work, "config"))
         stubs = os.path.join(work, "stubs")
         os.makedirs(stubs)
         with open(os.path.join(stubs, "sudo"), "w") as f:
@@ -109,10 +110,10 @@ class RoutingPbf(unittest.TestCase):
         area = {"areas": {"two": {"pbf": ["europe/a", "europe/b"]}}}
         work = os.path.join(tmp, "work")
         os.makedirs(work)
-        shadow = shadow_workers(work, {})
-        os.remove(os.path.join(shadow, "data"))
-        os.makedirs(os.path.join(shadow, "data"))
-        with open(os.path.join(shadow, "data", "routing.json"), "w") as f:
+        shadow_workers(work, {})
+        os.remove(os.path.join(work, "config"))
+        os.makedirs(os.path.join(work, "config"))
+        with open(os.path.join(work, "config", "routing.json"), "w") as f:
             json.dump({"areas": area}, f)
         server, base = rangeserver.serve({"/europe/a-latest.osm.pbf": blob, "/europe/b-latest.osm.pbf": blob})
         self.addCleanup(server.server_close)
@@ -128,7 +129,7 @@ class RoutingPbf(unittest.TestCase):
         r = subprocess.run(["bash", "workers/routing/pbf.sh"], cwd=work, capture_output=True, text=True,
                            env={**os.environ, **LOCAL, "AREA": "three", "OSMFR_BASE": base, "GITHUB_OUTPUT": out})
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn("isn't in the `areas` of workers/data/routing.json", r.stderr)
+        self.assertIn("isn't in the `areas` of config/routing.json", r.stderr)
 
     def test_a_border_object_at_two_versions_is_kept_once_at_the_newer(self):
         tmp = tempfile.mkdtemp()
@@ -149,10 +150,10 @@ class RoutingPbf(unittest.TestCase):
                      "n3 v1 dV t2026-09-01T00:00:00Z x20.0 y49.3\n")
         work = os.path.join(tmp, "work")
         os.makedirs(work)
-        shadow = shadow_workers(work, {})
-        os.remove(os.path.join(shadow, "data"))
-        os.makedirs(os.path.join(shadow, "data"))
-        with open(os.path.join(shadow, "data", "routing.json"), "w") as f:
+        shadow_workers(work, {})
+        os.remove(os.path.join(work, "config"))
+        os.makedirs(os.path.join(work, "config"))
+        with open(os.path.join(work, "config", "routing.json"), "w") as f:
             json.dump({"areas": {"areas": {"two": {"pbf": ["europe/a", "europe/b"]}}}}, f)
         server, base = rangeserver.serve({"/europe/a-latest.osm.pbf": a, "/europe/b-latest.osm.pbf": b})
         self.addCleanup(server.server_close)

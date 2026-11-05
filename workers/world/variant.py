@@ -15,7 +15,7 @@ import yaml
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 SCHEMA = os.path.join(_HERE, "world.yml")
 VARIANTS = os.path.join(_DATA, "world-variants.json")
 
@@ -44,7 +44,7 @@ def pick(name, raw=None):
     if name not in v:
         raise SystemExit(
             f"::error::World map variant “{name}” is unknown. There are: "
-            f"{', '.join(sorted(v))} (the list is in `workers/data/"
+            f"{', '.join(sorted(v))} (the list is in `config/"
             f"world-variants.json`).")
     return v[name]
 
@@ -61,7 +61,7 @@ def schema_for(layers, doc=None):
         raise SystemExit(
             f"::error::The variant asks for layers {missing} `workers/world/"
             f"world.yml` doesn't have (it has {sorted(have)}). Align `layers` "
-            f"in `workers/data/world-variants.json` with the schema.")
+            f"in `config/world-variants.json` with the schema.")
     out = dict(doc)
     out["layers"] = [l for l in doc["layers"] if l["id"] in layers]
     # an unused source needn't even be downloaded

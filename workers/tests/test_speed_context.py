@@ -40,7 +40,7 @@ class Classify(unittest.TestCase):
         self.assertEqual(names, set(context.CONTEXTS))
 
     def test_dictionary_lists_the_contexts(self):
-        with open(os.path.join(WORKERS, "data", "routing.json"), encoding="utf-8") as f:
+        with open(os.path.join(os.path.dirname(WORKERS), "config", "routing.json"), encoding="utf-8") as f:
             keys = json.load(f)["tags"]["keys"]
         self.assertEqual(tuple(keys["speed_context"]["values"]), context.CONTEXTS)
         self.assertEqual(list(keys)[-1], "speed_context", "a new key goes last, or old indices move")

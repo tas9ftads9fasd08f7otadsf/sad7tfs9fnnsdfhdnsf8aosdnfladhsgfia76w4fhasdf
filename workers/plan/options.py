@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""A run's settings from `workers/data/map-settings.json` for a region or a range; an unknown key is an error.
+"""A run's settings from `config/map-settings.json` for a region or a range; an unknown key is an error.
 
     python3 workers/plan/options.py --region=presovsky --rebuild=rocks \\
         --test=true --publish-pages=true --out=$GITHUB_OUTPUT
@@ -13,7 +13,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 # the category beside the countries, as in maps.json
 MOUNTAINS = "mountains"
 
@@ -28,7 +28,7 @@ SETTINGS = map_settings.PATH
 class SettingsError(Exception):
     pass
 
-# every setting and what it means; the values are in workers/data/map-settings.json
+# every setting and what it means; the values are in config/map-settings.json
 DESCRIPTIONS = {
     "crop_bbox": "crop the region to west,south,east,north",
     "area_bbox": "own cut-out W,S,E,N instead of the range picked",

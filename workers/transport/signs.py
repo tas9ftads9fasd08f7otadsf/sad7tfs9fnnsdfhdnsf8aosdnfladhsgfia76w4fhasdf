@@ -7,8 +7,8 @@ import re
 from collections import Counter
 from pathlib import Path
 
-MAPPING = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                       "data", "road-signs.json")
+MAPPING = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                       "config", "road-signs.json")
 # nodes that are a sign without `traffic_sign`
 IMPLIED = {"stop": "stop", "give_way": "give_way", "traffic_signals": "traffic_signals",
            "speed_camera": "speed_camera"}

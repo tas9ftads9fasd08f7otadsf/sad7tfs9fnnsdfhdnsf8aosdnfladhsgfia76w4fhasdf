@@ -12,7 +12,8 @@ _spec = importlib.util.spec_from_file_location(
 drop = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(drop)
 
-_CATALOG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "packages.json")
+_CATALOG = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+                        "config", "packages.json")
 with open(_CATALOG, encoding="utf-8") as _f:
     BASE_MAP = json.load(_f)["base_map"]
 # a whole layer to one package; the app's `MapOverlay.claimant` says the same

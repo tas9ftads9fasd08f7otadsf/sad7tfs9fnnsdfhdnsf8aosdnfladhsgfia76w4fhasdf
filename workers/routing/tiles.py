@@ -251,7 +251,7 @@ def main():
     dictionary = tags_mod.dictionary(args.dictionary or None)
     if args.country and dictionary.value_index("country", args.country) is None:
         print(f"::error::Country `{args.country}` isn't in `country` of "
-              f"the `tags` of workers/data/routing.json, so it wouldn't get into the "
+              f"the `tags` of config/routing.json, so it wouldn't get into the "
               f"archive and the vignette would have nothing to stand on.",
               file=sys.stderr)
         return 1
@@ -301,7 +301,7 @@ def main():
         print(f"::warning::Tile {zxy[0]}/{zxy[1]}/{zxy[2]} is "
               f"{n // 1024} kB, above the {fmt.BUDGET_KB} kB budget even "
               f"at z{ZOOM_MAX}, and isn't split further. The lever is the tag "
-              f"dictionary (`tags` in workers/data/routing.json).")
+              f"dictionary (`tags` in config/routing.json).")
 
     graph = {
         "scope": "region",

@@ -11,8 +11,8 @@ _WORKERS = os.path.dirname(_HERE)
 SCHEMA = os.path.join(_WORKERS, "rail", "rail.yml")
 FILTER = os.path.join(_WORKERS, "rail", "filter.txt")
 BUILD = os.path.join(_WORKERS, "rail", "build.sh")
-ROUTING = os.path.join(_WORKERS, "data", "routing.json")
-DICTIONARY = "workers/data/routing.json (`rail_tags`)"
+ROUTING = os.path.join(os.path.dirname(_WORKERS), "config", "routing.json")
+DICTIONARY = "config/routing.json (`rail_tags`)"
 
 # keys `lines.py` adds to points – the prefilter needn't pass them
 DERIVED = {"rail_speed"}
@@ -100,10 +100,10 @@ def main():
         bad.append(f"{BUILD}: `-R` drops relation members – station areas vanish.")
     if "signs.mjs" not in build:
         bad.append(f"{BUILD}: country signs aren't baked – the app would draw the defaults.")
-    with open(os.path.join(_WORKERS, "data", "packages.json"), encoding="utf-8") as f:
+    with open(os.path.join(os.path.dirname(_WORKERS), "config", "packages.json"), encoding="utf-8") as f:
         rail = [p for p in json.load(f)["packages"] if p["key"] == "railways"]
     if not rail or "rail_signs" not in (rail[0].get("manifest") or []):
-        bad.append("workers/data/packages.json: `railways` doesn't carry `rail_signs` – "
+        bad.append("config/packages.json: `railways` doesn't carry `rail_signs` – "
                    "the signs wouldn't reach the package.")
 
     for b in bad:

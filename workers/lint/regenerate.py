@@ -14,10 +14,10 @@ BUILD = ".github/workflows/build-map-region.yml"
 RELAY = "workers/state/regenerate.sh"
 CORE = "workers/state/relay-core.sh"
 JOBS = "workers/state/jobs.py"
-REGISTRY = "workers/data/packages.json"
+REGISTRY = "config/packages.json"
 with open(REGISTRY, encoding="utf-8") as _f:
     KNOWN_PACKAGES = {b["key"] for b in json.load(_f).get("packages") or []}
-REGIONS = "workers/data/map-settings.json"
+REGIONS = "config/map-settings.json"
 WF_DIR = ".github/workflows"
 # batch inputs that aren't run settings
 OWN = {"country", "what", "continuation"}

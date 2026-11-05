@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pack `_site` into stably named packages and upload them to Drive.
 
-The package list is `workers/data/packages.json`. Names are stable so the next
+The package list is `config/packages.json`. Names are stable so the next
 build overwrites the same file and the link in `maps.json` keeps working.
 `contents.json` inside says what a package holds.
 """
@@ -13,7 +13,7 @@ import time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
 _DRIVE = os.path.join(_WORKERS, "drive")

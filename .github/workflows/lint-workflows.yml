@@ -8,12 +8,14 @@ on:
     paths:
       - ".github/workflows/**"
       - "workers/**"
+      - "config/**"
       # the style too: `fill` over mixed geometry is a silent mistake
       - "poc/web/**"
   pull_request:
     paths:
       - ".github/workflows/**"
       - "workers/**"
+      - "config/**"
       - "poc/web/**"
   workflow_dispatch:
 
@@ -182,11 +184,11 @@ jobs:
           d = yaml.safe_load(open(".github/workflows/build-map-region.yml"))
           on = d[[k for k in d if k is True or k == "on"][0]]
           opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
-          areas = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
+          areas = [k for k in json.load(open("config/map-settings.json"))["areas"]
                    if not k.startswith("_")]
           want = ["whole_region"] + areas
           if opts != want:
-              print("::error::The choice `area` in the workflow doesn't match areas of workers/data/map-settings.json")
+              print("::error::The choice `area` in the workflow doesn't match areas of config/map-settings.json")
               print(f"  in the workflow: {opts}")
               print(f"  should be:       {want}")
               sys.exit(1)
@@ -199,7 +201,7 @@ jobs:
           set -euo pipefail
           python3 - <<'PY'
           import json, sys, yaml
-          areas = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
+          areas = [k for k in json.load(open("config/map-settings.json"))["areas"]
                    if not k.startswith("_")]
           want = ["whole_country"] + areas
           bad = 0
@@ -208,7 +210,7 @@ jobs:
               on = d[[k for k in d if k is True or k == "on"][0]]
               opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
               if opts != want:
-                  print(f"::error file={path}::The choice `area` doesn't match areas of workers/data/map-settings.json")
+                  print(f"::error file={path}::The choice `area` doesn't match areas of config/map-settings.json")
                   print(f"  in the workflow: {opts}")
                   print(f"  should be:       {want}")
                   bad += 1
@@ -226,10 +228,10 @@ jobs:
           d = yaml.safe_load(open(".github/workflows/shading-rocks.yml"))
           on = d[[k for k in d if k is True or k == "on"][0]]
           opts = on["workflow_dispatch"]["inputs"]["area"]["options"]
-          want = [k for k in json.load(open("workers/data/map-settings.json"))["areas"]
+          want = [k for k in json.load(open("config/map-settings.json"))["areas"]
                   if not k.startswith("_")]
           if opts != want:
-              print("::error::The choice `area` in shading-rocks.yml doesn't match areas of workers/data/map-settings.json")
+              print("::error::The choice `area` in shading-rocks.yml doesn't match areas of config/map-settings.json")
               print(f"  in the workflow: {opts}")
               print(f"  should be:       {want}")
               sys.exit(1)

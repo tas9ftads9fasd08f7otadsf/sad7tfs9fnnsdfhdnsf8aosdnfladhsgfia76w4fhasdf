@@ -4,7 +4,7 @@
     "",
     "Articles are ALWAYS fetched in English plus the language of the country the",
     "point lies in – that's the whole point of this file. The key is `country`",
-    "from `workers/data/regions.json` (so `slovensko`, not `sk`), since that value",
+    "from `regions` of `config/map-settings.json` (so `slovensko`, not `sk`), since that value",
     "already decides the Drive folder and a second lookup of the same would drift",
     "one day (rule 1 in CLAUDE.md).",
     "",

@@ -10,7 +10,7 @@ import zipfile
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _DRIVE = os.path.join(os.path.dirname(_HERE), "drive")
-_DATA = os.path.join(os.path.dirname(_HERE), "data")
+_DATA = os.path.join(os.path.dirname(os.path.dirname(_HERE)), "config")
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import map_settings  # noqa: E402
 

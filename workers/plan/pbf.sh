@@ -15,7 +15,7 @@ set -e
 T0=$(date +%s)
 mkdir -p data
 CUSTOM_URL="$OPT_CUSTOM_PBF_URL"
-SETTINGS=workers/data/map-settings.json
+SETTINGS=config/map-settings.json
 
 # a PBF (cropped too) from an earlier run needs no download
 CACHED=""
@@ -80,7 +80,7 @@ if [ -n "$CUSTOM_URL" ]; then
     exit 1
   fi
 else
-  # ----- a preset region from `regions` of workers/data/map-settings.json -----
+  # ----- a preset region from `regions` of config/map-settings.json -----
   KEY="$REGION"
   NAME=$(jq -r --arg r "$KEY" '.regions[$r].name' "$SETTINGS")
   BBOX=$(jq -r --arg r "$KEY" '.regions[$r].bbox | join(",")' "$SETTINGS")

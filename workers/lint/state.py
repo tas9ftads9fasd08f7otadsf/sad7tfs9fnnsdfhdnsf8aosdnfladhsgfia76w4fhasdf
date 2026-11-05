@@ -12,7 +12,7 @@ STATE = ".github/workflows/build-map-state.yml"
 REGION = ".github/workflows/build-map-region.yml"
 RELAY = "workers/state/relay.sh"
 QUEUE = "workers/state/queue.py"
-REGIONS = "workers/data/map-settings.json"
+REGIONS = "config/map-settings.json"
 OPTIONS_PY = "workers/plan/options.py"
 # batch inputs that aren't map settings
 OWN = {"country", "continuation"}

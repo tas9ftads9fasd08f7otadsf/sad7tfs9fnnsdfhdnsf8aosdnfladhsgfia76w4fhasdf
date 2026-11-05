@@ -21,10 +21,10 @@ const outDir = args.out || "_site/styles";
 const region = args.region || "svet";
 const maxzoom = Number(args.maxzoom || 6);
 
-// the variant decides which schema layers exist (`workers/data/world-variants.json`)
+// the variant decides which schema layers exist (`config/world-variants.json`)
 const _HERE = dirname(fileURLToPath(import.meta.url));
 const VARIANTS = JSON.parse(
-  readFileSync(join(_HERE, "..", "data", "world-variants.json"), "utf8")
+  readFileSync(join(_HERE, "..", "..", "config", "world-variants.json"), "utf8")
 );
 const VARIANT_ALIAS = { plna: "full" };
 const variant = VARIANT_ALIAS[args.variant] || args.variant || "full";

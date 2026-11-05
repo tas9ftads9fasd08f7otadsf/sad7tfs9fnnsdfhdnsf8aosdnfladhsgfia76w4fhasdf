@@ -11,7 +11,7 @@ _WORKERS = os.path.dirname(_HERE)
 SCHEMA = os.path.join(_WORKERS, "transport", "transport.yml")
 PATHS = os.path.join(_WORKERS, "transport", "paths.yml")
 FILTER = os.path.join(_WORKERS, "transport", "filter.txt")
-PACKAGES = os.path.join(_WORKERS, "data", "packages.json")
+PACKAGES = os.path.join(os.path.dirname(_WORKERS), "config", "packages.json")
 
 # families each layer PROMISES
 FAMILIES = {

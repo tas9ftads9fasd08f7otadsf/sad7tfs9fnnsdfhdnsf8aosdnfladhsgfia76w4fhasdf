@@ -28,7 +28,7 @@ from importlib.machinery import SourceFileLoader
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
-_DATA = os.path.join(_WORKERS, "data")
+_DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
 _probe = SourceFileLoader("probe", os.path.join(_HERE, "probe.py")).load_module()

@@ -16,10 +16,9 @@ import urllib.parse
 import urllib.request
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_DATA = os.path.join(os.path.dirname(_HERE), "data")
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import map_settings  # noqa: E402
-OUTLINES = os.path.join(_DATA, "outlines")
+OUTLINES = os.path.join(os.path.dirname(_HERE), "data", "outlines")
 LOOKUP = "https://nominatim.openstreetmap.org/lookup"
 # a range is built from DMR 5.0, as `mountain.yml` asks for it
 MODEL = "dmr5"

@@ -11,7 +11,7 @@ run-name: "${{ github.workflow }} · ${{ inputs.mountain }}"
 # cut-out and with the cut-out's model for the height tiles too; roads and
 # paths from `transport.yml`, water from `water.yml`, points from the features
 # job. Every setting, the photo source too, is the range's in
-# `workers/data/map-settings.json`. Published
+# `config/map-settings.json`. Published
 # under `mountains.ranges` in `maps.json`, a category of its own beside the
 # countries; the app draws a range alone or over the regions it crosses.
 
@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       mountain:
-        description: "Which range (maps.mountains.ranges of workers/data/map-settings.json)"
+        description: "Which range (maps.mountains.ranges of config/map-settings.json)"
         required: true
         default: vysoke_tatry
         type: choice

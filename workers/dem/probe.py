@@ -3,7 +3,7 @@
 
 `*.skgeodesy.sk` isn't visible from every network and the ArcGIS service names
 are undocumented, so a probe lists the service directory, asks each candidate
-from `sources.dem` of `workers/data/map-settings.json` for metadata, and asks a responder for a small GeoTIFF.
+from `sources.dem` of `config/map-settings.json` for metadata, and asks a responder for a small GeoTIFF.
 
 Usage:
     python3 workers/dem/probe.py [--bbox=W,S,E,N] [--summary=FILE]
@@ -321,7 +321,7 @@ def main():
     print("\n── Result")
     if winner:
         print(f"✓ USABLE: {winner}")
-        print("  Write it as the first candidate into `sources.dem` of workers/data/map-settings.json")
+        print("  Write it as the first candidate into `sources.dem` of config/map-settings.json")
         print("  and `dem_source: ugkk` will work.")
     else:
         usable = [r for r in rows if r[1] == "✓"]
@@ -345,7 +345,7 @@ def main():
             f.write("\n")
             if winner:
                 f.write(f"**✓ Usable:** `{winner}`\n\n"
-                        "Write it as the first candidate into `sources.dem` of `workers/data/map-settings.json`"
+                        "Write it as the first candidate into `sources.dem` of `config/map-settings.json`"
                         " and `dem_source: ugkk` will work.\n")
             else:
                 f.write("**✗ Nothing usable.** ÚGKK officially gives DMR 5.0 through "

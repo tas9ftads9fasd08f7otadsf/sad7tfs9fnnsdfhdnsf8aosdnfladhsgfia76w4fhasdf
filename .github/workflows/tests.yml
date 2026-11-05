@@ -6,6 +6,7 @@ on:
   push:
     paths:
       - "workers/**"
+      - "config/**"
       - "poc/web/**"
       - ".github/workflows/tests.yml"
   # every PR, whatever it touches

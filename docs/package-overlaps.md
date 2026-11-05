@@ -4,7 +4,7 @@ Packages are meant to be disjoint, so that switching one off takes its objects o
 switching two on draws nothing twice. `workers/tools/overlap.py` checks it: it reads every
 archive of a built `_site/tiles`, knows each feature by its OSM object (Planetiler's tile id is
 the OSM id × 10 + 1 node, 2 way, 3 relation, in our schemas and in the base map's cuts alike),
-maps each file to its package by the `suffixes` of `workers/data/packages.json`, and lists the
+maps each file to its package by the `suffixes` of `config/packages.json`, and lists the
 objects two packages share, by what each package makes of them.
 
     python3 workers/tools/overlap.py --tiles=_site/tiles --rows=6 --out=overlap.md
