@@ -26,7 +26,7 @@ layers:
         geometry: line
         min_zoom: 13
         include_when:
-          man_made: embankment
+          man_made: [embankment, dyke]
           embankment: [yes, both, left, right]
         attributes:
           - key: name

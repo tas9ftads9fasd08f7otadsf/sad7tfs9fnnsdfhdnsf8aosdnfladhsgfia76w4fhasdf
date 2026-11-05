@@ -196,7 +196,6 @@ const INK = {
   liftGoods: ["#8D5A3B", "#C99A74"],
   army: ["#6B7A3A", "#A3B46A"],
   mining: ["#7A5536", "#C0956C"],
-  embankment: ["#968770", "#A89C84"],
   heritage: ["#9C3D2A", "#D9826C"],
   gone: ["#7B7B86", "#A7A7B2"]
 };
@@ -368,7 +367,7 @@ export function railLayers(dark, { bold = "Noto Sans Bold" } = {}) {
 }
 
 const HISTORY_THEMES = [
-  ["gone", "gone"], ["embankment", "embankment"], ["mining", "mining"],
+  ["gone", "gone"], ["mining", "mining"],
   ["history", "heritage"], ["army", "army"]
 ];
 

@@ -11,11 +11,10 @@ SCHEMA = os.path.join(_WORKERS, "history", "history.yml")
 FILTER = os.path.join(_WORKERS, "history", "filter.txt")
 BUILD = os.path.join(_WORKERS, "history", "build.sh")
 
-# layer → geometries it promises; embankments are lines only
+# layer → geometries it promises; embankments are Landscape's
 PROMISED = {
     "army": {"point", "line", "polygon"},
     "mining": {"point", "line", "polygon"},
-    "embankment": {"line"},
     "history": {"point", "line", "polygon"},
     "gone": {"point", "line", "polygon"},
 }
@@ -89,9 +88,9 @@ def main():
             bad.append(f"{SCHEMA}: layer `{layer}` lacks "
                        f"{', '.join(sorted(geometries - made))} – the package promises "
                        f"points, lines and areas.")
-        if layer == "embankment" and made - {"line"}:
-            bad.append(f"{SCHEMA}: `embankment` makes {', '.join(sorted(made - {'line'}))} – "
-                       f"a closed embankment around a pond would turn into a filled area.")
+
+    if "embankment" in layers:
+        bad.append(f"{SCHEMA}: an `embankment` layer is back – embankments are Landscape's, drawn with their edge.")
 
     for layer, features in layers.items():
         for i, b in enumerate(features, start=1):

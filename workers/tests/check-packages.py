@@ -54,7 +54,7 @@ EXPECTED = [
     ("rail", "aerialway", {"name": "Lanovka"}),
     ("history", "history", {"name": "Hrad"}),
     ("history", "army", {}),
-    ("history", "embankment", {}),
+    ("features", "feature_line", {"class": "embankment", "name": "Hrádza"}),
     ("names", "village", {"class": "village", "name": "Malá Obec"}),
     ("names", "mountain", {"class": "peak", "name": "Vrch", "ele": 512}),
     ("names", "mountain", {"class": "ridge", "name": "Hrebeň"}),
@@ -73,7 +73,8 @@ EXPECTED = [
     ("points", "feature_point", {"name": "Rozhľadňa"}),
 ]
 # its village point already says the name
-ABSENT = [("boundaries", "boundary_label", {"name": "Malá Obec"}),
+ABSENT = [("history", "embankment", {}),  # 469 embankments are Landscape's
+          ("boundaries", "boundary_label", {"name": "Malá Obec"}),
           ("boundaries", "boundary", {"name": "Osada"}), ("boundaries", "boundary", {"name": "Národný park"}),
           # 468 one owner each: a region's peaks are Landscape's, springs Water's, monuments History's
           ("points", "peak", {}), ("points", "feature_point", {"class": "spring"}),
