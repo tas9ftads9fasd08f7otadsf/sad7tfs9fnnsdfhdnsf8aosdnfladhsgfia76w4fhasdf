@@ -45,6 +45,35 @@ definitions:
       type: long
     - key: osm_type
       value: '${ feature.osm_type }'
+  # areas carry their size, so a label can wait for the zoom where Mapy names them
+  - &water_area_attrs
+    - key: class
+      type: match_value
+    - key: family
+      type: match_key
+    - key: name
+    - key: name_en
+      value:
+        tag_value: "name:en"
+    # the style names a pond once it is big enough for the zoom
+    - key: area_ha
+      value: '${ feature.area("ha") }'
+      type: double
+    - key: water
+    - key: intermittent
+    - key: salt
+    - key: tidal
+    - key: tunnel
+    - key: layer
+    - key: width
+    - key: boat
+    - key: wikidata
+    - key: osm_id
+      value: '${ feature.id }'
+      type: long
+    - key: osm_type
+      value: '${ feature.osm_type }'
+
   # the same for lines, ids only close up: a river is many ways and merges only without them
   - &waterway_attrs
     - key: class
@@ -111,7 +140,7 @@ layers:
         min_zoom: 8
         include_when:
           natural: [water]
-        attributes: *water_attrs
+        attributes: *water_area_attrs
 
       # reservoirs mapped as land use: from z8 – the same thing, tagged the other way
       - source: osm
@@ -119,7 +148,7 @@ layers:
         min_zoom: 8
         include_when:
           landuse: [reservoir, basin]
-        attributes: *water_attrs
+        attributes: *water_area_attrs
 
       # bay and strait: from z4 – named parts of the sea
       - source: osm

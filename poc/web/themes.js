@@ -1531,6 +1531,16 @@ const NO_FILL_PROPS = new Set(["fill-color", "fill-extrusion-color"]);
 export const MAX_PAINT_STOPS = 8;
 
 const RIVER_NAME_MINZOOM = 9;
+/** Words that say what water it is, not what it is called; OSM has a pond named "pond". */
+export const GENERIC_WATER_NAMES = ["pond", "lake", "reservoir", "water", "rybník", "jazero", "nádrž",
+  "vodná nádrž", "jazierko", "rybníček"];
+const WATER_REAL_NAME = ["!", ["in", ["downcase", ["coalesce", ["get", "name"], ""]],
+  ["literal", GENERIC_WATER_NAMES]]];
+/** Hectares from which a water area is named, per style zoom; Mapy names village ponds only close up. */
+export const WATER_NAME_HA = [[0, 300], [9, 80], [10, 20], [11, 5], [12, 1], [13, 0]];
+// tiles built without `area_ha` keep every name
+const WATER_BIG_ENOUGH = [">=", ["coalesce", ["get", "area_ha"], 1e9],
+  ["step", ["zoom"], WATER_NAME_HA[0][1], ...WATER_NAME_HA.slice(1).flat()]];
 const RIVER_NAME_SIZE = [[10, 10], [13, 11], [18, 14]];
 
 /**
@@ -5212,6 +5222,7 @@ export function buildStyle({
       id: "water-name",
       type: "symbol",
       "source-layer": "water_name",
+      filter: WATER_REAL_NAME,
       layout: {
         "text-field": nameExpr,
         "text-font": ITAL,
@@ -5247,7 +5258,7 @@ export function buildStyle({
         source: "water",
         "source-layer": "water",
         minzoom: 9,
-        filter: ["has", "name"],
+        filter: ["all", ["has", "name"], WATER_REAL_NAME, WATER_BIG_ENOUGH],
         layout: {
           "text-field": nameExpr,
           "text-font": ITAL,
