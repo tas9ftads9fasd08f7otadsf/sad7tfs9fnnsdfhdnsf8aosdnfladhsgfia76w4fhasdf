@@ -17,8 +17,12 @@
     "  optional    manifest keys a region may go without (no traffic sign there) – not an error",
     "  rest        also carries what no other package does – styles, sprites, trails, the manifest",
     "  legacy      former keys; their old files on Drive are removed on publish",
+    "  reads       the prefilters (`osmium tags-filter --expressions`) its own schemas read OSM through",
+    "  owns        the OSM tags it owns: `key` for every value no other package names, `key=a,b` for those",
     "Order is the order in the app. A package dropped from here goes to `retired`,",
-    "whose files (key and legacy names) are deleted on Drive."
+    "whose files (key and legacy names) are deleted on Drive. A tag two packages own is listed in",
+    "`shared` with the package meant to keep it (`workers/lint/owners.py`); `workers/tools/overlap.py`",
+    "measures what a build really shares; `base_map` says where the base map's layers go."
   ],
   "packages": [
     {
@@ -102,7 +106,13 @@
       "sources": ["osm"],
       "manifest": ["omt_landscape", "features"],
       "suffixes": ["-omt-landscape.pmtiles", "-features.pmtiles"],
-      "origin": "site"
+      "origin": "site",
+      "reads": ["workers/features/filter.txt"],
+      "owns": ["landuse", "natural", "leisure", "aeroway", "boundary=national_park,protected_area",
+               "barrier", "man_made=embankment,cutline,pipeline,spoil_heap,tower,survey_point",
+               "embankment", "cutting", "power=line,minor_line",
+               "waterway=dam,weir,lock_gate,waterfall", "amenity=parking", "mountain_pass",
+               "highway=emergency_access_point,proposed", "piste:type"]
     },
     {
       "key": "roads",
@@ -118,7 +128,10 @@
       "optional": ["road_sign_sprite", "regulations"],
       "origin": "site",
       "regenerate": "roads",
-      "legacy": ["cesty"]
+      "legacy": ["cesty"],
+      "reads": ["workers/transport/filter.txt"],
+      "owns": ["highway", "route=ferry", "addr:housenumber", "addr:conscriptionnumber",
+               "traffic_sign", "traffic_sign:forward", "traffic_sign:backward"]
     },
     {
       "key": "paths",
@@ -132,7 +145,10 @@
       "suffixes": ["-paths.pmtiles", "-omt-paths.pmtiles"],
       "origin": "site",
       "rest": true,
-      "regenerate": "paths"
+      "regenerate": "paths",
+      "reads": ["workers/transport/filter.txt"],
+      "owns": ["highway=path,footway,cycleway,bridleway,steps,pedestrian,corridor,elevator,ladder,via_ferrata",
+               "aerialway"]
     },
     {
       "key": "trails",
@@ -144,7 +160,9 @@
       "sources": ["osm"],
       "manifest": ["trails"],
       "suffixes": ["-trails.pmtiles"],
-      "origin": "site"
+      "origin": "site",
+      "reads": [],
+      "owns": ["route=hiking,foot,bicycle,mtb,horse,ski,via_ferrata"]
     },
     {
       "key": "points",
@@ -158,7 +176,12 @@
       "suffixes": ["-points.pmtiles", "-omt-points.pmtiles"],
       "origin": "site",
       "regenerate": "points",
-      "legacy": ["body"]
+      "legacy": ["body"],
+      "reads": ["workers/features/filter.txt"],
+      "owns": ["amenity", "shop", "tourism",
+               "natural=spring,cave_entrance,sinkhole,peak,volcano,saddle",
+               "historic=archaeological_site,battlefield,fort,manor,tomb,wayside_cross,wayside_shrine,memorial,boundary_stone,milestone,charcoal_pile,mine,mine_shaft,mineshaft,adit",
+               "man_made=adit,mineshaft,mast,chimney,water_tower"]
     },
     {
       "key": "boundaries",
@@ -172,7 +195,9 @@
       "suffixes": ["-boundaries.pmtiles", "-omt-boundaries.pmtiles"],
       "origin": "site",
       "regenerate": "boundaries",
-      "legacy": ["hranice"]
+      "legacy": ["hranice"],
+      "reads": ["workers/boundaries/filter.txt"],
+      "owns": ["boundary=administrative", "place"]
     },
     {
       "key": "water",
@@ -186,7 +211,9 @@
       "suffixes": ["-water.pmtiles", "-omt-water.pmtiles"],
       "origin": "site",
       "regenerate": "water",
-      "legacy": ["vodstvo"]
+      "legacy": ["vodstvo"],
+      "reads": ["workers/water/filter.txt"],
+      "owns": ["waterway", "natural=water,bay,strait,spring,coastline", "landuse=reservoir,basin"]
     },
     {
       "key": "railways",
@@ -202,7 +229,10 @@
       "optional": ["rail_signs"],
       "origin": "site",
       "regenerate": "railways",
-      "legacy": ["zeleznice"]
+      "legacy": ["zeleznice"],
+      "reads": ["workers/rail/filter.txt"],
+      "owns": ["railway", "route=tram,subway,light_rail,monorail,train,railway,funicular",
+               "aerialway"]
     },
     {
       "key": "history",
@@ -215,7 +245,11 @@
       "manifest": ["history"],
       "suffixes": ["-history.pmtiles"],
       "origin": "site",
-      "regenerate": "history"
+      "regenerate": "history",
+      "reads": ["workers/history/filter.txt"],
+      "owns": ["military", "landuse=military,quarry", "building=bunker,military,barracks,ruins",
+               "man_made=mineshaft,adit,spoil_heap,embankment,dyke", "industrial=mine",
+               "embankment", "historic", "heritage", "ruins", "abandoned:*", "disused:*"]
     },
     {
       "key": "names",
@@ -227,7 +261,10 @@
       "sources": ["osm"],
       "manifest": ["names"],
       "suffixes": ["-names.pmtiles"],
-      "origin": "site"
+      "origin": "site",
+      "reads": ["workers/names/filter.txt"],
+      "owns": ["place",
+               "natural=peak,volcano,hill,mountain_range,ridge,arete,valley,gorge,canyon,plain,plateau,basin"]
     },
     {
       "key": "ski",
@@ -238,7 +275,9 @@
       "sources": ["osm"],
       "manifest": ["ski"],
       "suffixes": ["-ski.pmtiles"],
-      "origin": "site"
+      "origin": "site",
+      "reads": ["workers/ski/filter.txt"],
+      "owns": ["landuse=winter_sports", "piste:type", "aerialway"]
     },
     {
       "key": "settlements",
@@ -252,7 +291,9 @@
       "suffixes": ["-buildings.pmtiles", "-omt-settlements.pmtiles"],
       "origin": "site",
       "regenerate": "settlements",
-      "legacy": ["sidla"]
+      "legacy": ["sidla"],
+      "reads": ["workers/buildings/filter.txt"],
+      "owns": ["building", "place", "landuse=residential,commercial,retail"]
     },
     {
       "key": "wikipedia",
@@ -271,5 +312,64 @@
     {"key": "search"},
     {"key": "lines", "legacy": ["linie"]},
     {"key": "routing", "legacy": ["navigacia"]}
+  ],
+  "base_map": {
+    "_comment": [
+      "Which package each layer of the base map (OpenMapTiles) goes to: `workers/tiles/cut.py` cuts by it,",
+      "and the app's `MapOverlay.claimedBaseSourceLayers` must match, a test guards both.",
+      "  layers  a whole layer to one package",
+      "  split   a layer shared by its features: `tag`'s value picks the package from `to`, else `else`"
+    ],
+    "layers": {
+      "landcover": "landscape",
+      "landuse": "landscape",
+      "park": "landscape",
+      "mountain_peak": "landscape",
+      "aeroway": "landscape",
+      "aerodrome_label": "landscape",
+      "poi": "points",
+      "water": "water",
+      "water_name": "water",
+      "waterway": "water",
+      "boundary": "boundaries",
+      "building": "settlements",
+      "place": "settlements",
+      "transportation_name": "roads",
+      "housenumber": "roads"
+    },
+    "split": {
+      "transportation": {
+        "tag": "class",
+        "to": {
+          "path": "paths",
+          "pedestrian": "paths",
+          "rail": "railways",
+          "transit": "railways",
+          "aerialway": "railways"
+        },
+        "else": "roads"
+      },
+      "traffic_sign": {
+        "tag": "way",
+        "to": {
+          "path": "paths"
+        },
+        "else": "roads"
+      }
+    }
+  },
+  "shared": [
+    {"tag": "place", "packages": ["boundaries", "names", "settlements"], "owner": "settlements", "why": "Settlements and Geographical names both, the app keeps one (rikimaps#2794); Boundaries drops it"},
+    {"tag": "natural=peak,volcano", "packages": ["landscape", "names", "points"], "owner": "landscape", "why": "role: Landscape the mark, Geographical names the name; Points drops it"},
+    {"tag": "natural=spring", "packages": ["points", "water"], "owner": "water", "why": "Points drops it"},
+    {"tag": "piste:type", "packages": ["landscape", "ski"], "owner": "ski", "why": "Landscape drops it"},
+    {"tag": "aerialway", "packages": ["paths", "railways", "ski"], "owner": "railways", "why": "ski lifts to Ski & winter, cable cars and gondolas to Railways; Paths drops them"},
+    {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
+    {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
+    {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them"},
+    {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
+    {"tag": "landuse=quarry", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
+    {"tag": "landuse=residential,commercial,retail", "packages": ["landscape", "settlements"], "owner": "settlements", "why": "Landscape's base map share drops them"},
+    {"tag": "building=ruins", "packages": ["history", "settlements"], "owner": "settlements", "why": "role: Settlements the building, Army & history the ruin's mark"}
   ]
 }

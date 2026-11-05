@@ -2221,6 +2221,16 @@ bez ikony a bez vety, čo kreslí.
 Kým bol napísaný na piatich miestach, znamenal nový balík päť úprav a
 ktorákoľvek zabudnutá bola tichá.
 
+Ten istý súbor hovorí aj, **čo balík nesie**: `base_map` dáva každú vrstvu
+základnej mapy (OpenMapTiles) jednému balíku, podľa neho ju reže
+`workers/tiles/cut.py` a aplikácia má test, že jej `claimedBaseSourceLayers`
+sedí. Každý balík z OSM má `reads` (predfiltre, cez ktoré číta) a `owns`
+(značky OSM, ktoré vlastní: `kľúč` pre všetky hodnoty, ktoré nikto iný
+nemenuje, `kľúč=a,b` pre tieto). Značku, ktorú dnes vlastnia dva balíky, treba
+zapísať do `shared` aj s tým, ktorý si ju má nechať –
+`workers/lint/owners.py` inak padne. Čo zostavený kraj naozaj zdieľa, meria
+`workers/tools/overlap.py` ([docs/package-overlaps.md](../docs/package-overlaps.md)).
+
 **Podbalíky základnej mapy** sú `vodstvo`, `hranice`, `cesty`, `zeleznice`,
 `sidla` a `body` (`"cast": "mapa"` v číselníku, v `maps.json` ako
 `part_of`). Kreslia časť toho, čo kreslí aj základná mapa, preto ich appka
