@@ -351,8 +351,12 @@ class Ways(osmium.SimpleHandler):
             old = seen.get(key)
             if old is None or (not old["name"] and info["name"]):
                 seen[key] = info
+        # a colourless route (E8) is walked on the marks of the route beside it
+        marked = {i["route"] for i in seen.values() if i["colour"] or i["hex"]}
+        kept = [i for i in seen.values()
+                if i["colour"] or i["hex"] or i["route"] not in marked]
         return sorted(
-            seen.values(),
+            kept,
             key=lambda i: (
                 TIER_ORDER.get(i["tier"], 9),
                 ROUTE_ORDER.get(i["route"], 9),
