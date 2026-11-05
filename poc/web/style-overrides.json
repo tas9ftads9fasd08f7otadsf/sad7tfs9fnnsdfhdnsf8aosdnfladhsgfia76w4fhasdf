@@ -9,7 +9,7 @@
       "building": "#e2d3b9",
       "buildingOutline": "#cec2b2",
       "water": "#9ec5e2",
-      "river": "#86b0d6",
+      "river": "#92b8da",
       "rock": "#c8cbba",
       "rockPattern": "#a6aa9a",
       "trailRed": "#c60000",
@@ -226,7 +226,18 @@
         },
         "road-secondary-casing": {
           "paint": {
-            "line-color": "#cbbf36"
+            "line-color": [
+              [
+                0,
+                12,
+                "#faee75"
+              ],
+              [
+                13,
+                20,
+                "#cbbf36"
+              ]
+            ]
           },
           "paintDark": {
             "line-color": "#656134"
@@ -477,11 +488,11 @@
               ],
               [
                 14,
-                1.1
+                1.4
               ],
               [
                 15,
-                1.6
+                1.8
               ],
               [
                 16,
@@ -744,6 +755,18 @@
                 20,
                 "#a2a38c"
               ]
+            ],
+            "line-opacity": [
+              [
+                0,
+                13,
+                1
+              ],
+              [
+                14,
+                20,
+                0.7
+              ]
             ]
           },
           "paintDark": {
@@ -762,6 +785,18 @@
                 14,
                 20,
                 "#b4b69e"
+              ]
+            ],
+            "line-opacity": [
+              [
+                0,
+                13,
+                1
+              ],
+              [
+                14,
+                20,
+                0.6
               ]
             ]
           },
@@ -1014,6 +1049,16 @@
               "label": "záhradkárske osady",
               "paint": {
                 "fill-color": "#ddcfae"
+              }
+            },
+            {
+              "attr": "subclass",
+              "values": [
+                "orchard"
+              ],
+              "label": "sady",
+              "paint": {
+                "fill-color": "#e9e9da"
               }
             }
           ]
