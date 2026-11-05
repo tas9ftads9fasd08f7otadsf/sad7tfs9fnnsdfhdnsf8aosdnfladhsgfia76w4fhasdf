@@ -94,6 +94,10 @@ DESCRIPTIONS = {
                       "valleys, plains, regions) – package `names`"),
     # 14: the schema's highest `min_zoom` is 12, two more are headroom
     "names_maxzoom": "max zoom of geographical names tiles",
+    "ski": ("make ski & winter (ski areas, pistes, lifts, cross-country trails, "
+                    "winter paths) – package `ski`"),
+    # 14: the schema's highest `min_zoom` is 13, one more is headroom
+    "ski_maxzoom": "max zoom of ski and winter tiles",
     "buildings": ("make settlements – buildings with floor area and "
                           "name – package `settlements`"),
     # 14: the schema's highest `min_zoom`, past it tiles only grow
@@ -478,7 +482,7 @@ def main():
     for key, label in (("trails", ""), ("features", ""), ("transport", ""),
                        ("boundaries", "boundaries"), ("water", "water"),
                        ("rail", "railways"), ("buildings", "settlements"),
-                       ("history", "history"), ("names", "names"), ("routing", ""), ("apple_archive", ""), ("wikipedia", ""),
+                       ("history", "history"), ("names", "names"), ("ski", "ski"), ("routing", ""), ("apple_archive", ""), ("wikipedia", ""),
                        ("publish", ""), ("map_simplify", "")):
         if not check_bool(values, key, label):
             return 1
@@ -631,6 +635,7 @@ def main():
           f"Railways: {values['rail']}   "
           f"Army & history: {values['history']}   "
           f"Geographical names: {values['names']}   "
+          f"Ski & winter: {values['ski']}   "
           f"Settlements: {values['buildings']}")
     print("Quick test: " + (f"ON, terrain (contours, rocks, hillshading) only on "
                             f"{values['test_km2']} km² in the middle of the cut-out; "

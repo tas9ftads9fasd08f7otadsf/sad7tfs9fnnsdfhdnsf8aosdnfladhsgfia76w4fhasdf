@@ -90,6 +90,7 @@ for pair in "${CONTOURS:-}:contours:contours" \
             "${RAIL:-}:rail:railways" \
             "${HISTORY:-}:history:army and history" \
             "${NAMES:-}:names:geographical names" \
+            "${SKI:-}:ski:ski and winter" \
             "${BUILDINGS:-}:buildings:settlements"; do
   IFS=: read -r on src label <<<"$pair"
   [ "$on" = 'true' ] || continue

@@ -177,6 +177,9 @@ def build():
           **{"piste__type": "nordic", "piste__grooming": "classic", "name": "Bežkárska"})
     o.way(o.ring(square(17.185, 48.14, 200), every_m=10),
           **{"piste__type": "downhill", "piste__difficulty": "easy"})
+    # a ski area with its lift
+    o.way(o.ring(square(17.183, 48.142, 500), every_m=20), landuse="winter_sports", name="Stredisko")
+    o.way(o.line([(17.182, 48.139), (17.186, 48.145)], every_m=20), aerialway="chair_lift", name="Sedačka")
     o.node(17.185, 48.148, natural="peak", ele="512", name="Vrch", wikipedia="sk:Vrch")
     return o
 

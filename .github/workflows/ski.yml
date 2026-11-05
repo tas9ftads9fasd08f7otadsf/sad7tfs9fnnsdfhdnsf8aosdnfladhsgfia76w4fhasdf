@@ -1,0 +1,162 @@
+name: Map · ski
+
+# SKI & WINTER from OSM into their own `.pmtiles`: ski areas, downhill pistes,
+# cross-country trails, ski tours, sledging runs, winter paths and lifts (see the
+# `workers/ski/ski.yml` header). It's the `ski` package, of a region and of a range.
+#
+# The same pattern as names: the same PBF read again with its own schema.
+on:
+  workflow_call:
+    inputs:
+      region_key:
+        description: "Region key – it names `{region}-ski.pmtiles`"
+        required: true
+        type: string
+      region_bbox:
+        description: "Region bbox for clipping tiles (workers/lib/region-clip.sh)"
+        required: true
+        type: string
+      maxzoom:
+        description: "Highest zoom of the ski and winter tiles"
+        required: false
+        default: "14"
+        type: string
+      region_clip:
+        description: "Clip tiles to the region border"
+        required: false
+        default: "false"
+        type: string
+      size_limit_mb:
+        description: "The whole page budget in MB"
+        required: false
+        default: "900"
+        type: string
+      budget_pct:
+        description: "Ski and winter's share of the page budget in percent"
+        required: false
+        default: "1"
+        type: string
+      day:
+        description: "Date for the Planetiler cache key"
+        required: false
+        default: ""
+        type: string
+    outputs:
+      enabled:
+        description: "Was the layer made? (a cutout may hold none of it)"
+        value: ${{ jobs.ski.outputs.enabled }}
+      maxzoom:
+        description: "The zoom tiles really go up to"
+        value: ${{ jobs.ski.outputs.maxzoom }}
+      size_mb:
+        description: "Layer size in MB"
+        value: ${{ jobs.ski.outputs.size_mb }}
+    # `workflow_call` doesn't inherit secrets; without them the Drive cache can't
+    # open and Planetiler (93 MB) is downloaded on every run.
+    secrets:
+      GDRIVE_CREDENTIALS:
+        required: false
+      DRIVE_SECRET:
+        required: false
+      DRIVE_REFRESH:
+        required: false
+
+# Drive sign-in for the whole workflow, not per step: cache-restore and
+# cache-save are two steps, and with the token on only one of them the other
+# would quietly go back to downloading everything. Guarded by “Check · workflow lint”.
+env:
+  GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+  DRIVE_CLIENT: ${{ vars.DRIVE_CLIENT }}
+  DRIVE_SECRET: ${{ secrets.DRIVE_SECRET }}
+  DRIVE_REFRESH: ${{ secrets.DRIVE_REFRESH }}
+
+jobs:
+  ski:
+    name: Ski & winter
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.ski.outputs.enabled }}
+      maxzoom: ${{ steps.ski.outputs.maxzoom }}
+      size_mb: ${{ steps.ski.outputs.size_mb }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Prepare the timing folder
+        run: mkdir -p steps-out
+
+      - name: Download the PBF from the plan
+        uses: actions/download-artifact@v8
+        with:
+          name: pbf
+          path: data
+
+      # the region polygon is Planetiler's `--polygon`; `continue-on-error`, since
+      # the run finishes without it too (tiles then follow the bbox)
+      - name: Download the region polygon
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: region-poly
+          path: data
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Cache Planetileru (restore)
+        id: planetiler-cache
+        uses: ./.github/actions/cache-restore
+        with:
+          path: planetiler.jar
+          key: planetiler-latest-${{ inputs.day }}
+
+      - name: Stiahni Planetiler
+        run: workers/lib/planetiler.sh
+      - name: Cache Planetileru (save)
+        if: ${{ always() && steps.planetiler-cache.outputs.cache-hit != 'true' && hashFiles('planetiler.jar') != '' }}
+        continue-on-error: true
+        uses: ./.github/actions/cache-save
+        with:
+          path: planetiler.jar
+          key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
+
+      # schema tests before the build (`examples`) – the one thing that tells the
+      # truth about a schema without a whole run. They go first.
+      - name: Ski and winter schema tests
+        run: |
+          mkdir -p data
+          workers/lib/name-languages.sh workers/ski/ski.yml data/ski.yml
+          workers/lib/verify-schema.sh data/ski.yml
+
+      # described in `workers/ski/build.sh`
+      - name: Ski and winter from OSM → PMTiles
+        id: ski
+        env:
+          OPT_SKI_MAXZOOM: ${{ inputs.maxzoom }}
+          OPT_REGION_CLIP: ${{ inputs.region_clip }}
+          REGION_BBOX: ${{ inputs.region_bbox }}
+          REGION_KEY: ${{ inputs.region_key }}
+          SIZE_LIMIT_MB: ${{ inputs.size_limit_mb }}
+          BUDGET_SKI_PCT: ${{ inputs.budget_pct }}
+        run: workers/ski/build.sh
+
+      - name: Upload the site part
+        if: ${{ always() && hashFiles('_site/**') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-ski
+          path: _site
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: ignore
+
+      - name: Upload the step timing
+        if: ${{ always() && hashFiles('steps-out/*') != '' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: steps-ski
+          path: steps-out
+          retention-days: 1
+          if-no-files-found: ignore

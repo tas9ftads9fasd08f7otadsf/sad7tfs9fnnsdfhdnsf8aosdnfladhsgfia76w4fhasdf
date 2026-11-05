@@ -158,6 +158,8 @@ def layers():
         out.append("history")
     if env("NAMES_ENABLED") == "true":
         out.append("names")
+    if env("SKI_ENABLED") == "true":
+        out.append("ski")
     if env("BUILDINGS_ENABLED") == "true":
         out.append("buildings")
     out += [s for s in ("aerial_summer", "aerial_winter")

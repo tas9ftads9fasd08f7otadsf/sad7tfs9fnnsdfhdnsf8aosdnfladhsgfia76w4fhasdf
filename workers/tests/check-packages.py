@@ -21,11 +21,12 @@ sys.path.insert(0, _HERE)
 import mini_region  # noqa: E402
 
 SCHEMAS = {"transport": ["transport", "paths"], "boundaries": ["boundaries"], "water": ["water"],
-           "rail": ["rail"], "history": ["history"], "names": ["names"], "buildings": ["buildings"],
+           "rail": ["rail"], "history": ["history"], "names": ["names"], "ski": ["ski"],
+           "buildings": ["buildings"],
            "trails": ["trails"], "features": ["features", "points"], "range-boundaries": ["range"]}
 ARCHIVE = {"points": "points", "paths": "paths", "range": "range-boundaries"}
 # drawn by the app, not by the published styles
-UNSTYLED = {"range-boundaries", "names"}
+UNSTYLED = {"range-boundaries", "names", "ski"}
 # clip-tiles.py keeps 100 m past the outline
 MARGIN_M = 100
 
@@ -58,6 +59,10 @@ EXPECTED = [
     ("names", "mountain", {"class": "peak", "name": "Vrch", "ele": 512}),
     ("names", "mountain", {"class": "ridge", "name": "Hrebeň"}),
     ("names", "valley", {"class": "valley", "name": "Dolina"}),
+    ("ski", "area", {"class": "winter_sports", "name": "Stredisko"}),
+    ("ski", "downhill", {"class": "downhill", "difficulty": "easy"}),
+    ("ski", "nordic", {"class": "nordic", "grooming": "classic", "name": "Bežkárska"}),
+    ("ski", "lift", {"class": "chair_lift", "name": "Sedačka"}),
     ("buildings", "building", {"name": "Kostol"}),
     ("buildings", "building_name", {"name": "Kostol"}),
     ("buildings", "settlement_area", {}),

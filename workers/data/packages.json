@@ -230,6 +230,17 @@
       "origin": "site"
     },
     {
+      "key": "ski",
+      "app": "Ski & winter",
+      "symbol": "figure.skiing.downhill",
+      "app_detail": "Ski areas, pistes, lifts and winter paths",
+      "description": "OSM ski areas, downhill pistes by difficulty, cross-country trails, ski tours, sledging runs, winter paths and lifts with their stations – a layer per kind (.pmtiles); a region carries it, and so does a range",
+      "sources": ["osm"],
+      "manifest": ["ski"],
+      "suffixes": ["-ski.pmtiles"],
+      "origin": "site"
+    },
+    {
       "key": "settlements",
       "app": "Settlements",
       "symbol": "building.2.fill",

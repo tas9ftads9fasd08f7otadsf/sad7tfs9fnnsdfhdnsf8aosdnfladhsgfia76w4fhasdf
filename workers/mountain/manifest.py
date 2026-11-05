@@ -50,7 +50,7 @@ def manifest(site):
     tiles = os.path.join(site, "tiles")
     has = {kind: os.path.isfile(os.path.join(tiles, f"{key}-{kind}.pmtiles"))
            for kind in ("contours", "rocks", "terrain", "transport", "paths", "water",
-                        "points", "range-boundaries", "aerial_summer", "aerial_winter")}
+                        "points", "ski", "range-boundaries", "aerial_summer", "aerial_winter")}
     region = {"name": env("MOUNTAIN_NAME", key),
               "bbox": [float(v) for v in env("AREA_BBOX").split(",")],
               "mountain": True}
@@ -76,7 +76,7 @@ def manifest(site):
         if has[kind]:
             region[kind] = f"tiles/{key}-{kind}.pmtiles"
             region[f"{kind}_maxzoom"] = int(env("TRANSPORT_MAXZOOM", "14"))
-    for kind, default in (("water", "14"), ("points", "15")):
+    for kind, default in (("water", "14"), ("points", "15"), ("ski", "15")):
         if has[kind]:
             region[kind] = f"tiles/{key}-{kind}.pmtiles"
             region[f"{kind}_maxzoom"] = int(env(f"{kind.upper()}_MAXZOOM", default))
@@ -114,7 +114,7 @@ def manifest(site):
 def main(args):
     site = args[0] if args else "_site"
     data = manifest(site)
-    held = ("contours", "rocks", "transport", "paths", "water", "points", "boundaries",
+    held = ("contours", "rocks", "transport", "paths", "water", "points", "ski", "boundaries",
             "aerial_summer", "aerial_winter")
     if not any(k in data["regions"][data["default_region"]] for k in held) \
             and "dem" not in data:

@@ -146,6 +146,8 @@ env:
   BUDGET_HISTORY_PCT: "3"
   # geographical names: a point or a line per named place, a few MB per region
   BUDGET_NAMES_PCT: "2"
+  # ski and winter: a few resorts' lines, under a MB per region
+  BUDGET_SKI_PCT: "1"
   # settlements: many buildings, not simplified
   BUDGET_BUILDINGS_PCT: "6"
   # the road network is the densest layer with our own schema (`workers/transport/build.sh`)
@@ -343,6 +345,9 @@ jobs:
       opt_names: ${{ steps.opts.outputs.opt_names }}
       opt_names_maxzoom: ${{ steps.opts.outputs.opt_names_maxzoom }}
       budget_names_pct: ${{ env.BUDGET_NAMES_PCT }}
+      opt_ski: ${{ steps.opts.outputs.opt_ski }}
+      opt_ski_maxzoom: ${{ steps.opts.outputs.opt_ski_maxzoom }}
+      budget_ski_pct: ${{ env.BUDGET_SKI_PCT }}
       opt_buildings: ${{ steps.opts.outputs.opt_buildings }}
       opt_buildings_maxzoom: ${{ steps.opts.outputs.opt_buildings_maxzoom }}
       budget_buildings_pct: ${{ env.BUDGET_BUILDINGS_PCT }}
@@ -816,6 +821,22 @@ jobs:
       budget_pct: ${{ needs.plan.outputs.budget_names_pct }}
       day: ${{ needs.plan.outputs.day }}
 
+  # ski areas, pistes, lifts and winter paths – `workers/ski/ski.yml`
+  ski:
+    name: Ski & winter
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.outputs.opt_ski == 'true' }}
+    uses: ./.github/workflows/ski.yml
+    secrets: inherit                      # cache on Drive; `env` isn't inherited
+    with:
+      region_key: ${{ needs.plan.outputs.key }}
+      region_bbox: ${{ needs.plan.outputs.bbox }}
+      maxzoom: ${{ needs.plan.outputs.opt_ski_maxzoom }}
+      region_clip: ${{ needs.plan.outputs.opt_region_clip }}
+      size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
+      budget_pct: ${{ needs.plan.outputs.budget_ski_pct }}
+      day: ${{ needs.plan.outputs.day }}
+
   # buildings with floor area and name – `workers/buildings/buildings.yml`
   settlements:
     name: Settlements
@@ -1017,7 +1038,7 @@ jobs:
   # `!cancelled()`, not `success()`: with DEM layers failed or off the map still deploys.
   deploy:
     name: Assembly and deploy
-    needs: [plan, dem, trails, features, transport, boundaries, water, railways, history, names, settlements, routing, tiles, assets]
+    needs: [plan, dem, trails, features, transport, boundaries, water, railways, history, names, ski, settlements, routing, tiles, assets]
     if: ${{ !cancelled() && needs.tiles.result == 'success' && needs.assets.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
@@ -1051,7 +1072,7 @@ jobs:
       - name: What came from the other jobs
         run: |
           set -uo pipefail
-          echo "Job results: contours=${{ needs.dem.outputs.res_contours }}, trails=${{ needs.trails.result }}, features=${{ needs.features.result }}, transport=${{ needs.transport.result }}, boundaries=${{ needs.boundaries.result }}, water=${{ needs.water.result }}, railways=${{ needs.railways.result }}, history=${{ needs.history.result }}, names=${{ needs.names.result }}, settlements=${{ needs.settlements.result }}, routing=${{ needs.routing.result }}, terrain=${{ needs.dem.outputs.res_terrain }}, tiles=${{ needs.tiles.result }}, icons=${{ needs.assets.result }}"
+          echo "Job results: contours=${{ needs.dem.outputs.res_contours }}, trails=${{ needs.trails.result }}, features=${{ needs.features.result }}, transport=${{ needs.transport.result }}, boundaries=${{ needs.boundaries.result }}, water=${{ needs.water.result }}, railways=${{ needs.railways.result }}, history=${{ needs.history.result }}, names=${{ needs.names.result }}, ski=${{ needs.ski.result }}, settlements=${{ needs.settlements.result }}, routing=${{ needs.routing.result }}, terrain=${{ needs.dem.outputs.res_terrain }}, tiles=${{ needs.tiles.result }}, icons=${{ needs.assets.result }}"
           find _site -maxdepth 2 -mindepth 1 -type d -exec du -sh {} \; 2>/dev/null || true
           du -sm _site | cut -f1 | xargs -I{} echo "_site in total: {} MB"
 
@@ -1148,6 +1169,8 @@ jobs:
           HISTORY_MAXZOOM: ${{ needs.history.outputs.maxzoom || '14' }}
           NAMES_ENABLED: ${{ needs.names.outputs.enabled || 'false' }}
           NAMES_MAXZOOM: ${{ needs.names.outputs.maxzoom || '14' }}
+          SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
+          SKI_MAXZOOM: ${{ needs.ski.outputs.maxzoom || '14' }}
           BUILDINGS_ENABLED: ${{ needs.settlements.outputs.enabled || 'false' }}
           BUILDINGS_MAXZOOM: ${{ needs.settlements.outputs.maxzoom || '14' }}
           ICONS_AVAILABLE: ${{ needs.assets.outputs.available }}
@@ -1210,6 +1233,7 @@ jobs:
           RAIL: ${{ needs.railways.outputs.enabled }}
           HISTORY: ${{ needs.history.outputs.enabled }}
           NAMES: ${{ needs.names.outputs.enabled }}
+          SKI: ${{ needs.ski.outputs.enabled }}
           BUILDINGS: ${{ needs.settlements.outputs.enabled }}
           PAGES_BUILD_TYPE: ${{ needs.plan.outputs.pages_build_type }}
         run: workers/deploy/smoke-test.sh
@@ -1267,6 +1291,7 @@ jobs:
           RAIL_ENABLED: ${{ needs.railways.outputs.enabled || 'false' }}
           HISTORY_ENABLED: ${{ needs.history.outputs.enabled || 'false' }}
           NAMES_ENABLED: ${{ needs.names.outputs.enabled || 'false' }}
+          SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
           BUILDINGS_ENABLED: ${{ needs.settlements.outputs.enabled || 'false' }}
           REGION_KEY: ${{ needs.plan.outputs.key }}
           ROCKS_ENABLED: ${{ needs.dem.outputs.rocks_enabled || 'false' }}
@@ -1312,6 +1337,7 @@ jobs:
           R_RAILWAYS: ${{ needs.railways.result }}
           R_HISTORY: ${{ needs.history.result }}
           R_NAMES: ${{ needs.names.result }}
+          R_SKI: ${{ needs.ski.result }}
           R_SETTLEMENTS: ${{ needs.settlements.result }}
           R_TERRAIN: ${{ needs.dem.outputs.res_terrain }}
           R_TILES: ${{ needs.tiles.result }}
@@ -1355,7 +1381,7 @@ jobs:
   # After `deploy`, only when it published; a failure doesn't hurt the map.
   apple-archive:
     name: Packages as Apple Archive (.aar)
-    needs: [plan, deploy, dem, trails, features, transport, boundaries, water, railways, history, names, settlements, tiles]
+    needs: [plan, deploy, dem, trails, features, transport, boundaries, water, railways, history, names, ski, settlements, tiles]
     if: ${{ !cancelled() && needs.deploy.result == 'success' && needs.plan.outputs.opt_publish == 'true' && needs.plan.outputs.opt_apple_archive == 'true' }}
     # intel: arm runners left `.aar` jobs waiting for one
     runs-on: macos-15-intel
@@ -1402,6 +1428,7 @@ jobs:
           RAIL_ENABLED: ${{ needs.railways.outputs.enabled || 'false' }}
           HISTORY_ENABLED: ${{ needs.history.outputs.enabled || 'false' }}
           NAMES_ENABLED: ${{ needs.names.outputs.enabled || 'false' }}
+          SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
           BUILDINGS_ENABLED: ${{ needs.settlements.outputs.enabled || 'false' }}
           REGION_KEY: ${{ needs.plan.outputs.key }}
           ROCKS_ENABLED: ${{ needs.dem.outputs.rocks_enabled || 'false' }}
