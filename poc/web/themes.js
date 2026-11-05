@@ -4270,6 +4270,25 @@ export function buildStyle({
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
     );
+    // hamlets often have no residential polygon in OSM; Mapy shades around their houses
+    add(
+      {
+        id: "settlement-yard",
+        type: "line",
+        source: "buildings",
+        "source-layer": "building",
+        minzoom: 12,
+        maxzoom: YARD_FROM_Z,
+        layout: { "line-join": "round", "line-cap": "round" },
+        paint: {
+          "line-color": c.building,
+          "line-width": ["interpolate", ["exponential", 2], ["zoom"],
+            12, realWidthPx(2 * YARD_M, 12), YARD_FROM_Z, realWidthPx(2 * YARD_M, YARD_FROM_Z)],
+          "line-opacity": 0.85
+        }
+      },
+      ["budovy", "Okolie budov mimo obytnej zóny (balík sídla)", "line", { "line-color": "building" }]
+    );
     add(
       {
         id: "building-pkg",
