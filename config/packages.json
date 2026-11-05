@@ -318,11 +318,11 @@
       "Which package each layer of the base map (OpenMapTiles) goes to: `workers/tiles/cut.py` cuts by it,",
       "and the app's `MapOverlay.claimedBaseSourceLayers` must match, a test guards both.",
       "  layers  a whole layer to one package",
-      "  split   a layer shared by its features: `tag`'s value picks the package from `to`, else `else`"
+      "  split   a layer shared by its features: `tag`'s value picks the package from `to`, else `else`;",
+      "          a value in `drop` stays in the whole base map only, its owner draws it from its own archive"
     ],
     "layers": {
       "landcover": "landscape",
-      "landuse": "landscape",
       "park": "landscape",
       "mountain_peak": "landscape",
       "aeroway": "landscape",
@@ -338,6 +338,12 @@
       "housenumber": "roads"
     },
     "split": {
+      "landuse": {
+        "tag": "class",
+        "to": {},
+        "else": "landscape",
+        "drop": ["quarry", "residential", "commercial", "retail"]
+      },
       "transportation": {
         "tag": "class",
         "to": {
@@ -368,8 +374,6 @@
     {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points carries them for a range only, which has no Army & history"},
     {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them once History draws an embankment's edge"},
     {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it once History draws an embankment's edge"},
-    {"tag": "landuse=quarry", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape's base map share drops it once the cut splits `landuse` by class"},
-    {"tag": "landuse=residential,commercial,retail", "packages": ["landscape", "settlements"], "owner": "settlements", "why": "Landscape's base map share drops them once the cut splits `landuse` by class"},
     {"tag": "building=ruins", "packages": ["history", "settlements"], "owner": "settlements", "why": "role: Settlements the building, Army & history the ruin's mark"}
   ]
 }
