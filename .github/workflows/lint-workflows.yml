@@ -539,6 +539,10 @@ jobs:
       - name: "Ski and winter: filter, a layer per kind, relation members"
         run: python3 workers/lint/ski.py
 
+      # two packages taking one tag draw it twice; a shared one is declared with its owner
+      - name: "Package catalog: one owner per OSM tag, the base map's share"
+        run: python3 workers/lint/owners.py
+
       # rail routing may ride only what the package draws
       - name: "Railways and cable cars: filter, promised classes and track network"
         run: python3 workers/lint/rail.py

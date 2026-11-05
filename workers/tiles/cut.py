@@ -12,22 +12,15 @@ _spec = importlib.util.spec_from_file_location(
 drop = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(drop)
 
+_CATALOG = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "packages.json")
+with open(_CATALOG, encoding="utf-8") as _f:
+    BASE_MAP = json.load(_f)["base_map"]
 # a whole layer to one package; the app's `MapOverlay.claimant` says the same
-LAYERS = {
-    "landcover": "landscape", "landuse": "landscape", "park": "landscape",
-    "mountain_peak": "landscape", "aeroway": "landscape", "aerodrome_label": "landscape",
-    "poi": "points",
-    "water": "water", "water_name": "water", "waterway": "water",
-    "boundary": "boundaries",
-    "building": "settlements", "place": "settlements",
-    "transportation_name": "roads", "housenumber": "roads",
-}
+LAYERS = BASE_MAP["layers"]
 # these layers are shared, so each feature goes by a tag
-PATH_CLASSES = {"path", "pedestrian"}
-RAIL_CLASSES = {"rail", "transit", "aerialway"}
-SPLIT = {"transportation", "traffic_sign"}
-PACKAGES = ("landscape", "points", "roads", "paths", "railways", "water", "boundaries",
-            "settlements")
+SPLIT = BASE_MAP["split"]
+PACKAGES = tuple(dict.fromkeys(list(LAYERS.values())
+                               + [p for rule in SPLIT.values() for p in [*rule["to"].values(), rule["else"]]]))
 
 
 def stem(package):
@@ -40,13 +33,9 @@ def manifest_key(package):
 
 def owner(layer, tags):
     """The package of a feature of `layer` with `tags`."""
-    if layer == "transportation":
-        kind = tags.get("class")
-        if kind in PATH_CLASSES:
-            return "paths"
-        return "railways" if kind in RAIL_CLASSES else "roads"
-    if layer == "traffic_sign":
-        return "paths" if tags.get("way") == "path" else "roads"
+    rule = SPLIT.get(layer)
+    if rule:
+        return rule["to"].get(tags.get(rule["tag"]), rule["else"])
     return LAYERS.get(layer)
 
 
@@ -132,7 +121,7 @@ def cut_tile(raw):
             out.setdefault(LAYERS[name], bytearray()).extend(raw[start:end])
         else:
             raise SystemExit(f"::error::Layer `{name}` of the base map belongs to no "
-                             f"package – add it to LAYERS in {__file__}.")
+                             f"package – add it to `base_map` in {_CATALOG}.")
     return {p: bytes(t) for p, t in out.items()}
 
 
