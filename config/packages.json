@@ -109,7 +109,7 @@
       "origin": "site",
       "reads": ["workers/features/filter.txt"],
       "owns": ["landuse", "natural", "leisure", "aeroway", "boundary=national_park,protected_area",
-               "barrier", "man_made=embankment,cutline,pipeline,spoil_heap,tower,survey_point",
+               "barrier", "man_made=embankment,dyke,cutline,pipeline,spoil_heap,tower,survey_point",
                "embankment", "cutting", "power=line,minor_line",
                "waterway=dam,weir,lock_gate,waterfall", "amenity=parking", "mountain_pass",
                "highway=emergency_access_point,proposed", "piste:type"]
@@ -240,7 +240,7 @@
       "symbol": "shield.lefthalf.filled",
       "part_of": "base",
       "app_detail": "Military, historic and abandoned places",
-      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, embankments and dykes, and everything abandoned or disused – as points, lines and areas (.pmtiles)",
+      "description": "OSM military sites, historic places and listed monuments, mines, shafts, adits and quarries, and everything abandoned or disused – as points, lines and areas (.pmtiles)",
       "sources": ["osm"],
       "manifest": ["history"],
       "suffixes": ["-history.pmtiles"],
@@ -248,8 +248,8 @@
       "regenerate": "history",
       "reads": ["workers/history/filter.txt"],
       "owns": ["military", "landuse=military,quarry", "building=bunker,military,barracks,ruins",
-               "man_made=mineshaft,adit,spoil_heap,embankment,dyke", "industrial=mine",
-               "embankment", "historic", "heritage", "ruins", "abandoned:*", "disused:*"]
+               "man_made=mineshaft,adit,spoil_heap", "industrial=mine",
+               "historic", "heritage", "ruins", "abandoned:*", "disused:*"]
     },
     {
       "key": "names",
@@ -366,8 +366,7 @@
     {"tag": "aerialway", "packages": ["paths", "railways", "ski"], "owner": "railways", "why": "ski lifts to Ski & winter, cable cars and gondolas to Railways; Paths drops them"},
     {"tag": "historic=memorial,wayside_cross,wayside_shrine,mine,mine_shaft,mineshaft,adit", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
     {"tag": "man_made=adit,mineshaft", "packages": ["history", "points"], "owner": "history", "why": "Points drops them"},
-    {"tag": "man_made=embankment,spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops them"},
-    {"tag": "embankment", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
+    {"tag": "man_made=spoil_heap", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
     {"tag": "landuse=quarry", "packages": ["history", "landscape"], "owner": "history", "why": "Landscape drops it"},
     {"tag": "landuse=residential,commercial,retail", "packages": ["landscape", "settlements"], "owner": "settlements", "why": "Landscape's base map share drops them"},
     {"tag": "building=ruins", "packages": ["history", "settlements"], "owner": "settlements", "why": "role: Settlements the building, Army & history the ruin's mark"}

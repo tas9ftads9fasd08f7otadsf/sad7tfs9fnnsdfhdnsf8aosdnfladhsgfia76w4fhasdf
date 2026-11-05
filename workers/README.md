@@ -3406,12 +3406,12 @@ Všetko vojenské, historické, banské a opustené z OSM v
 |---|---|
 | `army` | `military=*`, `landuse=military`, `building=bunker/military/barracks` – výcvikové priestory, kasárne, bunkre, zákopy |
 | `mining` | `man_made=mineshaft/adit/spoil_heap`, `industrial=mine`, `landuse=quarry`, `historic=mine/mine_shaft/mine_adit/mining` – šachty, štôlne, haldy, lomy |
-| `embankment` | `man_made=embankment/dyke` a cesty či trate s `embankment=*` – vždy čiary |
 | `history` | `historic=*`, `heritage=*`, `ruins=yes`, `building=ruins` – hrady, zrúcaniny, pamätníky, archeologické náleziská, pamiatky |
 | `gone` | čo je opustené alebo nepoužívané a nepatrí do vrstvy vyššie: `abandoned:*`, `disused:*`, `abandoned=yes`, `disused=yes` a hodnoty `abandoned`/`disused` (`railway=abandoned`) |
 
 Objekt je len v jednej vrstve, v poradí z tabuľky: opustený bunker je v
-`army`, historická štôlňa v `mining`. Či je opustený alebo nepoužívaný, hovorí
+`army`, historická štôlňa v `mining`. Násypy a hrádze sú Krajiny
+(`feature_line`, kreslené aj so zúbkami), nie tohto balíka. Či je opustený alebo nepoužívaný, hovorí
 v každej vrstve `lifecycle` (`abandoned`, `disused`). `class` a `family` sú
 hodnota a kľúč značky, podľa ktorej tam objekt prišiel; vo vrstve `gone` je to
 značka za predponou (`disused:shop=bakery` → `family=shop`, `class=bakery`).
