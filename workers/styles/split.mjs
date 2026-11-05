@@ -8,6 +8,8 @@ import { packageOf } from "../../poc/web/packages.js";
 import { cutSprite } from "../lib/sprite-cut.mjs";
 
 export const FRAGMENTS = "fragments";
+// each style's layer order once recorded; a layer added later falls between its neighbours
+export const PLACES = new URL("../data/layer-places.json", import.meta.url);
 // the base map's archive, cut per package by `workers/tiles/cut.py`
 const BASE_SOURCES = new Set(["omt", "base"]);
 const ICON_KEYS = [["layout", "icon-image"], ["paint", "fill-pattern"],
@@ -45,13 +47,65 @@ function cutFile(url, pkg) {
   return `${url.slice(0, url.length - file.length)}${file.replace(/\.pmtiles$/, "")}-omt-${pkg}.pmtiles`;
 }
 
+/** Indexes of the longest run of `values` that rises, nulls never in it. */
+function longestRising(values) {
+  const best = values.map(() => 0);
+  const prev = values.map(() => -1);
+  let end = -1;
+  values.forEach((v, i) => {
+    if (v === null) return;
+    best[i] = 1;
+    for (let j = 0; j < i; j++) {
+      if (values[j] !== null && values[j] < v && best[j] + 1 > best[i]) {
+        best[i] = best[j] + 1;
+        prev[i] = j;
+      }
+    }
+    if (end < 0 || best[i] > best[end]) end = i;
+  });
+  const kept = new Set();
+  for (let i = end; i >= 0; i = prev[i]) kept.add(i);
+  return kept;
+}
+
+/**
+ * Each layer's `riki:z`: its recorded place, so adding a layer moves no other package's
+ * layers and leaves their packages unchanged. One moved or new falls between its neighbours.
+ */
+export function places(ids, recorded) {
+  if (!recorded) return ids.map((_, i) => i);
+  const at = new Map(recorded.map((id, i) => [id, i]));
+  const kept = longestRising(ids.map((id) => (at.has(id) ? at.get(id) : null)));
+  const z = ids.map((id, i) => (kept.has(i) ? at.get(id) : null));
+  for (let i = 0; i < z.length; i++) {
+    if (z[i] !== null) continue;
+    let j = i;
+    while (j < z.length && z[j] === null) j++;
+    const gap = j - i;
+    const low = i > 0 ? z[i - 1] : (j < z.length ? z[j] - 1 : -1);
+    const high = j < z.length ? z[j] : low + gap + 1;
+    for (let k = 0; k < gap; k++) {
+      z[i + k] = Math.round((low + ((high - low) * (k + 1)) / (gap + 1)) * 1e6) / 1e6;
+    }
+  }
+  return z;
+}
+
+/** The recorded order of the style `file` is, by its longest matching name. */
+export function recordedFor(file, recorded) {
+  const name = Object.keys(recorded).filter((key) => file.endsWith(`-${key}.json`))
+    .sort((a, b) => b.length - a.length)[0];
+  return name ? recorded[name] : null;
+}
+
 /** `{package: fragment}` of one full style; `sheet` is the image names of its sprite. */
-export function split(style, sheet, spriteUrl) {
+export function split(style, sheet, spriteUrl, recorded = null) {
   const byPackage = {};
-  style.layers.forEach((source, z) => {
+  const z = places(style.layers.map((layer) => layer.id), recorded);
+  style.layers.forEach((source, index) => {
     const pkg = packageOf(source);
     const layer = structuredClone(source);
-    layer.metadata = { ...(layer.metadata || {}), "riki:z": z };
+    layer.metadata = { ...(layer.metadata || {}), "riki:z": z[index] };
     const frag = (byPackage[pkg] ||= { layers: [], sources: {}, icons: new Set() });
     if (BASE_SOURCES.has(layer.source)) {
       const id = `omt-${pkg}`;
@@ -95,7 +149,7 @@ export function sheetUrl(spriteUrl, pkg) {
 }
 
 /** Every style of `site` split; icons of every style of a package go into its one sheet. */
-export function splitSite(site) {
+export function splitSite(site, recorded = JSON.parse(readFileSync(PLACES, "utf8"))) {
   const dir = `${site}/styles`;
   const icons = {};
   let sheetSet = null;
@@ -108,7 +162,8 @@ export function splitSite(site) {
     const sheet = sheetPath && existsSync(sheetPath)
       ? Object.keys(JSON.parse(readFileSync(sheetPath, "utf8"))) : [];
     if (set) sheetSet = set;
-    for (const [pkg, { fragment, icons: own }] of Object.entries(split(style, sheet, spriteUrl))) {
+    const order = recordedFor(file, recorded);
+    for (const [pkg, { fragment, icons: own }] of Object.entries(split(style, sheet, spriteUrl, order))) {
       mkdirSync(`${site}/${FRAGMENTS}/${pkg}`, { recursive: true });
       writeFileSync(`${site}/${FRAGMENTS}/${pkg}/${file}`, JSON.stringify(fragment));
       own.forEach((name) => (icons[pkg] ||= new Set()).add(name));

@@ -4163,6 +4163,12 @@ z výškového modelu. Prepíše sa preto vždy len ten jeden balík.
 zabalením vezme z jeho poslednej verzie na Drive (`workers/deploy/carry-over.py`).
 Vrstvu, ktorú beh postavil, nikdy: čo z nej tentoraz nevzniklo, v balíku nebude.
 
+**Miesto vrstvy v štýle (`riki:z`) je zapísané** v `workers/data/layer-places.json`,
+poradie vrstiev každého štýlu. Nová alebo presunutá vrstva dostane miesto medzi
+susedmi (napr. 34,5), ostatné si nechajú svoje. Inak by jedna nová vrstva posunula
+čísla všetkých za ňou a beh by znova nahral každý balík, aj nezmenený výškový model
+(Riki Maps TestFlight AIlA). Zoznam sa prepisuje len vedome; potom sa raz nahrá všetko.
+
 **Zoznam je číselník, nie `case` v skripte**: ktoré balíky sú, drží
 `workers/data/packages.json` (kľúč `regeneruj` hovorí, čo sa dá postaviť bez
 celého buildu mapy) a `workers/state/jobs.py` k tomu dopĺňa len to, čo je vec
