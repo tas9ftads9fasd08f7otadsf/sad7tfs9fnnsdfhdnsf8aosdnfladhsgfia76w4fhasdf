@@ -93,8 +93,8 @@ def main():
     lint = Lint()
     prof = load("routing_profile", "profile.py", "routing")
     p = prof.Profile()
-    rel_prof = "workers/data/routing-profiles.json"
-    rel_vig = "workers/data/vignettes.json"
+    rel_prof = "workers/data/routing.json (`profiles`)"
+    rel_vig = "workers/data/routing.json (`vignettes`)"
 
     engines = sorted(p.engines)
 

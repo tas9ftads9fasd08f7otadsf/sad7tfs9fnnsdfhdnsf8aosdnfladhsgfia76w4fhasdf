@@ -14,7 +14,7 @@ Quiet things:
   2. the national graph must not be built from a cut PBF: an edge without its
      other end is a dead end, yet the graph builds and the run goes green;
   3. without `admins.sqlite` Valhalla doesn't know which country an edge is in;
-  4. a scope covering a country outside `vignettes.json` never asks for a vignette;
+  4. a scope covering a country outside the `vignettes` of `routing.json` never asks for a vignette;
   5. the region network must stand on the map's PBF, ride in the map and in
      `roads` and be in the manifest; its own `routing` package is retired;
   6. node order: a region build takes it from the cache, and when it's missing
@@ -33,9 +33,8 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
 
-AREAS = os.path.join(_DATA, "routing-areas.json")
+ROUTING = os.path.join(_DATA, "routing.json")
 REGIONS = os.path.join(_DATA, "map-settings.json")
-VIGNETTES = os.path.join(_DATA, "vignettes.json")
 REGISTRY = os.path.join(_DATA, "packages.json")
 WORKFLOW = os.path.join(".github", "workflows", "navigation.yml")
 ORDER_WORKFLOW = os.path.join(".github", "workflows", "routing-order.yml")
@@ -59,7 +58,7 @@ def err(path, msg):
 
 def national_graph(areas, regions, countries):
     """Valhalla over a whole state – the reference build that stays."""
-    rel_areas = "workers/data/routing-areas.json"
+    rel_areas = "workers/data/routing.json (`areas`)"
     rel_regions = "workers/data/map-settings.json"
 
     for key, area in areas.items():
@@ -86,7 +85,7 @@ def national_graph(areas, regions, countries):
         for c in area.get("countries") or []:
             if c not in countries:
                 err(rel_areas,
-                    f"scope `{key}` covers `{c}`, but `vignettes.json` doesn't "
+                    f"scope `{key}` covers `{c}`, but the `vignettes` of `routing.json` don't "
                     f"know that country – the `vignettes` option asks nothing "
                     f"there, and silence can't be told from “no vignette needed”.")
         if not area.get("pbf"):
@@ -239,7 +238,7 @@ def node_order(areas, regions):
         if area and area not in areas:
             err(rel_regions,
                 f"`{key}` has `routing_area: {area}`, which "
-                f"`workers/data/routing-areas.json` lacks. The region build would "
+                f"the `areas` of `workers/data/routing.json` lack. The region build would "
                 f"look for an order nobody computes.")
 
     if not os.path.exists(ORDER_WORKFLOW):
@@ -349,12 +348,12 @@ def form(areas):
 
 
 def main():
-    with open(AREAS, encoding="utf-8") as f:
-        areas = json.load(f)["areas"]
+    with open(ROUTING, encoding="utf-8") as f:
+        routing = json.load(f)
+    areas = routing["areas"]["areas"]
     with open(REGIONS, encoding="utf-8") as f:
         regions = json.load(f)["regions"]
-    with open(VIGNETTES, encoding="utf-8") as f:
-        countries = json.load(f)["countries"]
+    countries = routing["vignettes"]["countries"]
 
     national_graph(areas, regions, countries)
     region_network()

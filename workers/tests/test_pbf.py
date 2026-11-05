@@ -112,8 +112,8 @@ class RoutingPbf(unittest.TestCase):
         shadow = shadow_workers(work, {})
         os.remove(os.path.join(shadow, "data"))
         os.makedirs(os.path.join(shadow, "data"))
-        with open(os.path.join(shadow, "data", "routing-areas.json"), "w") as f:
-            json.dump(area, f)
+        with open(os.path.join(shadow, "data", "routing.json"), "w") as f:
+            json.dump({"areas": area}, f)
         server, base = rangeserver.serve({"/europe/a-latest.osm.pbf": blob, "/europe/b-latest.osm.pbf": blob})
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
@@ -128,7 +128,7 @@ class RoutingPbf(unittest.TestCase):
         r = subprocess.run(["bash", "workers/routing/pbf.sh"], cwd=work, capture_output=True, text=True,
                            env={**os.environ, **LOCAL, "AREA": "three", "OSMFR_BASE": base, "GITHUB_OUTPUT": out})
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn("isn't in workers/data/routing-areas.json", r.stderr)
+        self.assertIn("isn't in the `areas` of workers/data/routing.json", r.stderr)
 
     def test_a_border_object_at_two_versions_is_kept_once_at_the_newer(self):
         tmp = tempfile.mkdtemp()
@@ -152,8 +152,8 @@ class RoutingPbf(unittest.TestCase):
         shadow = shadow_workers(work, {})
         os.remove(os.path.join(shadow, "data"))
         os.makedirs(os.path.join(shadow, "data"))
-        with open(os.path.join(shadow, "data", "routing-areas.json"), "w") as f:
-            json.dump({"areas": {"two": {"pbf": ["europe/a", "europe/b"]}}}, f)
+        with open(os.path.join(shadow, "data", "routing.json"), "w") as f:
+            json.dump({"areas": {"areas": {"two": {"pbf": ["europe/a", "europe/b"]}}}}, f)
         server, base = rangeserver.serve({"/europe/a-latest.osm.pbf": a, "/europe/b-latest.osm.pbf": b})
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)

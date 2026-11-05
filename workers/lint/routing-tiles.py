@@ -21,7 +21,8 @@ from types import SimpleNamespace
 _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(_WORKERS, "data")
-REL_TAGS = "workers/data/routing-tags.json"
+ROUTING = os.path.join(_DATA, "routing.json")
+REL_TAGS = "workers/data/routing.json (`tags`)"
 
 
 def load(name, filename, folder):
@@ -158,8 +159,8 @@ def check_dictionary(dictionary, raw, lint):
 
 
 def profile_against_dictionary(dictionary, lint):
-    with open(os.path.join(_DATA, "routing-profiles.json"), encoding="utf-8") as f:
-        options = json.load(f)["options"]
+    with open(ROUTING, encoding="utf-8") as f:
+        options = json.load(f)["profiles"]["options"]
     for option, spec in options.items():
         if not isinstance(spec, dict):
             continue
@@ -178,8 +179,8 @@ def profile_against_dictionary(dictionary, lint):
 
 
 def vignettes_against_dictionary(dictionary, lint):
-    with open(os.path.join(_DATA, "vignettes.json"), encoding="utf-8") as f:
-        countries = json.load(f)["countries"]
+    with open(ROUTING, encoding="utf-8") as f:
+        countries = json.load(f)["vignettes"]["countries"]
     for code, c in countries.items():
         if not c.get("sells_vignette"):
             continue
@@ -360,8 +361,8 @@ def main():
     fmt = load("routing_format", "format.py", "routing")
     tags = load("routing_tags", "tags.py", "routing")
     dictionary = tags.dictionary()
-    with open(os.path.join(_DATA, "routing-tags.json"), encoding="utf-8") as f:
-        raw = json.load(f)
+    with open(ROUTING, encoding="utf-8") as f:
+        raw = json.load(f)["tags"]
 
     if len(set(fmt.RESTRICTION_KINDS)) != len(fmt.RESTRICTION_KINDS):
         lint.err("workers/routing/format.py", "`RESTRICTION_KINDS` has a kind "

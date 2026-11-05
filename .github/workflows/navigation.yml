@@ -14,7 +14,7 @@ name: Map · Build routing
 on:
   workflow_dispatch:
     inputs:
-      # the list is in `workers/data/routing-areas.json`; GitHub's `choice` can't
+      # the list is the `areas` of `workers/data/routing.json`; GitHub's `choice` can't
       # read a file, so it's written here too and the lint compares them
       area:
         description: "Graph scope (neighbours = a costly run, but a route crosses the border)"
@@ -93,7 +93,7 @@ jobs:
           VALHALLA_IMAGE: ${{ inputs.valhalla_image }}
         run: workers/routing/graph.sh
 
-      # the region key sits next to the scope in `routing-areas.json` – it isn't
+      # the region key sits next to the scope in the `areas` of `routing.json` – it isn't
       # derived from the scope name (the name is a promise about the scope)
       - name: Region key and layers for the catalog
         id: cat
@@ -103,8 +103,8 @@ jobs:
           set -euo pipefail
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import json, os
-          areas = json.load(open("workers/data/routing-areas.json",
-                                 encoding="utf-8"))["areas"]
+          areas = json.load(open("workers/data/routing.json",
+                                 encoding="utf-8"))["areas"]["areas"]
           a = areas[os.environ["AREA"]]
           print(f"region_key={a['region_key']}")
           # `MAP_LAYERS` for a pipeline that makes no region map: without it

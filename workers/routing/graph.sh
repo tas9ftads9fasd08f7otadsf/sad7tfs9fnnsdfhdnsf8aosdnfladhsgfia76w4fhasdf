@@ -25,7 +25,7 @@ elif [ -n "$REGION_KEY" ]; then
   PBF="${ROUTING_PBF:-data/region.osm.pbf}"
   MADE_BY="workers/plan/pbf.sh (step “Region PBF”)"
 else
-  echo "::error::Say what scope the graph is built for: AREA (a key from workers/data/routing-areas.json, a national package) or REGION_KEY (a region, its own package beside its map). Without it graph.json couldn't say what the graph covers – and the scope is the main thing to know about routing."
+  echo "::error::Say what scope the graph is built for: AREA (a key of `areas` in workers/data/routing.json, a national package) or REGION_KEY (a region, its own package beside its map). Without it graph.json couldn't say what the graph covers – and the scope is the main thing to know about routing."
   exit 1
 fi
 IMAGE="${VALHALLA_IMAGE:-ghcr.io/valhalla/valhalla-scripted:latest}"
@@ -40,7 +40,7 @@ cp "$PBF" custom_files/routing.osm.pbf
 
 PBF_MB=$(( $(stat -c%s custom_files/routing.osm.pbf) / 1048576 ))
 # the plan before the slow part; a rough estimate
-echo "::notice::Building the graph from ${PBF_MB} MB of PBF ($WHAT, image $IMAGE). A region takes minutes; Slovakia alone tens of minutes and with neighbours it can be hours – the job cap is 360 minutes. Measured national numbers belong in workers/data/routing-areas.json."
+echo "::notice::Building the graph from ${PBF_MB} MB of PBF ($WHAT, image $IMAGE). A region takes minutes; Slovakia alone tens of minutes and with neighbours it can be hours – the job cap is 360 minutes. Measured national numbers belong in the `areas` of workers/data/routing.json."
 
 # the version before the build; no pipe from `docker run` (EPIPE under pipefail)
 VALHALLA_RAW=$(docker run --rm --entrypoint valhalla_build_tiles "$IMAGE" \
@@ -125,8 +125,8 @@ graph = {
     "run_id": os.environ.get("GITHUB_RUN_ID", ""),
 }
 if scope == "area":
-    areas = json.load(open(os.path.join("workers", "data", "routing-areas.json"),
-                           encoding="utf-8"))["areas"]
+    areas = json.load(open(os.path.join("workers", "data", "routing.json"),
+                           encoding="utf-8"))["areas"]["areas"]
     area = areas[key]
     graph.update({
         "name": area["name"],
@@ -156,6 +156,6 @@ MB=$(( $(du -sb _site/routing | cut -f1) / 1048576 ))
 echo "graph_mb=$MB" >> "$GITHUB_OUTPUT"
 echo "valhalla=${VALHALLA_VER:-unknown}" >> "$GITHUB_OUTPUT"
 SEC=$(( $(date +%s) - T ))
-echo "::notice::Graph done: ${MB} MB in $(( SEC / 60 )) min $(( SEC % 60 )) s (PBF ${PBF_MB} MB, $WHAT). For a national run this number belongs in workers/data/routing-areas.json; for a region it's in the catalog under its own package (\`maps.routing\`)."
+echo "::notice::Graph done: ${MB} MB in $(( SEC / 60 )) min $(( SEC % 60 )) s (PBF ${PBF_MB} MB, $WHAT). For a national run this number belongs in the `areas` of workers/data/routing.json; for a region it's in the catalog under its own package (\`maps.routing\`)."
 printf '%s\t%s\t%s\t%s\n' "20" "Routing graph (Valhalla)" "$SEC" \
   "${MB} MB from ${PBF_MB} MB PBF" >> steps-out/routing.tsv

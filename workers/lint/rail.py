@@ -11,7 +11,8 @@ _WORKERS = os.path.dirname(_HERE)
 SCHEMA = os.path.join(_WORKERS, "rail", "rail.yml")
 FILTER = os.path.join(_WORKERS, "rail", "filter.txt")
 BUILD = os.path.join(_WORKERS, "rail", "build.sh")
-DICTIONARY = os.path.join(_WORKERS, "data", "rail-routing-tags.json")
+ROUTING = os.path.join(_WORKERS, "data", "routing.json")
+DICTIONARY = "workers/data/routing.json (`rail_tags`)"
 
 # keys `lines.py` adds to points – the prefilter needn't pass them
 DERIVED = {"rail_speed"}
@@ -84,15 +85,15 @@ def main():
         bad.append(f"{FILTER}: the prefilter doesn't pass `{key}` – aerialways "
                    f"wouldn't be in the tiles.")
 
-    with open(DICTIONARY, encoding="utf-8") as f:
-        network = set(json.load(f)["network"]["railway"])
+    with open(ROUTING, encoding="utf-8") as f:
+        network = set(json.load(f)["rail_tags"]["network"]["railway"])
     for cls in sorted(network - classes):
         bad.append(f"{DICTIONARY}: routing runs on `railway={cls}`, which the map "
                    f"doesn't draw – a route would run off the drawing.")
 
     with open(BUILD, encoding="utf-8") as f:
         build = f.read()
-    if "rail-routing-tags.json" not in build:
+    if "--dictionary=rail" not in build:
         bad.append(f"{BUILD}: the rail network isn't built with its own dictionary – "
                    f"with the road one it would hold not a single line.")
     if " -R" in build or "--omit-referenced" in build:

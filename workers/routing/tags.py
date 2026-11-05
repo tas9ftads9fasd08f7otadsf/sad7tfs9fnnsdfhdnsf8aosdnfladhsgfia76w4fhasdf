@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Routing tag dictionary – the one way into `workers/data/routing-tags.json`."""
+"""Routing tag dictionary – the one way into the `tags` of `workers/data/routing.json`."""
 import hashlib
 import json
 import os
@@ -9,7 +9,19 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
 import context                                                    # noqa: E402
 
-LOOKUP = os.path.join(os.path.dirname(_HERE), "data", "routing-tags.json")
+ROUTING = os.path.join(os.path.dirname(_HERE), "data", "routing.json")
+# a dictionary by name, a section of `routing.json`; a path reads a file of its own (fixtures)
+SECTIONS = {"road": "tags", "rail": "rail_tags"}
+LOOKUP = "road"
+RAIL = "rail"
+
+
+def _raw(source):
+    if source in SECTIONS:
+        with open(ROUTING, encoding="utf-8") as f:
+            return json.load(f)[SECTIONS[source]]
+    with open(source, encoding="utf-8") as f:
+        return json.load(f)
 
 # key kinds; a tile value is encoded by them
 ENUMERATED, NUMBER, FREE = "values", "number", "free"
@@ -22,9 +34,8 @@ _ID_KEY = {"country": "krajina"}
 class Dictionary:
     """Keys and values allowed into a tile – in the order that is their index."""
 
-    def __init__(self, path=LOOKUP):
-        with open(path, encoding="utf-8") as f:
-            raw = json.load(f)
+    def __init__(self, source=LOOKUP):
+        raw = _raw(source)
         self.version = raw["version"]
         self.network = {k: v for k, v in raw["network"].items() if not k.startswith("_")}
         access = raw["_access"]["values"]
@@ -45,7 +56,7 @@ class Dictionary:
                 kind, values = FREE, []
             else:
                 raise SystemExit(
-                    f"::error file=workers/data/routing-tags.json::key "
+                    f"::error file=workers/data/routing.json::`tags` key "
                     f"`{key}` has no kind (`values`, `number`, `free`, "
                     f"`access` or `from_network`). Without one it can't be encoded "
                     f"or read – the phone would read another number there.")
@@ -107,14 +118,14 @@ def _id(version, network, keys, kind, values):
 
 
 _CACHE = {}
-RAIL = os.path.join(os.path.dirname(_HERE), "data", "rail-routing-tags.json")
 
 
-def dictionary(path=None):
-    path = path or os.environ.get("ROUTING_TAGS") or LOOKUP
-    if path not in _CACHE:
-        _CACHE[path] = Dictionary(path)
-    return _CACHE[path]
+def dictionary(source=None):
+    """`road`, `rail`, or a dictionary file's path."""
+    source = source or os.environ.get("ROUTING_TAGS") or LOOKUP
+    if source not in _CACHE:
+        _CACHE[source] = Dictionary(source)
+    return _CACHE[source]
 
 
 def export(s=None):

@@ -40,8 +40,8 @@ class Classify(unittest.TestCase):
         self.assertEqual(names, set(context.CONTEXTS))
 
     def test_dictionary_lists_the_contexts(self):
-        with open(os.path.join(WORKERS, "data", "routing-tags.json"), encoding="utf-8") as f:
-            keys = json.load(f)["keys"]
+        with open(os.path.join(WORKERS, "data", "routing.json"), encoding="utf-8") as f:
+            keys = json.load(f)["tags"]["keys"]
         self.assertEqual(tuple(keys["speed_context"]["values"]), context.CONTEXTS)
         self.assertEqual(list(keys)[-1], "speed_context", "a new key goes last, or old indices move")
 
@@ -103,8 +103,7 @@ class Network(unittest.TestCase):
 class RailNetwork(unittest.TestCase):
     def test_a_tram_on_a_street_gets_no_speed_context(self):
         n = worker("routing/network.py")
-        rail = worker("routing/tags.py", name="tags").dictionary(
-            os.path.join(WORKERS, "data", "rail-routing-tags.json"))
+        rail = worker("routing/tags.py", name="tags").dictionary("rail")
         net = n.load(os.path.join(FIXTURES, "tram-street.osm"), rail)
         self.assertEqual(len(net.edges), 2)
         self.assertFalse([e for e in net.edges if "speed_context" in e["tags"] or "road" in e])

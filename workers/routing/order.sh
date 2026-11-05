@@ -4,13 +4,13 @@
 # It depends only on the network's SHAPE, so it is recomputed after ORDER_MAX_AGE_DAYS;
 # a new id means regions built on the old one must be rebuilt.
 #
-# In:  AREA (key in routing-areas.json), OSMFR_BASE, ORDER_MAX_AGE_DAYS (default 30;
+# In:  AREA (key of `areas` in routing.json), OSMFR_BASE, ORDER_MAX_AGE_DAYS (default 30;
 #      0 = always), FORCE=true = compute even when fresh
 # Out: data/routing-order.json; `computed`, `id`, `nodes` to GITHUB_OUTPUT
 
 set -euo pipefail
 mkdir -p data steps-out
-: "${AREA:?give AREA – a key from workers/data/routing-areas.json}"
+: "${AREA:?give AREA – a key of `areas` in workers/data/routing.json}"
 OUT=data/routing-order.json
 MAX_AGE="${ORDER_MAX_AGE_DAYS:-30}"
 

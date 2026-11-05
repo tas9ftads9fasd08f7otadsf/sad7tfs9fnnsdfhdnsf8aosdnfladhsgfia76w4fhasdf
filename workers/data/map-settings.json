@@ -636,7 +636,7 @@
         22.57,
         49.61
       ],
-      "note": "The routing GRAPH (Valhalla), not a map – `navigation.yml`, extent from workers/data/routing-areas.json. `osmfr` is deliberately ABSENT: `workers/routing/pbf.sh` downloads the PBF by that lookup, since the graph's extent is another question than the map's – the graph is NOT split by region (see there). `admin_level: 2` means the package sits on Drive directly in `navigacia_slovensko/`, with no region level. And `country` EQUALS the key – not a shared `navigacia` for every scope: `admin_level: 2` makes the country a catalog node too, so two scopes under one `navigacia` would OVERWRITE each other's item (both packages on Drive, the catalog knowing the second). The same decision for the same reason as `svet_basic`."
+      "note": "The routing GRAPH (Valhalla), not a map – `navigation.yml`, extent from the `areas` of workers/data/routing.json. `osmfr` is deliberately ABSENT: `workers/routing/pbf.sh` downloads the PBF by that lookup, since the graph's extent is another question than the map's – the graph is NOT split by region (see there). `admin_level: 2` means the package sits on Drive directly in `navigacia_slovensko/`, with no region level. And `country` EQUALS the key – not a shared `navigacia` for every scope: `admin_level: 2` makes the country a catalog node too, so two scopes under one `navigacia` would OVERWRITE each other's item (both packages on Drive, the catalog knowing the second). The same decision for the same reason as `svet_basic`."
     },
     "navigacia_slovensko_susedia": {
       "id": "navigation_slovakia_neighbours",

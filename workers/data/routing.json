@@ -1,0 +1,1350 @@
+{
+  "_comment": [
+    "Everything routing reads, one section per former file:",
+    "  tags       the road graph's tag dictionary (`workers/routing/tags.py`; the app bundles its export)",
+    "  rail_tags  the rail graph's, its own `id` so the two never join",
+    "  profiles   routing engines, modes and their options (`workers/routing/profile.py`)",
+    "  areas      national routing scopes and their extracts",
+    "  vignettes  toll stickers by country (the app bundles the section whole)",
+    "Each section keeps its own `_comment`."
+  ],
+  "tags": {
+    "_comment": [
+      "ROUTING TAG DICTIONARY – what of OSM travels to the phone.",
+      "",
+      "The `<region>-routing.pmtiles` archive carries TAGS, not costs: the profile",
+      "is evaluated on the phone (`docs/navigation.md` §10, format in",
+      "`docs/routing-tiles.md`). So this list is also the SIZE LEVER.",
+      "",
+      "`network` says WHAT IS A ROAD (which ways enter the graph), `keys` WHAT",
+      "TRAVELS ABOUT IT; a key doing both has `from_network: true`.",
+      "",
+      "Three key kinds, an encoding difference: `values` (enumerated, an index in",
+      "the tile), `number` (integer without unit), `free` (string as in OSM).",
+      "Sizes stay strings: `12'6\"` read as 12 would send a caravan under a bridge.",
+      "",
+      "A value outside the list is dropped and counted by `tiles.py`.",
+      "`name` is for instructions and the first key cut when over budget.",
+      "`country` is not an OSM tag: the edge's country, for the vignette.",
+      "`speed_context` isn't either: which default limit applies (`routing/context.py`).",
+      "A new key goes LAST, so an older archive's indices still mean the same.",
+      "",
+      "CHANGING THIS FILE CHANGES THE DICTIONARY `id` in every tile; archives with",
+      "different ids must never join (`workers/lint/routing-tiles.py`). The id is",
+      "hashed over the former Slovak names, so this translation didn't move it."
+    ],
+    "version": 1,
+    "network": {
+      "_comment": [
+        "What makes a way a road: `highway`, plus ferries, lifts and platforms."
+      ],
+      "highway": [
+        "motorway",
+        "motorway_link",
+        "trunk",
+        "trunk_link",
+        "primary",
+        "primary_link",
+        "secondary",
+        "secondary_link",
+        "tertiary",
+        "tertiary_link",
+        "unclassified",
+        "residential",
+        "living_street",
+        "service",
+        "busway",
+        "bus_guideway",
+        "raceway",
+        "pedestrian",
+        "track",
+        "path",
+        "footway",
+        "cycleway",
+        "bridleway",
+        "steps",
+        "corridor",
+        "via_ferrata",
+        "road"
+      ],
+      "route": [
+        "ferry"
+      ],
+      "railway": [
+        "platform"
+      ],
+      "aerialway": [
+        "cable_car",
+        "gondola",
+        "mixed_lift",
+        "chair_lift",
+        "drag_lift",
+        "t-bar",
+        "j-bar",
+        "platter",
+        "rope_tow",
+        "magic_carpet",
+        "zip_line"
+      ]
+    },
+    "keys": {
+      "highway": {
+        "from_network": true,
+        "what": "road class"
+      },
+      "route": {
+        "from_network": true,
+        "what": "ferry"
+      },
+      "railway": {
+        "from_network": true,
+        "what": "platform"
+      },
+      "aerialway": {
+        "from_network": true,
+        "what": "lift, cable car"
+      },
+      "name": {
+        "free": true,
+        "what": "road name for the \"turn onto…\" instruction"
+      },
+      "ref": {
+        "free": true,
+        "what": "road number (D1, I/18) for the instruction and the sign"
+      },
+      "oneway": {
+        "values": [
+          "yes",
+          "no",
+          "-1",
+          "reversible",
+          "alternating"
+        ],
+        "what": "direction; `-1` runs against the way's node order"
+      },
+      "oneway:bicycle": {
+        "values": [
+          "yes",
+          "no",
+          "-1"
+        ],
+        "what": "a one-way that doesn't apply to bicycles"
+      },
+      "junction": {
+        "values": [
+          "roundabout",
+          "circular",
+          "jughandle"
+        ],
+        "what": "roundabout – direction and the instruction (\"third exit\")"
+      },
+      "access": {
+        "access": true,
+        "what": "access for all"
+      },
+      "vehicle": {
+        "access": true,
+        "what": "access for vehicles"
+      },
+      "motor_vehicle": {
+        "access": true,
+        "what": "access for motor vehicles"
+      },
+      "motorcar": {
+        "access": true,
+        "what": "access for cars"
+      },
+      "hgv": {
+        "access": true,
+        "what": "access for lorries"
+      },
+      "psv": {
+        "access": true,
+        "what": "access for buses"
+      },
+      "foot": {
+        "access": true,
+        "what": "access on foot"
+      },
+      "bicycle": {
+        "access": true,
+        "what": "access by bicycle"
+      },
+      "horse": {
+        "access": true,
+        "what": "access on horseback"
+      },
+      "ski": {
+        "access": true,
+        "what": "access on skis"
+      },
+      "surface": {
+        "values": [
+          "asphalt",
+          "concrete",
+          "concrete:plates",
+          "concrete:lanes",
+          "paved",
+          "paving_stones",
+          "sett",
+          "cobblestone",
+          "unhewn_cobblestone",
+          "metal",
+          "wood",
+          "unpaved",
+          "compacted",
+          "fine_gravel",
+          "gravel",
+          "pebblestone",
+          "rock",
+          "dirt",
+          "earth",
+          "ground",
+          "grass",
+          "grass_paver",
+          "mud",
+          "sand",
+          "woodchips",
+          "snow",
+          "ice",
+          "salt"
+        ],
+        "what": "surface – a cost for bicycles and caravans, not a ban"
+      },
+      "smoothness": {
+        "values": [
+          "excellent",
+          "good",
+          "intermediate",
+          "bad",
+          "very_bad",
+          "horrible",
+          "very_horrible",
+          "impassable"
+        ],
+        "what": "surface passability"
+      },
+      "tracktype": {
+        "values": [
+          "grade1",
+          "grade2",
+          "grade3",
+          "grade4",
+          "grade5"
+        ],
+        "what": "track grade – `track` is one switch in the profile, the grade sets the cost"
+      },
+      "sac_scale": {
+        "values": [
+          "hiking",
+          "mountain_hiking",
+          "demanding_mountain_hiking",
+          "alpine_hiking",
+          "demanding_alpine_hiking",
+          "difficult_alpine_hiking"
+        ],
+        "what": "hiking difficulty (SAC)"
+      },
+      "mtb:scale": {
+        "values": [
+          "0",
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6"
+        ],
+        "what": "mountain bike difficulty"
+      },
+      "trail_visibility": {
+        "values": [
+          "excellent",
+          "good",
+          "intermediate",
+          "bad",
+          "horrible",
+          "no"
+        ],
+        "what": "whether the path is visible in the field"
+      },
+      "maxspeed": {
+        "free": true,
+        "what": "speed limit with its unit (`50`, `30 mph`)"
+      },
+      "maxheight": {
+        "free": true,
+        "what": "underpass height"
+      },
+      "maxheight:physical": {
+        "free": true,
+        "what": "real height when the sign is elsewhere"
+      },
+      "maxwidth": {
+        "free": true,
+        "what": "width"
+      },
+      "maxweight": {
+        "free": true,
+        "what": "weight"
+      },
+      "maxlength": {
+        "free": true,
+        "what": "length"
+      },
+      "maxaxleload": {
+        "free": true,
+        "what": "axle load – for lorries"
+      },
+      "hazmat": {
+        "values": [
+          "yes",
+          "no",
+          "destination"
+        ],
+        "what": "hazardous goods"
+      },
+      "toll": {
+        "values": [
+          "yes",
+          "no"
+        ],
+        "what": "toll for passing; a vignette is NOT one (`docs/navigation.md` §5)"
+      },
+      "ford": {
+        "values": [
+          "yes",
+          "no",
+          "stepping_stones",
+          "boat"
+        ],
+        "what": "ford"
+      },
+      "bridge": {
+        "values": [
+          "yes",
+          "no",
+          "viaduct",
+          "boardwalk",
+          "aqueduct",
+          "cantilever",
+          "covered",
+          "movable",
+          "trestle"
+        ],
+        "what": "bridge"
+      },
+      "tunnel": {
+        "values": [
+          "yes",
+          "no",
+          "building_passage",
+          "culvert",
+          "avalanche_protector"
+        ],
+        "what": "tunnel"
+      },
+      "service": {
+        "values": [
+          "driveway",
+          "parking_aisle",
+          "alley",
+          "drive-through",
+          "emergency_access",
+          "yard",
+          "siding",
+          "spur",
+          "crossover"
+        ],
+        "what": "kind of service road – a driveway isn't a car park aisle"
+      },
+      "incline": {
+        "free": true,
+        "what": "incline with its sign (`10%`, `up`)"
+      },
+      "layer": {
+        "number": true,
+        "what": "crossing level – a grade-separated crossing isn't a junction"
+      },
+      "lanes": {
+        "number": true,
+        "what": "number of lanes"
+      },
+      "country": {
+        "values": [
+          "SK",
+          "CZ",
+          "AT",
+          "HU",
+          "PL",
+          "UA",
+          "DE",
+          "SI",
+          "CH",
+          "HR",
+          "RO"
+        ],
+        "what": "the edge's country – input for the vignette, not an OSM tag"
+      },
+      "speed_context": {
+        "values": [
+          "urban",
+          "rural",
+          "motorway",
+          "urban_motorway",
+          "motorroad",
+          "urban_motorroad",
+          "living_street"
+        ],
+        "what": "which default limit of the country's law applies (`regulations/<country>.json` in traffic-signs) – from `workers/routing/context.py`, not an OSM tag"
+      }
+    },
+    "_access": {
+      "_comment": [
+        "The values EVERY access key has (`access`, `foot`, `hgv`…), written once."
+      ],
+      "values": [
+        "yes",
+        "no",
+        "private",
+        "destination",
+        "delivery",
+        "customers",
+        "permissive",
+        "agricultural",
+        "forestry",
+        "designated",
+        "dismount",
+        "discouraged",
+        "use_sidepath",
+        "unknown"
+      ]
+    }
+  },
+  "rail_tags": {
+    "_comment": [
+      "Routing tag dictionary for tracks – archive `<region>-rail-routing.pmtiles`.",
+      "The format of `tags`, another dictionary and so another `id`:",
+      "the rail network never joins the road one on the phone."
+    ],
+    "version": 1,
+    "network": {
+      "railway": [
+        "rail",
+        "light_rail",
+        "subway",
+        "tram",
+        "narrow_gauge",
+        "monorail",
+        "funicular",
+        "preserved"
+      ]
+    },
+    "keys": {
+      "railway": {
+        "from_network": true,
+        "what": "line kind"
+      },
+      "name": {
+        "free": true,
+        "what": "line name for the instruction"
+      },
+      "ref": {
+        "free": true,
+        "what": "line number"
+      },
+      "usage": {
+        "values": [
+          "main",
+          "branch",
+          "industrial",
+          "military",
+          "tourism",
+          "scientific",
+          "test"
+        ],
+        "what": "line significance"
+      },
+      "service": {
+        "values": [
+          "yard",
+          "siding",
+          "spur",
+          "crossover"
+        ],
+        "what": "secondary track – dearer, not banned"
+      },
+      "maxspeed": {
+        "free": true,
+        "what": "line speed"
+      },
+      "gauge": {
+        "free": true,
+        "what": "gauge in mm"
+      },
+      "electrified": {
+        "values": [
+          "contact_line",
+          "rail",
+          "yes",
+          "no",
+          "4th_rail",
+          "ground-level_power_supply"
+        ],
+        "what": "traction"
+      },
+      "oneway": {
+        "values": [
+          "yes",
+          "no",
+          "-1"
+        ],
+        "what": "one-way track"
+      },
+      "railway:preferred_direction": {
+        "values": [
+          "forward",
+          "backward",
+          "both"
+        ],
+        "what": "preferred direction"
+      },
+      "access": {
+        "access": true,
+        "what": "access"
+      },
+      "bridge": {
+        "values": [
+          "yes",
+          "viaduct"
+        ],
+        "what": "bridge"
+      },
+      "tunnel": {
+        "values": [
+          "yes",
+          "building_passage"
+        ],
+        "what": "tunnel"
+      }
+    },
+    "_access": {
+      "values": [
+        "yes",
+        "no",
+        "private",
+        "permissive",
+        "unknown"
+      ]
+    }
+  },
+  "profiles": {
+    "_comment": [
+      "WHAT A USER ASKS OF NAVIGATION – in ONE place: each option once, with how it",
+      "translates into each engine. Read by `workers/routing/profile.py`, guarded by",
+      "`workers/lint/routing.py`.",
+      "",
+      "Engines say the same thing in other words; a profile per engine would be two",
+      "truths that part silently. So what an engine CAN'T do is here too: `unsupported`",
+      "with a reason is the only way to SEE the hole; `profile.py --strict` fails on it,",
+      "otherwise it lands in `_unsupported` and on stderr.",
+      "",
+      "Checked in Valhalla's source (master, August 2026): `exclude_highways` is exactly",
+      "`RoadClass::kMotorway`; `use_highways` scales the fixed `kHighwayFactor[]` table",
+      "(Motorway 1.0, Trunk 0.5, the rest 0.0), so it has NO effect on primary, secondary",
+      "and tertiary roads – that needs a patch (`docs/navigation.md`). GraphHopper's custom",
+      "model covers every option, `country` (the vignette) included.",
+      "",
+      "A road CLASS is national law (the `ref` prefix), a TAG is the mapper's guess",
+      "(`highway=primary`); each option has both `osm` and `ref`, and one place – the",
+      "graph's tag transform – decides which holds."
+    ],
+    "engines": {
+      "valhalla": {
+        "name": "Valhalla",
+        "lang": "C++",
+        "dialect": "costing_options",
+        "note": [
+          "The only one of the two that runs OFFLINE ON THE PHONE – the reason it's first:",
+          "the app is built on downloading a region and opening it without signal.",
+          "The cost: the three road-class options for cars and per-country vignettes can't be said in it today."
+        ],
+        "where": "on the phone and on a server"
+      },
+      "graphhopper": {
+        "name": "GraphHopper",
+        "lang": "Java",
+        "dialect": "custom_model",
+        "note": [
+          "The custom model is DECLARATIVE and covers every option, `country` too, so",
+          "the vignette per country – without a line of C++. The cost: it's a JVM, so a",
+          "\"with signal\" route, not offline in the mountains."
+        ],
+        "where": "server only"
+      }
+    },
+    "modes": {
+      "auto": {
+        "name": "By car",
+        "costing": {
+          "valhalla": "auto",
+          "graphhopper": "car"
+        },
+        "options": [
+          "avoid_motorway",
+          "avoid_trunk",
+          "avoid_toll",
+          "avoid_primary",
+          "avoid_secondary",
+          "avoid_tertiary",
+          "avoid_track",
+          "top_speed",
+          "vehicle_height",
+          "vehicle_weight",
+          "vehicle_width",
+          "vehicle_length",
+          "vignettes"
+        ]
+      },
+      "bus": {
+        "name": "By bus (the vehicle, not a line)",
+        "costing": {
+          "valhalla": "bus",
+          "graphhopper": "car"
+        },
+        "options": [
+          "avoid_motorway",
+          "avoid_trunk",
+          "avoid_toll",
+          "avoid_track",
+          "top_speed",
+          "vehicle_height",
+          "vehicle_weight",
+          "vehicle_width",
+          "vehicle_length"
+        ],
+        "note": [
+          "NOT TRAVELLING BY BUS: `bus` is a VEHICLE in the engine – a car route with other",
+          "sizes and bans. Riding a line needs `transit` below, which is timetables (GTFS), not OSM."
+        ]
+      },
+      "bicycle": {
+        "name": "By bicycle",
+        "costing": {
+          "valhalla": "bicycle",
+          "graphhopper": "bike"
+        },
+        "options": [
+          "bicycle_type",
+          "use_roads",
+          "use_hills",
+          "avoid_bad_surfaces"
+        ]
+      },
+      "pedestrian": {
+        "name": "On foot",
+        "costing": {
+          "valhalla": "pedestrian",
+          "graphhopper": "foot"
+        },
+        "options": [
+          "walking_speed",
+          "use_hills",
+          "max_hiking_difficulty"
+        ],
+        "note": [
+          "DELIBERATELY UNFINISHED: three Valhalla options that make sense on a hiking map now",
+          "(`max_hiking_difficulty` is the SAC scale of `sac_scale`); more is a line here, not code."
+        ]
+      },
+      "transit": {
+        "name": "By public transport (bus, train)",
+        "costing": {
+          "valhalla": "multimodal",
+          "graphhopper": "pt"
+        },
+        "options": [
+          "walking_speed"
+        ],
+        "needs_gtfs": true,
+        "note": [
+          "IT STANDS ON TIMETABLES, NOT OSM – the one part the pipeline has no data for.",
+          "Without a GTFS source `transit` is an empty box, hence `needs_gtfs`; see `docs/navigation.md`."
+        ]
+      }
+    },
+    "options": {
+      "avoid_motorway": {
+        "name": "Avoid motorways",
+        "type": "switch",
+        "osm": [
+          "highway=motorway",
+          "highway=motorway_link"
+        ],
+        "ref": "D",
+        "valhalla": {
+          "set": {
+            "exclude_highways": true
+          }
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == MOTORWAY",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "avoid_trunk": {
+        "name": "Avoid expressways",
+        "type": "switch",
+        "osm": [
+          "highway=trunk",
+          "highway=trunk_link"
+        ],
+        "ref": "R",
+        "valhalla": {
+          "soft": {
+            "use_highways": 0.0
+          },
+          "note": [
+            "ONLY DISCOURAGED, NOT EXCLUDED: `exclude_highways` is exactly `kMotorway`;",
+            "`use_highways: 0` raises the trunk cost via `kHighwayFactor` (0.5) but doesn't ban it –",
+            "and motorways get the same discouragement (1.0)."
+          ]
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == TRUNK",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "avoid_toll": {
+        "name": "Avoid toll roads",
+        "type": "switch",
+        "osm": [
+          "toll=yes"
+        ],
+        "valhalla": {
+          "set": {
+            "exclude_tolls": true
+          }
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "toll != NO",
+              "multiply_by": "0"
+            }
+          ]
+        },
+        "note": [
+          "TOLL ≠ VIGNETTE: `toll=yes` is paid per passage (gate, tunnel, bridge); the vignette",
+          "has its own `vignettes` option – someone with one wants to avoid a country, not motorways."
+        ]
+      },
+      "avoid_primary": {
+        "name": "Avoid class I roads",
+        "type": "switch",
+        "osm": [
+          "highway=primary",
+          "highway=primary_link"
+        ],
+        "ref": "I/",
+        "valhalla": {
+          "unsupported": [
+            "Valhalla can't say it at all today: `use_highways` scales the fixed",
+            "`kHighwayFactor[]` table, which is 0.0 for Primary – exactly zero effect. It needs a patch",
+            "(docs/navigation.md, \"kHighwayFactor patch\")."
+          ]
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == PRIMARY",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "avoid_secondary": {
+        "name": "Avoid class II roads",
+        "type": "switch",
+        "osm": [
+          "highway=secondary",
+          "highway=secondary_link"
+        ],
+        "ref": "II/",
+        "valhalla": {
+          "unsupported": [
+            "As for class I: `kHighwayFactor[Secondary] = 0.0`."
+          ]
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == SECONDARY",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "avoid_tertiary": {
+        "name": "Avoid class III roads",
+        "type": "switch",
+        "osm": [
+          "highway=tertiary",
+          "highway=tertiary_link"
+        ],
+        "ref": "III/",
+        "valhalla": {
+          "unsupported": [
+            "As for class I: `kHighwayFactor[Tertiary] = 0.0`."
+          ]
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == TERTIARY",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "avoid_track": {
+        "name": "Avoid forest tracks and paths",
+        "type": "switch",
+        "osm": [
+          "highway=track",
+          "highway=path",
+          "highway=bridleway"
+        ],
+        "valhalla": {
+          "set": {
+            "use_tracks": 0.0,
+            "exclude_unpaved": true
+          },
+          "note": [
+            "`use_tracks: 0` discourages (scales `Use::kTrack` edges), `exclude_unpaved` bans",
+            "unpaved surfaces; together they fit \"forest track\", but a paved track passes the discouragement."
+          ]
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "road_class == TRACK",
+              "multiply_by": "0"
+            },
+            {
+              "if": "road_class == PATH",
+              "multiply_by": "0"
+            },
+            {
+              "if": "road_class == BRIDLEWAY",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "top_speed": {
+        "name": "Vehicle top speed",
+        "type": "speed",
+        "unit": "km/h",
+        "range": [
+          30,
+          140
+        ],
+        "default": null,
+        "valhalla": {
+          "set_value": "top_speed"
+        },
+        "graphhopper": {
+          "speed": [
+            {
+              "if": "true",
+              "limit_to": "{value}"
+            }
+          ]
+        },
+        "note": [
+          "NOT A ROAD LIMIT, IT'S THE VEHICLE: \"this is how fast I go\" – it changes the TIME and",
+          "so which route wins; a caravan at 100 stops preferring the motorway by itself."
+        ]
+      },
+      "vehicle_height": {
+        "name": "Vehicle height",
+        "type": "size",
+        "unit": "m",
+        "range": [
+          1.5,
+          4.5
+        ],
+        "default": null,
+        "valhalla": {
+          "set_value": "height"
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "max_height < {value}",
+              "multiply_by": "0"
+            }
+          ]
+        },
+        "note": [
+          "The other half of road restrictions: the underpass height is in OSM (`maxheight`) and in",
+          "the `roads` package to LOOK AT; here it's to USE – say the vehicle's height and the route avoids it.",
+          "The unit is metres, converted HERE: the tile keeps the sign's string (`3.8 m`, `12'6\"`)."
+        ]
+      },
+      "vehicle_weight": {
+        "name": "Vehicle weight",
+        "type": "size",
+        "unit": "t",
+        "range": [
+          1.0,
+          60.0
+        ],
+        "default": null,
+        "valhalla": {
+          "set_value": "weight"
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "max_weight < {value}",
+              "multiply_by": "0"
+            }
+          ]
+        },
+        "note": [
+          "In Valhalla `weight` is a `truck` costing option; `auto` accepts and ignores it, so it",
+          "makes sense with `bus` and lorries."
+        ]
+      },
+      "vehicle_width": {
+        "name": "Vehicle width",
+        "type": "size",
+        "unit": "m",
+        "range": [
+          1.0,
+          3.0
+        ],
+        "default": null,
+        "valhalla": {
+          "set_value": "width"
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "max_width < {value}",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "vehicle_length": {
+        "name": "Vehicle length",
+        "type": "size",
+        "unit": "m",
+        "range": [
+          2.0,
+          25.0
+        ],
+        "default": null,
+        "valhalla": {
+          "set_value": "length"
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "max_length < {value}",
+              "multiply_by": "0"
+            }
+          ]
+        }
+      },
+      "vignettes": {
+        "name": "Motorway vignette per country",
+        "type": "vignettes",
+        "data": "workers/data/routing.json, `vignettes`",
+        "valhalla": {
+          "unsupported": [
+            "Valhalla's costing has no notion of country (only `country_crossing_penalty`),",
+            "so \"motorway allowed in Slovakia, not in Austria\" can't be said. The same patch as for road classes."
+          ]
+        },
+        "graphhopper": {
+          "priority_template": [
+            {
+              "if": "country == {alpha3} && ({classes})",
+              "multiply_by": "0"
+            }
+          ]
+        },
+        "note": [
+          "THREE ANSWERS, NOT TWO: \"I have one until 30 Sep\", \"I have none\" and \"this country sells",
+          "none\" – in Poland motorways needn't be avoided because there is no vignette.",
+          "THE TRIP DATE decides, not today: a vignette may expire before next month's trip."
+        ]
+      },
+      "bicycle_type": {
+        "name": "Bicycle type",
+        "type": "enum",
+        "values": [
+          "road",
+          "hybrid",
+          "city",
+          "cross",
+          "mountain"
+        ],
+        "default": "hybrid",
+        "valhalla": {
+          "set_value": "bicycle_type"
+        },
+        "graphhopper": {
+          "unsupported": [
+            "The custom model knows no bicycle type – it's the profile choice (`bike`, `mtb`, `racingbike`)."
+          ]
+        }
+      },
+      "use_roads": {
+        "name": "Willingness to ride with cars",
+        "type": "factor",
+        "range": [
+          0,
+          1
+        ],
+        "default": 0.5,
+        "valhalla": {
+          "set_value": "use_roads"
+        },
+        "graphhopper": {
+          "unsupported": [
+            "Said otherwise – as a priority multiplier by `road_class`, not one number."
+          ]
+        }
+      },
+      "use_hills": {
+        "name": "Willingness to climb",
+        "type": "factor",
+        "range": [
+          0,
+          1
+        ],
+        "default": 0.5,
+        "valhalla": {
+          "set_value": "use_hills"
+        },
+        "graphhopper": {
+          "unsupported": [
+            "GraphHopper switches elevation on when building the graph (`graph.elevation`), not per route."
+          ]
+        }
+      },
+      "avoid_bad_surfaces": {
+        "name": "Avoid bad surfaces",
+        "type": "factor",
+        "range": [
+          0,
+          1
+        ],
+        "default": 0.25,
+        "valhalla": {
+          "set_value": "avoid_bad_surfaces"
+        },
+        "graphhopper": {
+          "priority": [
+            {
+              "if": "surface != PAVED",
+              "multiply_by": "0.2"
+            }
+          ]
+        }
+      },
+      "walking_speed": {
+        "name": "Walking speed",
+        "type": "speed",
+        "unit": "km/h",
+        "range": [
+          1,
+          8
+        ],
+        "default": 5.1,
+        "valhalla": {
+          "set_value": "walking_speed"
+        },
+        "graphhopper": {
+          "speed": [
+            {
+              "if": "true",
+              "limit_to": "{value}"
+            }
+          ]
+        }
+      },
+      "max_hiking_difficulty": {
+        "name": "Highest path difficulty (SAC)",
+        "type": "int",
+        "range": [
+          0,
+          6
+        ],
+        "default": 1,
+        "valhalla": {
+          "set_value": "max_hiking_difficulty"
+        },
+        "graphhopper": {
+          "unsupported": [
+            "`sac_scale` isn't among GraphHopper's encoded values."
+          ]
+        }
+      }
+    }
+  },
+  "areas": {
+    "_comment": [
+      "WHAT EXTENT THE ROUTING GRAPH IS BUILT FOR – another question than “which",
+      "map”, hence a lookup of its own and not another key in `areas.json`. Read by",
+      "`workers/routing/pbf.sh` and `graph.sh`, guarded by `workers/lint/navigation.py`.",
+      "",
+      "THE GRAPH ISN'T SPLIT BY REGION like the map – not for convenience, it follows",
+      "from the brief. A vignette per country makes sense only when a route MAY cross",
+      "the border; one region's graph can't even take someone to Austria, so it can't",
+      "avoid lacking a vignette there. A map to look at and a graph to route on are",
+      "two extents of the same territory.",
+      "",
+      "HENCE TWO OPTIONS, not one. Rule 7 (never download more than needed) stands",
+      "against the brief here: a cross-border route wants the neighbours, but they are",
+      "several GB of PBF and hours of building, while a runner has ~60 GB free and a",
+      "360 minute job cap. Whoever tries routing or drives at home builds",
+      "`slovensko`; whoever goes to Austria pays for `slovensko_susedia`.",
+      "",
+      "TIMES AND SIZES ARE TO BE FILLED IN FROM THE FIRST RUN. They're deliberately",
+      "not estimated: a number in a comment here means measured. `graph.sh` prints",
+      "them into the run summary and the package's `contents.json`."
+    ],
+    "_pbf": [
+      "The PBF source is the same as the map's – osm.fr (`OSMFR_BASE`), since the",
+      "whole pipeline goes there and one source shouldn't be doubled. Paths go",
+      "WITHOUT the `-latest.osm.pbf` suffix; `pbf.sh` adds it."
+    ],
+    "areas": {
+      "slovensko": {
+        "name": "Slovensko",
+        "region_key": "navigacia_slovensko",
+        "pbf": [
+          "europe/slovakia"
+        ],
+        "countries": [
+          "SK"
+        ],
+        "note": [
+          "The default. A route doesn't cross the border, so the `vignettes` option only",
+          "means SK in this graph – and `profile.py` says so, since it takes countries",
+          "from `vignettes`, not from the graph."
+        ]
+      },
+      "slovensko_susedia": {
+        "name": "Slovensko a susedia",
+        "region_key": "navigacia_slovensko_susedia",
+        "pbf": [
+          "europe/slovakia",
+          "europe/czech_republic",
+          "europe/austria",
+          "europe/hungary",
+          "europe/poland",
+          "europe/ukraine"
+        ],
+        "countries": [
+          "SK",
+          "CZ",
+          "AT",
+          "HU",
+          "PL",
+          "UA"
+        ],
+        "note": [
+          "THIS IS THE COSTLY RUN and the only form in which a vignette per country fully",
+          "makes sense. Poland and Ukraine are the biggest pieces and a trip to Austria",
+          "needs neither – if it won't fit the runner's caps, the right answer is ANOTHER",
+          "ENTRY here (e.g. `slovensko_at_cz`), not a quiet trim of this one.",
+          "THE NAME IS A PROMISE ABOUT EXTENT (rule 2): if a state were quietly dropped,",
+          "the package would still be called `…_susedia` and a route in it would end at",
+          "the border without explanation."
+        ]
+      },
+      "cesko": {
+        "name": "Česko",
+        "region_key": "navigacia_cesko",
+        "pbf": [
+          "europe/czech_republic"
+        ],
+        "countries": [
+          "CZ"
+        ],
+        "note": [
+          "The node order the Czech regions share, as `slovensko` for Slovakia."
+        ]
+      },
+      "rakusko": {
+        "name": "Rakúsko",
+        "region_key": "navigacia_rakusko",
+        "pbf": [
+          "europe/austria"
+        ],
+        "countries": [
+          "AT"
+        ],
+        "note": [
+          "The node order the Austrian regions share, as `slovensko` for Slovakia."
+        ]
+      }
+    }
+  },
+  "vignettes": {
+    "_comment": [
+      "WHERE A MOTORWAY VIGNETTE IS NEEDED – and which roads it covers. The lookup for the",
+      "`vignettes` option in `profiles`; read by `workers/routing/profile.py`,",
+      "guarded by `workers/lint/routing.py`, copied whole into the app.",
+      "",
+      "Only what doesn't change per trip: whether the country sells one and where it applies.",
+      "Whether the USER has one is app state, mixed in by `profile.py`.",
+      "",
+      "A VIGNETTE ISN'T A TOLL: it's paid for TIME on a network, a toll per PASSAGE (`toll=yes`),",
+      "hence two options, `avoid_toll` and `vignettes`.",
+      "",
+      "These data change by law, not by OSM, so every entry has a primary `source` and a",
+      "`state`: `verified` (compared with the source, dated) or `unverified` (must be checked",
+      "before the app trusts it). `required_on` are OSM classes, which the graph knows."
+    ],
+    "_states": {
+      "verified": "compared with the primary source – `verified_on` says when",
+      "unverified": "UNVERIFIED. While this stands, it must not reach the app as fact."
+    },
+    "countries": {
+      "SK": {
+        "alpha3": "SVK",
+        "name": "Slovakia",
+        "sells_vignette": true,
+        "system": "electronic motorway vignette",
+        "required_on": [
+          "motorway",
+          "trunk"
+        ],
+        "source": "https://eznamka.sk/",
+        "state": "unverified",
+        "notes": [
+          "The vignette covers vehicles up to 3.5 t; above that a distance toll applies, another question.",
+          "Some motorway sections are exempt (city bypasses) – that needs `toll=no` on them in OSM;",
+          "until then the detour is sometimes needless."
+        ]
+      },
+      "CZ": {
+        "alpha3": "CZE",
+        "name": "Czechia",
+        "sells_vignette": true,
+        "system": "electronic motorway vignette",
+        "required_on": [
+          "motorway"
+        ],
+        "source": "https://edalnice.cz/",
+        "state": "unverified"
+      },
+      "AT": {
+        "alpha3": "AUT",
+        "name": "Austria",
+        "sells_vignette": true,
+        "system": "Vignette (sticker or digital)",
+        "required_on": [
+          "motorway",
+          "trunk"
+        ],
+        "source": "https://www.asfinag.at/",
+        "state": "unverified",
+        "notes": [
+          "ON TOP of the vignette some sections have a section toll (Brenner, Tauern, Arlberg):",
+          "`toll=yes`, handled by `avoid_toll` – the vignette doesn't pay those tunnels."
+        ]
+      },
+      "HU": {
+        "alpha3": "HUN",
+        "name": "Hungary",
+        "sells_vignette": true,
+        "system": "e-matrica (county vignettes too)",
+        "required_on": [
+          "motorway",
+          "trunk"
+        ],
+        "source": "https://nemzetiutdij.hu/",
+        "state": "unverified",
+        "notes": [
+          "Hungary also sells COUNTY vignettes, so \"I have one\" isn't one answer for the country;",
+          "this lookup treats a vignette as national – a county one gets a route that allows too much."
+        ]
+      },
+      "SI": {
+        "alpha3": "SVN",
+        "name": "Slovenia",
+        "sells_vignette": true,
+        "system": "e-vinjeta",
+        "required_on": [
+          "motorway",
+          "trunk"
+        ],
+        "source": "https://evinjeta.dars.si/",
+        "state": "unverified"
+      },
+      "CH": {
+        "alpha3": "CHE",
+        "name": "Switzerland",
+        "sells_vignette": true,
+        "system": "Autobahnvignette (annual, no short-term)",
+        "required_on": [
+          "motorway",
+          "trunk"
+        ],
+        "source": "https://www.bazg.admin.ch/",
+        "state": "unverified",
+        "notes": [
+          "No short-term vignette exists – only an annual one."
+        ]
+      },
+      "PL": {
+        "alpha3": "POL",
+        "name": "Poland",
+        "sells_vignette": false,
+        "system": "no vignette; toll per passage on some motorways",
+        "required_on": [],
+        "source": "https://www.gov.pl/web/infrastruktura",
+        "state": "unverified",
+        "notes": [
+          "THIS IS THE THIRD ANSWER, not \"I have none\": motorways needn't be avoided at all;",
+          "tolled sections are `toll=yes` and belong to `avoid_toll`."
+        ]
+      },
+      "DE": {
+        "alpha3": "DEU",
+        "name": "Germany",
+        "sells_vignette": false,
+        "system": "none for cars",
+        "required_on": [],
+        "source": "https://www.bmdv.bund.de/",
+        "state": "unverified"
+      },
+      "UA": {
+        "alpha3": "UKR",
+        "name": "Ukraine",
+        "sells_vignette": false,
+        "system": "none",
+        "required_on": [],
+        "source": "https://ukravtodor.gov.ua/",
+        "state": "unverified"
+      }
+    }
+  }
+}

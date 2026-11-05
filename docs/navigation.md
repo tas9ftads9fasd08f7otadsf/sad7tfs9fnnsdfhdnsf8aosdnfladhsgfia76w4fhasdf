@@ -121,7 +121,7 @@ dlaždice). GraphHopper je JVM, do iOS sa nedostane.
 Takže: **Valhalla v telefóne, GraphHopper ako druhý motor „so signálom"**, kde sa
 zatiaľ dá povedať celé zadanie. To nie sú dve pravdy, ak – a len ak – sa profil
 napíše **raz** a preloží sa do oboch dialektov. Preto je prvý kus tejto práce
-`workers/data/routing-profiles.json` + `workers/routing/profile.py`, a nie graf.
+`workers/data/routing.json` (`profiles`) + `workers/routing/profile.py`, a nie graf.
 
 Poradie práce z toho vychádza samo:
 
@@ -140,7 +140,7 @@ Poradie práce z toho vychádza samo:
 ročnou známkou by sa vyhýbal diaľnici, ktorú má zaplatenú, a bez známky by prešel
 tunelom s mýtom. Preto sú to dve voľby – `avoid_toll` a `vignettes`.
 
-Číselník je `workers/data/vignettes.json`: pri každej krajine to, čo sa nemení
+Číselník je `workers/data/routing.json` (`vignettes`): pri každej krajine to, čo sa nemení
 pri každej ceste – **či známku pozná** a **na aké OSM triedy platí**. Či ju
 používateľ má a dokedy, tam nie je a byť nesmie: to je stav aplikácie.
 
@@ -301,12 +301,12 @@ zo štvorice pád behu **je** – to nie je malé územie, ale rozbitý balík.
 
 | kus | čo robí |
 |---|---|
-| `workers/data/routing-profiles.json` | čo si používateľ vypýta – režimy, voľby, preklad do oboch motorov, a pri každej nepokrytej voľbe DÔVOD |
-| `workers/data/vignettes.json` | kde treba známku a na ktoré triedy ciest |
+| `workers/data/routing.json` (`profiles`) | čo si používateľ vypýta – režimy, voľby, preklad do oboch motorov, a pri každej nepokrytej voľbe DÔVOD |
+| `workers/data/routing.json` (`vignettes`) | kde treba známku a na ktoré triedy ciest |
 | `workers/routing/profile.py` | z profilu `costing_options` (Valhalla) alebo `custom_model` (GraphHopper); `--check` je matica pokrytia, `--strict` padne na nepokrytej voľbe |
 | `workers/lint/routing.py` | kľúče Valhally proti zoznamu z jej zdrojáku, výrazy GraphHoppera proti jeho zakódovaným hodnotám, každá voľba má pre každý motor odpoveď |
 
-| `workers/data/routing-areas.json` | na aký CELOŠTÁTNY rozsah sa graf stavia |
+| `workers/data/routing.json` (`areas`) | na aký CELOŠTÁTNY rozsah sa graf stavia |
 | `workers/routing/pbf.sh` | štátne extrakty z osm.fr, zliate `osmium merge`; **nič sa nereže** |
 | `workers/routing/graph.sh` | graf Valhally v Dockeri pre OBA rozsahy (`AREA` = štát, `REGION_KEY` = kraj), overenie všetkých štyroch súborov, `graph.json` s verziou motora, počtom ciest a s tým, kam trasa smie |
 | `.github/workflows/navigation.yml` | „Mapa · Build navigácia“ – celoštátny graf, vlastný balík na Drive, zápis do `maps.json` |
@@ -335,7 +335,7 @@ dostupný Docker obraz Valhally ani PBF (odchádzajúca sieť je zúžená). Ove
 všetko ostatné: číselníky, zápis do katalógu (skúšaný priamo, vrátane toho, že
 dva rozsahy si položku neprepíšu), balenie `publish-map.py --zip-only`
 a kontroly. Prvý beh má doplniť namerané časy a veľkosti do
-`routing-areas.json` – `graph.sh` ich vypíše.
+`routing.json` (`areas`) – `graph.sh` ich vypíše.
 
 ```bash
 python3 workers/lint/navigation.py
@@ -428,7 +428,7 @@ podjazd a v builde nespadne nič.
 
 | lístok | čo |
 |---|---|
-| **P1** ✓ | `workers/data/routing-tags.json` – slovník značiek; je to zároveň páka na veľkosť |
+| **P1** ✓ | `workers/data/routing.json` (`tags`) – slovník značiek; je to zároveň páka na veľkosť |
 | **P2** ✓ | `workers/routing/tiles.py` – archív z `data/region.osm.pbf` na mriežke z9, s OSM id uzlov; `graf` v metadátach archívu s verziou formátu, id slovníka, id poradia a počtom hrán |
 | **P3** ✓ | `workers/routing/order.py` – poradie uzlov (nested dissection) nad **celým stavaným územím**, jedno číslo na uzol; ráta ho workflow `routing-order.yml` a build kraja si ho berie z cache. Viď §11; rez je zatiaľ inerciálny, nie InertialFlowCutter |
 | **P4** ✓ | `workers/lint/routing-tiles.py` – každá značka je v slovníku, spoločné prvky okrajových dlaždíc susedov sa nerozchádzajú, všetky archívy jedného behu majú to isté id poradia, žiadna dlaždica neprekročí rozpočet |
