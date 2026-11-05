@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { buildStyle } from "../../poc/web/themes.js";
 import { composeFragments } from "../../poc/web/packages.js";
-import { split, splitSite, iconsOf, prefixed, sheetUrl } from "../styles/split.mjs";
+import { split, splitSite, iconsOf, prefixed, sheetUrl, places, recordedFor, PLACES } from "../styles/split.mjs";
 import { encodePng } from "../lib/png.mjs";
 import { styleSpec, NEEDS_SPEC } from "./spec.mjs";
 
@@ -86,4 +86,38 @@ test("a site's styles become fragments and one sheet a package", () => {
   const points = JSON.parse(readFileSync(join(site, "fragments", "points", "sprites", "points-osm-liberty.json")));
   assert.ok(points.bank && points.cafe && !points["mark-white-red-bar"] && !points["nobody-draws-me"]);
   assert.ok(readdirSync(join(site, "fragments", "roads")).includes("r-zakladna-svetla.json"));
+});
+
+// Riki Maps TestFlight AIlA: two new landcover layers republished an unchanged height model.
+test("a layer added elsewhere moves no other package's layers", () => {
+  const style = fullStyle();
+  const recorded = style.layers.map((l) => l.id);
+  const before = split(style, SHEET, SPRITE, recorded);
+  const grown = structuredClone(style);
+  grown.layers.splice(3, 0, { ...structuredClone(grown.layers[2]), id: "landcover-new" });
+  const after = split(grown, SHEET, SPRITE, recorded);
+  for (const pkg of Object.keys(before).filter((p) => p !== "landscape")) {
+    assert.deepEqual(after[pkg].fragment, before[pkg].fragment, pkg);
+  }
+  const back = composeFragments(Object.values(after).map((p) => p.fragment));
+  assert.deepEqual(back.layers.map((l) => l.id), grown.layers.map((l) => l.id));
+});
+
+test("a new or moved layer falls between its neighbours", () => {
+  assert.deepEqual(places(["a", "b", "c"], null), [0, 1, 2]);
+  assert.deepEqual(places(["a", "x", "b"], ["a", "b"]), [0, 0.5, 1]);
+  assert.deepEqual(places(["x", "y", "a"], ["a"]), [-0.666667, -0.333333, 0]);
+  assert.deepEqual(places(["a", "x"], ["a"]), [0, 1]);
+  assert.deepEqual(places(["c", "a", "b"], ["a", "b", "c"]), [-0.5, 0, 1], "c moved to the front");
+  assert.deepEqual(places(["a", "c"], ["a", "b", "c"]), [0, 2], "one removed leaves the rest");
+});
+
+test("each built style has its recorded order, the longest name winning", () => {
+  const recorded = JSON.parse(readFileSync(PLACES, "utf8"));
+  assert.equal(recordedFor("kraj-turisticka-svetla.json", recorded), recorded["turisticka-svetla"]);
+  assert.equal(recordedFor("kraj-svetla.json", recorded), recorded.svetla);
+  assert.equal(recordedFor("kraj-neznamy.json", recorded), null);
+  for (const [name, ids] of Object.entries(recorded)) {
+    assert.equal(new Set(ids).size, ids.length, `${name}: an id twice`);
+  }
 });
