@@ -1530,7 +1530,7 @@ const NO_FILL_PROPS = new Set(["fill-color", "fill-extrusion-color"]);
 /** Strop počtu zoomových zlomov na jednu vlastnosť. */
 export const MAX_PAINT_STOPS = 8;
 
-const RIVER_NAME_MINZOOM = 10;
+const RIVER_NAME_MINZOOM = 9;
 const RIVER_NAME_SIZE = [[10, 10], [13, 11], [18, 14]];
 
 /**
@@ -3365,6 +3365,7 @@ export const SHIELD_DEFS = [
  *                                    kreslí len obmedzenia na ceste
  * @param {number} [opts.transportMaxzoom]
  * @param {boolean} [opts.roadSigns] vrstva `traffic_sign` (základná mapa aj cesty) má obrázky
+ * @param {string} [opts.namesUrl]    geografické názvy (balík `názvy`): pohoria, doliny, kotliny
  * @param {string} [opts.boundariesUrl] hranice území (balík `hranice`); štýl
  *                                    z nich kreslí názvy území
  * @param {number} [opts.boundariesMaxzoom]
@@ -3411,6 +3412,8 @@ export function buildStyle({
   roadSigns = false,
   boundariesUrl = null,
   boundariesMaxzoom = 12,
+  namesUrl = null,
+  namesMaxzoom = 14,
   waterUrl = null,
   waterMaxzoom = 14,
   buildingsUrl = null,
@@ -3554,6 +3557,15 @@ export function buildStyle({
   }
   // hranice území (balík `hranice`): vrstva `boundary` OpenMapTiles je čiara
   // bez mena územia, ktoré ohraničuje – odtiaľto idú tie mená
+  if (namesUrl) {
+    style.sources.names = {
+      type: "vector",
+      url: namesUrl,
+      maxzoom: namesMaxzoom,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    };
+  }
   if (boundariesUrl) {
     style.sources.boundaries = {
       type: "vector",
@@ -6125,6 +6137,32 @@ export function buildStyle({
     },
     ["geo", "Geografické oblasti a ostrovy", "text", geoPalette]
   );
+
+  // OpenMapTiles has no mountain ranges, valleys or basins; the names package does
+  if (namesUrl) {
+    const onePoint = ["==", ["geometry-type"], "Point"];
+    for (const [id, label, layer, filter, minzoom, maxzoom, size] of [
+      ["names-range", "Pohoria (balík názvy)", "mountain",
+        ["all", onePoint, ["==", str("class"), "mountain_range"]], 8, 14, [[8, 12], [10, 15], [12, 18], [14, 20]]],
+      ["names-plain", "Kotliny a roviny (balík názvy)", "plain", onePoint, 9, 14, [[9, 12], [12, 16], [14, 18]]],
+      ["names-valley", "Doliny (balík názvy)", "valley", onePoint, 12, null, [[12, 11], [15, 14], [18, 16]]]
+    ]) {
+      add(
+        {
+          id,
+          type: "symbol",
+          source: "names",
+          "source-layer": layer,
+          minzoom,
+          ...(maxzoom ? { maxzoom } : {}),
+          filter,
+          layout: geoLayout(size),
+          paint: geoPaint
+        },
+        ["geo", label, "text", geoPalette]
+      );
+    }
+  }
 
   // ---- sídla ----
   const places = [

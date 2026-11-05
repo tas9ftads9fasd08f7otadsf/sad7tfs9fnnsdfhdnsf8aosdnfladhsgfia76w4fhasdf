@@ -98,7 +98,7 @@ const BASE_CLAIMS = {
 const SOURCE_OWNERS = {
   transport: ["roads"], paths: ["paths"], points: ["points"], boundaries: ["boundaries"],
   water: ["water"], buildings: ["settlements"], rail: ["railways"], history: ["history"],
-  trails: [BASE_PACKAGE, "paths"]
+  trails: [BASE_PACKAGE, "paths"], names: [BASE_PACKAGE]
 };
 
 /** Packages drawing the layer; empty for the background, terrain and shading. */

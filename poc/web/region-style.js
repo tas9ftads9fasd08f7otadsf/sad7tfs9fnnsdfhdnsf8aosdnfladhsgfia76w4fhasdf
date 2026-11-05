@@ -40,6 +40,8 @@ export function regionStyle({ manifest, regionKey, baseUrl, set, overrides, them
     roadSigns: !!region.road_sign_sprite,
     boundariesUrl: archive("boundaries"),
     boundariesMaxzoom: region.boundaries_maxzoom || 12,
+    namesUrl: archive("names"),
+    namesMaxzoom: region.names_maxzoom || 14,
     waterUrl: archive("water"),
     waterMaxzoom: region.water_maxzoom || 14,
     buildingsUrl: archive("buildings"),
