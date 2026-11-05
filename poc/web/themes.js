@@ -1459,6 +1459,11 @@ export function shieldShapeFor(id, fallback, overrides) {
     : fallback;
 }
 
+/** Water line widths in px; Mapy's rivers are bold from afar, its streams from z12. */
+export const RIVER_WIDTH = [[8, 1], [11, 2.4], [12, 2.6], [16, 5], [20, 18]];
+export const STREAM_WIDTH = [[11, 0.7], [12, 1.2], [14, 1.6], [16, 2.4], [20, 7]];
+export const STREAM_MINZOOM = 11;
+
 /** How much of a road shows through the hill it tunnels under. */
 export const TUNNEL_OPACITY = 0.45;
 const isTunnel = ["==", ["get", "brunnel"], "tunnel"];
@@ -3948,31 +3953,34 @@ export function buildStyle({
     },
     ["voda", "Obrys vodných plôch", "line", { "line-color": "waterOutline" }]
   );
+  // the water package has streams from z11, OpenMapTiles only close up
+  const waterLines = waterUrl
+    ? { source: "water", "source-layer": "waterway" }
+    : { "source-layer": "waterway" };
   add(
     {
       id: "waterway-river",
       type: "line",
-      "source-layer": "waterway",
+      ...waterLines,
       filter: ["in", str("class"), ["literal", ["river", "canal"]]],
       paint: {
         "line-color": c.river,
-        "line-width": zw([[8, 0.6], [12, 1.6], [16, 5], [20, 18]])
+        "line-width": zw(RIVER_WIDTH)
       }
     },
     ["voda", "Rieky a kanály", "line", { "line-color": "river" }]
   );
   add(
     {
-      // potoky, priekopy, kanály – detail od z12
+      // potoky, priekopy – Mapy ich kreslí od svojho z12
       id: "waterway-minor",
       type: "line",
-      "source-layer": "waterway",
-      minzoom: 12,
+      ...waterLines,
+      minzoom: STREAM_MINZOOM,
       filter: ["in", str("class"), ["literal", ["stream", "ditch", "drain"]]],
       paint: {
         "line-color": c.river,
-        "line-width": zw([[12, 0.5], [16, 2], [20, 7]]),
-        "line-opacity": 0.85
+        "line-width": zw(STREAM_WIDTH)
       }
     },
     ["voda", "Potoky a priekopy", "line", { "line-color": "river" }]
