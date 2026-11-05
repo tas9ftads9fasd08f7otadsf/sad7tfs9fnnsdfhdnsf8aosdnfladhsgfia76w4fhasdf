@@ -20,7 +20,6 @@ FAMILIES = {
 }
 PATH_FAMILIES = {
     "highway": "footways, paths and steps",
-    "aerialway": "aerialways and lifts",
 }
 
 # road restrictions, attributes of this network → what is lost without them
@@ -61,11 +60,6 @@ WALKABLE = {
     "highway": {
         "pedestrian", "path", "footway", "cycleway", "bridleway", "steps",
         "corridor", "via_ferrata", "elevator", "ladder",
-    },
-    "aerialway": {
-        "cable_car", "gondola", "mixed_lift", "chair_lift", "drag_lift",
-        "t-bar", "j-bar", "platter", "rope_tow", "magic_carpet", "zip_line",
-        "goods",
     },
 }
 

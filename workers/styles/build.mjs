@@ -13,6 +13,7 @@
  *   --buildings  … settlements: buildings with area and name instead of `building`
  *   --features   … landscape lines and areas OpenMapTiles lacks (own .pmtiles)
  *   --points     … landscape points – springs, caves, towers (second output of the same job)
+ *   --ski        … Ski & winter: pistes and every lift in service (own .pmtiles)
  *   --dem-source … model of contours and rocks – goes into the attribution
  *   --dem-tiles-source … model of the elevation tiles; empty = --dem-source
  *   --sprites-dir… folder of deployed sprites; the set follows the overrides
@@ -79,6 +80,8 @@ const waterMaxzoom = Number(args["water-maxzoom"] || 14);
 const hasWater = args.water === "true" || args.water === "1";
 const buildingsMaxzoom = Number(args["buildings-maxzoom"] || 14);
 const hasBuildings = args.buildings === "true" || args.buildings === "1";
+const skiMaxzoom = Number(args["ski-maxzoom"] || 14);
+const hasSki = args.ski === "true" || args.ski === "1";
 // the elevation source goes into the contour and rock attribution
 const demSource = DEM_SOURCES[args["dem-source"]]
   ? args["dem-source"]
@@ -294,6 +297,10 @@ for (const type of MAP_TYPES) {
         ? `pmtiles://${baseUrl}/tiles/${region}-buildings.pmtiles`
         : null,
       buildingsMaxzoom,
+      skiUrl: hasSki
+        ? `pmtiles://${baseUrl}/tiles/${region}-ski.pmtiles`
+        : null,
+      skiMaxzoom,
       demSource,
       demTiles,
       demTilesSource,
@@ -331,6 +338,7 @@ console.log(
   `Area names: ${hasBoundaries ? `yes (to z${boundariesMaxzoom})` : "no"}, ` +
   `Water names: ${hasWater ? `yes (to z${waterMaxzoom})` : "no"}, ` +
   `Settlements: ${hasBuildings ? `yes (to z${buildingsMaxzoom})` : "no"}, ` +
+  `Ski & winter: ${hasSki ? `yes (to z${skiMaxzoom})` : "no"}, ` +
   `Contours: ${
     hasContours ? `yes (to z${contoursMaxzoom}, heights: ${DEM_SOURCES[demSource].label})` : "no"
   }, ` +

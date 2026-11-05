@@ -29,3 +29,8 @@ nwr/abandoned=yes
 nwr/disused=yes
 nwr/*=abandoned
 nwr/*=disused
+# lifts taken down keep their kind here
+w/razed:aerialway
+w/removed:aerialway
+w/demolished:aerialway
+w/was:aerialway

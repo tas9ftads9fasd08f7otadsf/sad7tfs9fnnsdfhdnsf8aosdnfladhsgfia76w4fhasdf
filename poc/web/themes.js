@@ -3375,6 +3375,8 @@ export const SHIELD_DEFS = [
  *                                    kreslí len obmedzenia na ceste
  * @param {number} [opts.transportMaxzoom]
  * @param {boolean} [opts.roadSigns] vrstva `traffic_sign` (základná mapa aj cesty) má obrázky
+ * @param {string} [opts.skiUrl]      lyžovanie a zima: zjazdovky, bežky a všetky lanovky v prevádzke
+ * @param {number} [opts.skiMaxzoom]
  * @param {string} [opts.namesUrl]    geografické názvy (balík `názvy`): pohoria, doliny, kotliny
  * @param {string} [opts.boundariesUrl] hranice území (balík `hranice`); štýl
  *                                    z nich kreslí názvy území
@@ -3424,6 +3426,8 @@ export function buildStyle({
   boundariesMaxzoom = 12,
   namesUrl = null,
   namesMaxzoom = 14,
+  skiUrl = null,
+  skiMaxzoom = 14,
   waterUrl = null,
   waterMaxzoom = 14,
   buildingsUrl = null,
@@ -3533,7 +3537,7 @@ export function buildStyle({
     };
   }
   // krajinné prvky mimo schémy: násypy, zárezy, múry, ploty, vedenia,
-  // prieseky, parkoviská, zjazdovky (workers/features/features.yml)
+  // prieseky, parkoviská (workers/features/features.yml)
   if (featuresUrl) {
     style.sources.features = {
       type: "vector",
@@ -3567,6 +3571,15 @@ export function buildStyle({
   }
   // hranice území (balík `hranice`): vrstva `boundary` OpenMapTiles je čiara
   // bez mena územia, ktoré ohraničuje – odtiaľto idú tie mená
+  if (skiUrl) {
+    style.sources.ski = {
+      type: "vector",
+      url: skiUrl,
+      maxzoom: skiMaxzoom,
+      attribution:
+        '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    };
+  }
   if (namesUrl) {
     style.sources.names = {
       type: "vector",
@@ -3830,16 +3843,16 @@ export function buildStyle({
         ["prvky", label, "area", { "fill-color": paletteKey }]
       );
     }
+  }
 
-    // zjazdovky: vleky v dlaždiciach sú, trate nie (`piste:type` schéma nepozná).
-    // Plocha aj os sú tá istá vrstva, preto `polygonOnly` – inak by výplň
-    // dostala aj os a MapLibre z nej earcutom vyrobí nezmysel.
+  // zjazdovka je plocha aj os v tej istej vrstve; `polygonOnly`, inak earcut z osi spraví nezmysel
+  if (skiUrl) {
     add(
       {
         id: "piste-area",
         type: "fill",
-        source: "features",
-        "source-layer": "piste",
+        source: "ski",
+        "source-layer": "downhill",
         filter: polygonOnly(),
         paint: { "fill-color": c.pisteArea, "fill-opacity": 0.8 }
       },
@@ -4547,10 +4560,17 @@ export function buildStyle({
 
   // --- lanovky, kompy, móla ---
   // cabins ride a railway-like band, chairs bold dashes, drag lifts a thin dash, as on Mapy
-  const liftKind = (kinds) => ["all", ["==", ["get", "class"], "aerialway"],
-    ["in", str("subclass"), ["literal", kinds]]];
-  const dragLift = ["all", ["==", ["get", "class"], "aerialway"],
-    ["!", ["in", str("subclass"), ["literal", [...LIFT_CABINS, ...LIFT_CHAIRS]]]]];
+  // Ski & winter carries every lift in service; without it the base map's
+  const liftFrom = skiUrl
+    ? { source: "ski", "source-layer": "lift" }
+    : { "source-layer": "transportation" };
+  const liftIs = skiUrl
+    ? ["all", ["==", str("state"), "active"], ["==", ["geometry-type"], "LineString"]]
+    : ["==", ["get", "class"], "aerialway"];
+  const liftClass = str(skiUrl ? "class" : "subclass");
+  const liftKind = (kinds) => ["all", liftIs, ["in", liftClass, ["literal", kinds]]];
+  const dragLift = ["all", liftIs,
+    ["!", ["in", liftClass, ["literal", [...LIFT_CABINS, ...LIFT_CHAIRS]]]]];
   for (const [id, label, filter, paletteKey, width, dash] of [
     ["aerialway-casing", "Kabínkové lanovky (podklad)", liftKind(LIFT_CABINS), "aerialway",
       LIFT_WIDTH.cabinCasing, null],
@@ -4564,7 +4584,7 @@ export function buildStyle({
       {
         id,
         type: "line",
-        "source-layer": "transportation",
+        ...liftFrom,
         minzoom: 11,
         filter,
         paint: {
@@ -4575,6 +4595,28 @@ export function buildStyle({
       },
       ["doprava", label, "line", { "line-color": paletteKey }]
     );
+  }
+  if (skiUrl) {
+    for (const [state, label, paletteKey, dash] of [
+      ["construction", "Rozostavané lanovky", "aerialway", [3, 3]],
+      ["proposed", "Plánované lanovky", "roadProposed", [1, 2.5]]
+    ]) {
+      add(
+        {
+          id: `aerialway-${state}`,
+          type: "line",
+          ...liftFrom,
+          minzoom: 11,
+          filter: ["==", str("state"), state],
+          paint: {
+            "line-color": c[paletteKey],
+            "line-width": zl([[11, 0.6], [16, 1.6], [20, 3]]),
+            "line-dasharray": dash
+          }
+        },
+        ["doprava", label, "line", { "line-color": paletteKey }]
+      );
+    }
   }
   add(
     {
@@ -4693,14 +4735,7 @@ export function buildStyle({
       // plánovaná cesta je tu, medzi prvkami, lebo ide z vlastných dlaždíc.
       // Bodkovaná a šedšia než rozostavaná: „stavia sa" proti „je to na papieri".
       ["road-proposed", "Plánované cesty", ["road_proposed"], "roadProposed",
-        [[11, 0.8], [14, 1.6], [16, 2.6], [20, 6]], [1, 2.5], 11],
-      // lanovky mimo prevádzky; tie v prevádzke kreslí vrstva `aerialway`
-      ["aerialway-construction", "Rozostavané lanovky", ["aerialway_construction"],
-        "aerialway", [[11, 0.6], [16, 1.6], [20, 3]], [3, 3], 11],
-      ["aerialway-proposed", "Plánované lanovky", ["aerialway_proposed"],
-        "roadProposed", [[11, 0.6], [16, 1.6], [20, 3]], [1, 2.5], 11],
-      ["aerialway-disused", "Zrušené lanovky", ["aerialway_disused"], "roadProposed",
-        [[11, 0.5], [16, 1.2], [20, 2.4]], [6, 4], 11]
+        [[11, 0.8], [14, 1.6], [16, 2.6], [20, 6]], [1, 2.5], 11]
     ];
     for (const [id, label, classes, paletteKey, stops, dash, mz] of featureLines) {
       add(
@@ -4722,6 +4757,10 @@ export function buildStyle({
       );
     }
 
+  }
+
+  // zjazdovky, bežky, skialpy, sánkovačky a zimné chodníky – každý druh vlastná vrstva
+  if (skiUrl) {
     // farba podľa obťažnosti, tie isté kľúče palety ako pri značkách trás
     const pisteColour = [
       "match",
@@ -4734,66 +4773,62 @@ export function buildStyle({
       "freeride", c.trailOrange,
       c.pisteLine
     ];
-    add(
-      {
-        id: "piste-line",
-        type: "line",
-        source: "features",
-        "source-layer": "piste",
-        minzoom: 11,
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: {
-          "line-color": pisteColour,
-          "line-width": zw([[11, 0.8], [14, 1.8], [16, 3], [20, 8]]),
-          "line-opacity": 0.9
-        }
-      },
-      [
-        "prvky",
-        "Zjazdovky a bežky (čiara)",
-        "line",
-        {},
-        ["pisteLine", "trailGreen", "trailBlue", "trailRed", "trailBlack", "trailOrange"]
-      ]
-    );
-    add(
-      {
-        id: "piste-label",
-        type: "symbol",
-        source: "features",
-        "source-layer": "piste",
-        minzoom: 13,
-        filter: ["any", ["has", "name"], ["has", "ref"]],
-        layout: {
-          "symbol-placement": "line",
-          "text-field": [
-            "case",
-            ["all", ["has", "ref"], ["has", "name"]],
-            ["concat", ["get", "ref"], " ", ["get", "name"]],
-            ["has", "name"],
-            ["get", "name"],
-            ["get", "ref"]
-          ],
-          "text-font": REG,
-          "text-size": zl([[13, 9], [16, 11], [20, 13]]),
-          "symbol-spacing": 380,
-          "text-max-angle": 30,
-          "text-offset": [0, 0.8]
+    const pisteKeys = ["pisteLine", "trailGreen", "trailBlue", "trailRed", "trailBlack", "trailOrange"];
+    const pisteName = ["coalesce", ["get", "name"], ["get", "piste_name"]];
+    for (const [kind, label, minzoom] of [
+      ["downhill", "Zjazdovky", 11], ["nordic", "Bežky", 11], ["skitour", "Skialpinistické trasy", 11],
+      ["sled", "Sánkovačky", 12], ["hike", "Zimné chodníky", 12]
+    ]) {
+      const named = kind === "downhill" ? "piste" : `piste-${kind}`;
+      add(
+        {
+          id: `${named}-line`,
+          type: "line",
+          source: "ski",
+          "source-layer": kind,
+          minzoom,
+          layout: { "line-cap": "round", "line-join": "round" },
+          paint: {
+            "line-color": pisteColour,
+            "line-width": zw([[11, 0.8], [14, 1.8], [16, 3], [20, 8]]),
+            "line-opacity": 0.9
+          }
         },
-        paint: {
-          "text-color": pisteColour,
-          "text-halo-color": c.textHalo,
-          "text-halo-width": 1.6
-        }
-      },
-      [
-        "prvky",
-        "Zjazdovky – názvy",
-        "text",
-        { "text-halo-color": "textHalo" },
-        ["pisteLine", "trailGreen", "trailBlue", "trailRed", "trailBlack", "trailOrange"]
-      ]
-    );
+        ["prvky", `${label} (čiara)`, "line", {}, pisteKeys]
+      );
+      add(
+        {
+          id: `${named}-label`,
+          type: "symbol",
+          source: "ski",
+          "source-layer": kind,
+          minzoom: 13,
+          filter: ["any", ["has", "name"], ["has", "piste_name"], ["has", "ref"]],
+          layout: {
+            "symbol-placement": "line",
+            "text-field": [
+              "case",
+              ["all", ["has", "ref"], ["!", ["==", pisteName, null]]],
+              ["concat", ["get", "ref"], " ", pisteName],
+              ["has", "ref"],
+              ["get", "ref"],
+              pisteName
+            ],
+            "text-font": REG,
+            "text-size": zl([[13, 9], [16, 11], [20, 13]]),
+            "symbol-spacing": 380,
+            "text-max-angle": 30,
+            "text-offset": [0, 0.8]
+          },
+          paint: {
+            "text-color": pisteColour,
+            "text-halo-color": c.textHalo,
+            "text-halo-width": 1.6
+          }
+        },
+        ["prvky", `${label} – názvy`, "text", { "text-halo-color": "textHalo" }, pisteKeys]
+      );
+    }
   }
 
   // trasa nie je cesta: `type=route` relácia so značením, v dlaždiciach

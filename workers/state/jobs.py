@@ -47,14 +47,14 @@ COST = {
               "every OSM road a car can drive, with road limits (clearance, weight, "
               "speed) and the routing network the phone routes on"),
     "paths": ("Paths",
-              "footways, paths, cycleways, steps, pedestrian streets and lifts – "
+              "footways, paths, cycleways, steps and pedestrian streets – "
               "everything cars don't fit"),
     "boundaries": ("Boundaries and area names",
                    "state, region, district and municipality boundaries with their names"),
     "water": ("Water bodies",
               "rivers, streams, lakes, reservoirs and the sea with their names"),
-    "railways": ("Railways & cable cars",
-                 "every railway and cable car, planned and abandoned too, named "
+    "railways": ("Railways",
+                 "every railway, planned and abandoned too, named "
                  "stations, line signs and the track network for navigation"),
     "history": ("Army & history",
                 "military sites, historic places, mines, embankments, and everything "

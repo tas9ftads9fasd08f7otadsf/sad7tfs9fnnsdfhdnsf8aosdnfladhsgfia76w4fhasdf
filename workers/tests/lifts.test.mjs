@@ -1,7 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { buildStyle } from "../../poc/web/themes.js";
-import { railLayers } from "../../poc/web/packages.js";
 import { LIFT_CABINS, LIFT_CHAIRS } from "../../poc/web/lifts.js";
 
 const style = buildStyle({
@@ -28,12 +27,22 @@ test("cabin lifts are a dark band with light dashes, chairs and drag lifts dashe
   assert.equal(LIFT_CABINS.some((k) => LIFT_CHAIRS.includes(k)), false);
 });
 
-// 447 the railways package draws the same lifts the same way
-test("the railways package draws lifts with the same pattern", () => {
-  const layers = railLayers(false).ground;
-  for (const id of ["pkg-rail-lift-cabin-casing", "pkg-rail-lift-cabin", "pkg-rail-lift-chair", "pkg-rail-lift"]) {
-    assert.ok(byId(id, layers), id);
+// 472 lifts in service come from Ski & winter, drawn the same way
+test("with Ski & winter the lifts read its archive, those in service only", () => {
+  const ski = buildStyle({
+    theme: "svetla",
+    tilesUrl: "https://x/tiles.pmtiles",
+    spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
+    skiUrl: "https://x/ski.pmtiles"
+  });
+  for (const id of ["aerialway-casing", "aerialway", "aerialway-chair", "aerialway-drag"]) {
+    const layer = byId(id, ski.layers);
+    assert.equal(layer.source, "ski", id);
+    assert.equal(layer["source-layer"], "lift", id);
+    assert.ok(JSON.stringify(layer.filter).includes("active"), id);
+    assert.equal(JSON.stringify(layer.paint), JSON.stringify(byId(id).paint), id);
   }
-  assert.ok(byId("pkg-rail-lift-cabin", layers).paint["line-dasharray"]);
-  assert.ok(byId("pkg-rail-lift-chair", layers).paint["line-dasharray"]);
+  assert.ok(byId("aerialway-construction", ski.layers) && byId("aerialway-proposed", ski.layers));
+  assert.equal(byId("aerialway-construction"), undefined);
 });

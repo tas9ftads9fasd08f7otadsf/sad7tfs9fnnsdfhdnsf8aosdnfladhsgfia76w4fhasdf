@@ -33,8 +33,19 @@ definitions:
     building: [ruins]
   - &abandoned '${ feature.tags.exists(k, k.startsWith("abandoned:") || feature.tags[k] == "abandoned" || (k == "abandoned" && feature.tags[k] == "yes")) }'
   - &disused '${ feature.tags.exists(k, k.startsWith("disused:") || feature.tags[k] == "disused" || (k == "disused" && feature.tags[k] == "yes")) }'
+  # a lift taken down keeps its kind in one of these; a railway's is Railways' to draw
+  - &old_lift
+    "razed:aerialway": __any__
+    "removed:aerialway": __any__
+    "demolished:aerialway": __any__
+    "was:aerialway": __any__
   - &gone_tags
-    __any__: [*abandoned, *disused]
+    __any__: [*abandoned, *disused, *old_lift]
+  - &railway_tags
+    railway: __any__
+    "abandoned:railway": __any__
+    "disused:railway": __any__
+    "razed:railway": __any__
 
   # tags that make a closed way a line, not an area
   - &linear
@@ -55,6 +66,10 @@ definitions:
     "disused:waterway": __any__
     "abandoned:aerialway": __any__
     "disused:aerialway": __any__
+    "razed:aerialway": __any__
+    "removed:aerialway": __any__
+    "demolished:aerialway": __any__
+    "was:aerialway": __any__
     "abandoned:power": [line, minor_line, cable]
     "disused:power": [line, minor_line, cable]
 
@@ -92,24 +107,24 @@ definitions:
   - &gone_attrs
     # WHAT IT WAS: off the prefixed tag (`disused:shop=bakery`), else the tag that says it
     - key: family
-      value: '${ feature.tags.filter(k, k.matches("^(abandoned|disused):.")).map(k, k.replace("abandoned:", "").replace("disused:", ""))[0] }'
-      include_when: '${ feature.tags.exists(k, k.matches("^(abandoned|disused):.")) }'
+      value: '${ feature.tags.filter(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.")).map(k, k.replace("abandoned:", "").replace("disused:", "").replace("razed:", "").replace("removed:", "").replace("demolished:", "").replace("was:", ""))[0] }'
+      include_when: '${ feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.")) }'
     - key: class
-      value: '${ feature.tags[feature.tags.filter(k, k.matches("^(abandoned|disused):."))[0]] }'
-      include_when: '${ feature.tags.exists(k, k.matches("^(abandoned|disused):.")) }'
+      value: '${ feature.tags[feature.tags.filter(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):."))[0]] }'
+      include_when: '${ feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.")) }'
     - key: family
       value: '${ feature.tags.filter(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused")[0] }'
-      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused):.")) && feature.tags.exists(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused") }'
+      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.")) && feature.tags.exists(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused") }'
     - key: class
       value: '${ feature.tags[feature.tags.filter(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused")[0]] }'
-      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused):.")) && feature.tags.exists(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused") }'
+      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.")) && feature.tags.exists(k, feature.tags[k] == "abandoned" || feature.tags[k] == "disused") }'
     # `abandoned=yes` alone: what it is says what it was
     - key: family
       value: '${ ["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].filter(k, k in feature.tags)[0] }'
-      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused):.") || feature.tags[k] == "abandoned" || feature.tags[k] == "disused") && ["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].exists(k, k in feature.tags) }'
+      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.") || feature.tags[k] == "abandoned" || feature.tags[k] == "disused") && ["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].exists(k, k in feature.tags) }'
     - key: class
       value: '${ feature.tags[["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].filter(k, k in feature.tags)[0]] }'
-      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused):.") || feature.tags[k] == "abandoned" || feature.tags[k] == "disused") && ["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].exists(k, k in feature.tags) }'
+      include_when: '${ !feature.tags.exists(k, k.matches("^(abandoned|disused|razed|removed|demolished|was):.") || feature.tags[k] == "abandoned" || feature.tags[k] == "disused") && ["building", "amenity", "shop", "railway", "highway", "landuse", "man_made", "leisure", "tourism", "power", "office", "craft", "industrial", "aeroway", "aerialway", "waterway"].exists(k, k in feature.tags) }'
     - key: name
     - key: name_en
       value:
@@ -253,23 +268,23 @@ layers:
         min_zoom: 12
         include_when: *gone_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *linear]
+          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags, *linear]
         attributes: *gone_attrs
-      # abandoned railways and roads read as lines across the land from z10
+      # abandoned roads and lifts read as lines across the land from z10
       - source: osm
         geometry: line
         min_zoom: 10
         include_when:
           __all__: [*gone_tags, *linear]
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags]
+          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags]
         attributes: *gone_attrs
       - source: osm
         geometry: point
         min_zoom: 13
         include_when: *gone_tags
         exclude_when:
-          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags]
+          __any__: [*army_tags, *mining_tags, *embankment_tags, *history_tags, *railway_tags]
         attributes: *gone_attrs
 
 # TESTS: `java -jar planetiler.jar verify workers/history/history.yml`
@@ -469,37 +484,68 @@ examples:
           family: shop
           lifecycle: disused
 
-  - name: An abandoned railway is a line from z10
+  - name: An abandoned railway is Railways', not gone
     input:
       source: osm
       geometry: line
       tags:
         railway: abandoned
         name: Úvraťová železnica
-    output:
-      - layer: gone
-        geometry: line
-        min_zoom: 10
-        tags:
-          class: abandoned
-          family: railway
-          lifecycle: abandoned
-          name: Úvraťová železnica
+    output: []
 
-  - name: A railway left as `abandoned:railway` is a line, and says it was a railway
+  - name: A railway left as `abandoned:railway` is Railways' too
     input:
       source: osm
       geometry: line
       tags:
         "abandoned:railway": rail
+    output: []
+
+  - name: A disused chair lift is gone, and says it was a chair lift
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: disused
+        "disused:aerialway": chair_lift
     output:
       - layer: gone
         geometry: line
         min_zoom: 10
         tags:
-          class: rail
-          family: railway
-          lifecycle: abandoned
+          class: chair_lift
+          family: aerialway
+          lifecycle: disused
+
+  - name: A lift with disused=yes is gone
+    input:
+      source: osm
+      geometry: line
+      tags:
+        aerialway: drag_lift
+        disused: "yes"
+    output:
+      - layer: gone
+        geometry: line
+        min_zoom: 10
+        tags:
+          class: drag_lift
+          family: aerialway
+          lifecycle: disused
+
+  - name: A lift taken down is gone, and says what it was
+    input:
+      source: osm
+      geometry: line
+      tags:
+        "razed:aerialway": cable_car
+    output:
+      - layer: gone
+        geometry: line
+        min_zoom: 10
+        tags:
+          class: cable_car
+          family: aerialway
 
   - name: A closed loop of abandoned track stays a line, never an area
     input:

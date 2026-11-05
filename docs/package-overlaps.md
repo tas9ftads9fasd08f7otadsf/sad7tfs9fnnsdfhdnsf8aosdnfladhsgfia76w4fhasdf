@@ -50,10 +50,10 @@ Proposals, each a ticket of its own:
 - **Peaks, saddles, ridges**: Geographical names names them, Landscape draws the mark; `points.yml`
   drops `peak` and `saddle`.
 - **Springs**: Water bodies; `points.yml` drops `natural=spring`.
-- **Pistes**: Ski & winter; `features.yml` drops `piste`.
-- **Lifts and stations**: Ski & winter for those that serve skiing (`drag_lift`, `t-bar`,
-  `platter`, `chair_lift`…), Railways for cable cars and gondolas; `paths.yml` and the base map's
-  `poi:aerialway` drop them.
+- **Pistes**: Ski & winter; `features.yml` drops `piste` (done in #472).
+- **Lifts and stations**: Ski & winter for every lift and cable car in service, being built or
+  planned; Army & history for those out of service; Railways, Paths and the base map's cuts drop
+  them (done in #472).
 - **Place names**: `boundaries.yml` drops `place`.
 - **Memorials, adits, wayside crosses, embankments, quarries**: Army & history; `points.yml` and
   `features.yml` drop them.

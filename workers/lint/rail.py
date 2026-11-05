@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rail and aerialways: the filter passes what the schema wants, routing runs on what the map draws."""
+"""Rail: the filter passes what the schema wants, routing runs on what the map draws; no lifts."""
 import json
 import os
 import sys
@@ -20,12 +20,6 @@ DERIVED = {"rail_speed"}
 # what the package promises in the app
 PROMISED = {"rail", "tram", "subway", "light_rail", "abandoned", "disused",
          "station", "halt", "level_crossing"}
-# aerialways in every state – under construction, proposed and abandoned too
-PROMISED_AERIAL = {"cable_car", "gondola", "chair_lift", "goods", "construction",
-                 "proposed", "disused", "abandoned", "station"}
-STATES = {"construction:aerialway", "proposed:aerialway", "disused:aerialway",
-         "abandoned:aerialway", "razed:aerialway", "was:aerialway",
-         "removed:aerialway", "demolished:aerialway", "historic:aerialway"}
 
 
 def filter_keys(path):
@@ -56,12 +50,11 @@ def main():
         schema = yaml.safe_load(f)
     blocks = [b for v in schema.get("layers") or [] for b in v.get("features") or []]
 
-    passes, classes, aerial, all_keys = filter_keys(FILTER), set(), set(), set()
+    passes, classes, aerial = filter_keys(FILTER), set(), set()
     for b in blocks:
         keys = set()
         for key, values in conditions(b.get("include_when")):
             keys.add(key)
-            all_keys.add(key)
             if key == "railway":
                 classes |= set(map(str, values))
             if key == "aerialway":
@@ -75,15 +68,9 @@ def main():
         bad.append(f"{SCHEMA}: `railway={promise}` isn't in the schema, yet the "
                    f"package promises it.")
 
-    for promise in sorted(PROMISED_AERIAL - aerial):
-        bad.append(f"{SCHEMA}: `aerialway={promise}` isn't in the schema, yet the "
-                   f"package promises it.")
-    for key in sorted(STATES - all_keys):
-        bad.append(f"{SCHEMA}: aerialways with `{key}` aren't in the schema – the "
-                   f"state would be lost.")
-    for key in sorted((STATES | {"aerialway"}) - passes):
-        bad.append(f"{FILTER}: the prefilter doesn't pass `{key}` – aerialways "
-                   f"wouldn't be in the tiles.")
+    # lifts and cable cars are Ski & winter's, the ones out of service Army & history's
+    if aerial or "aerialway" in passes:
+        bad.append(f"{SCHEMA}: aerialways are back in railways – they are Ski & winter's.")
 
     with open(ROUTING, encoding="utf-8") as f:
         network = set(json.load(f)["rail_tags"]["network"]["railway"])
@@ -110,7 +97,7 @@ def main():
         print(f"::error::{b}")
     if not bad:
         print(f"rail ✓ ({len(blocks)} blocks, {len(classes)} classes, "
-              f"{len(aerial)} aerialway kinds, network of {len(network)} classes)")
+              f"network of {len(network)} classes)")
     return 1 if bad else 0
 
 

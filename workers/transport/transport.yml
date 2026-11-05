@@ -316,7 +316,7 @@ examples:
         name: Hlavná
     output: []
 
-  - name: An aerialway is a path – it carries people, not cars
+  - name: A lift is no road – Ski & winter carries it
     input:
       source: osm
       geometry: line

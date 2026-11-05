@@ -17,6 +17,7 @@ const ARCHIVES = {
   boundariesUrl: "https://x/boundaries.pmtiles",
   waterUrl: "https://x/water.pmtiles",
   buildingsUrl: "https://x/buildings.pmtiles",
+  skiUrl: "https://x/ski.pmtiles",
   roadSigns: true
 };
 const OWN = { railUrl: "https://x/rail.pmtiles", historyUrl: "https://x/history.pmtiles" };
@@ -69,7 +70,7 @@ test("railways draw from their archive, else from the base map", () => {
   assert.ok(own.includes("pkg-rail-main") && own.includes("pkg-rail-station"));
   assert.ok(!own.includes("rail-bg"));
   const base = ids(packageMap("railways", { own: {} }));
-  assert.ok(base.includes("rail-bg") && base.includes("aerialway"));
+  assert.ok(base.includes("rail-bg") && !base.includes("aerialway"));
   assert.ok(!base.some((l) => l.startsWith("pkg-rail-")));
 });
 
@@ -89,7 +90,8 @@ test("the base map is the style as built", () => {
 });
 test("landscape takes the land, points the shops, settlements the places", () => {
   const land = ids(packageMap("landscape"));
-  assert.ok(land.includes("landcover-wood") && land.includes("park") && land.includes("piste-line"));
+  assert.ok(land.includes("landcover-wood") && land.includes("park"));
+  assert.ok(!land.some((l) => l.startsWith("piste-")));
   assert.ok(land.includes("mountain-peak") && land.includes("aeroway-runway"));
   assert.ok(!land.includes("road-motorway") && !land.includes("poi-major"));
   assert.ok(!land.includes("feature-aerialway-disused"));
@@ -102,9 +104,21 @@ test("a region offers only the packages it has", () => {
   const bare = packagesOf({}).map((p) => p.id);
   assert.ok(bare.includes("roads") && bare.includes("railways"));
   assert.ok(!bare.includes("history") && !bare.includes("settlements"));
-  const full = packagesOf({ history: "h", buildings: "b", points: "p" }).map((p) => p.id);
+  const full = packagesOf({ history: "h", buildings: "b", points: "p", ski: "s" }).map((p) => p.id);
   assert.deepEqual(full, PACKAGE_IDS);
   assert.equal(normalizePackage("history", {}), BASE_PACKAGE);
   assert.equal(normalizePackage("history", { history: "h" }), "history");
   assert.equal(normalizePackage(null, {}), BASE_PACKAGE);
+});
+
+// 472 Ski & winter draws every piste and every lift in service, Railways and Landscape none
+test("ski draws the pistes and the lifts, from its own archive only", () => {
+  const style = packageMap("ski");
+  assert.deepEqual(Object.keys(style.sources).sort(), ["dem", "ski"]);
+  const drawn = ids(style);
+  for (const id of ["piste-area", "piste-line", "piste-nordic-line", "aerialway", "aerialway-drag",
+    "aerialway-construction"]) {
+    assert.ok(drawn.includes(id), id);
+  }
+  assert.ok(!ids(packageMap("railways")).some((l) => l.includes("lift") || l.startsWith("aerialway")));
 });

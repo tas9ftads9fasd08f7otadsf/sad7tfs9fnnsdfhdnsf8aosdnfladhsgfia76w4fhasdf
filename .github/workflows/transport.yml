@@ -1,7 +1,7 @@
 name: Map · transport network
 
 # ROADS AND PATHS from OSM, each into its own `.pmtiles`: roads a car can drive
-# and ferries (package `roads`), footways, paths, steps and aerialways (package
+# and ferries (package `roads`), footways, paths, steps and pedestrian streets (package
 # `paths`). See the `workers/transport/transport.yml` and `paths.yml` headers.
 # One prefiltered PBF, read once per schema.
 #

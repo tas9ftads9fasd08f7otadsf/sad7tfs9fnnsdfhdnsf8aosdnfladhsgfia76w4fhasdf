@@ -73,7 +73,9 @@ class CutFromCatalog(unittest.TestCase):
     def test_the_cut_follows_the_catalog(self):
         cut = worker("tiles/cut.py")
         self.assertEqual(cut.owner("transportation", {"class": "path"}), "paths")
-        self.assertEqual(cut.owner("transportation", {"class": "aerialway"}), "railways")
+        # 472 the base map's lifts go to no share: Ski & winter draws every lift
+        self.assertIsNone(cut.owner("transportation", {"class": "aerialway"}))
+        self.assertIsNone(cut.owner("poi", {"class": "aerialway"}))
         self.assertEqual(cut.owner("transportation", {"class": "primary"}), "roads")
         self.assertEqual(cut.owner("traffic_sign", {"way": "path"}), "paths")
         self.assertEqual(cut.owner("poi", {}), "points")

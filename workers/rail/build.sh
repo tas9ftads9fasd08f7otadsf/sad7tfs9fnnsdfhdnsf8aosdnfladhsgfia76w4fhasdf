@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Railways and aerialways from OSM → `{region}-rail.pmtiles` and `{region}-rail-routing.pmtiles`.
+# Railways from OSM → `{region}-rail.pmtiles` and `{region}-rail-routing.pmtiles`.
 # Its share of the page size comes from `BUDGET_RAIL_PCT`.
 
 set -euo pipefail
@@ -19,13 +19,13 @@ osmium tags-filter --overwrite -o data/rail.osm.pbf \
 BEFORE=$(stat -c%s data/region.osm.pbf)
 AFTER=$(stat -c%s data/rail.osm.pbf)
 echo "Prefilter: $(du -h data/region.osm.pbf | cut -f1) → $(du -h data/rail.osm.pbf | cut -f1)"
-printf '%s\t%s\t%s\t%s\n' "67" "Railway and aerialway prefilter" "$(( $(date +%s) - T_F ))" \
+printf '%s\t%s\t%s\t%s\n' "67" "Railway prefilter" "$(( $(date +%s) - T_F ))" \
   "$(( BEFORE / 1048576 )) MB → $(( AFTER / 1048576 )) MB" \
   >> steps-out/rail.tsv
 
 # an empty cutout isn't an error – there may be no track at all
-if [ "$AFTER" -lt 2000 ]; then
-  echo "::warning::This area has no track and no aerialway – the \`railways\` package isn't made."
+if [ "$(osmium fileinfo -e -g data.count.nodes data/rail.osm.pbf)" -eq 0 ]; then
+  echo "::warning::This area has no track – the \`railways\` package isn't made."
   echo "enabled=false" >> "$GITHUB_OUTPUT"
   exit 0
 fi
@@ -58,7 +58,7 @@ java -Xmx4g -jar planetiler.jar generate-custom \
   --force
 # the region ends in the tiles, not in the style
 workers/lib/clip-tiles.sh "$OUT"
-printf '%s\t%s\t%s\t%s\n' "68" "Railways and aerialways → PMTiles" "$(( $(date +%s) - T_PM ))" \
+printf '%s\t%s\t%s\t%s\n' "68" "Railways → PMTiles" "$(( $(date +%s) - T_PM ))" \
   "maxzoom $RZ_, $(du -h "$OUT" | cut -f1)" \
   >> steps-out/rail.tsv
 

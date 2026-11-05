@@ -1,10 +1,10 @@
 # Planetiler custom schema – every OSM way cars don't fit, in one `.pmtiles`.
-# Footways, paths, cycleways, steps, pedestrian streets and aerialways; roads are
-# `transport.yml`. Reads the same prefiltered PBF. Zooms: lifts and pedestrian z11, paths z13.
+# Footways, paths, cycleways, steps and pedestrian streets; lifts are Ski & winter's, roads are
+# `transport.yml`. Reads the same prefiltered PBF. Zooms: pedestrian z11, paths z13.
 schema_name: FricoMaps paths
 schema_description: >-
-  Every way on foot, by bike or on a lift – footways, paths, cycleways,
-  steps, pedestrian streets and aerialways, with name, surface and access
+  Every way on foot or by bike – footways, paths, cycleways,
+  steps and pedestrian streets, with name, surface and access
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
 sources:
@@ -63,16 +63,6 @@ layers:
         include_when:
           highway: [path, footway, cycleway, bridleway, steps, corridor,
                     via_ferrata, elevator, ladder]
-        attributes: *path_attrs
-
-      # 3. aerialways and lifts: from z11 – how people get up a mountain
-      - source: osm
-        geometry: line
-        min_zoom: 11
-        include_when:
-          aerialway: [cable_car, gondola, mixed_lift, chair_lift, drag_lift,
-                      t-bar, j-bar, platter, rope_tow, magic_carpet, zip_line,
-                      goods]
         attributes: *path_attrs
 
     tile_post_process:
@@ -159,21 +149,14 @@ examples:
           class: ladder
           family: highway
 
-  - name: An aerialway carries people, not cars
+  - name: A lift is no path – Ski & winter carries it
     input:
       source: osm
       geometry: line
       tags:
         aerialway: gondola
         name: Skalnaté pleso
-    output:
-      - layer: paths
-        geometry: line
-        min_zoom: 11
-        tags:
-          class: gondola
-          family: aerialway
-          name: Skalnaté pleso
+    output: []
 
   - name: A road is not a path – the `roads` package carries it
     input:

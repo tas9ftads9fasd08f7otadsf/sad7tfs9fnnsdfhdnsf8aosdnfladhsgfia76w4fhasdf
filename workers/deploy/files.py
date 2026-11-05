@@ -93,7 +93,7 @@ def trails_files(site, man):
 
 
 def features_files(site, man):
-    """Part `features` – landscape lines, areas and pistes, also in `landscape`."""
+    """Part `features` – landscape lines and areas, also in `landscape`."""
     return package_files(site, man, {"manifest": ["features"],
                                       "suffixes": ["-features.pmtiles"]})
 
@@ -171,7 +171,7 @@ def base_parts(site, man):
     return [
         ("trails", "waymarked routes from OSM relations (.pmtiles)",
          trails_files(site, man)),
-        ("features", "landscape lines, areas and pistes (.pmtiles)",
+        ("features", "landscape lines and areas (.pmtiles)",
          features_files(site, man)),
         ("routing", "signed routing network (.pmtiles)",
          routing_files(site, man)),

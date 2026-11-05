@@ -26,7 +26,7 @@ SCHEMAS = {"transport": ["transport", "paths"], "boundaries": ["boundaries"], "w
            "trails": ["trails"], "features": ["features", "points"], "range-boundaries": ["range"]}
 ARCHIVE = {"points": "points", "paths": "paths", "range": "range-boundaries"}
 # drawn by the app, not by the published styles
-UNSTYLED = {"range-boundaries", "names", "ski"}
+UNSTYLED = {"range-boundaries", "names"}
 # clip-tiles.py keeps 100 m past the outline
 MARGIN_M = 100
 
@@ -36,7 +36,6 @@ EXPECTED = [
     ("transport", "transport", {"class": "motorway_link"}),
     ("transport", "addresses", {}),
     ("paths", "paths", {"class": "path"}),
-    ("paths", "paths", {"class": "cable_car", "name": "Lanovka"}),
     ("boundaries", "boundary", {"admin_level": 8, "name": "Malá Obec"}),
     ("boundaries", "boundary_line", {}),
     ("boundaries", "boundary_label", {"admin_level": 4, "name": "Bratislavský kraj"}),
@@ -51,10 +50,10 @@ EXPECTED = [
     ("water", "water", {"name": "Jazero"}),
     ("water", "water_point", {"name": "Studnička"}),
     ("rail", "railway", {}),
-    ("rail", "aerialway", {"name": "Lanovka"}),
     ("history", "history", {"name": "Hrad"}),
     ("history", "army", {}),
     ("history", "embankment", {}),
+    ("history", "gone", {"name": "Starý vlek"}),
     ("names", "village", {"class": "village", "name": "Malá Obec"}),
     ("names", "mountain", {"class": "peak", "name": "Vrch", "ele": 512}),
     ("names", "mountain", {"class": "ridge", "name": "Hrebeň"}),
@@ -63,6 +62,7 @@ EXPECTED = [
     ("ski", "downhill", {"class": "downhill", "difficulty": "easy"}),
     ("ski", "nordic", {"class": "nordic", "grooming": "classic", "name": "Bežkárska"}),
     ("ski", "lift", {"class": "chair_lift", "name": "Sedačka"}),
+    ("ski", "lift", {"class": "cable_car", "state": "active", "name": "Lanovka"}),
     ("buildings", "building", {"name": "Kostol"}),
     ("buildings", "building_name", {"name": "Kostol"}),
     ("buildings", "settlement_area", {}),
@@ -77,7 +77,10 @@ ABSENT = [("boundaries", "boundary_label", {"name": "Malá Obec"}),
           ("boundaries", "boundary", {"name": "Osada"}), ("boundaries", "boundary", {"name": "Národný park"}),
           # 468 one owner each: a region's peaks are Landscape's, springs Water's, monuments History's
           ("points", "peak", {}), ("points", "feature_point", {"class": "spring"}),
-          ("points", "feature_point", {"class": "wayside_cross"})]
+          ("points", "feature_point", {"class": "wayside_cross"}),
+          # 472 every lift in service is Ski & winter's, one taken out of it Army & history's
+          ("paths", "paths", {"class": "cable_car"}), ("rail", "aerialway", {}),
+          ("ski", "lift", {"name": "Starý vlek"})]
 OUTSIDE_NAMES = {"Vonku", "Cudzie jazero"}
 
 

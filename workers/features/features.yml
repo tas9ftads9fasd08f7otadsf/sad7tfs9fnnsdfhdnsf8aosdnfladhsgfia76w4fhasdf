@@ -4,8 +4,8 @@
 schema_name: FricoMaps landscape features
 schema_description: >-
   Embankments, cuttings, walls, fences, power lines, cutlines, tree rows,
-  car parks, ski pistes and proposed roads – OSM lines and areas the
-  OpenMapTiles schema doesn't carry
+  car parks and proposed roads – OSM lines and areas the OpenMapTiles schema
+  doesn't carry; pistes and lifts are Ski & winter's
 attribution: <a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>
 
 sources:
@@ -123,48 +123,6 @@ layers:
               coalesce:
                 - tag_value: proposed
                 - tag_value: "proposed:highway"
-          - key: osm_id
-            value: '${ feature.id }'
-            type: long
-          - key: osm_type
-            value: '${ feature.osm_type }'
-
-      # aerialways out of service – OpenMapTiles draws those in service (`aerialway`)
-      - source: osm
-        geometry: line
-        min_zoom: 11
-        include_when:
-          aerialway: [construction, proposed, disused, abandoned]
-          "construction:aerialway": __any__
-          "proposed:aerialway": __any__
-          "disused:aerialway": __any__
-          "abandoned:aerialway": __any__
-          "razed:aerialway": __any__
-        exclude_when:
-          aerialway: [cable_car, gondola, mixed_lift, chair_lift, drag_lift,
-                      t-bar, j-bar, platter, rope_tow, magic_carpet, zip_line,
-                      goods, station, pylon]
-        attributes:
-          - key: name
-          - key: class
-            value:
-              - if: {aerialway: construction, "construction:aerialway": __any__}
-                value: aerialway_construction
-              - if: {aerialway: proposed, "proposed:aerialway": __any__}
-                value: aerialway_proposed
-              - else: aerialway_disused
-          - key: subclass
-            value:
-              coalesce:
-                - tag_value: "construction:aerialway"
-                - tag_value: "proposed:aerialway"
-                - tag_value: "disused:aerialway"
-                - tag_value: "abandoned:aerialway"
-                - tag_value: "razed:aerialway"
-                - tag_value: construction
-                - tag_value: proposed
-                - tag_value: disused
-                - tag_value: abandoned
           - key: osm_id
             value: '${ feature.id }'
             type: long
@@ -304,49 +262,3 @@ layers:
 
   # points are in `workers/features/points.yml`, a separate package in the app
 
-  # SKI PISTES: OpenMapTiles has lifts but not `piste:type`; a line and an area are both kept
-  - id: piste
-    features:
-      - source: osm
-        geometry: polygon
-        min_zoom: 11
-        include_when:
-          "piste:type": [downhill, nordic, skitour, sled, sleigh, snow_park, connection]
-        attributes:
-          - key: name
-          - key: ref
-          - key: class
-            value:
-              tag_value: "piste:type"
-          # blue/red/black – the first thing a skier looks for
-          - key: difficulty
-            value:
-              tag_value: "piste:difficulty"
-          - key: grooming
-            value:
-              tag_value: "piste:grooming"
-      - source: osm
-        geometry: line
-        min_zoom: 11
-        include_when:
-          "piste:type": [downhill, nordic, skitour, sled, sleigh, snow_park, connection]
-        attributes:
-          - key: name
-          - key: ref
-          - key: class
-            value:
-              tag_value: "piste:type"
-          - key: difficulty
-            value:
-              tag_value: "piste:difficulty"
-          - key: grooming
-            value:
-              tag_value: "piste:grooming"
-          - key: osm_id
-            value: '${ feature.id }'
-            type: long
-          - key: osm_type
-            value: '${ feature.osm_type }'
-    tile_post_process:
-      merge_line_strings:
-        min_length: 0

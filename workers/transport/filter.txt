@@ -8,8 +8,6 @@ w/highway
 # ferries (on the Danube the only way across)
 w/route=ferry
 
-# aerialways and lifts
-w/aerialway
 
 # addresses: points and buildings with a house number
 nwr/addr:housenumber
