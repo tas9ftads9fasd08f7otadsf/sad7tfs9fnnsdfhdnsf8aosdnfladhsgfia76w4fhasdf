@@ -6269,10 +6269,23 @@ export function buildStyle({
   // najprv profil typu mapy, až potom úpravy – tie musia vedieť profil prebiť
   applyMapType(style, mapTypeId);
   // poradie sa mení nad hotovým štýlom: presúva sa aj vzor a okraj
-  return applyLayerOrder(
+  return skipInvisibleFills(applyLayerOrder(
     applyLayerOverrides(style, overrides?.layers, hasIcon, theme),
     overrides?.order
-  );
+  ));
+}
+
+/** A plain fill in the background's own colour draws nothing a viewer can see; it isn't drawn. */
+export function skipInvisibleFills(style) {
+  const bg = style.layers.find((l) => l.type === "background")?.paint?.["background-color"];
+  if (typeof bg !== "string") return style;
+  for (const layer of style.layers) {
+    const color = layer.paint?.["fill-color"];
+    if (layer.type !== "fill" || typeof color !== "string" || layer.paint["fill-pattern"]) continue;
+    if (color.toLowerCase() !== bg.toLowerCase()) continue;
+    layer.layout = { ...(layer.layout || {}), visibility: "none" };
+  }
+  return style;
 }
 
 export {
