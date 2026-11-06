@@ -3003,7 +3003,9 @@ function outlineWidth(layer, width) {
  * Prvok bez toho atribútu ostáva v predlohe: `str()` z chýbajúceho tagu spraví
  * `""`. „Nevieme, aký je povrch" nie je to isté ako „je nespevnený".
  */
-function variantLayers(layer, variants, hasIcon) {
+const isColorProp = (prop) => prop.endsWith("-color");
+
+function variantLayers(layer, variants, hasIcon, dark = false) {
   const out = [];
   const koren = (layer.metadata || {})["frico:derived"] || layer.id;
   for (const [i, v] of variants.entries()) {
@@ -3018,6 +3020,8 @@ function variantLayers(layer, variants, hasIcon) {
       metadata: { ...zaklad.metadata, "frico:derived": koren, "frico:variant": layer.id }
     };
     for (const [prop, value] of Object.entries(v.paint || {})) {
+      // variant nemá tmavú farbu, v tmavej téme si nechá farbu predlohy
+      if (dark && isColorProp(prop)) continue;
       const nv = overrideValue(vrstva.paint[prop], value, PAINT_DEFAULTS[prop]);
       if (nv !== undefined) vrstva.paint[prop] = nv;
     }
@@ -3149,6 +3153,8 @@ function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme)
     if (o.paint) {
       layer.paint = { ...(layer.paint || {}) };
       for (const [prop, value] of Object.entries(o.paint)) {
+        // 475 svetlá farba bez tmavej by v tmavej téme svietila, ostáva farba témy
+        if (theme === "tmava" && isColorProp(prop)) continue;
         // vlastnosť, ktorú štýl nenastavil, má predvoľbu MapLibre; `undefined`
         // v `paint` by MapLibre odmietol aj s celým štýlom
         const v = overrideValue(layer.paint[prop], value, PAINT_DEFAULTS[prop]);
@@ -3182,7 +3188,7 @@ function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme)
     // variant vzniká z vrstvy, na ktorej už sedí jej úprava; predloha si
     // k filtru pridá negáciu – viď `variantLayers`
     const varianty = (o.variants || []).length
-      ? variantLayers(layer, o.variants, hasIcon)
+      ? variantLayers(layer, o.variants, hasIcon, theme === "tmava")
       : [];
     if (varianty.length) {
       const nie = ["!", variantTest(o.variants)];
