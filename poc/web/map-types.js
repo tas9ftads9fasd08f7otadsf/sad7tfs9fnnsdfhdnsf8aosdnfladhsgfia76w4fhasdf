@@ -13,8 +13,9 @@
  * Pravidlo má tvar `{ match, ...akcie }`:
  *   match: { id: string | string[] | RegExp, group, kind }  (voliteľné)
  *   akcie: visible, minzoom, maxzoom, minzoomFloor (zdvihne, neznižuje),
- *          opacity (vynásobí krytie), classesFrom ({ minzoom, classes }:
- *          tieto triedy POI až od zoomu)
+ *          opacity (vynásobí krytie), classesFrom ({ minzoom, classes, keys }:
+ *          tieto triedy až od zoomu), rankFrom ({ minzoom, maxRank }: pod zoomom
+ *          len prvky s rankom do maxRank)
  * Neskoršie pravidlo prepíše skoršie.
  */
 
@@ -73,6 +74,9 @@ const OTHER_TRAILS = /^trail-(hiking|bicycle|mtb|horse)(-icon|-mark|-label)?$/;
 const SKI_TRAILS = /^trail-ski(-icon|-mark|-label)?$/;
 /** Všetky značené trasy vrátane podkladu pod pásikmi. */
 const ALL_TRAILS = /^trail-/;
+const TRAIL_LINES = /^trail-(hiking|ferrata|bicycle|mtb|horse)$/;
+/** Style zoom (Mapy's z12) where the default map adds paths, local trails and minor peaks. */
+export const OVERVIEW_DETAIL_Z = 11;
 /**
  * Značky trás (biely či žltý štvorec s farebným pásom). Vlastný vzor preto,
  * že pravidlá, ktoré púšťajú PÁSIKY nižšie („trasy vidieť už z prehľadu"),
@@ -126,19 +130,27 @@ export const MAP_TYPES = [
       // takže `minzoom: 8` by ich nezobrazilo skôr – len by tichým spôsobom
       // prepisovalo číslo, ktoré má byť na jednom mieste. Zoom skál je
       // v themes.js a v contours-rocks/rocks.yml, a tie dve sa musia rovnať.
-      { match: { id: "road-path" }, minzoom: 10 },
-      { match: { id: "road-track" }, minzoom: 10 },
+      // the overview stays as light as Mapy's: paths, tracks and local trails from its z12
+      { match: { id: "road-path" }, minzoom: OVERVIEW_DETAIL_Z },
+      { match: { id: "road-track" }, minzoom: OVERVIEW_DETAIL_Z },
       { match: { id: "road-cycleway" }, minzoom: 11 },
       { match: { id: "road-footway" }, minzoom: 12 },
-      { match: { id: ALL_TRAILS }, minzoom: 8 },
+      { match: { id: ALL_TRAILS }, minzoom: 9 },
+      { match: { id: TRAIL_LINES },
+        classesFrom: { minzoom: OVERVIEW_DETAIL_Z, classes: ["regional", "local"], keys: ["tier"] } },
       // …ale značky nie: pásik má zmysel aj ako čiara z prehľadu, značka až
       // vtedy, keď je z nej vidieť, čo na nej je.
       { match: { id: TRAIL_MARKS }, minzoomFloor: MARK_MINZOOM },
-      { match: { id: "trail-halo" }, minzoom: 10 },
+      { match: { id: "trail-halo" }, minzoom: OVERVIEW_DETAIL_Z },
       // Vrcholy, chaty a studničky sú tu to hlavné.
       { match: { id: "poi-major" }, minzoom: 13 },
-      { match: { id: "mountain-peak" }, minzoom: 8 },
-      { match: { id: POI_LAYERS }, classesFrom: { minzoom: TOWN_POI_Z, classes: TOWN_CLASSES } }
+      { match: { id: "mountain-peak" }, minzoom: 9 },
+      { match: { id: "mountain-peak" }, rankFrom: { minzoom: OVERVIEW_DETAIL_Z, maxRank: 2 } },
+      { match: { id: POI_LAYERS }, classesFrom: { minzoom: TOWN_POI_Z, classes: TOWN_CLASSES } },
+      // district borders and names, castles and fuel aren't on Mapy's overview
+      { match: { id: TOPIC_LAYERS }, minzoomFloor: OVERVIEW_DETAIL_Z + 1 },
+      { match: { id: "boundary-district" }, minzoomFloor: OVERVIEW_DETAIL_Z },
+      { match: { id: /^boundary-name-(region|district)$/ }, visible: false }
     ]
   },
   {
@@ -331,13 +343,16 @@ const OPACITY_PROPS = {
   raster: ["raster-opacity"]
 };
 
-function withClassesFrom(filter, { minzoom, classes }) {
+function withClassesFrom(filter, { minzoom, classes, keys = ["class", "subclass"] }) {
   const listed = ["literal", classes];
   const gate = ["any",
-    ["!", ["any",
-      ["in", ["coalesce", ["get", "class"], ""], listed],
-      ["in", ["coalesce", ["get", "subclass"], ""], listed]]],
+    ["!", ["any", ...keys.map((k) => ["in", ["coalesce", ["get", k], ""], listed])]],
     [">=", ["zoom"], minzoom]];
+  return filter ? ["all", filter, gate] : gate;
+}
+
+function withRankFrom(filter, { minzoom, maxRank }) {
+  const gate = ["any", ["<=", ["coalesce", ["get", "rank"], 99], maxRank], [">=", ["zoom"], minzoom]];
   return filter ? ["all", filter, gate] : gate;
 }
 
@@ -368,6 +383,7 @@ export function applyMapType(style, id) {
       }
       if (rule.maxzoom != null) layer.maxzoom = rule.maxzoom;
       if (rule.classesFrom) layer.filter = withClassesFrom(layer.filter, rule.classesFrom);
+      if (rule.rankFrom) layer.filter = withRankFrom(layer.filter, rule.rankFrom);
       if (rule.opacity != null) {
         for (const prop of OPACITY_PROPS[layer.type] || []) {
           // Popisku sa krytie nastavuje len vtedy, keď ho vrstva už má –
