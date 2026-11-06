@@ -216,6 +216,12 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   `landcover` na z11 – z12 poskladá zo štyroch dlaždíc o zoom vyššie, triedy
   zlúči bez škár a zahodí len diery a kúsky pod 2 px.
 
+  **Číslo domu nesie výšku svojej budovy.** V 3D mape stoja budovy, no čísla
+  ležia na zemi a vyzerajú ako na okraji steny.
+  [`workers/tiles/house-number-heights.py`](tiles/house-number-heights.py) dá
+  každému bodu vrstvy `housenumber` `render_height` budovy, v ktorej stojí
+  (alebo do 3 m od jej steny), a aplikácia ho postaví na strechu.
+
   **Hranica sa pred rezom zjednoduší na 10 m.** `osmium extract --polygon`
   testuje každý uzol PBF proti každej úsečke hranice, takže čas rezu rastie
   s počtom bodov. Namerané na relácii Prešovského kraja (388271, plná geometria
