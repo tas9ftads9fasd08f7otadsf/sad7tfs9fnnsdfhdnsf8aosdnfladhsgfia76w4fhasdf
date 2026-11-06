@@ -141,7 +141,13 @@ export const MAP_TYPES = [
       // …ale značky nie: pásik má zmysel aj ako čiara z prehľadu, značka až
       // vtedy, keď je z nej vidieť, čo na nej je.
       { match: { id: TRAIL_MARKS }, minzoomFloor: MARK_MINZOOM },
-      { match: { id: "trail-halo" }, minzoom: OVERVIEW_DETAIL_Z },
+      // Mapy has no white edge under its trails; ours doubled every trail's drawing from z11
+      { match: { id: "trail-halo" }, minzoom: OVERVIEW_DETAIL_Z + 2 },
+      // Mapy's contours start at its z13; the index lines alone drew hundreds at its z12
+      { match: { id: "contour-major" }, minzoomFloor: OVERVIEW_DETAIL_Z + 1 },
+      // a town centre held 76 memorials and 18 graves at Mapy's z15, which shows none
+      { match: { id: "feature-point" },
+        classesFrom: { minzoom: 16, classes: ["memorial", "tomb", "wayside_cross", "wayside_shrine"] } },
       // Vrcholy, chaty a studničky sú tu to hlavné.
       { match: { id: "poi-major" }, minzoom: 13 },
       { match: { id: "mountain-peak" }, minzoom: 9 },

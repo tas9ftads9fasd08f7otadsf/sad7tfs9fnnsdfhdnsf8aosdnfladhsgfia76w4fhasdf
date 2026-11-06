@@ -1464,6 +1464,9 @@ export const RIVER_WIDTH = [[8, 1], [11, 2.4], [12, 3], [16, 5], [20, 18]];
 export const STREAM_WIDTH = [[11, 0.7], [12, 1.2], [14, 1.6], [16, 2.4], [20, 7]];
 export const STREAM_MINZOOM = 11;
 
+/** Px between heights on one contour; Mapy writes one or two per screen. */
+export const CONTOUR_LABEL_SPACING = 700;
+
 /** How much of a road shows through the hill it tunnels under. */
 export const TUNNEL_OPACITY = 0.45;
 const isTunnel = ["==", ["get", "brunnel"], "tunnel"];
@@ -3798,14 +3801,15 @@ export function buildStyle({
       type: "line",
       ...(buildingsUrl ? { source: "buildings" } : {}),
       "source-layer": "building",
-      minzoom: YARD_FROM_Z - 1,
+      // settlement-yard shades the houses until here; a fade below would parse every yard twice
+      minzoom: YARD_FROM_Z,
       layout: { "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": c.residential,
         "line-width": ["interpolate", ["exponential", 2], ["zoom"],
           YARD_FROM_Z - 1, realWidthPx(2 * YARD_M, YARD_FROM_Z - 1),
           MAX_DISPLAY_Z + 2, realWidthPx(2 * YARD_M, MAX_DISPLAY_Z + 2)],
-        "line-opacity": zl([[YARD_FROM_Z - 1, 0], [YARD_FROM_Z, 1]])
+        "line-opacity": zl([[YARD_FROM_Z - 0.5, 0], [YARD_FROM_Z, 1]])
       }
     },
     ["uzemie", "Obytná zóna – okolie budov", "line", { "line-color": "residential" }]
@@ -4070,7 +4074,7 @@ export function buildStyle({
           "text-field": ["concat", ["to-string", ["round", num("ele", 0)]], " m"],
           "text-font": REG,
           "text-size": zl([[13, 9], [16, 11], [20, 13]]),
-          "symbol-spacing": 320,
+          "symbol-spacing": CONTOUR_LABEL_SPACING,
           "text-max-angle": 25,
           "text-padding": 8
         },
