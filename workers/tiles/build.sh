@@ -96,6 +96,9 @@ while : ; do
     || python3 -m pip install --quiet pmtiles mapbox-vector-tile shapely
   python3 workers/tiles/lift-landcover.py "$OUT"
 
+  # a 3D map stands each house number on its roof
+  python3 workers/tiles/house-number-heights.py "$OUT"
+
   # traffic signs, as the roads carry them; without them the base map still draws
   workers/tiles/signs.sh "$OUT" "$Z" "${CLIP[@]}" \
     || echo "::warning::Traffic signs didn't get into the base map – it goes without them."
