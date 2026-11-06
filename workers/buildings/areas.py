@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the area in m² onto buildings and places as `area_m2`; a place mapped twice keeps its point."""
+"""Writes `area_m2` onto buildings and places, `in_town` onto houses in built-up land; a twin place keeps its point."""
 import argparse
 import math
 import os
@@ -27,6 +27,50 @@ def points(ring):
     return [(n.lon, n.lat) for n in ring if n.location.valid()]
 
 
+TOWN = {"residential", "commercial", "retail"}
+CELL = 0.01
+STRIP = 0.0005
+
+
+class Ring:
+    """A ring's edges bucketed by latitude, so a ray cast reads only those near the point."""
+
+    def __init__(self, points):
+        self.strips = {}
+        for (x1, y1), (x2, y2) in zip(points, points[1:] + points[:1]):
+            if y1 == y2:
+                continue
+            for k in range(int(min(y1, y2) // STRIP), int(max(y1, y2) // STRIP) + 1):
+                self.strips.setdefault(k, []).append((x1, y1, x2, y2))
+
+    def holds(self, x, y):
+        hit = False
+        for x1, y1, x2, y2 in self.strips.get(int(y // STRIP), ()):
+            if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1):
+                hit = not hit
+        return hit
+
+
+class Towns:
+    """Built-up land in a grid, to ask which houses stand in it."""
+
+    def __init__(self):
+        self.grid = {}
+
+    def add(self, outer, inners):
+        xs, ys = [p[0] for p in outer], [p[1] for p in outer]
+        shape = (Ring(outer), [Ring(i) for i in inners if len(i) > 3])
+        for cx in range(int(min(xs) // CELL), int(max(xs) // CELL) + 1):
+            for cy in range(int(min(ys) // CELL), int(max(ys) // CELL) + 1):
+                self.grid.setdefault((cx, cy), []).append(shape)
+
+    def holds(self, x, y):
+        for outer, inners in self.grid.get((int(x // CELL), int(y // CELL)), ()):
+            if outer.holds(x, y) and not any(i.holds(x, y) for i in inners):
+                return True
+        return False
+
+
 class Areas(osmium.SimpleHandler):
     def __init__(self):
         super().__init__()
@@ -34,6 +78,8 @@ class Areas(osmium.SimpleHandler):
         self.relations = {}
         self.place_nodes = []
         self.place_areas = []
+        self.towns = Towns()
+        self.centres = {}
 
     def node(self, n):
         if "place" in n.tags and n.location.valid():
@@ -42,6 +88,11 @@ class Areas(osmium.SimpleHandler):
 
     def area(self, a):
         t = a.tags
+        if t.get("landuse") in TOWN:
+            for outer in a.outer_rings():
+                ring = points(outer)
+                if len(ring) > 3:
+                    self.towns.add(ring, [points(i) for i in a.inner_rings(outer)])
         if "building" not in t and "place" not in t:
             return
         m2 = 0.0
@@ -55,8 +106,14 @@ class Areas(osmium.SimpleHandler):
             return
         key = ("w" if a.from_way() else "r", a.orig_id())
         (self.ways if a.from_way() else self.relations)[key[1]] = round(m2)
+        if "building" in t and ring:
+            self.centres[key] = (sum(p[0] for p in ring) / len(ring), sum(p[1] for p in ring) / len(ring))
         if "place" in t and ring:
             self.place_areas.append((key, t.get("name"), t.get("wikidata"), bbox(ring)))
+
+    def in_town(self):
+        """Buildings whose centre stands in built-up land."""
+        return {key for key, (x, y) in self.centres.items() if self.towns.holds(x, y)}
 
     def twins(self):
         """Place areas that have a place point, and the area each point takes over."""
@@ -74,6 +131,7 @@ class Write(osmium.SimpleHandler):
         self.p = areas
         self.w = writer
         self.dropped, self.node_m2 = areas.twins()
+        self.town = areas.in_town()
 
     def node(self, n):
         m2 = self.node_m2.get(n.id)
@@ -81,6 +139,9 @@ class Write(osmium.SimpleHandler):
 
     def tags(self, o, kind, m2):
         tags = {**dict(o.tags), "area_m2": str(m2)}
+        # the style shades the yard only around houses no town polygon covers
+        if (kind, o.id) in self.town:
+            tags["in_town"] = "1"
         # the point is drawn; the area would draw the name again
         if (kind, o.id) in self.dropped:
             tags.pop("place", None)
@@ -111,7 +172,8 @@ def main():
     finally:
         writer.close()
     print(f"Area: {len(areas.ways)} ways and {len(areas.relations)} relations; "
-          f"{len(write.dropped)} place areas left to their point")
+          f"{len(write.dropped)} place areas left to their point; "
+          f"{len(write.town)} of {len(areas.centres)} buildings in built-up land")
 
 
 if __name__ == "__main__":

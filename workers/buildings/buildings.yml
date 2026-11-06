@@ -28,6 +28,9 @@ definitions:
     - key: area
       value:
         tag_value: area_m2
+    # 1 inside residential, commercial or retail land (areas.py)
+    - key: in_town
+      type: integer
     - key: levels
       value:
         tag_value: "building:levels"
@@ -136,6 +139,21 @@ layers:
         attributes: *settlement_attrs
 
 examples:
+  - name: A house in built-up land says so, for the style to skip its yard
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        building: house
+        in_town: "1"
+    output:
+      - layer: building
+        geometry: polygon
+        min_zoom: 12
+        tags:
+          class: house
+          in_town: 1
+
   - name: A building carries area, name and address
     input:
       source: osm

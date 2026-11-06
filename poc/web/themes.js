@@ -4324,6 +4324,8 @@ export function buildStyle({
         "source-layer": "building",
         minzoom: 12,
         maxzoom: YARD_FROM_Z,
+        // a house in a town lies on the town's own fill; tiles without the flag draw every yard
+        filter: ["!=", ["coalesce", ["get", "in_town"], 0], 1],
         layout: { "line-join": "round", "line-cap": "round" },
         paint: {
           "line-color": c.building,
