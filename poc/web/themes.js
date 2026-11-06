@@ -3801,14 +3801,15 @@ export function buildStyle({
       type: "line",
       ...(buildingsUrl ? { source: "buildings" } : {}),
       "source-layer": "building",
-      minzoom: YARD_FROM_Z - 1,
+      // settlement-yard shades the houses until here; a fade below would parse every yard twice
+      minzoom: YARD_FROM_Z,
       layout: { "line-join": "round", "line-cap": "round" },
       paint: {
         "line-color": c.residential,
         "line-width": ["interpolate", ["exponential", 2], ["zoom"],
           YARD_FROM_Z - 1, realWidthPx(2 * YARD_M, YARD_FROM_Z - 1),
           MAX_DISPLAY_Z + 2, realWidthPx(2 * YARD_M, MAX_DISPLAY_Z + 2)],
-        "line-opacity": zl([[YARD_FROM_Z - 1, 0], [YARD_FROM_Z, 1]])
+        "line-opacity": zl([[YARD_FROM_Z - 0.5, 0], [YARD_FROM_Z, 1]])
       }
     },
     ["uzemie", "Obytná zóna – okolie budov", "line", { "line-color": "residential" }]

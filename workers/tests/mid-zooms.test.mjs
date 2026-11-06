@@ -34,3 +34,12 @@ test("memorials and graves show only at street level", { skip: !spec && NEEDS_SP
   assert.equal(at(15, "tomb"), false);
   assert.equal(at(13, "spring"), true);
 });
+
+// 477 at Mapy's z15 a town tile drew 3645 yard bands at opacity 0
+test("the house yards aren't drawn where they are invisible", async () => {
+  const { YARD_FROM_Z } = await import("../../poc/web/themes.js");
+  const s = buildStyle({ theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/t.pmtiles",
+    spriteUrl: "https://x/s", glyphsUrl: "https://x/{fontstack}/{range}.pbf",
+    buildingsUrl: "https://x/b.pmtiles" });
+  assert.equal(s.layers.find((l) => l.id === "landuse-residential-yard").minzoom, YARD_FROM_Z);
+});
