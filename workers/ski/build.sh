@@ -26,10 +26,13 @@ printf '%s\t%s\t%s\t%s\n' "78" "Ski and winter prefilter" "$(( $(date +%s) - T_F
 
 # empty isn't an error for a small test; `contents.json` says the layer is absent
 # counted, not weighed: one small resort makes a file smaller than other packages' floor
-if [ "$(osmium fileinfo -e -g data.count.nodes data/ski.osm.pbf)" -eq 0 ]; then
+no_ski() {
   echo "::warning::This area has no ski area, piste, lift or winter path – the \`ski\` package isn't made."
   echo "enabled=false" >> "$GITHUB_OUTPUT"
   exit 0
+}
+if [ "$(osmium fileinfo -e -g data.count.nodes data/ski.osm.pbf)" -eq 0 ]; then
+  no_ski
 fi
 
 SZ_="$OPT_SKI_MAXZOOM"
@@ -62,6 +65,11 @@ java -Xmx4g -jar planetiler.jar generate-custom \
   --force
 # the region ends in the tiles, not in the style
 workers/lib/clip-tiles.sh "$OUT"
+# cable cars outside the mountains and whatever lies beyond the region are gone by now
+if [ ! -s "$OUT" ]; then
+  rm -f "$OUT"
+  no_ski
+fi
 
 MB=$(( $(stat -c%s "$OUT") / 1048576 ))
 

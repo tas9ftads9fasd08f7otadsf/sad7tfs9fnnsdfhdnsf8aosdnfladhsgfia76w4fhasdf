@@ -189,6 +189,8 @@ def main():
     man = manifest_data(args.site)
     # own packages are counted before the base map – it leaves them out
     own_packages = layer_packages(args.site, man)
+    # their files stay out of the base map all the same
+    no_data = files.barren(own_packages)
     # base map parts: never removed from it (even when another package carries
     # them too) and sized for the catalog; with `--only` the map isn't published
     pieces = base_parts(args.site, man)
@@ -213,7 +215,7 @@ def main():
                if fs else "none in this region" if key in files.OPTIONAL_PARTS
                else "THIS BUILD DIDN'T MAKE IT, the map won't have it"))
     for p, fs in own_packages:
-        for k in files.missing(man, p) if fs else ():
+        for k in files.missing(man, p) if fs and p["key"] not in no_data else ():
             log(f"::warning::Package `{p['key']}` goes without `{k}` – the manifest "
                 f"doesn't list it and the registry doesn't call it optional.")
     # out of the base map: files of own packages + what doesn't belong there
@@ -230,7 +232,7 @@ def main():
              "routing network and search; without layers that have their own "
              "package, glyphs or viewer",
          args.site, [] if retired else base_files(args.site, exclude, keep)),
-    ] + [(p["key"], p["description"], args.site, fs)
+    ] + [(p["key"], p["description"], args.site, [] if p["key"] in no_data else fs)
          for p, fs in own_packages]
     if not mountain:
         batch = [b for b in batch if b[0] not in names.MOUNTAIN_ONLY]

@@ -209,6 +209,11 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   otvorenie mapy ju muselo prečítať. Stráži to
   [`workers/lint/style.mjs`](lint/style.mjs) (bod 5).
 
+  **Balík bez dlaždíc sa nepublikuje.** Keď po oreze nezostane ani jedna dlaždica,
+  súbor ostane prázdny. `publish-map.py` má takýto balík, aj balík so samými časťami
+  štýlu, za nepostavený: starý zmaže z Drive aj z katalógu. Časť štýlu sama nič
+  nekreslí, napríklad online výškový model aplikácia zahadzuje.
+
   **Krajinná pokrývka na z11 – z12 sa skladá zo z13.** Planetiler pod z13
   zahodí v ploche každú dieru pod 8 px, takže les zaleje svoje čistinky a
   mokrade (Šúr) a pri priblížení zrazu zosvetlie.

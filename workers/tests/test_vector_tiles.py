@@ -1,8 +1,10 @@
 import gzip
 import importlib.util
+import json
 import os
 import tempfile
 import unittest
+from unittest import mock
 
 from load import needs, worker
 
@@ -20,6 +22,23 @@ class ClipTiles(unittest.TestCase):
         raw = mapbox_vector_tile.encode([{"name": "poi", "features": features}],
                                         default_options={"extents": 4096, "y_coord_down": True})
         return gzip.compress(raw) if compressed else raw
+
+    def test_a_region_with_no_tile_left_leaves_an_empty_file(self):
+        from pmtiles.tile import Compression, TileType, zxy_to_tileid
+        from pmtiles.writer import write
+        with tempfile.TemporaryDirectory() as tmp:
+            archive, region = os.path.join(tmp, "r-ski.pmtiles"), os.path.join(tmp, "r.geojson")
+            with write(archive) as writer:
+                writer.write_tile(zxy_to_tileid(self.Z, self.X, self.Y), self.tile([]))
+                writer.finalize({"tile_type": TileType.MVT, "tile_compression": Compression.GZIP,
+                                 "min_lon_e7": 0, "min_lat_e7": 0, "max_lon_e7": 0, "max_lat_e7": 0,
+                                 "center_zoom": 0, "center_lon_e7": 0, "center_lat_e7": 0}, {})
+            ring = [[-60, -30], [-59, -30], [-59, -29], [-60, -29], [-60, -30]]
+            with open(region, "w") as f:
+                json.dump({"type": "Polygon", "coordinates": [ring]}, f)
+            with mock.patch("sys.argv", ["clip-tiles.py", archive, f"--region={region}"]):
+                self.c.main()
+            self.assertEqual(os.path.getsize(archive), 0)
 
     def clip(self, features, compressed=True):
         import mapbox_vector_tile
