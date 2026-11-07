@@ -136,8 +136,9 @@ for r in form(REGION_WF).get("region", {}).get("options") or []:
     except opts.SettingsError as exc:
         error(SETTINGS, f"Region `{r}`: {exc}")
 offered = form(MOUNTAIN_WF).get("mountain", {}).get("options") or []
-if sorted(offered) != sorted(ranges_known):
-    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, `maps.mountains.ranges` has {ranges_known}.")
+if offered[-1:] != ["all"] or sorted(offered[:-1]) != sorted(ranges_known):
+    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, `maps.mountains.ranges` "
+                       f"has {ranges_known}, then `all`.")
 for r in ranges_known:
     try:
         opts.resolve(settings, regions, mountain=r)

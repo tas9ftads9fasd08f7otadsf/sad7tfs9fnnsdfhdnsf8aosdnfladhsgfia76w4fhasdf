@@ -1050,7 +1050,9 @@ viac ani nejde (1° v 1 m má ~48 GB). Pohorie je ale malé, tak sa preň robí
 
 Pohoria sú vo `maps.mountains.ranges` v [`config/map-settings.json`](../config/map-settings.json): krajina
 a výrez z `areas` nastavení (meno, bbox a DMR 5.0 v 1 m pod tým istým menom, aký
-si berie testovací výrez). Workflow volá **ten istý `dem-layers.yml`** ako
+si berie testovací výrez). Voľba `all` nestavia nič sama: job `all`
+(`workers/mountain/all.sh`) pustí jeden beh `mountain.yml` na každé pohorie, vedľa
+seba, s tým istým `rebuild` a `test`. Workflow volá **ten istý `dem-layers.yml`** ako
 build mapy, s `mountain: true` – vtedy si aj tieňovanie berie model vo tvare
 výrezu (`TERRAIN_CUTOUT`, v kľúči cache aj v mene assetu `-cut`), nie 5 m
 dlaždice, a vrstevnice nevypisujú varovanie „len výrez, nie na nasadenie“.

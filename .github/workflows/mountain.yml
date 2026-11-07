@@ -19,7 +19,7 @@ on:
   workflow_dispatch:
     inputs:
       mountain:
-        description: "Which range (maps.mountains.ranges of config/map-settings.json)"
+        description: "Which range (maps.mountains.ranges of config/map-settings.json); `all` builds every range"
         required: true
         default: vysoke_tatry
         type: choice
@@ -32,6 +32,7 @@ on:
           - velka_fatra
           - slovensky_raj
           - pieniny
+          - all
       rebuild:
         description: "Compute a layer anew even when it is cached"
         required: false
@@ -83,13 +84,35 @@ jobs:
         env:
           INPUTS_JSON: ${{ toJSON(inputs) }}
           WORKFLOW: .github/workflows/mountain.yml
-          OPT_MOUNTAIN: ${{ inputs.mountain }}
+          # `all` has no settings of its own; each range run prints its own
+          OPT_MOUNTAIN: ${{ inputs.mountain != 'all' && inputs.mountain || '' }}
           OPT_REBUILD: ${{ inputs.rebuild }}
           OPT_TEST: ${{ inputs.test }}
         run: workers/plan/settings.sh
 
+  # every other job needs `plan`, so `all` runs only this one
+  all:
+    name: One run per range
+    if: ${{ inputs.mountain == 'all' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Start every range
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          REF: ${{ github.ref_name }}
+          REBUILD: ${{ inputs.rebuild }}
+          TEST: ${{ inputs.test }}
+        run: workers/mountain/all.sh
+
   plan:
     name: Preparation (range, settings)
+    if: ${{ inputs.mountain != 'all' }}
     runs-on: ubuntu-latest
     outputs:
       key: ${{ steps.mountain.outputs.key }}
