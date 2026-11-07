@@ -171,6 +171,15 @@ class Site(unittest.TestCase):
         self.assertNotIn("NOT IN THIS BUILD", next(
             x for x in run.stdout.splitlines() if "r-water.zip" in x))
 
+    def test_one_package_without_data_is_skipped_without_an_error(self):
+        touch(self.site, "fragments/terrain/r-svetla.json")
+        os.remove(os.path.join(self.site, "tiles/r-terrain.pmtiles"))
+        run = subprocess.run([sys.executable, os.path.join(WORKERS, "deploy/publish-map.py"),
+                              f"--site={self.site}", "--only=terrain", "--format=zip", "--maps="],
+                             capture_output=True, text=True, env={**os.environ, "REGION_KEY": "r"})
+        self.assertEqual(run.returncode, 0, run.stderr + run.stdout)
+        self.assertIn("skipped", run.stdout)
+
     def test_viewer_and_glyphs_stay_out(self):
         with redirect_stdout(io.StringIO()):
             out, reasons = files.outside_packages(self.site, self.man)
