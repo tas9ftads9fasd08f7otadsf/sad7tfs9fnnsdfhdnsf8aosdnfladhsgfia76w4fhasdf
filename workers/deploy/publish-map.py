@@ -258,6 +258,10 @@ def main():
             raise SystemExit(f"::error::`--only={args.only}` is unknown. Packages "
                              f"are: {', '.join(k or 'base' for k in known)}.")
         batch = [b for b in batch if b[0] == args.only]
+        if args.only in no_data:
+            # a skipped build step looks the same, so the old package stays for a full build
+            log(f"{file_name(args.only)}: this region has no data for it – skipped.")
+            return 0
         if not batch[0][3]:
             raise SystemExit(
                 f"::error::Package `{args.only}` has no files – nothing to "
