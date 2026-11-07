@@ -48,7 +48,28 @@ class Registry(unittest.TestCase):
         on = flow.get("on") or flow.get(True)
         offered = on["workflow_dispatch"]["inputs"]["mountain"]["options"]
         known = [k for k in registry("mountains") if not k.startswith("_")]
-        self.assertEqual(sorted(offered), sorted(known))
+        # 479 every range, then `all`
+        self.assertEqual(offered[-1], "all")
+        self.assertEqual(sorted(offered[:-1]), sorted(known))
+
+    def test_all_starts_every_range_with_the_form(self):
+        # 479 `all` builds what each range by hand would, none left out
+        self.assertEqual(plan.ranges(), [k for k in registry("mountains") if not k.startswith("_")])
+        with open(os.path.join(WORKERS, "mountain", "all.sh")) as f:
+            script = f.read()
+        for field in ("mountain", "rebuild", "test"):
+            self.assertIn(f"-f {field}=", script)
+
+    def test_all_runs_no_build_job_itself(self):
+        # 479 the fan-out run must not build a range of its own
+        import yaml
+        with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
+            jobs = yaml.safe_load(f)["jobs"]
+        self.assertIn("inputs.mountain == 'all'", jobs["all"]["if"])
+        self.assertIn("inputs.mountain != 'all'", jobs["plan"]["if"])
+        for name, job in jobs.items():
+            if name not in ("settings", "all", "plan"):
+                self.assertIn("plan", job.get("needs") or [], name)
 
     def test_a_range_has_contours_every_five_metres(self):
         opts = worker("plan/options.py")

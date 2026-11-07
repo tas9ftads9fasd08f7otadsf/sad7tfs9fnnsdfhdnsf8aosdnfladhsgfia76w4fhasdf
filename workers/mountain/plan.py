@@ -125,15 +125,27 @@ def plan(key, test_km2=0.0, test_at="", mountains=None, areas=None, regions=None
     }
 
 
+def ranges(mountains=None):
+    """Range keys in settings order, the ones `mountain: all` builds."""
+    mountains = map_settings.mountains() if mountains is None else mountains
+    return [k for k in mountains if not k.startswith("_")]
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mountain", required=True)
+    ap.add_argument("--mountain", default="")
+    ap.add_argument("--ranges", action="store_true", help="list the range keys and stop")
     ap.add_argument("--test-km2", type=float, default=0.0)
     ap.add_argument("--test-at", default="")
     ap.add_argument("--geojson", default="data/region.geojson")
     ap.add_argument("--poly", default="data/region.poly")
     ap.add_argument("--out", default="")
     args = ap.parse_args()
+    if args.ranges:
+        print("\n".join(ranges()))
+        return 0
+    if not args.mountain:
+        ap.error("give --mountain=<range> or --ranges")
 
     got = plan(args.mountain, args.test_km2, args.test_at)
     os.makedirs(os.path.dirname(args.geojson) or ".", exist_ok=True)
