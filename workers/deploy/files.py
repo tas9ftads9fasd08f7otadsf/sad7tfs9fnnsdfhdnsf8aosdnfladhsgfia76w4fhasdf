@@ -70,6 +70,25 @@ def layer_packages(site, man):
             if p["key"] != "base" and p.get("origin", "site") == "site"]
 
 
+def has_tiles(path):
+    """True unless the file is empty or a PMTiles archive with no tile bytes."""
+    with open(path, "rb") as f:
+        head = f.read(PMTILES_TILE_BYTES + 8)
+    if head[:7] != b"PMTiles":
+        return bool(head)
+    return int.from_bytes(head[PMTILES_TILE_BYTES:], "little") > 0
+
+
+def barren(own):
+    """Packages of `own` with no tiles: style parts and icon sheets alone draw nothing."""
+    # a `rest` package also carries the region's search and outline
+    return {p["key"] for p, fs in own if not p.get("rest")
+            and not any(f.endswith(".pmtiles") and has_tiles(f) for f in fs)}
+
+
+# where a PMTiles v3 header says how many bytes of tiles follow
+PMTILES_TILE_BYTES = 64
+
 # `workers/styles/split.mjs` writes each package's part of the styles here
 FRAGMENTS = "fragments"
 

@@ -126,6 +126,51 @@ class Site(unittest.TestCase):
         self.assertIn("styles/r-svetla.json", base)
         self.assertNotIn("fragments/roads/r-svetla.json", base)
 
+    def archive(self, rel, tile_bytes):
+        header = bytearray(b"PMTiles\x03" + bytes(119))
+        header[64:72] = tile_bytes.to_bytes(8, "little")
+        return touch(self.site, rel, bytes(header))
+
+    def test_style_parts_alone_are_no_data(self):
+        for rel in ("fragments/ski/r-svetla.json", "fragments/water/r-svetla.json"):
+            touch(self.site, rel)
+        os.remove(os.path.join(self.site, "tiles/r-terrain.pmtiles"))
+        no_data = files.barren(files.layer_packages(self.site, self.man))
+        self.assertIn("ski", no_data)
+        self.assertIn("terrain", no_data)
+        self.assertNotIn("water", no_data)
+
+    def test_an_archive_without_tiles_is_no_data(self):
+        self.archive("tiles/r-ski.pmtiles", 0)
+        self.archive("tiles/r-names.pmtiles", 4096)
+        touch(self.site, "tiles/r-history.pmtiles", b"")
+        no_data = files.barren(files.layer_packages(self.site, self.man))
+        self.assertIn("ski", no_data)
+        self.assertIn("history", no_data)
+        self.assertNotIn("names", no_data)
+
+    def test_a_country_sign_sheet_alone_is_no_data(self):
+        for rel in ("tiles/r-rail.pmtiles", "tiles/r-rail-routing.pmtiles"):
+            os.remove(os.path.join(self.site, rel))
+        self.assertIn("railways", files.barren(files.layer_packages(self.site, self.man)))
+
+    def test_the_package_with_the_regions_rest_always_goes_out(self):
+        self.assertNotIn("paths", files.barren(files.layer_packages(self.site, self.man)))
+
+    def test_a_package_without_data_is_not_published(self):
+        touch(self.site, "fragments/terrain/r-svetla.json")
+        touch(self.site, "fragments/water/r-svetla.json")
+        os.remove(os.path.join(self.site, "tiles/r-terrain.pmtiles"))
+        run = subprocess.run([sys.executable, os.path.join(WORKERS, "deploy/publish-map.py"),
+                              f"--site={self.site}", "--dry-run", "--format=zip"],
+                             capture_output=True, text=True,
+                             env={**os.environ, "REGION_KEY": "r"})
+        self.assertEqual(run.returncode, 0, run.stderr + run.stdout)
+        line = next(x for x in run.stdout.splitlines() if "r-terrain.zip" in x)
+        self.assertIn("NOT IN THIS BUILD", line)
+        self.assertNotIn("NOT IN THIS BUILD", next(
+            x for x in run.stdout.splitlines() if "r-water.zip" in x))
+
     def test_viewer_and_glyphs_stay_out(self):
         with redirect_stdout(io.StringIO()):
             out, reasons = files.outside_packages(self.site, self.man)

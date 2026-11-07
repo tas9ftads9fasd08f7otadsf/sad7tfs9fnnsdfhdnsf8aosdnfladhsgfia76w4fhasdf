@@ -157,7 +157,9 @@ def main():
                 continue
             writer.write_tile(zxy_to_tileid(z, x, y), clipped)
             cut += 1
-        writer.finalize(header, metadata)
+        # a Writer can't finish without a tile; the file stays empty, which `[ -s ]` sees
+        if kept or cut:
+            writer.finalize(header, metadata)
     before = os.path.getsize(args.archive)
     os.replace(tmp, args.archive)
     print(f"Cut to the region ({args.margin_m:.0f} m beyond): {kept} tiles untouched, "
