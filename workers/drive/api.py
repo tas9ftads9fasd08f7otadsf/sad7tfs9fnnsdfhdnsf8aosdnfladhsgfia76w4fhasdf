@@ -8,6 +8,8 @@ Used as a module: `api = load("drive_api", "api.py")`.
 """
 import json
 import os
+import random
+import sys
 import time
 import urllib.parse
 
@@ -46,6 +48,10 @@ TRIOS = (
     ("GDRIVE_CLIENT_ID", "GDRIVE_CLIENT_SECRET", "GDRIVE_REFRESH_TOKEN"),
     ("DRIVE_CLIENT", "DRIVE_SECRET", "DRIVE_REFRESH"),
 )
+
+# the quota is per minute and a build's parallel jobs share it, so waits pass a minute
+LIMIT_REASONS = ("rateLimitExceeded", "userRateLimitExceeded")
+LIMIT_WAITS = 6
 
 
 class AuthError(RuntimeError):
@@ -135,9 +141,23 @@ def api_call(creds, method, path, body=None, ctype="application/json", ok=(200, 
         # the token may have expired just now – renew it once
         head["Authorization"] = "Bearer " + creds.renew(None)
         status, data = request_json(method, API_HOST, path, raw, head)
+    waits = 0
+    while limited(status, data) and waits < LIMIT_WAITS:
+        waits += 1
+        # jitter, or jobs that met the limit together retry together
+        wait = min(2.0 ** waits, 60.0) * random.uniform(1.0, 1.5)
+        print(f"  Drive limit on {path.split('?')[0]} – waiting {wait:.0f} s",
+              file=sys.stderr, flush=True)
+        time.sleep(wait)
+        status, data = request_json(method, API_HOST, path, raw, head)
     if status not in ok:
         raise AuthError(api_hint(status, data, creds, path))
     return data
+
+
+def limited(status, data):
+    """Did Drive refuse for its rate limit, which passes, rather than for good?"""
+    return status == 429 or (status == 403 and api_reason(data) in LIMIT_REASONS)
 
 
 def api_get(creds, path):

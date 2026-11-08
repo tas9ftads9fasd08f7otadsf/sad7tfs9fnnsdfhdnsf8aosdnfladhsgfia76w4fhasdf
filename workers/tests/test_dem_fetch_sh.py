@@ -18,14 +18,19 @@ if "--rm" in sys.argv:
     with open(os.path.join(os.environ["FAKE_STORE"], "removed"), "a") as f:
         f.write(args["--name"] + "\\n")
     sys.exit(0)
+if os.environ.get("FAKE_STORE_DOWN"):
+    print("::error::The Drive API returned HTTP 403 for /drive/v3/files: rateLimitExceeded")
+    sys.exit(1)
 if "--get" in sys.argv:
-    got = 0
+    got = missing = 0
     for name in args.get("--name", "").split():
         src = os.path.join(root, name)
         if os.path.exists(src):
             shutil.copy(src, os.path.join(args["--dir"], name))
             got += 1
-    sys.exit(0 if got or "--missing-ok" in sys.argv else 1)
+        else:
+            missing += 1
+    sys.exit(3 if not got or (missing and "--missing-ok" not in sys.argv) else 0)
 """
 BBOX = "19.2,49.2,20.8,49.8"
 
@@ -44,10 +49,11 @@ class Fetch(unittest.TestCase):
         rows = round((n - s) / ((e - w) / cells))
         write_dem(os.path.join(self.store, store, name), hill(cells)[:rows], box)
 
-    def fetch(self, source="sonny", area="whole", bbox=BBOX, fill=""):
+    def fetch(self, source="sonny", area="whole", bbox=BBOX, fill="", down=""):
         r = subprocess.run(["bash", "workers/dem/fetch.sh", bbox, "dem/x", "", source, area], cwd=self.work,
                            capture_output=True, text=True,
-                           env={**os.environ, "FAKE_STORE": self.store, "DEM_FILL": fill, **{k: "" for k in (
+                           env={**os.environ, "FAKE_STORE": self.store, "DEM_FILL": fill,
+                                "FAKE_STORE_DOWN": down, **{k: "" for k in (
                                "DEM_STORE", "DMR5_STORE", "DMR35_STORE", "UGKK_STORE", "SONNY1_STORE")}})
         removed = os.path.join(self.store, "removed")
         if not os.path.exists(removed):
@@ -101,6 +107,15 @@ class Fetch(unittest.TestCase):
             self.assertIn("ugkk-vysoke_tatry.tif", f.read())
         r, _ = self.fetch(source="dmr5", area="male_karpaty", bbox="17,48,17.3,48.3")
         self.assertEqual(r.returncode, 3)
+
+    def test_a_drive_error_is_no_missing_model(self):
+        # 484 a rate limit read as "no cut-out" sent the build to the fallback or a wrong error
+        r, _ = self.fetch(source="dmr5", area="vysoke_tatry", bbox="20,49.1,20.3,49.25", down="1")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertNotIn("nobody has made", r.stdout)
+        r, _ = self.fetch(source="dmr35", down="1")
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        self.assertNotIn("not a single tile", r.stdout)
 
     def height(self, lon, lat):
         out = subprocess.run(["gdallocationinfo", "-valonly", "-wgs84", "dem/x/all.vrt", str(lon), str(lat)],
