@@ -19,14 +19,11 @@ const byId = (id, s = style) => s.layers.find((l) => l.id === id);
 const shown = (id, zoom, properties) =>
   spec.featureFilter(byId(id).filter).filter({ zoom }, { type: 2, properties });
 
-// 476 Mapy's overview has long-distance routes only; local trails come at its z12
-test("only long-distance trails show below the detail zoom", { skip: !spec && NEEDS_SPEC }, () => {
-  const below = OVERVIEW_DETAIL_Z - 1;
-  assert.equal(shown("trail-hiking", below, { route: "hiking", tier: "national" }), true);
-  assert.equal(shown("trail-hiking", below, { route: "hiking", tier: "international" }), true);
-  assert.equal(shown("trail-hiking", below, { route: "hiking", tier: "regional" }), false);
-  assert.equal(shown("trail-bicycle", below, { route: "bicycle", tier: "local" }), false);
-  assert.equal(shown("trail-hiking", OVERVIEW_DETAIL_Z, { route: "hiking", tier: "local" }), true);
+// 483 long-distance routes alone still covered the overview (TestFlight ABcm)
+test("no trail shows below the detail zoom", () => {
+  for (const layer of style.layers.filter((l) => l.id.startsWith("trail-"))) {
+    assert.ok(layer.minzoom >= OVERVIEW_DETAIL_Z, layer.id);
+  }
 });
 
 // 476 Mapy names only the main peaks from afar

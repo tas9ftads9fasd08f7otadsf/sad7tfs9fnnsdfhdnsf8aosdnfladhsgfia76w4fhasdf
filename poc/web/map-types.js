@@ -74,7 +74,6 @@ const OTHER_TRAILS = /^trail-(hiking|bicycle|mtb|horse)(-icon|-mark|-label)?$/;
 const SKI_TRAILS = /^trail-ski(-icon|-mark|-label)?$/;
 /** Všetky značené trasy vrátane podkladu pod pásikmi. */
 const ALL_TRAILS = /^trail-/;
-const TRAIL_LINES = /^trail-(hiking|ferrata|bicycle|mtb|horse)$/;
 /** Style zoom (Mapy's z12) where the default map adds paths, local trails and minor peaks. */
 export const OVERVIEW_DETAIL_Z = 11;
 /**
@@ -135,9 +134,8 @@ export const MAP_TYPES = [
       { match: { id: "road-track" }, minzoom: OVERVIEW_DETAIL_Z },
       { match: { id: "road-cycleway" }, minzoom: 11 },
       { match: { id: "road-footway" }, minzoom: 12 },
-      { match: { id: ALL_TRAILS }, minzoom: 9 },
-      { match: { id: TRAIL_LINES },
-        classesFrom: { minzoom: OVERVIEW_DETAIL_Z, classes: ["regional", "local"], keys: ["tier"] } },
+      // ABcm: even the long-distance routes alone covered the overview
+      { match: { id: ALL_TRAILS }, minzoom: OVERVIEW_DETAIL_Z },
       // …ale značky nie: pásik má zmysel aj ako čiara z prehľadu, značka až
       // vtedy, keď je z nej vidieť, čo na nej je.
       { match: { id: TRAIL_MARKS }, minzoomFloor: MARK_MINZOOM },
