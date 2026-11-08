@@ -1,0 +1,43 @@
+name: Maintenance · Drive layout
+
+# Moves Drive to one root: `cache/` (build cache and stores, private) and
+# `countries/<id>/<region>/` and `mountains/<range>/` (packages, shared by link).
+# Only moves and renames – file ids and the catalog's links stay. Once is enough;
+# a second run finds nothing to move. See `workers/drive/layout.py`.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only list the steps (nothing is moved)"
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  layout:
+    name: Move Drive to the new layout
+    runs-on: ubuntu-latest
+    # one at a time; start it while no build is publishing
+    concurrency:
+      group: drive-layout
+    env:
+      GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+      DRIVE_CLIENT: ${{ vars.DRIVE_CLIENT }}
+      DRIVE_SECRET: ${{ secrets.DRIVE_SECRET }}
+      DRIVE_REFRESH: ${{ secrets.DRIVE_REFRESH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Move
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "${DRY_RUN:-true}" = "true" ]; then ARGS+=(--dry-run); fi
+          python3 workers/drive/layout.py --migrate --maps=maps.json "${ARGS[@]}"

@@ -2085,6 +2085,21 @@ na tom istom účte, ktorý drží DMR 5.0, cache buildu aj hotové mapy.
          sklad     meno — to isté, aké mal asset releasu
 ```
 
+Koreň skladov je odteraz `cache/stores`. Celý Drive má jeden koreň ([`workers/drive/layout.py`](drive/layout.py)):
+
+```
+cache/build/…                       cache buildu (`cache.py`)        súkromné
+cache/stores/<sklad>/…              sklady hotových dát (`store.py`) súkromné
+countries/<id krajiny>/<kraj>/      balíky, ktoré sťahuje appka      zdieľané odkazom
+mountains/<pohorie>/                balíky pohorí                    zdieľané odkazom
+```
+
+Krajina sa v priečinku volá svojím `id` z katalógu (`slovakia`, `czech_republic`,
+`austria`), kľúče v `maps.json` (`slovensko`, …) ostávajú – podľa nich appka
+chodí; pole `drive` hovorí, kde súbory naozaj ležia. Starý tvar prevedie
+workflow *Maintenance · Drive layout* – súbory len presúva a premenúva, takže
+ich id a odkazy v katalógu ostanú. Build pred ním si svoju krajinu presunie sám.
+
 Prečo: release má na jeden asset **strop 2 GB**, ktorý pipeline tvaroval
 zvonku, a hotové dáta v releasoch verejného repozitára vyzerajú ako vydanie
 softvéru, ktorým nikdy neboli. Ten strop teda odpadol — **dve podoby DMR 5.0

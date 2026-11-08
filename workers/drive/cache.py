@@ -47,9 +47,10 @@ def load(name, path):
 drive = load("drive_serve", "serve.py")
 auth = load("drive_auth", "auth.py")
 folder = load("drive_folder", "folder.py")
+layout = load("drive_layout", "layout.py")
 
-# the cache folder on Drive; the id is no secret, the owner's token is
-FOLDER_ID = "15-Z37buVADUk9_-RMWAQp6arqqjPdRaV"
+# `cache/build` on Drive; the id is no secret, the owner's token is
+FOLDER_ID = layout.BUILD_ID
 
 # FINISHED LAYERS FROM THE ELEVATION MODEL are hours of work a region and asked for
 # months later (`workers/plan/cache-keys.sh`), so they live longer and go LAST
