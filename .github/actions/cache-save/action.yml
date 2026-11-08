@@ -18,11 +18,23 @@ inputs:
   key:
     description: "Entry key"
     required: true
+  store:
+    description: "`drive`, or `github` – the same as at restore"
+    required: false
+    default: drive
 
 runs:
   using: composite
   steps:
+    - id: github
+      if: ${{ inputs.store == 'github' }}
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
+
     - id: save
+      if: ${{ inputs.store != 'github' }}
       shell: bash
       env:
         CACHE_KEY: ${{ inputs.key }}

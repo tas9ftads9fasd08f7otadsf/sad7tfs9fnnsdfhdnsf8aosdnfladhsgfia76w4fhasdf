@@ -611,6 +611,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ inputs.day }}
 
       - name: Download Planetiler
@@ -807,6 +808,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ inputs.day }}
 
       - name: Download Planetiler
