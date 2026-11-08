@@ -344,8 +344,9 @@ class Publish(unittest.TestCase):
         site = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, site)
         os.makedirs(os.path.join(site, "tiles"))
+        # 490 ski and the range's boundaries were built, then left out of the publish
         for kind in ("contours", "rocks", "terrain", "transport", "paths", "water", "points",
-                     "aerial_summer"):
+                     "aerial_summer", "ski", "range-boundaries"):
             with open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb") as f:
                 f.write(b"x")
         with open(os.path.join(site, "tiles", "manifest.json"), "w") as f:
@@ -360,10 +361,11 @@ class Publish(unittest.TestCase):
         listed = re.findall(r"^\s+(vysoke_tatry\S*\.zip) .* \d+ files", run.stdout, re.M)
         self.assertIn("vysoke_tatry-aerial_winter.zip", run.stdout)
         self.assertEqual(sorted(listed), ["vysoke_tatry-aerial_summer.zip",
+                                          "vysoke_tatry-boundaries.zip",
                                           "vysoke_tatry-contours.zip", "vysoke_tatry-paths.zip",
                                           "vysoke_tatry-points.zip", "vysoke_tatry-roads.zip",
-                                          "vysoke_tatry-rocks.zip", "vysoke_tatry-terrain.zip",
-                                          "vysoke_tatry-water.zip"])
+                                          "vysoke_tatry-rocks.zip", "vysoke_tatry-ski.zip",
+                                          "vysoke_tatry-terrain.zip", "vysoke_tatry-water.zip"])
         self.assertRegex(run.stdout, r"vysoke_tatry-trails\.zip .* NOT IN THIS BUILD",
                          "the old trails package is deleted, not left behind")
         self.assertIn("mountains/vysoke_tatry", run.stdout)
