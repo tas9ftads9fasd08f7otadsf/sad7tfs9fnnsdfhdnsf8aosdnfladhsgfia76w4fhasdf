@@ -2137,15 +2137,15 @@ Dve veci, ktoré z toho plynú:
   `shading-vector`, `routing-order`, `wiki`), z ktorých sa po predpone berie
   vždy len najnovšia. Vek a strop ostávajú na týždennom upratovaní, ktoré
   pravidlá mŕtvych použije tiež (`dead` vo [`workers/drive/cache.py`](drive/cache.py)).
+- **Čo v cache je, ukáže workflow *Maintenance · list only***
+  ([`cache-list.yml`](../.github/workflows/cache-list.yml)): tabuľka podľa druhu
+  záznamu – ktoré pipeline ho ukladajú, ako dlho ostáva, veľkosti, počty a kópie
+  s rovnakým obsahom (MD5). Nič nemaže; každý záznam dá aj ako CSV.
 - **Planetiler je v GitHubovej cache.** Jar a jeho zdroje si za build obnoví tucet
   jobov naraz a na Drive to minulo minútový limit API. Kroky s `store: github`
   idú cez `actions/cache`, GitHub ich po týždni bez použitia zahodí sám a týždenné
   upratovanie ich nechá (`KEEP: planetiler-`). Nič iné tam nesmie –
   [`test_cache_store.py`](tests/test_cache_store.py).
-- **Čo v cache je, ukáže workflow *Maintenance · list only***
-  ([`cache-list.yml`](../.github/workflows/cache-list.yml)): tabuľka podľa druhu
-  záznamu – ktoré pipeline ho ukladajú, ako dlho ostáva, veľkosti, počty a kópie
-  s rovnakým obsahom (MD5). Nič nemaže; každý záznam dá aj ako CSV.
 
 #### Tri vrstvy, tri nezávislé kľúče
 
