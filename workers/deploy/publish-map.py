@@ -56,9 +56,10 @@ PACKERS = pack.PACKERS
 has_aa = pack.has_aa
 auth = load("drive_auth", os.path.join(_DRIVE, "auth.py"))
 folder = load("drive_folder", os.path.join(_DRIVE, "folder.py"))
+layout = load("drive_layout", os.path.join(_DRIVE, "layout.py"))
 
-# a folder id is no secret, the token is
-FOLDER_ID = "1pvrw7CGUkQLwg8Ql8xbKA4HhQHvPl8_7"
+# the layout's root: `countries/` and `mountains/` under it
+FOLDER_ID = layout.ROOT_ID
 
 # retired packages are deleted on Drive, or the catalog keeps a dead link
 RETIRED = registry.retired()
@@ -186,6 +187,8 @@ def main():
                          "keep `--format=zip`.")
 
     parts = drive_path(regions)
+    country_id = catalog.node_id(regions, parts[0])
+    where = "/".join(layout.package_parts(parts, country_id))
     man = manifest_data(args.site)
     # own packages are counted before the base map – it leaves them out
     own_packages = layer_packages(args.site, man)
@@ -278,7 +281,7 @@ def main():
                  if fs else "NOT IN THIS BUILD – the old package is deleted")
         for fmt in formats:
             log(f"  {file_name(kind, fmt):<48} {description} – {state}")
-    log(f"Folder on Drive: {'/'.join(parts)}")
+    log(f"Folder on Drive: {where}")
     if args.dry_run:
         return 0
 
@@ -308,7 +311,7 @@ def main():
         raise SystemExit(f"::error::The map wasn't published: {auth.scope_hint()}")
 
     root = folder.folder_id(args.folder)
-    fid = folder.ensure_path(creds, root, parts)
+    fid = layout.package_folder(creds, parts, country_id, root)
     done = []
     # the same contents in both formats, so hashed once per package
     shas = {}
@@ -343,7 +346,7 @@ def main():
             log(f"Uploading {name} ({folder.human(size)}) …")
             t0 = time.time()
             file_id, overwritten = folder.upload_clobber(
-                creds, dest, name, fid, f"{'/'.join(parts)}/{name}")
+                creds, dest, name, fid, f"{where}/{name}")
             el = max(time.time() - t0, 1e-6)
             log(f"  done in {el / 60:.1f} min "
                 f"({size / el / 1e6:.1f} MB/s)"
@@ -383,7 +386,7 @@ def main():
             # how much of the map is search – nowhere else to read it
             base_parts=None if args.only or mountain else part_sizes(pieces),
             # retired packages and dead links out, `--only` too
-            retired=RETIRED, live=live)
+            retired=RETIRED, live=live, drive=where)
         if args.summary and changed:
             with open(args.summary, "a") as f:
                 f.write(f"Catalog `{args.maps}` in the repository is "
@@ -392,7 +395,7 @@ def main():
     if args.summary:
         with open(args.summary, "a") as f:
             f.write("## Map on Google Drive\n\n")
-            f.write(f"Folder [{'/'.join(parts)}]({folder.folder_link(fid)}) – "
+            f.write(f"Folder [{where}]({folder.folder_link(fid)}) – "
                     f"names are stable, so the next build overwrites these files. "
                     f"`contents.json` inside says what a package holds.\n\n")
             f.write("| package | what it holds | size | old |\n|---|---|--:|---|\n")

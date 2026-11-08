@@ -433,7 +433,7 @@ COMMENT_TEST = ("QUICK TEST runs – terrain covers only a few km² of the cut-o
 
 def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
                   cat=None, layers=None, owns=None, base_parts=None,
-                  retired=(), live=None):
+                  retired=(), live=None, drive=None):
     """Add (or overwrite) an entry in `maps.json`. True when it changed.
 
     `uploaded` is `(kind, name, size, id, format, sha)`; `owns` the kinds this run decides.
@@ -479,7 +479,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     if only:
         # an addition, not a rewrite: a separate pipeline knows only its package
         name_node(node, regions, cat[-1], "region")
-        node.setdefault("drive", "/".join(parts))
+        node["drive"] = drive or node.get("drive") or "/".join(parts)
         # `updated_at` and `run` of the region say which run built the map
         node.setdefault("updated_at", data["_updated_at"])
         node.setdefault("updated_ts", data["_updated_ts"])
@@ -494,7 +494,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         return write(path, data, f"added package {only} to {'/'.join(cat)}")
     entry = {
         "name": node.get("name"),
-        "drive": "/".join(parts),
+        "drive": drive or "/".join(parts),
         # the entry is written whole, so creation = rewrite
         "updated_at": data["_updated_at"],
         "updated_ts": data["_updated_ts"],

@@ -7,8 +7,8 @@
     gh release delete-asset  → --rm
 
 File names stay as the assets had them – a name promises an extent. The layout
-is `<root>/<store>/<asset name>`; the root appears by itself at the first write,
-`DRIVE_STORE_FOLDER` puts it elsewhere. "Clobber" uploads the new first and only
+is `cache/stores/<store>/<asset name>` (`layout.py`); the root appears by itself at
+the first write, `DRIVE_STORE_FOLDER` puts it elsewhere. "Clobber" uploads the new first and only
 then deletes the old; the newest file of a name wins when reading. Without a
 sign-in it fails loudly – "nothing stored" and "no token" must differ.
 
@@ -42,12 +42,10 @@ def load(name, path):
 drive = load("drive_serve", "serve.py")     # Pool: Range, redirects
 auth = load("drive_auth", "auth.py")        # who am I, token, deleting
 folder = load("drive_folder", "folder.py")  # listing, folders, upload
+layout = load("drive_layout", "layout.py")  # where the store root lies
 
-# empty = `STORE_NAME` in the token owner's My Drive root (found by name or made);
-# DRIVE_STORE_FOLDER overrides it, an id or a whole link
+# empty = `cache/stores` of the layout; DRIVE_STORE_FOLDER overrides it, an id or a link
 FOLDER_ID = ""
-# the existing Drive folder's name – renaming it would orphan every store
-STORE_NAME = "fricomaps-sklad"
 
 # stores the pipeline knows, so a typo isn't mistaken for an empty store;
 # `workers/lint/stores.py` checks the list against what the pipeline asks for
@@ -103,9 +101,7 @@ def root_id(creds, create=False):
     if want:
         _ROOT["id"] = folder.folder_id(want)
         return _ROOT["id"]
-    mine = auth.api_get(creds, "/drive/v3/files/root?fields=id")["id"]
-    fid = (folder.ensure_folder(creds, mine, STORE_NAME) if create
-           else folder.find_folder(creds, mine, STORE_NAME))
+    fid = layout.stores_id(creds, create=create)
     if fid:
         _ROOT["id"] = fid
     return fid
@@ -204,7 +200,7 @@ def do_check(args):
         log(f"Store on Google Drive, folder {root}")
         log(f"  {folder.folder_link(root)}")
     else:
-        log(f"Store on Google Drive: folder \"{STORE_NAME}\" isn't in My Drive "
+        log(f"Store on Google Drive: {layout.CACHE}/{layout.STORES} isn't there "
             f"yet – made at the first save.")
     log(f"  account {who.get('emailAddress', '?')} (details from {creds.source})")
     write = auth.can_write(creds)
