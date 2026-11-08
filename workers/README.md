@@ -2137,6 +2137,10 @@ Dve veci, ktoré z toho plynú:
   `shading-vector`, `routing-order`, `wiki`), z ktorých sa po predpone berie
   vždy len najnovšia. Vek a strop ostávajú na týždennom upratovaní, ktoré
   pravidlá mŕtvych použije tiež (`dead` vo [`workers/drive/cache.py`](drive/cache.py)).
+- **Čo v cache je, ukáže workflow *Maintenance · list only***
+  ([`cache-list.yml`](../.github/workflows/cache-list.yml)): tabuľka podľa druhu
+  záznamu – ktoré pipeline ho ukladajú, ako dlho ostáva, veľkosti, počty a kópie
+  s rovnakým obsahom (MD5). Nič nemaže; každý záznam dá aj ako CSV.
 
 #### Tri vrstvy, tri nezávislé kľúče
 

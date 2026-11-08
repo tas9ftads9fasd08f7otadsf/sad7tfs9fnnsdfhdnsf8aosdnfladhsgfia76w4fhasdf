@@ -1,3 +1,8 @@
+import csv
+import io
+import os
+import shutil
+import tempfile
 import threading
 import unittest
 from unittest import mock
@@ -217,6 +222,61 @@ class Cache(unittest.TestCase):
         self.assertIsNone(cache.entry_key("notes.txt"))
         self.assertTrue(cache.is_layer("rocks-x"))
         self.assertFalse(cache.is_layer("dem-x"))
+
+
+class Listing(unittest.TestCase):
+    def entry(self, key, size, md5="", created="2026-11-07T10:00:00"):
+        return {"id": key, "name": key + ".tar.zst", "key": key, "full_key": key,
+                "size": size, "md5": md5, "created": created}
+
+    def test_kinds_name_the_pipelines(self):
+        # 485
+        self.assertEqual(cache.kind_of("pbf-mountain-v3-tatry-x-2026-11-07")[0], "pbf-mountain-")
+        self.assertEqual(cache.kind_of("pbf-v6-zilinsky---t0-2026-11-06")[0], "pbf-")
+        self.assertIn("Build world", cache.kind_of("world-src-v1-full-abc-2026-W45")[2])
+        self.assertEqual(cache.kind_of("demtiles-v3-r1-b")[0], "demtiles-v3-r")
+        self.assertEqual(cache.kind_of("mystery-v1"), ("mystery-", "Unknown", "?"))
+
+    def test_kept_follows_the_prune(self):
+        # 485
+        self.assertEqual(cache.kept("planetiler-latest-", 30, 180), "build day + 1")
+        self.assertEqual(cache.kept("pbf-", 30, 180), "build day + 1")
+        self.assertEqual(cache.kept("wiki-", 30, 180), "newest only, ≤ 30 days")
+        self.assertEqual(cache.kept("terrain-", 30, 180), "180 days")
+        self.assertEqual(cache.kept("assets-", 30, 180), "30 days")
+
+    def test_copies_by_content_same_size_by_size(self):
+        # 485 the jar is saved again each day: two copies of one file
+        rows = cache.kinds([self.entry("planetiler-latest-2026-11-07", 88, "a"),
+                            self.entry("planetiler-latest-2026-11-06", 88, "a"),
+                            self.entry("planetiler-latest-2026-11-05", 88, "a"),
+                            self.entry("pbf-v6-a-2026-11-07", 60, "b"),
+                            self.entry("pbf-v6-b-2026-11-07", 60, "c"),
+                            self.entry("pbf-v6-c-2026-11-07", 30, "d")])
+        jar, pbf = rows
+        self.assertEqual((jar["count"], jar["total"], jar["copies"], jar["wasted"]), (3, 264, 2, 176))
+        self.assertEqual((pbf["same_size"], pbf["copies"], pbf["median"]), (2, 0, 60))
+
+    def test_list_writes_summary_and_csv(self):
+        # 485
+        items = [self.entry("terrain-v8-x", 2_000_000_000, "t"),
+                 self.entry("wiki-v3-kosicky___text-41188747921", 3_000_000, "w")]
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        summary, table = os.path.join(tmp, "summary.md"), os.path.join(tmp, "list.csv")
+        args = mock.Mock(summary=summary, csv=table, keep_days=30, keep_days_layers=180)
+        with mock.patch.object(cache, "creds_or_die", lambda what: None), \
+                mock.patch.object(cache, "entries", lambda creds: items), \
+                mock.patch("sys.stdout", new_callable=io.StringIO):
+            self.assertEqual(cache.do_list(args), 0)
+        with open(summary) as f:
+            text = f.read()
+        self.assertIn("2 entries, 2.00 GB", text)
+        self.assertIn("| `terrain-` | Finished hillshading and 3D terrain |", text)
+        with open(table) as f:
+            rows = list(csv.DictReader(f))
+        self.assertEqual([r["kind"] for r in rows], ["terrain-", "wiki-"])
+        self.assertEqual(rows[0]["md5"], "t")
 
 
 if __name__ == "__main__":

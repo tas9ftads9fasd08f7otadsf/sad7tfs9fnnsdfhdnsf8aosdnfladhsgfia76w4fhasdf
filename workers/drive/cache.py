@@ -10,7 +10,7 @@ One entry = one `.tar.zst` in `FOLDER_ID` named by its key; the whole key is in
 `description` too, since the name replaces characters outside `[A-Za-z0-9._-]`.
 Nothing deletes itself – the weekly `--prune` thins it at two speeds.
 
-    python3 workers/drive/cache.py --check | --list
+    python3 workers/drive/cache.py --check | --list [--summary=… --csv=…]
     python3 workers/drive/cache.py --restore --key=abc --path=dem
     python3 workers/drive/cache.py --lookup --key=abc --restore-keys=ab
     python3 workers/drive/cache.py --save --key=abc --path=dem
@@ -19,6 +19,7 @@ Nothing deletes itself – the weekly `--prune` thins it at two speeds.
 """
 import argparse
 import calendar
+import csv
 import datetime
 import importlib.util
 import os
@@ -94,6 +95,82 @@ def dead(items, today):
     return out
 
 
+HEIGHT = ("Height-model layers (in Build map region, Build mountain package, "
+          "Regenerate region layer)")
+# (key prefix, what it is, pipelines that save it); the first matching prefix wins
+KINDS = (
+    ("planetiler-latest-", "Planetiler jar",
+     "Build map region, Build mountain package, Regenerate region layer"),
+    ("planetiler-sources-", "Planetiler base data", "Build map region"),
+    ("pbf-mountain-", "OSM cut-out of a range", "Build mountain package"),
+    ("pbf-", "OSM extract of a region", "Build map region, Regenerate region layer"),
+    ("assets-", "Icons and fonts", "Build map region"),
+    ("contours-", "Finished contours", HEIGHT),
+    ("rocks-", "Finished rocks", HEIGHT),
+    ("terrain-", "Finished hillshading and 3D terrain", HEIGHT),
+    ("demtiles-v3-c", "Height tiles for contours", HEIGHT),
+    ("demtiles-v3-r", "Height tiles for rocks", HEIGHT),
+    ("demtiles-v2-t", "Height tiles for hillshading", HEIGHT),
+    ("demtiles-", "Height tiles (older schema)", HEIGHT),
+    ("slope-", "Slope chunks for rocks", HEIGHT),
+    ("shading-tiles-", "Shaded relief tiles", "Data · shaded rocks (also inside height-model layers)"),
+    ("shading-vector-", "Rock outlines from shading", "Data · shaded rocks (also inside height-model layers)"),
+    ("aerial-", "Aerial photos", "Build mountain package"),
+    ("routing-order-", "Routing node order", "Routing · node order, region routing network"),
+    ("wiki-", "Wiki texts", "Build wiki"),
+    ("world-src-", "World map base data", "Build world"),
+)
+
+
+def kind_of(key):
+    """`(prefix, what, pipelines)` of a key; an unknown one is named by its first word."""
+    for kind in KINDS:
+        if key.startswith(kind[0]):
+            return kind
+    head = key.split("-", 1)[0] + "-"
+    return head, "Unknown", "?"
+
+
+def kept(prefix, keep_days, keep_days_layers):
+    """How long the weekly prune lets an entry of this kind live."""
+    if prefix.startswith(DATED) or any(d.startswith(prefix) for d in DATED):
+        return "build day + 1"
+    if prefix.startswith(TOPPED_UP) or any(t.startswith(prefix) for t in TOPPED_UP):
+        return f"newest only, ≤ {keep_days:g} days"
+    return f"{keep_days_layers if is_layer(prefix) else keep_days:g} days"
+
+
+def median(values):
+    v = sorted(values)
+    return v[len(v) // 2] if v else 0
+
+
+def kinds(items, keep_days=30, keep_days_layers=180):
+    """One row per kind: counts, sizes and copies (same MD5, or same size without one)."""
+    groups = {}
+    for e in items:
+        groups.setdefault(kind_of(e["full_key"]), []).append(e)
+    rows = []
+    for (prefix, what, pipelines), es in groups.items():
+        sizes = [e["size"] for e in es]
+        by_md5, by_size = {}, {}
+        for e in es:
+            by_md5.setdefault(e.get("md5") or ("size", e["size"]), []).append(e["size"])
+            by_size.setdefault(e["size"], 0)
+            by_size[e["size"]] += 1
+        rows.append({
+            "prefix": prefix, "what": what, "pipelines": pipelines,
+            "kept": kept(prefix, keep_days, keep_days_layers),
+            "count": len(es), "total": sum(sizes), "median": median(sizes),
+            "smallest": min(sizes), "largest": max(sizes),
+            "same_size": sum(n for n in by_size.values() if n > 1),
+            "copies": sum(len(g) - 1 for g in by_md5.values()),
+            "wasted": sum(sum(g[1:]) for g in by_md5.values()),
+        })
+    rows.sort(key=lambda r: r["total"], reverse=True)
+    return rows
+
+
 # two suffixes: `zstd` may be missing somewhere, unpacked by what the name says
 ZSTD = ".tar.zst"
 GZIP = ".tar.gz"
@@ -138,7 +215,7 @@ def creds_or_die(what):
 def entries(creds):
     """Cache entries in the folder, newest first; files without a suffix are left alone."""
     files, _skipped = folder.listing(creds, FOLDER_ID,
-                                     extra="createdTime,description")
+                                     extra="createdTime,description,md5Checksum")
     out = []
     for f in files:
         key = entry_key(f["name"])
@@ -147,7 +224,8 @@ def entries(creds):
         raw = f.get("raw") or {}
         out.append({"id": f["id"], "name": f["name"], "key": key,
                     "full_key": raw.get("description") or key,
-                    "size": f["size"], "created": raw.get("createdTime") or ""})
+                    "size": f["size"], "created": raw.get("createdTime") or "",
+                    "md5": raw.get("md5Checksum") or ""})
     out.sort(key=lambda e: e["created"], reverse=True)
     return out
 
@@ -338,7 +416,45 @@ def do_list(args):
     log(f"Drive cache ({FOLDER_ID}): {len(items)} entries, {human(total)}")
     for e in items:
         log(f"  {e['created'][:19]}  {human(e['size']):>9}  {e['full_key']}")
+    rows = kinds(items, args.keep_days, args.keep_days_layers)
+    log("")
+    for r in rows:
+        log(f"{r['prefix']:<22} {r['count']:>4} × ~{human(r['median']):>9} = "
+            f"{human(r['total']):>9}  copies {r['copies']} ({human(r['wasted'])})  "
+            f"{r['what']} – {r['pipelines']}")
+    if args.summary:
+        with open(args.summary, "a") as f:
+            f.write(list_markdown(items, rows))
+    if args.csv:
+        with open(args.csv, "w", newline="") as f:
+            w = csv.writer(f)
+            w.writerow(["created", "size", "md5", "kind", "key", "name"])
+            for e in items:
+                w.writerow([e["created"], e["size"], e.get("md5", ""),
+                            kind_of(e["full_key"])[0], e["full_key"], e["name"]])
     return 0
+
+
+def list_markdown(items, rows):
+    """The step summary: one table by kind, then every entry folded away."""
+    total = sum(e["size"] for e in items)
+    wasted = sum(r["wasted"] for r in rows)
+    out = [f"### Drive cache: {len(items)} entries, {human(total)}\n",
+           f"Copies of another entry (same content): {human(wasted)}.\n",
+           "| kind | what | pipelines | kept | usual size | range | entries | total "
+           "| same size | copies (wasted) |",
+           "|---|---|---|---|--:|--:|--:|--:|--:|--:|"]
+    for r in rows:
+        out.append(f"| `{r['prefix']}` | {r['what']} | {r['pipelines']} | {r['kept']} "
+                   f"| {human(r['median'])} | {human(r['smallest'])}–{human(r['largest'])} "
+                   f"| {r['count']} | {human(r['total'])} | {r['same_size']} "
+                   f"| {r['copies']} ({human(r['wasted'])}) |")
+    out += ["", "<details><summary>Every entry</summary>\n",
+            "| created | size | key |", "|---|--:|---|"]
+    out += [f"| {e['created'][:19]} | {human(e['size'])} | `{e['full_key']}` |"
+            for e in items]
+    out += ["", "</details>", ""]
+    return "\n".join(out) + "\n"
 
 
 def do_prune(args):
@@ -495,7 +611,9 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="only print what would happen")
     ap.add_argument("--summary", default="",
-                    help="with --prune: where to append the summary (GITHUB_STEP_SUMMARY)")
+                    help="with --prune or --list: where to append the summary "
+                         "(GITHUB_STEP_SUMMARY)")
+    ap.add_argument("--csv", default="", help="with --list: every entry into this CSV")
     args = ap.parse_args()
     args.path = lines(args.path)
     args.restore_keys = lines(args.restore_keys)
