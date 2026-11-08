@@ -86,6 +86,40 @@ class Renewal(unittest.TestCase):
             api.api_get(creds, "/drive/v3/files/x")
 
 
+class RateLimit(unittest.TestCase):
+    LIMIT = (403, {"error": {"errors": [{"reason": "rateLimitExceeded"}]}})
+
+    def setUp(self):
+        p = mock.patch.object(api.time, "sleep")
+        self.sleep = p.start()
+        self.addCleanup(p.stop)
+        self.creds = mock.Mock(token=lambda: "t", client_id="")
+
+    def call(self, answers):
+        with mock.patch.object(api, "request_json", lambda *a, **kw: answers.pop(0)), \
+                mock.patch("sys.stderr"):
+            return api.api_get(self.creds, "/drive/v3/files?q=x")
+
+    def test_waits_out_the_limit(self):
+        # 484 parallel mountain builds failed on Drive's per-minute quota at once
+        self.assertEqual(self.call([self.LIMIT, (429, {}), (200, {"id": "x"})]), {"id": "x"})
+        self.assertEqual(self.sleep.call_count, 2)
+        self.assertGreater(sum(c.args[0] for c in self.sleep.call_args_list), 5)
+
+    def test_waits_pass_a_minute_then_give_up(self):
+        # 484
+        with self.assertRaises(api.AuthError) as err:
+            self.call([self.LIMIT] * (api.LIMIT_WAITS + 1))
+        self.assertIn("rateLimitExceeded", str(err.exception))
+        self.assertGreater(sum(c.args[0] for c in self.sleep.call_args_list), 60)
+
+    def test_a_refusal_for_good_doesnt_wait(self):
+        # 484
+        with self.assertRaises(api.AuthError):
+            self.call([(403, {"error": {"errors": [{"reason": "forbidden"}]}})])
+        self.sleep.assert_not_called()
+
+
 class Hints(unittest.TestCase):
     def test_api_not_enabled_names_the_project(self):
         data = {"error": {"errors": [{"reason": "accessNotConfigured"}], "message": "off"}}

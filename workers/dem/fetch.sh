@@ -35,8 +35,16 @@ SRC_LABEL=$(get label)
 if [ "$FORM" = "area" ]; then
   mkdir -p "$DIR"
   UASSET=$(get assets)
-  if ! python3 "$STORE_PY" --get --store="$SRC_STORE" --name="$UASSET" \
-        --dir="$DIR" --skip-local; then
+  set +e
+  python3 "$STORE_PY" --get --store="$SRC_STORE" --name="$UASSET" \
+    --dir="$DIR" --skip-local
+  GOT=$?
+  set -e
+  # a Drive error isn't a missing cut-out; falling back would hide it
+  if [ "$GOT" -ne 0 ] && [ "$GOT" -ne 3 ]; then
+    exit "$GOT"
+  fi
+  if [ "$GOT" -eq 3 ]; then
     # code 3 = "not for this cut-out", so the caller can fall back
     echo "::warning::Store $SRC_STORE has no $UASSET – nobody has made DMR 5.0 for this cut-out yet. Run the workflow 'Data · DMR 5.0' with area: $AREA_KEY."
     exit 3
@@ -75,6 +83,7 @@ python3 "$STORE_PY" --get --store="$SRC_STORE" --dir="$DIR/tiles" \
   --name="$(tr '\n' ' ' < "$DIR/list.txt")" --missing-ok --skip-local
 SRC=$?
 set -e
+[ "$SRC" -ne 0 ] && [ "$SRC" -ne 3 ] && exit "$SRC"
 
 shopt -s nullglob
 tifs=("$DIR"/tiles/*.tif)
