@@ -1,0 +1,37 @@
+name: Maintenance · list only
+
+# What the Drive cache holds, by kind: the pipelines that save it, how long it is
+# kept, sizes and copies. Reads only; deleting is the weekly cleanup's.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  list:
+    name: List the Drive cache
+    runs-on: ubuntu-latest
+    env:
+      GDRIVE_CREDENTIALS: ${{ secrets.GDRIVE_CREDENTIALS }}
+      DRIVE_CLIENT: ${{ vars.DRIVE_CLIENT }}
+      DRIVE_SECRET: ${{ secrets.DRIVE_SECRET }}
+      DRIVE_REFRESH: ${{ secrets.DRIVE_REFRESH }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: List the cache
+        run: |
+          set -euo pipefail
+          python3 workers/drive/cache.py --list \
+            --summary="$GITHUB_STEP_SUMMARY" --csv=drive-cache.csv
+
+      # a download of the run, not a publication
+      - name: Every entry as CSV
+        uses: actions/upload-artifact@v7
+        with:
+          name: drive-cache
+          path: drive-cache.csv
+          retention-days: 1
