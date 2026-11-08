@@ -84,8 +84,18 @@ class CachePrune(unittest.TestCase):
                          ["slope-old", "vector-old", "wiki-old"])
 
     def test_dead_only_leaves_age_and_cap_to_the_weekly_run(self):
-        items = [entry("pbf", "pbf-x", 300, int(1e9)), entry("dem", "demtiles-v3-x", 300, int(1e9))]
+        # 486 `demtiles-` is retired now, so a plain key stands in
+        items = [entry("pbf", "pbf-x", 300, int(1e9)), entry("dem", "dem-x", 300, int(1e9))]
         self.assertEqual(self.prune(items, dead_only=True, keep_gb=0.5), [])
+
+    def test_retired_versions_go_even_after_a_build(self):
+        # 486 a copy of the model stores and key versions no workflow asks for
+        items = [entry("tiles", "demtiles-v2-tdmr5abc-1_2_3_4", 1), entry("t7", "terrain-v7-x", 1),
+                 entry("t8", "terrain-v8-x", 1), entry("r2", "rocks-v2-x", 1), entry("r3", "rocks-v3-x", 1),
+                 entry("a1", "aerial-v1-summer-x-z", 1), entry("a2", "aerial-v2-x-z", 1),
+                 entry("m2", "pbf-mountain-v2-x", 1)]
+        self.assertEqual(sorted(self.prune(items, dead_only=True)), ["a1", "m2", "r2", "t7", "tiles"])
+        self.assertEqual(cache.kept("demtiles-", 30, 180), "retired: the next prune")
 
     def test_a_dry_run_deletes_nothing_and_says_so(self):
         with tempfile.TemporaryDirectory() as d:
@@ -115,6 +125,13 @@ class DeadRulesCoverEveryKey(unittest.TestCase):
                 self.assertTrue(prefix.startswith(cache.TOPPED_UP))
         self.assertIn("slope=slope-v1-", text)
         self.assertIn("key=wiki-v3-", text)
+
+    def test_no_workflow_asks_for_a_retired_version(self):
+        # 486 a retired prefix that is still written would be deleted after every build
+        text = self.keys()
+        for prefix in cache.RETIRED:
+            with self.subTest(prefix=prefix):
+                self.assertNotIn(prefix, text)
 
     def test_day_keys_are_dated(self):
         text = self.keys()
@@ -148,6 +165,25 @@ class StorePrune(unittest.TestCase):
     def test_no_age_no_deletes(self):
         self.assertEqual(self.prune(self.ITEMS, keep_days=0), [])
         self.assertEqual(self.prune(self.ITEMS, dry_run=True), [])
+
+    def retire(self, ids, **kw):
+        args = argparse.Namespace(**{"dry_run": False, "summary": "", **kw})
+        deleted = []
+        with mock.patch.object(store, "creds_or_die", lambda what: "creds"), \
+                mock.patch.object(store, "store_id", lambda creds, s: ids.get(s)), \
+                mock.patch.object(store, "index", lambda creds, s: self.ITEMS), \
+                mock.patch.object(store.auth, "api_delete", lambda creds, fid: deleted.append(fid)), \
+                mock.patch.object(store, "log"):
+            self.assertEqual(store.do_retire(args), 0)
+        return deleted
+
+    def test_retired_stores_go_with_their_folder(self):
+        # 486 `vysledky` and the old `dem-dmr5` are read by nothing
+        self.assertEqual(self.retire({"vysledky": "folder"}), ["o", "o2", "n", "u", "folder"])
+        self.assertEqual(self.retire({"vysledky": "folder"}, dry_run=True), [])
+        self.assertEqual(self.retire({}), [])
+        with self.assertRaises(SystemExit):
+            store.known_or_die("vysledky")
 
     def test_epoch_is_utc_and_unknown_is_now(self):
         self.assertEqual(store._epoch("1970-01-02T00:00:00.000Z"), DAY)

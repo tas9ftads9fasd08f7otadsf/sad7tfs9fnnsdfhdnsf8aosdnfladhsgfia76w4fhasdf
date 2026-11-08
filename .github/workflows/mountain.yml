@@ -400,10 +400,8 @@ jobs:
         with:
           path: aerial-cache
           key: ${{ env.TILE_KEY }}
-          # v1 keys are ofmozaika_sk's, from before a range picked its source
           restore-keys: |
             aerial-v2-${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] }}-${{ needs.plan.outputs.bboxkey }}-
-            ${{ fromJSON(needs.plan.outputs.opt_aerial_sources)[matrix.season] == 'ofmozaika_sk' && format('aerial-v1-{0}-{1}-', matrix.season, needs.plan.outputs.bboxkey) || '' }}
 
       - name: Download the range outline
         continue-on-error: true

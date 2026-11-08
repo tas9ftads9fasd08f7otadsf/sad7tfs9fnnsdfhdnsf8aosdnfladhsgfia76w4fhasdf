@@ -9,8 +9,8 @@ opens only suspiciously small files (`tiles.EMPTY_MAX_BYTES`, sizes from the
 store listing). Needs `gdalinfo` – installed by the caller only when needed.
 
 Usage (stdin gets `name:size`, the output of `store.py --index`):
-    python3 workers/drive/store.py --index --store=dem-dmr5 \\
-      | python3 workers/dem/trust.py --store=dem-dmr5 --names="N48E016.tif …"
+    python3 workers/drive/store.py --index --store=dem-dmr5-v2 \\
+      | python3 workers/dem/trust.py --store=dem-dmr5-v2 --names="N48E016.tif …"
 
 Stdout gets the untrustworthy names (one a line); explanations go to stderr.
 """

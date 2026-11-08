@@ -512,9 +512,6 @@ jobs:
       rocks_done: ${{ steps.keys.outputs.rocks_done }}
       terrain: ${{ steps.keys.outputs.terrain }}
       terrain_done: ${{ steps.keys.outputs.terrain_done }}
-      demtiles_contours: ${{ steps.keys.outputs.demtiles_contours }}
-      demtiles_rocks: ${{ steps.keys.outputs.demtiles_rocks }}
-      demtiles_terrain: ${{ steps.keys.outputs.demtiles_terrain }}
       slope: ${{ steps.keys.outputs.slope }}
     steps:
       - name: Checkout
@@ -653,15 +650,6 @@ jobs:
           name: region-poly
           path: data
 
-      # only when computing: the model is gigabytes, a finished layer needs none
-      - name: DEM tile cache (restore)
-        id: demtiles-cache
-        if: ${{ inputs.opt_contours == 'true' && steps.done.outputs.compute == 'true' }}
-        uses: ./.github/actions/cache-restore
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_contours }}
-
       - name: Contours and rocks from the DEM
         if: ${{ inputs.opt_contours == 'true' && steps.done.outputs.compute == 'true' }}
         env:
@@ -715,15 +703,6 @@ jobs:
         with:
           path: contours-out
           key: ${{ needs.keys.outputs.contours }}
-
-      # `always()`: the store must survive exactly the runs that didn't finish
-      - name: DEM tile cache (save)
-        if: ${{ always() && inputs.opt_contours == 'true' && steps.demtiles-cache.outputs.cache-hit != 'true' && hashFiles('dem/**') != '' }}
-        continue-on-error: true
-        uses: ./.github/actions/cache-save
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_contours }}
 
       # `workers/contours-rocks/site.sh` – two jobs share the step
       - name: Put the contours into the site
@@ -838,15 +817,6 @@ jobs:
           name: region-poly
           path: data
 
-      # model and slope parts are inputs – finished rocks need neither
-      - name: DEM tile cache (restore)
-        id: demtiles-cache
-        if: ${{ inputs.opt_contours == 'true' && steps.done.outputs.compute == 'true' }}
-        uses: ./.github/actions/cache-restore
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_rocks }}
-
       # `opt_rocks_rebuild` stays here: the slope is to be read anew
       - name: Slope part cache (restore)
         id: slope-cache
@@ -918,14 +888,6 @@ jobs:
         with:
           path: slope-chunks
           key: ${{ needs.keys.outputs.slope }}${{ github.run_id }}
-
-      - name: DEM tile cache (save)
-        if: ${{ always() && inputs.opt_contours == 'true' && steps.demtiles-cache.outputs.cache-hit != 'true' && hashFiles('dem/**') != '' }}
-        continue-on-error: true
-        uses: ./.github/actions/cache-save
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_rocks }}
 
       - name: Put the contours into the site
         id: contours
@@ -1016,15 +978,6 @@ jobs:
           MATCHED: ${{ steps.terrain-cache.outputs.cache-matched-key }}
         run: workers/plan/layer-done.sh
 
-      # after the decision and only when computing: finished tiles need no model
-      - name: DEM tile cache (restore)
-        id: demtiles-cache
-        if: ${{ inputs.opt_terrain == 'true' && steps.done.outputs.compute == 'true' }}
-        uses: ./.github/actions/cache-restore
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_terrain }}
-
       - name: Relief hillshading (PNG tiles from the chosen DEM)
         id: terrain
         if: ${{ inputs.opt_terrain == 'true' }}
@@ -1053,15 +1006,6 @@ jobs:
         with:
           path: terrain-out
           key: ${{ needs.keys.outputs.terrain }}
-
-      # hillshading has its own source and key – without this its restore never hits
-      - name: DEM tile cache (save)
-        if: ${{ always() && steps.demtiles-cache.outputs.cache-hit != 'true' && hashFiles('dem/**') != '' }}
-        continue-on-error: true
-        uses: ./.github/actions/cache-save
-        with:
-          path: dem
-          key: ${{ needs.keys.outputs.demtiles_terrain }}
 
       - name: Keep the site piece
         if: ${{ always() && hashFiles('_site/**') != '' }}

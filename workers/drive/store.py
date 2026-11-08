@@ -12,10 +12,11 @@ is `<root>/<store>/<asset name>`; the root appears by itself at the first write,
 then deletes the old; the newest file of a name wins when reading. Without a
 sign-in it fails loudly – "nothing stored" and "no token" must differ.
 
-    python3 workers/drive/store.py --check | --list --store=dem-dmr5
-    python3 workers/drive/store.py --get --store=dem-dmr5 --dir=dem/tiles \
+    python3 workers/drive/store.py --check | --list --store=dem-dmr5-v2
+    python3 workers/drive/store.py --get --store=dem-dmr5-v2 --dir=dem/tiles \
         --name=N49E019.tif --missing-ok
     python3 workers/drive/store.py --put --store=dem-terrain --file=/tmp/x.tar.zst
+    python3 workers/drive/store.py --retire [--dry-run]
 """
 import argparse
 import calendar
@@ -55,9 +56,7 @@ KNOWN = {
     "dem-sonny": "Elevation model – Sonny's LiDAR DTM (1°×1° tiles)",
     "dem-sonny1": "Elevation model – Sonny's LiDAR DTM 1″ (.hgt, 1 m height step)",
     "dem-dmr35": "Elevation model – ÚGKK DMR 3.5 (open data, 10 m)",
-    # `-v2` carries the resampling fix, since `N49E020.tif` must not be renamed;
-    # the old `dem-dmr5` stays until deleted by hand
-    "dem-dmr5": "Elevation model – ÚGKK DMR 5.0, tiles (5 m), before the resampling fix",
+    # `-v2` carries the resampling fix, since `N49E020.tif` must not be renamed
     "dem-dmr5-v2": "Elevation model – ÚGKK DMR 5.0, tiles (5 m)",
     "dem-ugkk": "Elevation model – ÚGKK DMR 5.0, a full 1 m cut-out",
     "dem-terrain": "Terrain (terrarium) tiles for hillshading and 3D terrain",
@@ -65,8 +64,12 @@ KNOWN = {
     "dem-rocks-img": "Rock areas from dark spots in hillshading tiles",
     "dem-slope": "The slope raster in chunks (a rock intermediate)",
     "results": "Intermediate build results to look at (contours, rocks, trails)",
-    # the former name of `results`, pruned until it is empty
-    "vysledky": "Intermediate build results, former store",
+}
+
+# stores nothing reads any more; `--retire` deletes them with their folder
+RETIRED = {
+    "dem-dmr5": "Elevation model – ÚGKK DMR 5.0 tiles from before the resampling fix",
+    "vysledky": "The former name of `results`",
 }
 
 _ROOT = {}      # the store root's id – found once a run
@@ -371,6 +374,35 @@ def do_prune(args):
     return 0
 
 
+def do_retire(args):
+    """Delete the retired stores, files first, so the log names what went."""
+    creds = creds_or_die("deleting retired stores")
+    freed = 0
+    for store, why in sorted(RETIRED.items()):
+        fid = store_id(creds, store)
+        if not fid:
+            log(f"Store {store}: not on Drive ✓")
+            continue
+        items = index(creds, store)
+        size = sum(v["size"] for v in items.values())
+        freed += size
+        log(f"Store {store} ({why}): {len(items)} files, {human(size)}")
+        if args.dry_run:
+            continue
+        for v in items.values():
+            for file_id in [v["id"]] + v.get("dupes", []):
+                auth.api_delete(creds, file_id)
+        auth.api_delete(creds, fid)
+        _STORES.pop(store, None)
+        log("  deleted with its folder")
+    log(("Would free " if args.dry_run else "Freed ") + human(freed))
+    if args.summary:
+        with open(args.summary, "a") as f:
+            f.write(f"### Retired stores\n\n{', '.join(sorted(RETIRED))}: "
+                    f"{'would free' if args.dry_run else 'freed'} {human(freed)}\n\n")
+    return 0
+
+
 def _epoch(stamp):
     """RFC 3339 from Drive → seconds (UTC, hence `timegm`); unknown = leave it."""
     try:
@@ -400,6 +432,8 @@ def main():
     ap.add_argument("--put", action="store_true")
     ap.add_argument("--rm", action="store_true")
     ap.add_argument("--prune", action="store_true")
+    ap.add_argument("--retire", action="store_true",
+                    help="delete the stores in RETIRED with their folders")
     ap.add_argument("--store", default="", help="which store (see KNOWN)")
     ap.add_argument("--name", action="append", default=[],
                     help="a file name in the store; repeatable")
@@ -418,17 +452,18 @@ def main():
     ap.add_argument("--dry-run", action="store_true",
                     help="only print what would happen")
     ap.add_argument("--summary", default="",
-                    help="with --prune: where to append the summary (GITHUB_STEP_SUMMARY)")
+                    help="with --prune or --retire: where to append the summary "
+                         "(GITHUB_STEP_SUMMARY)")
     args = ap.parse_args()
     args.name = lines(args.name)
     args.file = lines(args.file)
 
     commands = [k for k in ("check", "list", "names", "index", "latest",
-                            "get", "put", "rm", "prune") if getattr(args, k)]
+                            "get", "put", "rm", "prune", "retire") if getattr(args, k)]
     if len(commands) != 1:
         ap.error("say exactly one thing: --check / --list / --names / "
-                 "--index / --latest / --get / --put / --rm / --prune")
-    if commands[0] != "check":
+                 "--index / --latest / --get / --put / --rm / --prune / --retire")
+    if commands[0] not in ("check", "retire"):
         if not args.store:
             ap.error("--store is required")
         known_or_die(args.store)
@@ -442,7 +477,8 @@ def main():
     try:
         return {"check": do_check, "list": do_list, "names": do_names,
                 "index": do_index, "latest": do_latest, "get": do_get,
-                "put": do_put, "rm": do_rm, "prune": do_prune}[commands[0]](args)
+                "put": do_put, "rm": do_rm, "prune": do_prune,
+                "retire": do_retire}[commands[0]](args)
     except auth.AuthError as exc:
         # those messages already say what to do
         print(f"::error::{exc}")
