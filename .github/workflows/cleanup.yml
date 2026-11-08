@@ -8,7 +8,7 @@ name: Maintenance · weekly cleanup
 # delete them.
 #
 # On GitHub it deletes runs of retired workflows and rejected files, releases and
-# their assets, artifacts, the GitHub cache (no longer used) and optionally
+# their assets, artifacts, the GitHub cache (but Planetiler's) and optionally
 # `claude/*` branches. Nothing is lost – everything published lies in the Drive
 # store (`workers/drive/store.py`).
 #
@@ -97,12 +97,13 @@ jobs:
         run: python3 workers/tools/cleanup-actions.py
 
       # GitHub's cache caps at 10 GB and quietly evicts the oldest when full – so
-      # it moved to Drive; nobody looks for what's left on GitHub
+      # it moved to Drive, but for Planetiler (`store: github`), which GitHub expires itself
       - name: Delete the GitHub cache
         if: ${{ inputs.what == '' || inputs.what == 'weekly' || inputs.what == 'cache' || inputs.what == 'everything' }}
         env:
           GH_TOKEN: ${{ github.token }}
           DRY_RUN: ${{ inputs.dry_run }}
+          KEEP: planetiler-
         run: python3 workers/tools/cleanup-cache.py
 
   drive:

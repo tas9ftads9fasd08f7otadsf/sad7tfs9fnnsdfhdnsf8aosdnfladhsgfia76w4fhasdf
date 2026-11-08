@@ -2146,6 +2146,11 @@ Dve veci, ktoré z toho plynú:
   ([`cache-list.yml`](../.github/workflows/cache-list.yml)): tabuľka podľa druhu
   záznamu – ktoré pipeline ho ukladajú, ako dlho ostáva, veľkosti, počty a kópie
   s rovnakým obsahom (MD5). Nič nemaže; každý záznam dá aj ako CSV.
+- **Planetiler je v GitHubovej cache.** Jar a jeho zdroje si za build obnoví tucet
+  jobov naraz a na Drive to minulo minútový limit API. Kroky s `store: github`
+  idú cez `actions/cache`, GitHub ich po týždni bez použitia zahodí sám a týždenné
+  upratovanie ich nechá (`KEEP: planetiler-`). Nič iné tam nesmie –
+  [`test_cache_store.py`](tests/test_cache_store.py).
 
 #### Tri vrstvy, tri nezávislé kľúče
 

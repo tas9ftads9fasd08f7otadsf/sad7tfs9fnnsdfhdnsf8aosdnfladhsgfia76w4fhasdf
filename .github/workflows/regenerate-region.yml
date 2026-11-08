@@ -363,6 +363,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ needs.plan.outputs.day }}
 
       - name: Download Planetiler
@@ -373,6 +374,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: planetiler.jar
+          store: github
           key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
 
       - name: Landscape features from OSM → PMTiles

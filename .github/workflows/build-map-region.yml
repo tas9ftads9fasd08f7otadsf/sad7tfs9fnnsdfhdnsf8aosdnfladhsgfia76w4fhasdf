@@ -588,6 +588,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ needs.plan.outputs.day }}
 
       - name: Download Planetiler
@@ -598,6 +599,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: planetiler.jar
+          store: github
           key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
 
       - name: Trails from OSM relations → PMTiles
@@ -683,6 +685,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ needs.plan.outputs.day }}
 
       - name: Download Planetiler
@@ -693,6 +696,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: planetiler.jar
+          store: github
           key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
 
       - name: Landscape features from OSM → PMTiles
@@ -909,6 +913,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: data/sources
+          store: github
           key: planetiler-sources-v1
 
       - name: Planetiler cache (restore)
@@ -916,6 +921,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ needs.plan.outputs.day }}
 
       - name: Download Planetiler
@@ -926,6 +932,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: planetiler.jar
+          store: github
           key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
 
       # the base map's traffic signs (`tiles/signs.sh`), tested before the build
@@ -953,6 +960,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: data/sources
+          store: github
           key: ${{ steps.sources-cache.outputs.cache-primary-key }}
 
       - name: Keep the site piece

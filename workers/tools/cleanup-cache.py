@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-GitHub cache cleanup: deletes EVERY entry, since none is used any more.
+GitHub cache cleanup: deletes every entry but those under `KEEP`.
 
 WHY IT EXISTS. GitHub's cache caps a repository at **10 GB** and when full it
 says nothing – it quietly evicts the oldest entries (LRU). This pipeline stored
 DEM tiles, the slope part store, contours and shading there, tens of GB per
 cutout, so entries evicted each other and hour-long computations reran unseen.
 
-The cache now lives on Google Drive (`workers/drive/cache.py`), so GitHub's is
-just leftovers taking space. This script empties it.
+The cache now lives on Google Drive (`workers/drive/cache.py`). Only the
+Planetiler jar and its sources, restored by a dozen jobs a build, stay on
+GitHub (`store: github`); the weekly cleanup keeps them with `KEEP=planetiler-`.
 
 WHY IT CAN'T BE DONE OTHERWISE: a cache entry isn't a file in the repository,
 so no pull request can delete it; inside a run `GITHUB_TOKEN` can, given

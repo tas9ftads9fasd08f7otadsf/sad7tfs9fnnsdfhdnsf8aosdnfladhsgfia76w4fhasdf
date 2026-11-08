@@ -113,6 +113,7 @@ jobs:
         uses: ./.github/actions/cache-restore
         with:
           path: planetiler.jar
+          store: github
           key: planetiler-latest-${{ inputs.day }}
 
       - name: Stiahni Planetiler
@@ -123,6 +124,7 @@ jobs:
         uses: ./.github/actions/cache-save
         with:
           path: planetiler.jar
+          store: github
           key: ${{ steps.planetiler-cache.outputs.cache-primary-key }}
 
       # schema tests before the build (`examples`) – the one thing that tells the
