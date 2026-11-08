@@ -16,6 +16,7 @@ name: Maintenance · weekly cleanup
 # each region build does the same when done), then thins the cache at two speeds:
 # finished elevation layers 180 days (hours of compute per region), the rest 30. The `results` store 90 days, the
 # retention artifacts had. Elevation model stores aren't thinned – costly mirrors.
+# Retired stores (`RETIRED` in `workers/drive/store.py`) are deleted whole.
 #
 # The schedule runs `weekly`: releases, artifacts and both caches. Runs and
 # branches aren't deleted on schedule – that's history, for a human to decide.
@@ -157,10 +158,19 @@ jobs:
           set -euo pipefail
           ARGS=()
           if [ "${DRY_RUN:-false}" = "true" ]; then ARGS+=(--dry-run); fi
-          # `vysledky` is the former name of `results`
-          for STORE in results vysledky; do
-            python3 workers/drive/store.py --prune --store="$STORE" \
-              --keep-days="${KEEP_DAYS:-90}" \
-              "${ARGS[@]}" \
-              --summary="$GITHUB_STEP_SUMMARY"
-          done
+          python3 workers/drive/store.py --prune --store=results \
+            --keep-days="${KEEP_DAYS:-90}" \
+            "${ARGS[@]}" \
+            --summary="$GITHUB_STEP_SUMMARY"
+
+      # stores nothing reads (`RETIRED` in `workers/drive/store.py`) go whole
+      - name: Delete retired stores
+        continue-on-error: true
+        env:
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          ARGS=()
+          if [ "${DRY_RUN:-false}" = "true" ]; then ARGS+=(--dry-run); fi
+          python3 workers/drive/store.py --retire "${ARGS[@]}" \
+            --summary="$GITHUB_STEP_SUMMARY"

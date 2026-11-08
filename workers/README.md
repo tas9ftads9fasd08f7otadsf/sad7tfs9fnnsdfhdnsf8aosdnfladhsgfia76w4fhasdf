@@ -2079,9 +2079,9 @@ s 30- až 90-dňovou retenciou. Oboje je teraz v **sklade na Google Drive** —
 na tom istom účte, ktorý drží DMR 5.0, cache buildu aj hotové mapy.
 
 ```
-<koreň>/dem-dmr5/N49E020.tif             <koreň> = `fricomaps-sklad`
+<koreň>/dem-dmr5-v2/N49E020.tif          <koreň> = `fricomaps-sklad`
 <koreň>/dem-ugkk/ugkk-vysoke_tatry.tif   v My Drive vlastníka tokenu
-<koreň>/vysledky/teren-…-r73.tar.zst
+<koreň>/results/teren-…-r73.tar.zst  
          sklad     meno — to isté, aké mal asset releasu
 ```
 
@@ -2097,7 +2097,7 @@ stupeň je tu"), ani to, ktorý sklad ktorá vrstva hľadá. Celý rozpis je vo
 
 Krátkodobé artefakty (`site-*`, `steps-*` s `retention-days: 1`) ostávajú a nie
 sú publikovanie — sú to prepravky, ktorými si joby jedného behu podávajú kusy
-`_site`. Čokoľvek s dlhšou retenciou ide do skladu `vysledky` cez
+`_site`. Čokoľvek s dlhšou retenciou ide do skladu `results` cez
 [`workers/deploy/publish-results.sh`](deploy/publish-results.sh) a *Kontrola · lint workflowov* to
 kontroluje. Staré releasy, ich tagy aj artefakty zmaže *Údržba · týždenné upratovanie*
 ([`cleanup.yml`](../.github/workflows/cleanup.yml)) v režime
@@ -2128,7 +2128,8 @@ Dve veci, ktoré z toho plynú:
   Preriedi ich workflow *Údržba · týždenné upratovanie*
   ([`cleanup.yml`](../.github/workflows/cleanup.yml)) — raz za týždeň, alebo
   ručne. Ten istý workflow vyprázdni aj GitHub cache, ktorú už nikto nehľadá,
-  a preriedi sklad `vysledky`. Kým to boli dva workflowy, mali dva plány
+  preriedi sklad `results` a zmaže vyradené sklady (`RETIRED` v `store.py`:
+  `vysledky`, starý `dem-dmr5`). Kým to boli dva workflowy, mali dva plány
   posunuté o pol hodiny, aby si nelezli do cesty.
 - **Mŕtve záznamy idú hneď po builde.** Posledný job *Build map region*
   (`drive-cleanup`) zmaže, čo už žiadny ďalší beh neobnoví: PBF výrezy
@@ -2137,6 +2138,10 @@ Dve veci, ktoré z toho plynú:
   `shading-vector`, `routing-order`, `wiki`), z ktorých sa po predpone berie
   vždy len najnovšia. Vek a strop ostávajú na týždennom upratovaní, ktoré
   pravidlá mŕtvych použije tiež (`dead` vo [`workers/drive/cache.py`](drive/cache.py)).
+- **Výškový model sa do cache neukladá.** Vrstevnice, skaly aj tieňovanie si ho
+  ťahajú priamo zo skladu (`dem-*`); kópia v cache bola tými istými bajtmi
+  druhýkrát, raz pre každú vrstvu. Vyradené verzie kľúčov (`RETIRED` vo
+  [`workers/drive/cache.py`](drive/cache.py)) zmaže každé upratovanie.
 - **Čo v cache je, ukáže workflow *Maintenance · list only***
   ([`cache-list.yml`](../.github/workflows/cache-list.yml)): tabuľka podľa druhu
   záznamu – ktoré pipeline ho ukladajú, ako dlho ostáva, veľkosti, počty a kópie

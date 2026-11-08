@@ -67,6 +67,9 @@ DATED = ("pbf-v6-", "pbf-mountain-v3-", "planetiler-latest-")
 DATED_GRACE_DAYS = 1
 # saved as prefix + run id, restored by prefix: only the newest is ever read
 TOPPED_UP = ("slope-v1-", "shading-tiles-", "shading-vector-", "routing-order-v1-", "wiki-v3-")
+# key versions no workflow asks for any more; height tiles were a copy of the model stores
+RETIRED = ("demtiles-", "terrain-v4-", "terrain-v5-", "terrain-v6-", "terrain-v7-",
+           "rocks-v1-", "rocks-v2-", "aerial-v1-", "pbf-mountain-v2-")
 _DAY = re.compile(r"-(\d{4}-\d{2}-\d{2})$")
 _RUN = re.compile(r"\d{5,}(-s)?$")
 
@@ -76,7 +79,9 @@ def dead(items, today):
     out, newest = [], set()
     for e in items:
         key = e["full_key"]
-        if key.startswith(DATED):
+        if key.startswith(RETIRED):
+            out.append((e, "retired key version – no workflow asks for it"))
+        elif key.startswith(DATED):
             m = _DAY.search(key)
             try:
                 day = datetime.date.fromisoformat(m.group(1)) if m else None
@@ -108,10 +113,7 @@ KINDS = (
     ("contours-", "Finished contours", HEIGHT),
     ("rocks-", "Finished rocks", HEIGHT),
     ("terrain-", "Finished hillshading and 3D terrain", HEIGHT),
-    ("demtiles-v3-c", "Height tiles for contours", HEIGHT),
-    ("demtiles-v3-r", "Height tiles for rocks", HEIGHT),
-    ("demtiles-v2-t", "Height tiles for hillshading", HEIGHT),
-    ("demtiles-", "Height tiles (older schema)", HEIGHT),
+    ("demtiles-", "Height tiles (retired: a copy of the height-model stores)", "none"),
     ("slope-", "Slope chunks for rocks", HEIGHT),
     ("shading-tiles-", "Shaded relief tiles", "Data · shaded rocks (also inside height-model layers)"),
     ("shading-vector-", "Rock outlines from shading", "Data · shaded rocks (also inside height-model layers)"),
@@ -133,6 +135,8 @@ def kind_of(key):
 
 def kept(prefix, keep_days, keep_days_layers):
     """How long the weekly prune lets an entry of this kind live."""
+    if prefix.startswith(RETIRED):
+        return "retired: the next prune"
     if prefix.startswith(DATED) or any(d.startswith(prefix) for d in DATED):
         return "build day + 1"
     if prefix.startswith(TOPPED_UP) or any(t.startswith(prefix) for t in TOPPED_UP):

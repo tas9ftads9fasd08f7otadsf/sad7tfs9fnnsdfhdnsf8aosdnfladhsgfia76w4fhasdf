@@ -68,11 +68,6 @@ T_SETTINGS="terrain-v8-t$TS${T_OPT}-$B-z${OPT_TERRAIN_MAXZOOM}"
   # entries from before the split are hours of work; an exact key, not a prefix
   LEGACY="contours-v10-c$CS$DC-r$RS$DR-$B-i${CONTOUR_INTERVAL}-z${OPT_CONTOUR_MAXZOOM}-rz${OPT_ROCK_MAXZOOM}p${OPT_ROCK_SOLID}d${OPT_ROCK_FILL_HOLES}-s${OPT_CONTOUR_SMOOTHING}h${CONTOUR_DEM_LOWPASS}t${CONTOUR_SIMPLIFY}x${CONTOUR_SMOOTH}-${ROCK_SLOPE}g${OPT_ROCK_RES}a$RA-${OPT_ROCK_IMG_ASSET}-${SCHEMA_HASH}"
   echo "contours_legacy=$LEGACY"
-  # ---------- downloaded DEM tiles ----------
-  # in a subfolder by source, so one job may hold two models; `v3`: own key per layer
-  echo "demtiles_contours=demtiles-v3-c$CS$DC-$B"
-  echo "demtiles_rocks=demtiles-v3-r$RS$DR-$B"
-  echo "demtiles_terrain=demtiles-v2-t$TS$DT-$B"
   # the slope store: cut-out, model and grid change its parts; a prefix, saved
   # under prefix + run number and restored through `restore-keys`
   echo "slope=slope-v1-$(store_area "$AREA_KEY")-$RS-g${OPT_ROCK_RES}-"

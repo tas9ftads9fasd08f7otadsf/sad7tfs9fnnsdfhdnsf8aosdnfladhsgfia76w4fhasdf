@@ -234,7 +234,8 @@ class Listing(unittest.TestCase):
         self.assertEqual(cache.kind_of("pbf-mountain-v3-tatry-x-2026-11-07")[0], "pbf-mountain-")
         self.assertEqual(cache.kind_of("pbf-v6-zilinsky---t0-2026-11-06")[0], "pbf-")
         self.assertIn("Build world", cache.kind_of("world-src-v1-full-abc-2026-W45")[2])
-        self.assertEqual(cache.kind_of("demtiles-v3-r1-b")[0], "demtiles-v3-r")
+        # 486 height tiles are one retired kind now
+        self.assertEqual(cache.kind_of("demtiles-v3-r1-b")[0], "demtiles-")
         self.assertEqual(cache.kind_of("mystery-v1"), ("mystery-", "Unknown", "?"))
 
     def test_kept_follows_the_prune(self):
