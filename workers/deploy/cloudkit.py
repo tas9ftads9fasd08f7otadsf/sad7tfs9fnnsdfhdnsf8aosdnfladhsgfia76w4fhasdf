@@ -31,6 +31,8 @@ TRIES = 3
 FEATURES = ("features-beta", "features-prod")
 COUNTRY_KEY = "country:"
 ENVIRONMENTS = ("development", "production")
+# production first: a refused development key mustn't keep the app's catalog old
+BOTH = ("production", "development")
 
 
 def log(msg):
@@ -393,13 +395,27 @@ def main(argv=None):
     if os.path.basename(args.catalog) != "maps.json":
         log(f"CloudKit: {args.catalog} is not the app's catalog – not published.")
         return 0
-    environment = os.environ.get("CLOUDKIT_ENV", "").strip() or "production"
-    if environment not in ENVIRONMENTS:
-        raise ValueError(f"CLOUDKIT_ENV is development or production, not {environment}")
+    environments = targets(os.environ.get("CLOUDKIT_ENV"))
     with open(args.catalog, encoding="utf-8") as handle:
         catalog = json.load(handle)
-    publish_to(environment, catalog, args)
-    return 0
+    failed = []
+    for environment in environments:
+        try:
+            publish_to(environment, catalog, args)
+        except (RuntimeError, OSError) as error:
+            log(f"::error::CloudKit {environment}: {error}")
+            failed.append(environment)
+    return 1 if failed else 0
+
+
+def targets(value):
+    """The environments to publish to; unset or `both` is both, Xcode builds read development."""
+    value = (value or "").strip()
+    if value in ("", "both"):
+        return list(BOTH)
+    if value not in ENVIRONMENTS:
+        raise ValueError(f"CLOUDKIT_ENV is development, production or both, not {value}")
+    return [value]
 
 
 def publish_to(environment, catalog, args):
