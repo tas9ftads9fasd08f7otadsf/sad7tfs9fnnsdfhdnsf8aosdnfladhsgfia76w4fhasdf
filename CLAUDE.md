@@ -21,7 +21,9 @@ mapeditor-fe: change all eight together. Each repo's own rules follow.
 
 ## Tests
 
-Every code change brings unit tests; one that shows on screen brings UI tests too. Each test you
+Every code change brings unit tests; one that shows on screen brings UI tests too. A new or fixed
+feature gets tests for what it promises. A bug fix, reported or found, gets a test that fails
+without the fix and stays, so the bug can't come back; its comment names the bug. Each test you
 add or change carries your ticket in its comment (`// 1470 …`). Before pushing, run the unit tests
 of each part you touched; UI tests run at night. A repo missing the tool below gets it with the
 first change that needs it.
@@ -64,8 +66,7 @@ ticket needs code in the app.
 
 ## Local checks
 
-Run the ones for what you changed. Tests live in `workers/tests/`; a `fix:` commit's test fails
-without the fix.
+Run the ones for what you changed; tests live in `workers/tests/`.
 
 - `workers/lint/*.py`, `workers/lint/*.mjs`
 - `workers/deploy/catalog-schema.py maps.json maps-test.json`
