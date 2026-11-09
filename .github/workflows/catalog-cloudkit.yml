@@ -8,8 +8,8 @@ on:
       environment:
         description: "CloudKit environment"
         type: choice
-        options: [development, production]
-        default: production
+        options: [both, development, production]
+        default: both
       force:
         description: "write every node again"
         type: boolean

@@ -307,7 +307,9 @@ class Signing(unittest.TestCase):
 
 class Main(unittest.TestCase):
     def test_without_a_key_nothing_is_published(self):
+        # 491 unset means both environments, so neither may hold a key
         with mock.patch.dict(os.environ, {"CLOUDKIT_KEY_ID_PRODUCTION": "", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "",
+                                          "CLOUDKIT_KEY_ID_DEVELOPMENT": "", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "",
                                           "CLOUDKIT_KEY_FILE": "", "CLOUDKIT_ENV": ""}):
             out = io.StringIO()
             with redirect_stdout(out):
@@ -330,18 +332,42 @@ class Main(unittest.TestCase):
                 self.assertEqual(handle.read(), pem)
             os.remove(cloud.key_file)
 
-    def test_unpinned_publishes_to_production_only(self):
-        keys = {"CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
-                "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
-                "CLOUDKIT_KEY_FILE": "", "CLOUDKIT_ENV": ""}
-        with mock.patch.dict(os.environ, keys), \
+    KEYS = {"CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
+            "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
+            "CLOUDKIT_KEY_FILE": ""}
+
+    def publish_with(self, env, side_effect=None):
+        with mock.patch.dict(os.environ, dict(self.KEYS, **env)), \
                 mock.patch.object(cloudkit, "pem_text", side_effect=lambda text: text), \
                 mock.patch.object(cloudkit, "caller_line", return_value="caller"), \
-                mock.patch.object(cloudkit, "publish") as publish, redirect_stdout(io.StringIO()):
-            self.assertEqual(cloudkit.main(["maps.json"]), 0)
+                mock.patch.object(cloudkit, "publish", side_effect=side_effect) as publish, \
+                redirect_stdout(io.StringIO()) as out:
+            code = cloudkit.main(["maps.json"])
         clouds = [call.args[1] for call in publish.call_args_list]
-        self.assertEqual([(c.environment, c.key_id) for c in clouds], [("production", "prod-id")])
-        os.remove(clouds[0].key_file)
+        for cloud in clouds:
+            os.remove(cloud.key_file)
+        return code, [(c.environment, c.key_id) for c in clouds], out.getvalue()
+
+    def test_unpinned_publishes_to_both_production_first(self):
+        # 491 an Xcode build reads development, which no build wrote: 15 of 43 nodes behind
+        for value in ("", "both"):
+            with self.subTest(value=value):
+                code, clouds, _ = self.publish_with({"CLOUDKIT_ENV": value})
+                self.assertEqual(code, 0)
+                self.assertEqual(clouds, [("production", "prod-id"), ("development", "dev-id")])
+
+    def test_a_refused_environment_doesnt_stop_the_other(self):
+        # 491
+        refused = [RuntimeError("modify x: ACCESS_DENIED"), None]
+        code, clouds, out = self.publish_with({"CLOUDKIT_ENV": ""}, side_effect=refused)
+        self.assertEqual(code, 1)
+        self.assertEqual(clouds, [("production", "prod-id"), ("development", "dev-id")])
+        self.assertIn("CloudKit development has maps.json ✓", out)
+
+    def test_an_unknown_environment_is_an_error(self):
+        # 491
+        with self.assertRaisesRegex(ValueError, "development, production or both"):
+            cloudkit.targets("staging")
 
     def test_the_run_says_where_it_publishes_and_with_which_key(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -370,8 +396,8 @@ class Main(unittest.TestCase):
         with mock.patch.dict(os.environ, env), mock.patch.object(cloudkit, "public_key", return_value="pub"), \
                 mock.patch.object(cloudkit, "publish", side_effect=refused), \
                 mock.patch.object(cloudkit, "caller_line", return_value="caller"), redirect_stdout(out):
-            with self.assertRaises(RuntimeError):
-                cloudkit.main(["maps.json"])
+            # 491 a refusal fails the run once both environments were tried
+            self.assertEqual(cloudkit.main(["maps.json"]), 1)
         self.assertIn("::error::CloudKit production: the account that created the Production key isn't in the "
                       "Admin role of Production › Users", out.getvalue())
 
