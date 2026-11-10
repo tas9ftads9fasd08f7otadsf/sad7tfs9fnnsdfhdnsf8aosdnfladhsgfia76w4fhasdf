@@ -63,5 +63,33 @@ class GitHubStore(unittest.TestCase):
                 self.assertIn("inputs.store != 'github'", steps[1]["if"])
 
 
+class PlanetilerSources(unittest.TestCase):
+    def steps(self):
+        return [st for wf, job, st, way in cache_steps()
+                if wf == "build-map-region.yml"
+                and str((st.get("with") or {}).get("path", "")).strip() == "data/sources"]
+
+    def test_saved_only_after_a_complete_download(self):
+        # 498 a run with osmdata.openstreetmap.de down cached sources without water polygons
+        saves = [st for st in self.steps() if st["uses"].endswith("save")]
+        self.assertEqual(len(saves), 1)
+        self.assertIn("steps.tiles.outputs.sources == 'complete'", saves[0]["if"])
+        self.assertNotIn("hashFiles", saves[0]["if"])
+
+    def test_build_reports_complete_only_past_the_failed_download(self):
+        # 498 the output must come after the loop's `exit 1`, never before
+        with open(os.path.join(ROOT, "workers/tiles/build.sh")) as f:
+            text = f.read()
+        fail = text.index('if [ -z "${DL_OK:-}" ]; then')
+        done = text.index('echo "sources=complete" >> "$GITHUB_OUTPUT"')
+        self.assertLess(text.index("exit 1", fail), done)
+
+    def test_the_partial_entry_is_left_behind(self):
+        # 498 `planetiler-sources-v1` holds the partial download and can't be overwritten
+        restores = [st for st in self.steps() if st["uses"].endswith("restore")]
+        self.assertEqual(len(restores), 1)
+        self.assertNotEqual(restores[0]["with"]["key"], "planetiler-sources-v1")
+
+
 if __name__ == "__main__":
     unittest.main()
