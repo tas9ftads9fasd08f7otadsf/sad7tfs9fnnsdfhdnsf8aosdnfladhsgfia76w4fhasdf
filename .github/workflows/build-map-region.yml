@@ -914,7 +914,7 @@ jobs:
         with:
           path: data/sources
           store: github
-          key: planetiler-sources-v1
+          key: planetiler-sources-v2
 
       - name: Planetiler cache (restore)
         id: planetiler-cache
@@ -955,7 +955,7 @@ jobs:
 
       # Planetiler downloaded its source data during the run (water polygons ~700 MB)
       - name: Planetiler source data cache (save)
-        if: ${{ always() && steps.sources-cache.outputs.cache-hit != 'true' && hashFiles('data/sources/**') != '' }}
+        if: ${{ always() && steps.sources-cache.outputs.cache-hit != 'true' && steps.tiles.outputs.sources == 'complete' }}
         continue-on-error: true
         uses: ./.github/actions/cache-save
         with:

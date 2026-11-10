@@ -52,6 +52,8 @@ if [ -z "${DL_OK:-}" ]; then
   echo "::error::Planetiler source data (water polygons, Natural Earth, lake centerlines) couldn't be downloaded in $DL_TRIES attempts. Usually https://osmdata.openstreetmap.de is down – try the run again shortly. If it persists, give Planetiler a mirror via --water_polygons_url."
   exit 1
 fi
+# the workflow caches `data/sources` only after this; a partial entry would stick for good
+echo "sources=complete" >> "$GITHUB_OUTPUT"
 du -sh data/sources 2>/dev/null || true
 
 # without the cut Planetiler draws water and Natural Earth far beyond the region
