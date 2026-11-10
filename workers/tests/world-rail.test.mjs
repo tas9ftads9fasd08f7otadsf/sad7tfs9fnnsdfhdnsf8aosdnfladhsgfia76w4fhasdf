@@ -32,6 +32,25 @@ test("world style: every variant and theme, relative links, valid", () => {
   }
 });
 
+// 495 Riki Maps AByj: only `ground` holds the states' shapes, drawn as land under the sea
+test("world style: ground draws the states' shapes under the water, the others do not", () => {
+  const drawn = (variant) => {
+    const dir = mkdtempSync(join(tmpdir(), "world-"));
+    try {
+      execFileSync(process.execPath, [WORLD, `--out=${dir}`, `--variant=${variant}`], { stdio: "pipe" });
+      const file = readdirSync(dir).filter((f) => f.endsWith(".json"))[0];
+      return JSON.parse(readFileSync(join(dir, file), "utf8")).layers.map((l) => l["source-layer"]);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  };
+  const ground = drawn("ground");
+  assert.ok(ground.includes("country"));
+  assert.ok(ground.indexOf("country") < ground.indexOf("water"));
+  assert.ok(!drawn("full").includes("country"));
+  assert.ok(!drawn("basic").includes("country"));
+});
+
 test("world style: an unknown variant fails", () => {
   const r = spawnSync(process.execPath, [WORLD, "--out=/tmp/none", "--variant=tiny"], { encoding: "utf8" });
   assert.equal(r.status, 1);

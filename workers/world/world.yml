@@ -86,6 +86,15 @@ layers:
         attributes:
           - key: kind
 
+  # each state's shape, so an app can end a map on its border (Riki Maps AByj)
+  - id: country
+    features:
+      - source: countries
+        geometry: polygon
+        min_zoom: 0
+        attributes:
+          - key: iso
+
   # state labels, a centroid of the polygon
   - id: place
     features:

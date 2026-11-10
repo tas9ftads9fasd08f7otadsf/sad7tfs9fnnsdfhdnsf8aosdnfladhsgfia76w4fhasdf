@@ -2928,9 +2928,11 @@ morí – tá istá úvaha, akou má rýchly test v mene `test4km2`.
 
 **Tretia podoba, `ground`** (kľúč `svet_ground`): vodstvo, jazerá, hranice
 štátov a ich mená – bez regiónov sťahovania, ktoré sú väčšina váhy plnej mapy.
+Od 495 nesie aj plochy štátov (`country`, s `iso`): aplikácia nimi prikryje
+cudzie štáty, takže online vrstvy mapy končia na hranici (rikimaps AByj).
 Je to podklad, ktorý si aplikácia nesie v sebe a kreslí ho namiesto prázdneho
 papiera, keď mapa nemá čo kresliť (rikimaps 2320). Namerané: **5,0 MB na z5,
-8,0 MB na z6**, strop 10 MB.
+8,0 MB na z6** bez plôch štátov, strop 12 MB.
 
 Do aplikácie ide **len odtiaľto**: beh s `variant: ground` a `publish` ho dá
 na Drive a do `maps.json` ako uzol `svet_ground` (bez `regions`, takže ho

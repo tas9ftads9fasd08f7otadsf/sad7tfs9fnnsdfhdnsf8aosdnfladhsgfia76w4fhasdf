@@ -123,6 +123,15 @@ class Variant(unittest.TestCase):
                 self.assertEqual(sorted(l["id"] for l in out["layers"]), sorted(spec["layers"]))
                 self.assertTrue(self.v.map_layers(spec["layers"]))
 
+    def test_ground_carries_each_states_shape(self):
+        # 495 Riki Maps AByj: the app cuts a map on its states' borders, so it needs their shapes
+        out, sources = self.v.schema_for(self.v.pick("ground")["layers"])
+        country = next(l for l in out["layers"] if l["id"] == "country")
+        self.assertEqual([(f["geometry"], f["min_zoom"]) for f in country["features"]], [("polygon", 0)])
+        self.assertEqual([a["key"] for a in country["features"][0]["attributes"]], ["iso"])
+        self.assertIn("countries", sources)
+        self.assertNotIn("country", self.v.pick("full")["layers"] + self.v.pick("basic")["layers"])
+
     def test_map_layers_order_and_once(self):
         raw = {"_names": {"water": ["water"], "lakes": ["water", "lakes"], "places": ["names"]}}
         self.assertEqual(self.v.map_layers(["lakes", "water"], raw), ["water", "lakes"])
