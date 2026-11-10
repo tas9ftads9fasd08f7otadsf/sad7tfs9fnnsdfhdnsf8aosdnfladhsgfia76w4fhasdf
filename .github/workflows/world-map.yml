@@ -30,7 +30,7 @@ on:
           - "7"
           - "8"
       limit_mb:
-        description: "Warn above this many MB of tiles (auto = by variant: full 250, basic 15, ground 10)"
+        description: "Warn above this many MB of tiles (auto = by variant: full 250, basic 15, ground 12)"
         required: false
         default: "auto"
         type: string

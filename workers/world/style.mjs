@@ -53,6 +53,7 @@ const ATTRIBUTION =
 
 /** From which zoom what is drawn – the same numbers as `min_zoom` in `world.yml`. */
 const FROM = {
+  country: 0,
   water: 0,
   lakeMinor: 5,
   boundary: 0,
@@ -76,6 +77,15 @@ function style(themeId) {
       id: "background",
       type: "background",
       paint: { "background-color": c.background }
+    },
+    // states are land too; their shapes are there for an app to cut a map by
+    {
+      id: "country",
+      type: "fill",
+      source: "world",
+      "source-layer": "country",
+      minzoom: FROM.country,
+      paint: { "fill-color": c.background }
     },
     // seas, oceans and lakes
     {

@@ -17,6 +17,7 @@
     "boundary": ["boundaries"],
     "water": ["water", "lakes"],
     "place": [],
+    "country": [],
     "download": ["download_regions"],
     "download_label": []
   },
@@ -42,10 +43,10 @@
   },
 
   "ground": {
-    "label": "ground – sea, lakes, state borders and their names (up to 10 MB)",
+    "label": "ground – sea, lakes, states, their borders and names (up to 12 MB)",
     "region": "svet_ground",
-    "layers": ["water", "boundary", "place"],
-    "limit_mb": 10,
+    "layers": ["water", "country", "boundary", "place"],
+    "limit_mb": 12,
     "glyphs": "from_data",
     "_comment": [
       "The ground the app bundles under a map with nothing to draw.",

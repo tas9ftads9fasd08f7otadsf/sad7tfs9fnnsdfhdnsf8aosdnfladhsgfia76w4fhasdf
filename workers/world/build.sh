@@ -34,7 +34,7 @@ if [ "$Z" -gt 8 ]; then
 fi
 if [ "$Z" -lt 3 ]; then Z=3; fi
 
-# `auto` = the variant's cap (full 250 MB, basic 15 MB, ground 10 MB)
+# `auto` = the variant's cap (full 250 MB, basic 15 MB, ground 12 MB)
 LIMIT_MB="${OPT_LIMIT_MB:-auto}"
 case "$LIMIT_MB" in ''|auto) LIMIT_MB="$VARIANT_LIMIT" ;; esac
 case "$LIMIT_MB" in *[!0-9]*) LIMIT_MB="$VARIANT_LIMIT" ;; esac
