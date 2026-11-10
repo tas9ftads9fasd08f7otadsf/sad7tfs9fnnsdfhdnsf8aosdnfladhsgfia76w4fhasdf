@@ -58,6 +58,12 @@ SOURCES = {
         "mb": 60.0,
         "what": "seas and oceans – from OSM coastlines (simplified, z0–z9)",
     },
+    "ocean": {
+        "url": f"{NE}/ne_10m_ocean.geojson",
+        "file": "ne_10m_ocean.geojson",
+        "mb": 9.7,
+        "what": "seas and oceans – Natural Earth 10m (stand-in for OSM)",
+    },
     "downloads": {
         "url": "https://download.geofabrik.de/index-v1.json",
         "file": "geofabrik-index-v1.json",
@@ -74,7 +80,14 @@ MINIMUM = {
     "lakes": 300,
     "downloads": 100,
     "water": 1000,
+    "ocean": 1,
 }
+
+# osmdata.openstreetmap.de goes down for hours; a coarser sea beats no map
+STAND_IN = {"water": "ocean"}
+
+# written only when every source came from its own server, so the cache keeps it
+COMPLETE = "complete"
 
 ATTEMPTS = 4        # a foreign server may hiccup without failing the run
 TIMEOUT = 120       # s
@@ -123,8 +136,8 @@ def _download_once(url, dest, what, mb):
     return have, time.time() - t0
 
 
-def download(key, where):
-    """Downloads a source into `where` unless there; via `.part` so no half file looks done."""
+def download(key, where, required=True):
+    """Downloads a source into `where` via `.part`; None on failure unless `required`."""
     z = SOURCES[key]
     dest = os.path.join(where, z["file"])
     if os.path.exists(dest) and os.path.getsize(dest) > 0:
@@ -144,6 +157,10 @@ def download(key, where):
                 ValueError) as exc:
             if os.path.exists(dest + ".part"):
                 os.remove(dest + ".part")
+            if attempt == ATTEMPTS and not required:
+                log(f"::warning::{z['what']} couldn't be downloaded in "
+                    f"{ATTEMPTS} attempts ({exc}) from {z['url']}.")
+                return None
             if attempt == ATTEMPTS:
                 raise SystemExit(
                     f"::error::{z['what']} couldn't be downloaded in "
@@ -355,22 +372,51 @@ def prepare_downloads(src, out):
     write_geojson(out, result, "downloads", "download regions")
 
 
-def prepare_water(zip_path, out):
-    """OSM water areas: shapefile in EPSG:3857 → GeoPackage in EPSG:4326 (projection visible in the log)."""
+def fetch_water(where):
+    """OSM water areas, or Natural Earth's ocean when their server fails; (path, key)."""
+    src = download("water", where, required=False)
+    if src:
+        return src, "water"
+    stand_in = STAND_IN["water"]
+    log(f"::warning::The map gets the coarser sea of "
+        f"{SOURCES[stand_in]['what']}. Run again with `rebuild` once "
+        f"osmdata.openstreetmap.de answers, for the OSM coastline.")
+    return download(stand_in, where), stand_in
+
+
+def mark_complete(where, steps):
+    """Marks `where` worth caching when it holds every step's own source; True if so."""
+    marker = os.path.join(where, COMPLETE)
+    done = all(os.path.exists(os.path.join(where, SOURCES[k]["file"]))
+               for k in steps)
+    if done:
+        with open(marker, "w", encoding="utf-8") as f:
+            f.write("\n".join(steps) + "\n")
+    elif os.path.exists(marker):
+        os.remove(marker)
+    return done
+
+
+def prepare_water(path, out, key="water"):
+    """Sea areas (OSM shapefile in a ZIP, or GeoJSON) → GeoPackage in EPSG:4326."""
     if shutil.which("ogr2ogr") is None:
         raise SystemExit(
             "::error::`ogr2ogr` isn't here. Water areas are a shapefile "
             "in EPSG:3857 and need projecting – install `gdal-bin` "
             "(in the pipeline `workers/world/build.sh` does it).")
-    # the file name inside the ZIP changes between releases
-    with zipfile.ZipFile(zip_path) as z:
-        shp = [n for n in z.namelist() if n.lower().endswith(".shp")]
-    if not shp:
-        raise SystemExit(
-            f"::error::`{zip_path}` has no `.shp`. Was the whole file "
-            f"downloaded? Delete it and run again.")
-    source = f"/vsizip/{os.path.abspath(zip_path)}/{shp[0]}"
-    log(f"  water areas: {shp[0]} in the ZIP → {out}")
+    if path.lower().endswith(".zip"):
+        # the file name inside the ZIP changes between releases
+        with zipfile.ZipFile(path) as z:
+            shp = [n for n in z.namelist() if n.lower().endswith(".shp")]
+        if not shp:
+            raise SystemExit(
+                f"::error::`{path}` has no `.shp`. Was the whole file "
+                f"downloaded? Delete it and run again.")
+        source = f"/vsizip/{os.path.abspath(path)}/{shp[0]}"
+        log(f"  water areas: {shp[0]} in the ZIP → {out}")
+    else:
+        source = os.path.abspath(path)
+        log(f"  water areas: {os.path.basename(path)} → {out}")
     t0 = time.time()
     if os.path.exists(out):
         os.remove(out)
@@ -386,10 +432,10 @@ def prepare_water(zip_path, out):
         capture_output=True, text=True, check=False).stdout
     line = [r for r in info.split("\n") if "Feature Count" in r]
     count = int(line[0].split(":")[-1].strip()) if line else 0
-    if count < MINIMUM["water"]:
+    if count < MINIMUM[key]:
         raise SystemExit(
             f"::error::Water areas: `{out}` has {count} features, at least "
-            f"{MINIMUM['water']} expected. The map would have no sea – see the "
+            f"{MINIMUM[key]} expected. The map would have no sea – see the "
             f"`ogr2ogr` log above.")
     log(f"  water areas: {count} areas in {took(time.time() - t0)} "
         f"({human(os.path.getsize(out))})")
@@ -421,6 +467,9 @@ def main():
 
     raw = os.path.join(args.out, "sources")
     os.makedirs(raw, exist_ok=True)
+    # a restored cache brings the marker along; this run must earn it again
+    if os.path.exists(os.path.join(raw, COMPLETE)):
+        os.remove(os.path.join(raw, COMPLETE))
 
     # the plan before the slow part: the foreign network is what takes time
     total = sum(SOURCES[k]["mb"] for k in steps)
@@ -437,10 +486,12 @@ def main():
     for i, k in enumerate(steps, 1):
         log(f"::group::[{i}/{len(steps)}] {SOURCES[k]['what']}")
         t0 = time.time()
-        src = download(k, raw)
         if k == "water":
-            prepare_water(src, os.path.join(args.out, "water.gpkg"))
-        elif k == "boundaries":
+            src, used = fetch_water(raw)
+            prepare_water(src, os.path.join(args.out, "water.gpkg"), used)
+        else:
+            src = download(k, raw)
+        if k == "boundaries":
             prepare_boundaries(src, os.path.join(args.out, "boundaries.geojson"))
         elif k == "regions":
             prepare_regions(src, os.path.join(args.out, "regions.geojson"))
@@ -453,6 +504,8 @@ def main():
         measured.append((k, time.time() - t0))
         log("::endgroup::")
 
+    if not mark_complete(raw, steps):
+        log("Sources aren't all from their own servers – the cache won't keep them.")
     log("Sources are ready:")
     for k, sec in measured:
         log(f"  {k:<11} {took(sec):>8}")

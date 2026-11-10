@@ -111,8 +111,9 @@ jobs:
           OPT_LIMIT_MB: ${{ inputs.limit_mb }}
         run: workers/world/build.sh
 
+      # only whole sources: the key can't be overwritten, so a part would block it all week
       - name: Sources cache (save)
-        if: ${{ always() && hashFiles('data/world/sources/*') != '' }}
+        if: ${{ always() && hashFiles('data/world/sources/complete') != '' }}
         continue-on-error: true
         uses: ./.github/actions/cache-save
         with:
