@@ -1206,10 +1206,8 @@ export const METRES_PER_PX_Z0 = 156543.03 * Math.cos((48.7 * Math.PI) / 180);
 /** Šírka v pixeloch, ktorú má na zemi `metres` – dlaždice majú 512 px. */
 export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 / 2);
 
-/** Residential land reaches this far around a building, in metres on the ground. */
-export const YARD_M = 20;
-/** From this zoom residential land follows the buildings, below it the OSM polygons. */
-export const YARD_FROM_Z = 15;
+/** From this zoom the buildings alone show where people live; below it, the areas. */
+export const BUILDINGS_ALONE_FROM_Z = 15;
 
 /** Length in px of the ticks inside a protected area's border; within the 8 px tile buffer. */
 export const PARK_BAND = [[10, 2.5], [13, 4], [16, 6]];
@@ -3794,26 +3792,7 @@ export function buildStyle({
     // `waterway=dam` ako plocha; v dlaždiciach je od začiatku, štýl ho nekreslil
     ["dam", "Priehrada (plocha)", ["dam"], "dam"]
   ];
-  // osm's residential polygons take in whole meadows; close up the yards show where people live
-  add(
-    {
-      id: "landuse-residential-yard",
-      type: "line",
-      ...(buildingsUrl ? { source: "buildings" } : {}),
-      "source-layer": "building",
-      // settlement-yard shades the houses until here; a fade below would parse every yard twice
-      minzoom: YARD_FROM_Z,
-      layout: { "line-join": "round", "line-cap": "round" },
-      paint: {
-        "line-color": c.residential,
-        "line-width": ["interpolate", ["exponential", 2], ["zoom"],
-          YARD_FROM_Z - 1, realWidthPx(2 * YARD_M, YARD_FROM_Z - 1),
-          MAX_DISPLAY_Z + 2, realWidthPx(2 * YARD_M, MAX_DISPLAY_Z + 2)],
-        "line-opacity": zl([[YARD_FROM_Z - 0.5, 0], [YARD_FROM_Z, 1]])
-      }
-    },
-    ["uzemie", "Obytná zóna – okolie budov", "line", { "line-color": "residential" }]
-  );
+  // osm's residential polygons take in whole meadows; close up only the buildings are drawn
   for (const [id, label, classes, paletteKey] of landuse) {
     add(
       {
@@ -3823,7 +3802,7 @@ export function buildStyle({
         filter: ["in", str("class"), ["literal", classes]],
         paint: {
           "fill-color": c[paletteKey],
-          ...(id === "residential" ? { "fill-opacity": zl([[YARD_FROM_Z - 1, 1], [YARD_FROM_Z, 0]]) } : {})
+          ...(id === "residential" ? { "fill-opacity": zl([[BUILDINGS_ALONE_FROM_Z - 1, 1], [BUILDINGS_ALONE_FROM_Z, 0]]) } : {})
         }
       },
       ["uzemie", label, "area", { "fill-color": paletteKey }]
@@ -4299,7 +4278,7 @@ export function buildStyle({
   );
   // balík `sidla` má každú budovu, aj tú, ktorú OpenMapTiles zahodí
   if (buildingsUrl) {
-    // the built-up area at overview zooms, until the yards take over
+    // the built-up area at overview zooms, until the buildings take over
     add(
       {
         id: "settlement-area",
@@ -4310,31 +4289,10 @@ export function buildStyle({
         maxzoom: 15,
         paint: {
           "fill-color": c.building,
-          "fill-opacity": zl([[11, 0.85], [YARD_FROM_Z - 1, 0.85], [YARD_FROM_Z, 0]])
+          "fill-opacity": zl([[11, 0.85], [BUILDINGS_ALONE_FROM_Z - 1, 0.85], [BUILDINGS_ALONE_FROM_Z, 0]])
         }
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
-    );
-    // hamlets often have no residential polygon in OSM; Mapy shades around their houses
-    add(
-      {
-        id: "settlement-yard",
-        type: "line",
-        source: "buildings",
-        "source-layer": "building",
-        minzoom: 12,
-        maxzoom: YARD_FROM_Z,
-        // a house in a town lies on the town's own fill; tiles without the flag draw every yard
-        filter: ["!=", ["coalesce", ["get", "in_town"], 0], 1],
-        layout: { "line-join": "round", "line-cap": "round" },
-        paint: {
-          "line-color": c.building,
-          "line-width": ["interpolate", ["exponential", 2], ["zoom"],
-            12, realWidthPx(2 * YARD_M, 12), YARD_FROM_Z, realWidthPx(2 * YARD_M, YARD_FROM_Z)],
-          "line-opacity": 0.85
-        }
-      },
-      ["budovy", "Okolie budov mimo obytnej zóny (balík sídla)", "line", { "line-color": "building" }]
     );
     add(
       {
