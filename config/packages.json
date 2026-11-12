@@ -285,7 +285,7 @@
       "symbol": "building.2.fill",
       "part_of": "base",
       "app_detail": "Buildings and the places they make up",
-      "description": "every OSM building with floor area in m², name, kind, levels and address, and place names from city to hamlet, and the base map's buildings and places (.pmtiles)",
+      "description": "every OSM building with floor area in m², name, kind, levels and address, and place names from city to hamlet, and the base map's buildings and places (.pmtiles); a region carries it, and so does a range, without the base map's part",
       "sources": ["osm"],
       "manifest": ["buildings", "omt_settlements"],
       "suffixes": ["-buildings.pmtiles", "-omt-settlements.pmtiles"],

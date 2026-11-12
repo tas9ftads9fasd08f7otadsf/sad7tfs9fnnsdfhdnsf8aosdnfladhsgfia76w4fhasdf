@@ -115,11 +115,12 @@ Mapa · Build svet            základná mapa CELÉHO sveta – podklad pod výb
 
 Mapa · Build mountain        JEDNO POHORIE v detaile: vrstevnice po 5 m,
 package (manuálne, pohorie)  skaly a výškový model z DMR 5.0 v 1 m, cesty,
-                             chodníky, vodstvo a body z OSM, letecké snímky
-                             leta a zimy – aj za hranicou (Tatry v Poľsku)
+                             chodníky, vodstvo, sídla a body z OSM, letecké
+                             snímky leta a zimy – aj za hranicou (Tatry
+                             v Poľsku)
                              ─► balíky contours, rocks, terrain, roads,
-                               paths, water, points, aerial_summer,
-                               aerial_winter pod
+                               paths, water, settlements, points,
+                               aerial_summer, aerial_winter pod
                                `mountains.ranges.<pohorie>` v `maps.json`
                              ▲ ten istý `dem-layers.yml`, len na výreze
                                pohoria a s `mountain: true`; cesty cez
@@ -1127,6 +1128,11 @@ z toho zlúčeného PBF. Smerovaciu sieť pohorie nemá – navigácia ide z kra
 **Vodstvo a body** (`water`, `points`) robí ten istý `water.yml` a
 `workers/features/build.sh` ako kraj, z toho zlúčeného PBF; z features job ide
 do pohoria len polovica s bodmi.
+
+**Sídla** (`settlements`) robí ten istý `buildings.yml` ako kraj, z toho
+zlúčeného PBF a orezané na okraj pohoria: budovy s výmerou a menom, plochy sídiel
+a ich mená (`<pohorie>-buildings.pmtiles`, zoom z `buildings_maxzoom`). Časť
+základnej mapy (`omt_settlements`) pohorie nemá, lebo nemá základnú mapu.
 
 **Značené trasy pohorie nemá** – kreslia ich jeho chodníky (`paths`). Balík
 `trails` z predošlých behov je v `MOUNTAIN_RETIRED`
