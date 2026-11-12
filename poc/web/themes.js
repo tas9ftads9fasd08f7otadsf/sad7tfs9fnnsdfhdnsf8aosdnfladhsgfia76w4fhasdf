@@ -1171,8 +1171,9 @@ export const TRAIL_PITCH = TRAIL_STRIPE;
 // Pod z16 rozhodujú metre, nie šírka čiary – pásik by inak obiehal vlásenku
 // oblúkom širším než zákruta a v mape by z neho bola plocha.
 // Stráži to `workers/lint/trails.mjs`.
+// 502: from z16 the line is a minor road's casing, which most marked roads are
 export const TRAIL_OFFSET_ROAD = [
-  [9, 0.06], [11, 0.24], [13, 0.95], [14, 1.9], [16, 6.6], [20, 66.8]
+  [9, 0.06], [11, 0.24], [13, 0.95], [14, 1.9], [16, 6.6], [20, 44]
 ];
 export const TRAIL_OFFSET_PATH = [
   [9, 0.04], [11, 0.16], [13, 0.63], [14, 1.27], [16, 3.6], [20, 11.0]
