@@ -3,14 +3,14 @@ run-name: "${{ github.workflow }} · ${{ inputs.mountain }}"
 
 # ONE MOUNTAIN RANGE IN DETAIL – 5 m contours, rocks and a height model
 # from DMR 5.0 at 1 m (Sonny's 20 m beyond the Slovak border), roads, paths,
-# water and points of interest from OSM, and aerial photos of summer and winter,
+# water, settlements and points of interest from OSM, and aerial photos of summer and winter,
 # over the range alone (`maps.mountains.ranges` of map-settings.json) – across borders where it
 # runs on. No waymarked trails: the range's Paths draw them.
 #
 # The same DEM layers the map build makes (`dem-layers.yml`), on the range's
 # cut-out and with the cut-out's model for the height tiles too; roads and
-# paths from `transport.yml`, water from `water.yml`, points from the features
-# job. Every setting, the photo source too, is the range's in
+# paths from `transport.yml`, water from `water.yml`, settlements from
+# `buildings.yml`, points from the features job. Every setting, the photo source too, is the range's in
 # `config/map-settings.json`. Published
 # under `mountains.ranges` in `maps.json`, a category of its own beside the
 # countries; the app draws a range alone or over the regions it crosses.
@@ -134,6 +134,7 @@ jobs:
       opt_publish: ${{ steps.opts.outputs.opt_publish }}
       opt_apple_archive: ${{ steps.opts.outputs.opt_apple_archive }}
       opt_size_limit_mb: ${{ steps.opts.outputs.opt_size_limit_mb }}
+      opt_buildings_maxzoom: ${{ steps.opts.outputs.opt_buildings_maxzoom }}
       opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
       opt_aerial_sources: ${{ steps.opts.outputs.opt_aerial_sources }}
       opt_aerial_maxzoom: ${{ steps.opts.outputs.opt_aerial_maxzoom }}
@@ -360,6 +361,20 @@ jobs:
       size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
       day: ${{ needs.plan.outputs.day }}
 
+  # buildings and place names: the map build's workflow over the range's PBF
+  settlements:
+    name: Settlements
+    needs: [plan, osm]
+    uses: ./.github/workflows/buildings.yml
+    secrets: inherit
+    with:
+      region_key: ${{ needs.plan.outputs.key }}
+      region_bbox: ${{ needs.plan.outputs.bbox }}
+      region_clip: ${{ 'true' }}
+      maxzoom: ${{ needs.plan.outputs.opt_buildings_maxzoom }}
+      size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
+      day: ${{ needs.plan.outputs.day }}
+
   # settlements down to their parts, parks, ranges, ridges and valleys (`workers/boundaries/range.yml`)
   boundaries:
     name: Borders and natural areas
@@ -499,9 +514,9 @@ jobs:
 
   publish:
     name: Package to Drive and the catalog
-    needs: [plan, dem, transport, points, water, ski, boundaries, aerial]
+    needs: [plan, dem, transport, points, water, ski, settlements, boundaries, aerial]
     # half a new range would be a lying package
-    if: ${{ !cancelled() && needs.dem.result == 'success' && needs.transport.result == 'success' && needs.points.result == 'success' && needs.water.result == 'success' && needs.ski.result != 'failure' && needs.boundaries.result == 'success' && needs.aerial.result == 'success' && needs.plan.outputs.opt_publish == 'true' }}
+    if: ${{ !cancelled() && needs.dem.result == 'success' && needs.transport.result == 'success' && needs.points.result == 'success' && needs.water.result == 'success' && needs.ski.result != 'failure' && needs.settlements.result == 'success' && needs.boundaries.result == 'success' && needs.aerial.result == 'success' && needs.plan.outputs.opt_publish == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       # `maps.json`, the one place anything reaches the repository
@@ -533,6 +548,8 @@ jobs:
       WATER_MAXZOOM: ${{ needs.water.outputs.maxzoom }}
       SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
       SKI_MAXZOOM: ${{ needs.ski.outputs.maxzoom }}
+      BUILDINGS_ENABLED: ${{ needs.settlements.outputs.enabled || 'false' }}
+      BUILDINGS_MAXZOOM: ${{ needs.settlements.outputs.maxzoom }}
       POINTS_ENABLED: ${{ needs.points.outputs.enabled || 'false' }}
       POINTS_MAXZOOM: "15"
       BOUNDARIES_ENABLED: ${{ needs.boundaries.outputs.enabled || 'false' }}
@@ -594,7 +611,7 @@ jobs:
 
   apple-archive:
     name: Package as Apple Archive (.aar)
-    needs: [plan, dem, transport, points, water, ski, boundaries, aerial, publish]
+    needs: [plan, dem, transport, points, water, ski, settlements, boundaries, aerial, publish]
     if: ${{ !cancelled() && needs.publish.outputs.published == 'success' && needs.plan.outputs.opt_apple_archive == 'true' }}
     # intel: arm runners left `.aar` jobs waiting for one
     runs-on: macos-15-intel
@@ -617,6 +634,7 @@ jobs:
       PATHS_ENABLED: ${{ needs.transport.outputs.paths_enabled || 'false' }}
       WATER_ENABLED: ${{ needs.water.outputs.enabled || 'false' }}
       SKI_ENABLED: ${{ needs.ski.outputs.enabled || 'false' }}
+      BUILDINGS_ENABLED: ${{ needs.settlements.outputs.enabled || 'false' }}
       POINTS_ENABLED: ${{ needs.points.outputs.enabled || 'false' }}
       BOUNDARIES_ENABLED: ${{ needs.boundaries.outputs.enabled || 'false' }}
     steps:

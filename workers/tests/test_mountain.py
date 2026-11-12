@@ -71,6 +71,24 @@ class Registry(unittest.TestCase):
             if name not in ("settings", "all", "plan"):
                 self.assertIn("plan", job.get("needs") or [], name)
 
+    def test_the_range_build_makes_and_publishes_settlements(self):
+        # 501 built from the range's PBF, clipped to it, and named to the packer
+        import yaml
+        with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
+            jobs = yaml.safe_load(f)["jobs"]
+        job = jobs["settlements"]
+        self.assertEqual(job["uses"], "./.github/workflows/buildings.yml")
+        self.assertEqual(job["needs"], ["plan", "osm"])
+        self.assertEqual(job["with"]["region_clip"], "${{ 'true' }}")
+        self.assertIn("opt_buildings_maxzoom", jobs["plan"]["outputs"])
+        for name in ("publish", "apple-archive"):
+            with self.subTest(job=name):
+                self.assertIn("settlements", jobs[name]["needs"])
+                self.assertIn("needs.settlements.outputs.enabled",
+                              jobs[name]["env"]["BUILDINGS_ENABLED"])
+        self.assertIn("needs.settlements.result == 'success'", jobs["publish"]["if"])
+        self.assertIn("settlements", names.MOUNTAIN_PACKAGES)
+
     def test_a_range_has_contours_every_five_metres(self):
         opts = worker("plan/options.py")
         settings, regions = opts.load_settings(), registry("regions")
@@ -246,6 +264,19 @@ class Manifest(unittest.TestCase):
         self.assertNotIn("aerial_winter_source", reg, "no photos, so no source to credit")
         self.assertEqual(catalog.region_models({}, reg)["aerial_summer"], "ofmozaika_sk")
 
+    def test_settlements_are_the_buildings_file(self):
+        # 501 a range carries its buildings and place names
+        site = self.site("buildings")
+        with env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4", BUILDINGS_MAXZOOM="14"):
+            got = manifest.manifest(site)
+            with redirect_stdout(io.StringIO()):
+                self.assertEqual(manifest.main([site]), 0, "settlements alone are a package")
+        reg = got["regions"]["vysoke_tatry"]
+        self.assertEqual((reg["buildings"], reg["buildings_maxzoom"]),
+                         ("tiles/vysoke_tatry-buildings.pmtiles", 14))
+        self.assertEqual(catalog.tiles_paths(got, reg)["buildings"],
+                         "tiles/vysoke_tatry-buildings.pmtiles")
+
     def test_a_missing_layer_is_left_out(self):
         site = self.site("contours")
         with env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4", CONTOUR_INTERVAL="5"):
@@ -345,8 +376,9 @@ class Publish(unittest.TestCase):
         self.addCleanup(shutil.rmtree, site)
         os.makedirs(os.path.join(site, "tiles"))
         # 490 ski and the range's boundaries were built, then left out of the publish
+        # 501 settlements are published too
         for kind in ("contours", "rocks", "terrain", "transport", "paths", "water", "points",
-                     "aerial_summer", "ski", "range-boundaries"):
+                     "aerial_summer", "ski", "range-boundaries", "buildings"):
             with open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb") as f:
                 f.write(b"x")
         with open(os.path.join(site, "tiles", "manifest.json"), "w") as f:
@@ -364,7 +396,8 @@ class Publish(unittest.TestCase):
                                           "vysoke_tatry-boundaries.zip",
                                           "vysoke_tatry-contours.zip", "vysoke_tatry-paths.zip",
                                           "vysoke_tatry-points.zip", "vysoke_tatry-roads.zip",
-                                          "vysoke_tatry-rocks.zip", "vysoke_tatry-ski.zip",
+                                          "vysoke_tatry-rocks.zip",
+                                          "vysoke_tatry-settlements.zip", "vysoke_tatry-ski.zip",
                                           "vysoke_tatry-terrain.zip", "vysoke_tatry-water.zip"])
         self.assertRegex(run.stdout, r"vysoke_tatry-trails\.zip .* NOT IN THIS BUILD",
                          "the old trails package is deleted, not left behind")
