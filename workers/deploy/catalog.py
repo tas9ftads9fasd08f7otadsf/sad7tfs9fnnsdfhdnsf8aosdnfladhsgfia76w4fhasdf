@@ -431,6 +431,25 @@ COMMENT_TEST = ("QUICK TEST runs – terrain covers only a few km² of the cut-o
                 "these are NOT maps to download; finished maps are in maps.json. ")
 
 
+def online_aerial(sources):
+    """The photo sources whose server goes deeper than their packages, as the app reads them."""
+    return {key: {"online": source["url"], "online_maxzoom": source["online_maxzoom"]}
+            for key, source in sources.items()
+            if str(source.get("url", "")).startswith("https://") and source.get("online_maxzoom")}
+
+
+def name_online_aerial(data, sources):
+    """Under `mountains`, as an unknown top-level key would read as a country to the app."""
+    category = data.get(names.MOUNTAINS)
+    if not isinstance(category, dict):
+        return
+    online = online_aerial(sources)
+    if online:
+        category["aerial_sources"] = online
+    else:
+        category.pop("aerial_sources", None)
+
+
 def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
                   cat=None, layers=None, owns=None, base_parts=None,
                   retired=(), live=None, drive=None):
@@ -462,6 +481,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         category["name"] = MOUNTAINS_NAME
         node = category.setdefault(names.RANGES, {}).setdefault(cat[1], {})
         name_node(node, regions, cat[1], "mountain")
+        name_online_aerial(data, map_settings.aerial_sources())
     else:
         country = data.setdefault(cat[0], {})
         name_node(country, regions, cat[0], "region")
