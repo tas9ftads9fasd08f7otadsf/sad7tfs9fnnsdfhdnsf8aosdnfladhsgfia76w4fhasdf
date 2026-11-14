@@ -89,6 +89,23 @@ class Registry(unittest.TestCase):
         self.assertIn("needs.settlements.result == 'success'", jobs["publish"]["if"])
         self.assertIn("settlements", names.MOUNTAIN_PACKAGES)
 
+    def test_the_range_build_makes_and_publishes_its_trails(self):
+        # 504 built from the range's PBF, clipped to it, and waited for by both packers
+        import yaml
+        with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
+            jobs = yaml.safe_load(f)["jobs"]
+        steps = {s["name"]: s for s in jobs["trails"]["steps"]}
+        build = steps["Trails from OSM relations → PMTiles"]
+        self.assertEqual(build["run"], "workers/trails/build.sh")
+        self.assertEqual(build["env"]["OPT_REGION_CLIP"], "true")
+        self.assertEqual(jobs["trails"]["needs"], ["plan", "osm"])
+        for name in ("publish", "apple-archive"):
+            with self.subTest(job=name):
+                self.assertIn("trails", jobs[name]["needs"])
+        self.assertIn("needs.trails.result == 'success'", jobs["publish"]["if"])
+        self.assertIn("trails", names.MOUNTAIN_PACKAGES)
+        self.assertFalse(hasattr(names, "MOUNTAIN_RETIRED"), "trails are no longer retired")
+
     def test_a_range_has_contours_every_five_metres(self):
         opts = worker("plan/options.py")
         settings, regions = opts.load_settings(), registry("regions")
@@ -250,7 +267,9 @@ class Manifest(unittest.TestCase):
                  COUNTRIES="SK,PL", WATER_MAXZOOM="14", AERIAL_SUMMER_SOURCE="ofmozaika_sk",
                  AERIAL_WINTER_SOURCE="nobody"):
             reg = manifest.manifest(site)["regions"]["vysoke_tatry"]
-        self.assertNotIn("trails", reg, "a range's Paths draw its trails")
+        # 504 a range carries its waymarked trails again; it has no base map to hold them
+        self.assertEqual((reg["trails"], reg["trails_maxzoom"]),
+                         ("tiles/vysoke_tatry-trails.pmtiles", 14))
         self.assertEqual((reg["water"], reg["water_maxzoom"]), ("tiles/vysoke_tatry-water.pmtiles", 14))
         self.assertEqual((reg["points"], reg["points_maxzoom"]), ("tiles/vysoke_tatry-points.pmtiles", 15))
         self.assertEqual(reg["countries"], ["SK", "PL"])
@@ -377,8 +396,8 @@ class Publish(unittest.TestCase):
         os.makedirs(os.path.join(site, "tiles"))
         # 490 ski and the range's boundaries were built, then left out of the publish
         # 501 settlements are published too
-        for kind in ("contours", "rocks", "terrain", "transport", "paths", "water", "points",
-                     "aerial_summer", "ski", "range-boundaries", "buildings"):
+        for kind in ("contours", "rocks", "terrain", "transport", "paths", "trails", "water",
+                     "points", "aerial_summer", "ski", "range-boundaries", "buildings"):
             with open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb") as f:
                 f.write(b"x")
         with open(os.path.join(site, "tiles", "manifest.json"), "w") as f:
@@ -398,9 +417,10 @@ class Publish(unittest.TestCase):
                                           "vysoke_tatry-points.zip", "vysoke_tatry-roads.zip",
                                           "vysoke_tatry-rocks.zip",
                                           "vysoke_tatry-settlements.zip", "vysoke_tatry-ski.zip",
-                                          "vysoke_tatry-terrain.zip", "vysoke_tatry-water.zip"])
-        self.assertRegex(run.stdout, r"vysoke_tatry-trails\.zip .* NOT IN THIS BUILD",
-                         "the old trails package is deleted, not left behind")
+                                          "vysoke_tatry-terrain.zip", "vysoke_tatry-trails.zip",
+                                          "vysoke_tatry-water.zip"])
+        # 504 the trails are published again, not deleted as a retired package
+        self.assertNotRegex(run.stdout, r"vysoke_tatry-trails\.zip .* NOT IN THIS BUILD")
         self.assertIn("mountains/vysoke_tatry", run.stdout)
 
 

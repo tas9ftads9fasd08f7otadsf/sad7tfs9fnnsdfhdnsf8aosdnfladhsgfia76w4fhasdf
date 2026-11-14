@@ -60,10 +60,9 @@ MOUNTAINS = "mountains"
 RANGES = "ranges"
 # a region's base map carries the trails; a range has no base map
 MOUNTAIN_ONLY = ("trails", "aerial_summer", "aerial_winter")
-MOUNTAIN_PACKAGES = ("terrain", "contours", "rocks", "roads", "paths", "water", "points",
-                     "ski", "settlements", "boundaries", "aerial_summer", "aerial_winter")
-# a range's Paths draw its waymarked trails; an old package of them is deleted
-MOUNTAIN_RETIRED = ("trails",)
+MOUNTAIN_PACKAGES = ("terrain", "contours", "rocks", "roads", "paths", "trails", "water",
+                     "points", "ski", "settlements", "boundaries", "aerial_summer",
+                     "aerial_winter")
 
 
 def mountain_country():
