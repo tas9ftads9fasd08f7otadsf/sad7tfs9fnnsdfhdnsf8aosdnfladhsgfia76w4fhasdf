@@ -34,6 +34,12 @@ definitions:
     # how hard a mountain path is to walk, and whether it can be seen
     - key: sac_scale
     - key: trail_visibility
+    # a climbing route on a path (`route`), its UIAA grade, and how hard a via ferrata is
+    - key: climbing
+    - key: climbing_grade
+      value:
+        tag_value: "climbing:grade:uiaa"
+    - key: via_ferrata_scale
     - key: bridge
     - key: tunnel
     - key: layer
@@ -104,6 +110,42 @@ examples:
           family: highway
           sac_scale: demanding_mountain_hiking
           trail_visibility: intermediate
+
+  - name: A climbing route says so and carries its UIAA grade
+    input:
+      source: osm
+      geometry: line
+      tags:
+        highway: path
+        climbing: route
+        climbing:grade:uiaa: "3"
+        sac_scale: demanding_alpine_hiking
+    output:
+      - layer: paths
+        geometry: line
+        min_zoom: 13
+        tags:
+          class: path
+          family: highway
+          climbing: route
+          climbing_grade: "3"
+          sac_scale: demanding_alpine_hiking
+
+  - name: A via ferrata carries how hard it is
+    input:
+      source: osm
+      geometry: line
+      tags:
+        highway: via_ferrata
+        via_ferrata_scale: "2"
+    output:
+      - layer: paths
+        geometry: line
+        min_zoom: 13
+        tags:
+          class: via_ferrata
+          family: highway
+          via_ferrata_scale: "2"
 
   - name: A pedestrian street is a path from z11
     input:
