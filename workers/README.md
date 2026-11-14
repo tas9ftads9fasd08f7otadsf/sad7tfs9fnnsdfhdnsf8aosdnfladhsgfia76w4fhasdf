@@ -115,11 +115,11 @@ Mapa · Build svet            základná mapa CELÉHO sveta – podklad pod výb
 
 Mapa · Build mountain        JEDNO POHORIE v detaile: vrstevnice po 5 m,
 package (manuálne, pohorie)  skaly a výškový model z DMR 5.0 v 1 m, cesty,
-                             chodníky, vodstvo, sídla a body z OSM, letecké
-                             snímky leta a zimy – aj za hranicou (Tatry
-                             v Poľsku)
+                             chodníky, značené trasy, vodstvo, sídla a body
+                             z OSM, letecké snímky leta a zimy – aj za
+                             hranicou (Tatry v Poľsku)
                              ─► balíky contours, rocks, terrain, roads,
-                               paths, water, settlements, points,
+                               paths, trails, water, settlements, points,
                                aerial_summer, aerial_winter pod
                                `mountains.ranges.<pohorie>` v `maps.json`
                              ▲ ten istý `dem-layers.yml`, len na výreze
@@ -1134,9 +1134,10 @@ zlúčeného PBF a orezané na okraj pohoria: budovy s výmerou a menom, plochy 
 a ich mená (`<pohorie>-buildings.pmtiles`, zoom z `buildings_maxzoom`). Časť
 základnej mapy (`omt_settlements`) pohorie nemá, lebo nemá základnú mapu.
 
-**Značené trasy pohorie nemá** – kreslia ich jeho chodníky (`paths`). Balík
-`trails` z predošlých behov je v `MOUNTAIN_RETIRED`
-([`deploy/names.py`](deploy/names.py)): beh ho na Drive zmaže a z katalógu vyhodí.
+**Značené trasy** (`trails`) robí ten istý `workers/trails/build.sh` ako kraj,
+z toho zlúčeného PBF. Kraj ich nesie v základnej mape; pohorie ju nemá, tak sú
+balíkom samy pre seba. Appka ich kreslí s chodníkmi pohoria (časť Chodníky) a
+vypína prepínačom Značené trasy.
 
 **Letecké snímky** (`aerial_summer`, `aerial_winter`) sú JPEG dlaždice
 zdroja, ktorý pohorie vyberie nastavením `aerial_summer` / `aerial_winter`
