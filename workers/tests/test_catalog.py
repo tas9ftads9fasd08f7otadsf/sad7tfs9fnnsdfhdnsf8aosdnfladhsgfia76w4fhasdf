@@ -228,6 +228,44 @@ class Unchanged(unittest.TestCase):
         self.assertEqual(maps["water"]["run"], "10")
 
 
+class OnlineAerial(unittest.TestCase):
+    # 503: the app loads a source's zooms past its packages from this server
+    def test_only_an_https_source_with_a_depth_is_named(self):
+        sources = {"deep": {"url": "https://a/{z}/{x}/{y}.jpg", "maxzoom": 17, "online_maxzoom": 19},
+                   "offline": {"url": "https://b/{z}/{x}/{y}.jpg", "maxzoom": 17},
+                   "plain": {"url": "http://c/{z}/{x}/{y}.jpg", "online_maxzoom": 19}}
+        self.assertEqual(catalog.online_aerial(sources),
+                         {"deep": {"online": "https://a/{z}/{x}/{y}.jpg", "online_maxzoom": 19}})
+
+    # 503: a top-level key would read as a country, so it sits in the mountains category
+    def test_named_under_mountains_and_dropped_when_gone(self):
+        data = {"mountains": {"ranges": {}}, "slovensko": {}}
+        catalog.name_online_aerial(data, {"a": {"url": "https://a", "online_maxzoom": 19}})
+        self.assertEqual(data["mountains"]["aerial_sources"], {"a": {"online": "https://a", "online_maxzoom": 19}})
+        catalog.name_online_aerial(data, {})
+        self.assertNotIn("aerial_sources", data["mountains"])
+        countries = {"slovensko": {}}
+        catalog.name_online_aerial(countries, {"a": {"url": "https://a", "online_maxzoom": 19}})
+        self.assertEqual(countries, {"slovensko": {}})
+
+    # 503: the summer photos' own server goes two zooms past their packages
+    def test_the_settings_name_freemap(self):
+        online = catalog.online_aerial(catalog.map_settings.aerial_sources())
+        self.assertEqual(online["ofmozaika_sk"]["online_maxzoom"], 19)
+
+    # 503
+    def test_a_range_write_names_the_sources(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
+                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}):
+            path = os.path.join(tmp, "maps.json")
+            catalog.write_catalog(path, ["mountains", "vysoke_tatry"], catalog.map_settings.regions(),
+                                  [("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1")],
+                                  {"regions": {}}, owns=["water"])
+            with open(path) as f:
+                written = json.load(f)["mountains"]
+        self.assertIn("ofmozaika_sk", written["aerial_sources"])
+
+
 class Merge(unittest.TestCase):
     def test_three_way(self):
         base = {"sk": {"a": 1, "b": 1, "gone": 1}}
