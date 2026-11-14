@@ -481,7 +481,6 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         category["name"] = MOUNTAINS_NAME
         node = category.setdefault(names.RANGES, {}).setdefault(cat[1], {})
         name_node(node, regions, cat[1], "mountain")
-        name_online_aerial(data, map_settings.aerial_sources())
     else:
         country = data.setdefault(cat[0], {})
         name_node(country, regions, cat[0], "region")
@@ -494,6 +493,8 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         subs = node.setdefault("subregions", {})
         node = subs.setdefault(cat[2], {})
         name_node(node, regions, cat[2], "area")
+    # every build, or the sources wait for the next range build to be published
+    name_online_aerial(data, map_settings.aerial_sources())
 
     reg = region_entry(man)
     if only:

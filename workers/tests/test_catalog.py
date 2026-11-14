@@ -265,6 +265,20 @@ class OnlineAerial(unittest.TestCase):
                 written = json.load(f)["mountains"]
         self.assertIn("ofmozaika_sk", written["aerial_sources"])
 
+    # 507: only range builds named them, so a catalog of region builds since 503 had none
+    def test_a_region_write_names_the_sources_too(self):
+        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
+                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10"}):
+            path = os.path.join(tmp, "maps.json")
+            with open(path, "w") as f:
+                json.dump({"mountains": {"ranges": {}}}, f)
+            catalog.write_catalog(path, ["slovensko", "bratislavsky"], catalog.map_settings.regions(),
+                                  [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)],
+                                  {"regions": {}}, owns=["terrain"])
+            with open(path) as f:
+                written = json.load(f)["mountains"]
+        self.assertIn("ofmozaika_sk", written["aerial_sources"])
+
 
 class Merge(unittest.TestCase):
     def test_three_way(self):
