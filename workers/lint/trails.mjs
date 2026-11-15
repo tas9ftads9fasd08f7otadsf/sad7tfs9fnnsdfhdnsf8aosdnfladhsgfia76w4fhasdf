@@ -29,7 +29,9 @@ import {
   TRAIL_OFFSET_ROAD,
   TRAIL_OFFSET_PATH,
   TRAIL_PITCH,
+  TRAIL_PITCH_WALK,
   TRAIL_STRIPE,
+  TRAIL_STRIPE_WALK,
   TRAIL_OFFSET_LIMIT_M,
   TRAIL_JOIN,
   METRES_PER_PX_Z0,
@@ -85,7 +87,9 @@ if (!sideBlock) {
 const curves = [
   ["TRAIL_OFFSET_ROAD", TRAIL_OFFSET_ROAD],
   ["TRAIL_OFFSET_PATH", TRAIL_OFFSET_PATH],
-  ["TRAIL_PITCH", TRAIL_PITCH]
+  ["TRAIL_PITCH", TRAIL_PITCH],
+  ["TRAIL_STRIPE_WALK", TRAIL_STRIPE_WALK],
+  ["TRAIL_PITCH_WALK", TRAIL_PITCH_WALK]
 ];
 for (const [name, stops] of curves) {
   const zooms = stops.map(([z]) => z);
@@ -156,6 +160,12 @@ for (const key of ["side", "off", "lane", "way"]) {
 // 7. the pitch of two trails is the stripe width – the same curve and interpolation
 const sameStops = (a, b) =>
   a.length === b.length && a.every(([z, v], i) => z === b[i][0] && v === b[i][1]);
+if (!sameStops(TRAIL_PITCH_WALK, TRAIL_STRIPE_WALK)) {
+  bad.push(
+    "TRAIL_PITCH_WALK isn't TRAIL_STRIPE_WALK – the pitch of two walking trails must be " +
+      "the stripe width, or the background shows between them."
+  );
+}
 if (!sameStops(TRAIL_PITCH, TRAIL_STRIPE)) {
   bad.push(
     "TRAIL_PITCH isn't TRAIL_STRIPE – the pitch of two trails must be the stripe " +
@@ -194,11 +204,12 @@ if (!stripeLayer) {
   }
 }
 
-// 8. the offset in metres: at z13 a pixel is twelve metres
+// 8. the offset in metres: at z13 a pixel is six metres
 for (const [key, stops] of [["road", TRAIL_OFFSET_ROAD], ["path", TRAIL_OFFSET_PATH]]) {
   const limit = TRAIL_OFFSET_LIMIT_M[key];
   for (const [z, px] of stops) {
-    const metres = px * (METRES_PER_PX_Z0 / 2 ** z);
+    // tiles are 512 px, as in `realWidthPx`
+    const metres = px * (METRES_PER_PX_Z0 / 2 / 2 ** z);
     if (metres > limit * 1.05) {
       bad.push(
         `The stripe offset from the ${key === "road" ? "road" : "path"} at z${z} is ` +

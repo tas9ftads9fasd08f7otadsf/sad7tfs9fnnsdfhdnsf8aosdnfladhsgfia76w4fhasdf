@@ -1,7 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildStyle, normalizeOverrides, TRAIL_STRIPE, TRAIL_TYPE_IDS } from "../../poc/web/themes.js";
+import {
+  buildStyle, normalizeOverrides, TRAIL_STRIPE, TRAIL_STRIPE_WALK, TRAIL_TYPES, TRAIL_TYPE_IDS
+} from "../../poc/web/themes.js";
 import { dashValue } from "../../poc/web/patterns.js";
 
 const saved = JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)));
@@ -21,7 +23,9 @@ const stops = (expr) => expr.slice(3).filter((_, i) => i % 2 === 1);
 // 443 a narrower stroke than the pitch leaves gaps between trails on one path
 test("every trail is drawn as wide as the pitch between trails", () => {
   for (const id of TRAIL_TYPE_IDS) {
-    assert.deepEqual(stops(byId(`trail-${id}`).paint["line-width"]), TRAIL_STRIPE.map(([, w]) => w), id);
+    // 508 walking routes are wider than cycle ones, each side keeps its own pitch
+    const curve = TRAIL_TYPES.find((t) => t.id === id).side === 1 ? TRAIL_STRIPE_WALK : TRAIL_STRIPE;
+    assert.deepEqual(stops(byId(`trail-${id}`).paint["line-width"]), curve.map(([, w]) => w), id);
   }
 });
 
@@ -57,4 +61,13 @@ test("local routes start at z12 and regional ones at z11", () => {
     assert.ok(at(opacity, 9, "national") > 0.7, `${id} national at z9`);
   }
   assert.equal(at(byId("trail-halo").paint["line-opacity"], 11.5, "local"), 0);
+});
+
+// 508 Mapy draws a hiking stripe about twice as wide as a cycle route's dots
+test("walking stripes are about twice as wide as cycle ones from z13 to z16", () => {
+  const wide = Object.fromEntries(TRAIL_STRIPE_WALK);
+  const thin = Object.fromEntries(TRAIL_STRIPE);
+  for (const z of [13, 14, 16]) {
+    assert.ok(wide[z] / thin[z] >= 1.6 && wide[z] / thin[z] <= 2.1, `z${z}: ${wide[z]} vs ${thin[z]}`);
+  }
 });
