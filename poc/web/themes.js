@@ -1167,9 +1167,9 @@ export const TRAIL_STRIPE = [
 /** Rozostup dvoch trás = šírka pásika. Tá istá krivka, nie kópia. */
 export const TRAIL_PITCH = TRAIL_STRIPE;
 
-/** Walking routes (hiking, ferrata, ski, horse) are drawn about twice as wide as cycle ones. */
+/** Walking routes (hiking, ferrata, ski, horse): as wide as cycle ones, a little wider close up. */
 export const TRAIL_STRIPE_WALK = [
-  [9, 1.2], [11, 2.3], [13, 3.5], [14, 3.3], [16, 3.4], [20, 7]
+  [9, 1.2], [11, 2.3], [13, 1.9], [14, 1.9], [16, 2.8], [20, 6]
 ];
 export const TRAIL_PITCH_WALK = TRAIL_STRIPE_WALK;
 
