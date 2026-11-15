@@ -1223,6 +1223,9 @@ export const PATH_GROUND_MIN_Z = 16;
 export const TRAIL_GAP_ZOOM = 16;
 const atZoom = (stops, z) => (stops.find(([sz]) => sz === z) || [, 0])[1];
 
+/** Zoom a tier's routes start at; long-distance ones show from the overview. */
+export const TRAIL_TIER_MINZOOM = { regional: 11, local: 12 };
+
 /** One stripe per route (`route`), or one per mark colour, as Mapy.com draws them. */
 export const TRAIL_LANES = ["route", "colour"];
 
@@ -4896,6 +4899,27 @@ export function buildStyle({
       3
     ];
 
+    // opacity stops with the routes of a younger tier held back until their zoom
+    const tierGated = (base) => {
+      const at = (z) => {
+        const i = base.findIndex(([bz]) => bz >= z);
+        if (i < 0) return base[base.length - 1][1];
+        if (i === 0 || base[i][0] === z) return base[i][1];
+        const [z0, v0] = base[i - 1];
+        const [z1, v1] = base[i];
+        return v0 + ((v1 - v0) * (z - z0)) / (z1 - z0);
+      };
+      const edges = Object.values(TRAIL_TIER_MINZOOM);
+      const zooms = [...new Set([...base.map(([z]) => z), ...edges, ...edges.map((e) => e - 0.01)])]
+        .sort((x, y) => x - y);
+      return zl(zooms.map((z) => [z, [
+        "case",
+        ...Object.entries(TRAIL_TIER_MINZOOM).flatMap(([tier, from]) =>
+          [["==", str("tier"), tier], z >= from ? at(z) : 0]),
+        at(z)
+      ]]));
+    };
+
     // podklad pod všetkými pásikmi: farebná čiara sa cez les a tieňovanie stráca
     add(
       {
@@ -4910,7 +4934,7 @@ export function buildStyle({
           "line-color": c.trailHalo,
           "line-width": zw([[11, 2.4], [14, 3.4], [16, 4.8], [20, 10]]),
           "line-offset": trailOffset,
-          "line-opacity": zl([[11, 0], [12, 0.45], [14, 0.65]])
+          "line-opacity": tierGated([[11, 0], [12, 0.45], [14, 0.65]])
         }
       },
       ["trasy", "Podklad pod pásikmi trás", "line", { "line-color": "trailHalo" }]
@@ -4932,7 +4956,7 @@ export function buildStyle({
             // tá istá krivka, ktorá je aj rozostupom – pásiky sa dotýkajú vždy
             "line-width": zw(TRAIL_STRIPE),
             "line-offset": trailOffset,
-            "line-opacity": zl([[9, 0.75], [13, 0.95]]),
+            "line-opacity": tierGated([[9, 0.75], [13, 0.95]]),
             ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {})
           }
         },

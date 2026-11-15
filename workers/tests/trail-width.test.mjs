@@ -37,3 +37,24 @@ test("cycle routes are short dashes at every zoom", () => {
   assert.deepEqual(bike.paint["line-dasharray"], dashValue("dashed-fine"));
   assert.equal(style.layers.some((l) => l.id.startsWith("trail-bicycle__var")), false);
 });
+
+// 508 at z11 the map showed every local route; only long-distance and regional ones belong there
+test("local routes start at z12 and regional ones at z11", () => {
+  const at = (expr, zoom, tier) => {
+    const stopsAt = expr.slice(3);
+    let out;
+    for (let i = 0; i < stopsAt.length; i += 2) if (stopsAt[i] <= zoom) out = stopsAt[i + 1];
+    const cases = out.slice(1, -1);
+    for (let i = 0; i < cases.length; i += 2) if (cases[i][2] === tier) return cases[i + 1];
+    return out[out.length - 1];
+  };
+  for (const id of TRAIL_TYPE_IDS) {
+    const opacity = byId(`trail-${id}`).paint["line-opacity"];
+    assert.equal(at(opacity, 11.5, "local"), 0, `${id} local at z11.5`);
+    assert.ok(at(opacity, 12, "local") > 0.7, `${id} local at z12`);
+    assert.equal(at(opacity, 10.5, "regional"), 0, `${id} regional at z10.5`);
+    assert.ok(at(opacity, 11, "regional") > 0.7, `${id} regional at z11`);
+    assert.ok(at(opacity, 9, "national") > 0.7, `${id} national at z9`);
+  }
+  assert.equal(at(byId("trail-halo").paint["line-opacity"], 11.5, "local"), 0);
+});
