@@ -223,9 +223,9 @@ export const THEMES = {
     textHalo: "#ffffff",
     poiIcon: "#5f6b52",
     poiIconHalo: "#ffffff",
-    peakText: "#6a5a3a",
+    peakText: "#251d12",
     geoText: "#6a6252",
-    peakIcon: "#7a5a30",
+    peakIcon: "#3a2e1c",
     aerodromeIcon: "#6a6a80",
     onewayIcon: "#8a7a6a",
     roadLimit: "#b02a1a",
@@ -478,9 +478,9 @@ export const THEMES = {
     textHalo: "#ffffff",
     poiIcon: "#3f5a30",
     poiIconHalo: "#f4f1e4",
-    peakText: "#5a3a20",
+    peakText: "#2a170a",
     geoText: "#5a4a2e",
-    peakIcon: "#8a3a10",
+    peakIcon: "#4a2410",
     aerodromeIcon: "#4a5a7a",
     onewayIcon: "#6a5a45",
     roadLimit: "#8f2414",
@@ -604,9 +604,9 @@ export const THEMES = {
     textHalo: "#ffffff",
     poiIcon: "#8a6a55",
     poiIconHalo: "#fdf6ec",
-    peakText: "#7a6250",
+    peakText: "#35271c",
     geoText: "#8a7362",
-    peakIcon: "#9a6a40",
+    peakIcon: "#5a3f2a",
     aerodromeIcon: "#7a7a95",
     onewayIcon: "#a89080",
     roadLimit: "#d4604a",
@@ -1167,16 +1167,22 @@ export const TRAIL_STRIPE = [
 /** Rozostup dvoch trás = šírka pásika. Tá istá krivka, nie kópia. */
 export const TRAIL_PITCH = TRAIL_STRIPE;
 
+/** Walking routes (hiking, ferrata, ski, horse) are drawn about twice as wide as cycle ones. */
+export const TRAIL_STRIPE_WALK = [
+  [9, 1.2], [11, 2.3], [13, 3.5], [14, 3.3], [16, 3.4], [20, 7]
+];
+export const TRAIL_PITCH_WALK = TRAIL_STRIPE_WALK;
+
 // odstup osi pásika od osi cesty v px: polovica čiary + polovica pásika.
 // Pod z16 rozhodujú metre, nie šírka čiary – pásik by inak obiehal vlásenku
 // oblúkom širším než zákruta a v mape by z neho bola plocha.
 // Stráži to `workers/lint/trails.mjs`.
 // 502: from z16 the line is a minor road's casing, which most marked roads are
 export const TRAIL_OFFSET_ROAD = [
-  [9, 0.06], [11, 0.24], [13, 0.95], [14, 1.9], [16, 6.6], [20, 44]
+  [9, 0.12], [11, 0.48], [13, 1.9], [14, 3.7], [16, 6.6], [20, 44]
 ];
 export const TRAIL_OFFSET_PATH = [
-  [9, 0.04], [11, 0.16], [13, 0.63], [14, 1.27], [16, 3.6], [20, 11.0]
+  [9, 0.08], [11, 0.32], [13, 1.26], [14, 2.5], [16, 3.6], [20, 11.0]
 ];
 
 /** Koľko metrov od cesty smie pásik najviac ísť (rozpis vyššie). */
@@ -1222,6 +1228,9 @@ export const PATH_GROUND_MIN_Z = 16;
 /** Referenčný zoom, v ktorom sa odstupy zadávajú aj ladia. */
 export const TRAIL_GAP_ZOOM = 16;
 const atZoom = (stops, z) => (stops.find(([sz]) => sz === z) || [, 0])[1];
+
+/** Zoom a tier's routes start at; long-distance ones show from the overview. */
+export const TRAIL_TIER_MINZOOM = { regional: 11, local: 12 };
 
 /** One stripe per route (`route`), or one per mark colour, as Mapy.com draws them. */
 export const TRAIL_LANES = ["route", "colour"];
@@ -4837,6 +4846,7 @@ export function buildStyle({
     const ROAD_STOPS = scaled(TRAIL_OFFSET_ROAD, TRAIL_GAP_DEFAULTS.road, trailGaps.road);
     const PATH_STOPS = scaled(TRAIL_OFFSET_PATH, TRAIL_GAP_DEFAULTS.path, trailGaps.path);
     const PITCH_STOPS = scaled(TRAIL_PITCH, TRAIL_GAP_DEFAULTS.pitch, trailGaps.pitch);
+    const PITCH_WALK = scaled(TRAIL_PITCH_WALK, TRAIL_GAP_DEFAULTS.pitch, trailGaps.pitch);
 
     // `["zoom"]` smie byť len vstupom najvrchnejšieho `interpolate`, tak sa
     // výpočet skladá až vo výstupoch stopov. `exponential 1.5` je to isté, čím
@@ -4853,7 +4863,9 @@ export function buildStyle({
           [
             "+",
             ["case", ["==", str("way"), "path"], PATH_STOPS[i][1], ROAD_STOPS[i][1]],
-            ["*", laneNum, PITCH_STOPS[i][1]]
+            // a wider walking stripe keeps its inner edge where a cycle one's would be
+            ["case", ["==", num("side", 1), 1], (PITCH_WALK[i][1] - PITCH_STOPS[i][1]) / 2, 0],
+            ["*", laneNum, ["case", ["==", num("side", 1), 1], PITCH_WALK[i][1], PITCH_STOPS[i][1]]]
           ]
         ]
       ])
@@ -4896,6 +4908,27 @@ export function buildStyle({
       3
     ];
 
+    // opacity stops with the routes of a younger tier held back until their zoom
+    const tierGated = (base) => {
+      const at = (z) => {
+        const i = base.findIndex(([bz]) => bz >= z);
+        if (i < 0) return base[base.length - 1][1];
+        if (i === 0 || base[i][0] === z) return base[i][1];
+        const [z0, v0] = base[i - 1];
+        const [z1, v1] = base[i];
+        return v0 + ((v1 - v0) * (z - z0)) / (z1 - z0);
+      };
+      const edges = Object.values(TRAIL_TIER_MINZOOM);
+      const zooms = [...new Set([...base.map(([z]) => z), ...edges, ...edges.map((e) => e - 0.01)])]
+        .sort((x, y) => x - y);
+      return zl(zooms.map((z) => [z, [
+        "case",
+        ...Object.entries(TRAIL_TIER_MINZOOM).flatMap(([tier, from]) =>
+          [["==", str("tier"), tier], z >= from ? at(z) : 0]),
+        at(z)
+      ]]));
+    };
+
     // podklad pod všetkými pásikmi: farebná čiara sa cez les a tieňovanie stráca
     add(
       {
@@ -4908,15 +4941,15 @@ export function buildStyle({
         layout: { "line-cap": "butt", ...TRAIL_JOIN },
         paint: {
           "line-color": c.trailHalo,
-          "line-width": zw([[11, 2.4], [14, 3.4], [16, 4.8], [20, 10]]),
+          "line-width": zw([[11, 2.4], [13, 5.2], [16, 5.8], [20, 11]]),
           "line-offset": trailOffset,
-          "line-opacity": zl([[11, 0], [12, 0.45], [14, 0.65]])
+          "line-opacity": tierGated([[11, 0], [12, 0.3], [14, 0]])
         }
       },
       ["trasy", "Podklad pod pásikmi trás", "line", { "line-color": "trailHalo" }]
     );
 
-    for (const { id, label, palette: paletteKey, dash } of trailTypes) {
+    for (const { id, label, palette: paletteKey, dash, side } of trailTypes) {
       const filter = ["==", str("route"), id];
       add(
         {
@@ -4930,9 +4963,9 @@ export function buildStyle({
           paint: {
             "line-color": trailColour(paletteKey),
             // tá istá krivka, ktorá je aj rozostupom – pásiky sa dotýkajú vždy
-            "line-width": zw(TRAIL_STRIPE),
+            "line-width": zw(side === 1 ? TRAIL_STRIPE_WALK : TRAIL_STRIPE),
             "line-offset": trailOffset,
-            "line-opacity": zl([[9, 0.75], [13, 0.95]]),
+            "line-opacity": tierGated([[9, 0.75], [13, 0.95]]),
             ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {})
           }
         },
@@ -6035,18 +6068,20 @@ export function buildStyle({
           hasIcon(SPECIAL.volcano) ? SPECIAL.volcano : SPECIAL.peak,
           SPECIAL.peak
         ],
-        "icon-size": 0.9 * iconScale,
+        "icon-size": 0.55 * iconScale,
         "icon-optional": true,
+        // the icon sits in the empty middle line: name above it, height below
         "text-field": [
-          "case",
-          ["has", "ele"],
-          ["concat", nameExpr, "\n", ["to-string", ["get", "ele"]], " m"],
-          nameExpr
+          "format",
+          nameExpr, { "text-font": ["literal", ITAL] },
+          "\n\u00a0\n", {},
+          ["case", ["has", "ele"], ["to-string", ["get", "ele"]], "\u00a0"],
+          { "text-font": ["literal", BOLD] }
         ],
-        "text-font": REG,
-        "text-size": zl([[9, 9], [14, 11], [20, 14]]),
-        "text-offset": [0, 0.9],
-        "text-anchor": "top",
+        "text-font": ITAL,
+        "text-size": zl([[9, 9.5], [14, 12.5], [20, 15]]),
+        "text-line-height": 1.3,
+        "text-anchor": "center",
         "text-optional": true,
         "symbol-sort-key": num("rank", 100)
       },
