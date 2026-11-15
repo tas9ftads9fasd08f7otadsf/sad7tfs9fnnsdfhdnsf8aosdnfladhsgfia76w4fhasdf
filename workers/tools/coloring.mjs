@@ -70,7 +70,7 @@ async function openPage(state) {
   } catch {
     fail("playwright is needed: npm i -g playwright");
   }
-  const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY } : undefined;
+  const proxy = process.env.HTTPS_PROXY ? { server: process.env.HTTPS_PROXY, bypass: "localhost,127.0.0.1" } : undefined;
   const browser = await chromium.launch({
     proxy, args: ["--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"]
   });
