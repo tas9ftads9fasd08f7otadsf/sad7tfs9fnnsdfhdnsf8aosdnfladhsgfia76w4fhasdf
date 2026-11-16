@@ -277,9 +277,12 @@ export function patternSpec(spec = {}) {
  */
 export function patternDef(spec = {}) {
   const opacity = Number(spec?.opacity);
+  // the zoom it has faded in by; on an overview the pattern is noise
+  const from = spec?.from == null ? NaN : Number(spec.from);
   return {
     ...patternSpec(spec),
-    opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
+    opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1,
+    ...(Number.isFinite(from) ? { from: Math.min(22, Math.max(1, Math.round(from))) } : {})
   };
 }
 

@@ -2955,10 +2955,11 @@ function patternLayer(layer, pattern) {
   const name = patternImageName(pattern);
   const opacity = pattern.opacity ?? 1;
   if (layer.type === "fill" || layer.type === "fill-extrusion") {
+    const fill = pattern.from ? zl([[pattern.from - 1, 0], [pattern.from, opacity]]) : opacity;
     return {
       ...derived(layer, "pattern", "vzor"),
       type: "fill",
-      paint: { "fill-pattern": name, "fill-opacity": opacity }
+      paint: { "fill-pattern": name, "fill-opacity": fill }
     };
   }
   if (layer.type === "line") {
@@ -3770,8 +3771,8 @@ export function buildStyle({
     // a lúkou. Dlaždica sa zadáva v pixeloch obrazovky, takže sa vzor so
     // zoomom nezväčšuje; 26 px vyzeralo ako dlažba. Počítané skalné plochy
     // z DEM vzor zámerne nemajú: to je stena, nie sypké kamene.
-    ["rock", "Skaly a suť", ["rock", "scree", "bare_rock"], "rock", 0.8,
-     { id: "rocks", color: "rockPattern", size: 9, weight: 0.6, opacity: 0.75 }],
+    ["rock", "Skaly a suť", ["rock", "scree", "bare_rock"], "rock", 1,
+     { id: "rocks", color: "rockPattern", size: 9, weight: 1.1, opacity: 0.45, from: 13 }],
     ["sand", "Piesok", ["sand", "beach"], "sand", 1],
     ["ice", "Ľadovec", ["ice", "glacier"], "ice", 1]
   ];
