@@ -1476,6 +1476,12 @@ const TRAIL_KIND_COLOURED_KEYS = TRAIL_KIND_COLOURED.map((id) => TRAIL_TYPES.fin
 
 /** An educational trail's dash, gap, dot, gap in stripe widths by zoom band `[from, dash]`. */
 // Mapy keeps them 10, 4, 2 and 4 screen px whatever the zoom; our stripe widens
+/**
+ * Dash and gap of a local hiking route (`tier: local`), in stripe widths by zoom band.
+ * 529 Mapy draws these dashed, 5.9/4.5 px at z13, 9.5/4.75 at z14, 10/4.75 at z15, 10.25/4.75 at z16.
+ */
+export const TRAIL_LOCAL_DASH = [[0, [3.1, 2.4]], [14, [5, 2.5]], [15, [4.4, 2.1]], [16, [3.7, 1.7]]];
+
 export const TRAIL_EDUCATIONAL_DASH = [
   [0, [5.3, 2.1, 1.05, 2.1]], [15, [4.4, 1.8, 0.9, 1.8]], [16, [3.6, 1.4, 0.7, 1.4]]
 ];
@@ -5056,13 +5062,14 @@ export function buildStyle({
 
     const onCycleway = ["==", num("cycleway", 0), 1];
     const educational = ["==", num("edu", 0), 1];
+    const localTier = ["==", str("tier"), "local"];
     for (const { id, label, palette: paletteKey, dash, side } of trailTypes) {
       const solidOnCycleway = TRAIL_SOLID_ON_CYCLEWAY.includes(id) && dashValue(dash);
       const ownEducational = id === "hiking";
       const filter = solidOnCycleway
         ? ["all", ["==", str("route"), id], ["!", onCycleway]]
         : ownEducational
-          ? ["all", ["==", str("route"), id], ["!", educational]]
+          ? ["all", ["==", str("route"), id], ["!", ["any", educational, localTier]]]
           : ["==", str("route"), id];
       const paint = {
         "line-color": trailColour(paletteKey),
@@ -5100,6 +5107,23 @@ export function buildStyle({
         );
         L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
         // its override is the hiking routes', as on a cycleway (`twinOverride`)
+        L[L.length - 1].metadata["frico:twin"] = `trail-${id}`;
+      }
+      if (ownEducational) {
+        add(
+          {
+            id: `trail-${id}-local`,
+            type: "line",
+            source: "trails",
+            "source-layer": "trail",
+            minzoom: 9,
+            filter: ["all", ["==", str("route"), id], localTier, ["!", educational]],
+            layout: { "line-cap": "butt", ...TRAIL_JOIN },
+            paint: { ...paint, "line-dasharray": dashSteps(TRAIL_LOCAL_DASH) }
+          },
+          ["trasy", `${label} – miestne trasy`, "line", {}, [...MARK_KEYS, paletteKey]]
+        );
+        L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
         L[L.length - 1].metadata["frico:twin"] = `trail-${id}`;
       }
       if (!solidOnCycleway) continue;
