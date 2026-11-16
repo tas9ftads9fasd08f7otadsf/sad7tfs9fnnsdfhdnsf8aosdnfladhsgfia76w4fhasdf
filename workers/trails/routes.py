@@ -59,6 +59,21 @@ def way_class(tags):
     return "path" if (tags.get("highway") or "").strip().lower() \
         in PATH_HIGHWAYS else "road"
 
+
+UNPAVED = {"unpaved", "gravel", "fine_gravel", "compacted", "ground", "dirt", "earth",
+           "grass", "sand", "mud", "pebblestone", "rock", "woodchips"}
+
+
+def on_cycleway(tags):
+    """Whether the way is built for bikes: Mapy draws a cycle route on it solid."""
+    highway = (tags.get("highway") or "").strip().lower()
+    bicycle = (tags.get("bicycle") or "").strip().lower()
+    surface = (tags.get("surface") or "").strip().lower()
+    if highway == "cycleway":
+        return True
+    # a shared path counts while paved; on gravel Mapy dashes the route as on a track
+    return highway in {"path", "footway"} and bicycle == "designated" and surface not in UNPAVED
+
 # MapLibre can't stitch a `miter` above 120°, so such a turn becomes 60° steps
 EASE_ABOVE_DEG = 120.0
 MAX_TURN_DEG = 60.0
@@ -292,7 +307,9 @@ class Ways(osmium.SimpleHandler):
         self.eased += eased
 
         lanes = self.lane_order(routes)
-        way = way_class({t.k: t.v for t in w.tags})
+        tags = {t.k: t.v for t in w.tags}
+        way = way_class(tags)
+        cycleway = on_cycleway(tags)
         self.ways += 1
         self.lanes[len(lanes)] += 1
         self.by_way_class[way] += 1
@@ -317,6 +334,8 @@ class Ways(osmium.SimpleHandler):
                 "cnt": len(lanes),
                 "rel": info["rel"],
             }
+            if cycleway:
+                props["cycleway"] = 1
             for key in ("colour", "hex", "network", "name", "ref",
                         "mark", "mark_bg", "mark_fg"):
                 if info[key]:
