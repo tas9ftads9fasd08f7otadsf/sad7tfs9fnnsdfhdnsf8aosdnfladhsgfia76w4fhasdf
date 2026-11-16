@@ -1174,19 +1174,18 @@ export const TRAIL_STRIPE_WALK = [
 export const TRAIL_PITCH_WALK = TRAIL_STRIPE_WALK;
 
 // odstup osi pásika od osi cesty v px: polovica čiary + polovica pásika.
-// Pod z16 rozhodujú metre, nie šírka čiary – pásik by inak obiehal vlásenku
-// oblúkom širším než zákruta a v mape by z neho bola plocha.
-// Stráži to `workers/lint/trails.mjs`.
+// 511: below z16 as far out as Mapy draws it, leaving a gap beside the road
 // 502: from z16 the line is a minor road's casing, which most marked roads are
 export const TRAIL_OFFSET_ROAD = [
-  [9, 0.12], [11, 0.48], [13, 1.9], [14, 3.7], [16, 6.6], [20, 44]
+  [9, 0.3], [11, 2], [13, 4.5], [14, 4.4], [16, 6.6], [20, 44]
 ];
 export const TRAIL_OFFSET_PATH = [
-  [9, 0.08], [11, 0.32], [13, 1.26], [14, 2.5], [16, 3.6], [20, 11.0]
+  [9, 0.08], [11, 0.32], [13, 3.4], [14, 3.5], [16, 3.6], [20, 11.0]
 ];
 
-/** Koľko metrov od cesty smie pásik najviac ísť (rozpis vyššie). */
-export const TRAIL_OFFSET_LIMIT_M = { road: 12, path: 8 };
+/** Most metres a stripe may lie off its way, Mapy's offset; `workers/lint/trails.mjs` holds it. */
+// further out, a stripe rounds a hairpin wider than the bend and becomes a coloured area
+export const TRAIL_OFFSET_LIMIT_M = { road: 50, path: 22 };
 
 /**
  * Spoj pásika v zákrute: `miter`, nie `round`.
