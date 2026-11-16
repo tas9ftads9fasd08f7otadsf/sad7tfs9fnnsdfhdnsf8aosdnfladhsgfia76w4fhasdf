@@ -1251,6 +1251,12 @@ export const PARK_TICKS = [0.35, 3];
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
 export const PATH_GROUND_MIN_Z = 16;
 
+/**
+ * Core width of a cycleway by zoom, as Mapy draws it; the grey edge adds a pixel each side.
+ * 528 Mapy: 1.25 px of brown at z13-14, a pale band 1.5 px at z15 and 4 px at z16.
+ */
+export const CYCLEWAY_WIDTH = [[12, 0.4], [13, 1.25], [14, 1.25], [15, 1.5], [16, 4], [20, 8]];
+
 /** Dash and gap of tracks and paths by zoom band `[from, [dash, gap]]`, in line widths. */
 // Mapy's dashes keep their length on the ground as our lines widen, so each band is its own
 export const TRACK_DASH = [[0, [6.9, 2.2]], [14, [3.75, 1.4]], [15, [4.2, 1.9]], [16, [3.4, 2.4]]];
@@ -4486,15 +4492,22 @@ export function buildStyle({
     { cap: "butt", dash: [3, 2], opacity: TUNNEL_OPACITY, casingOpacity: 0.8 });
 
   // --- chodníky, cyklotrasy, schody, poľné cesty ---
+  // 528 Mapy draws a paved path or footway marked for bikes as a cycleway
+  const sharedBikePath = ["all",
+    ["in", str("subclass"), ["literal", ["path", "footway"]]],
+    ["==", str("bicycle"), "designated"],
+    ["!=", str("surface"), "unpaved"]];
   const pathDefs = [
     ["track", "Poľné a lesné cesty", ["==", str("class"), "track"], "track", [[11, 0.4], [13, 0.9], [14, 1.6], [16, 3.5], [20, 12]], dashSteps(TRACK_DASH), 11],
     ["steps", "Schody", ["==", str("subclass"), "steps"], "steps", [[14, 1.2], [16, 3], [20, 10]], [1, 0.6], 14],
-    ["cycleway", "Cyklotrasy", ["==", str("subclass"), "cycleway"], "cycleway", [[12, 0.4], [14, 1], [16, 2.2], [20, 8]], [3, 1.5], 12],
+    ["cycleway", "Cyklotrasy", ["any", ["==", str("subclass"), "cycleway"], sharedBikePath], "cycleway", CYCLEWAY_WIDTH, [3, 1.5], 12],
     // `platform` a `corridor` majú tiež `class=path`
-    ["footway", "Chodníky, priechody a nástupištia", ["in", str("subclass"), ["literal", ["footway", "sidewalk", "crossing", "platform", "corridor"]]], "footway", [[13, 0.6], [16, 2], [20, 7]], [2.6, 2.6], 13],
+    ["footway", "Chodníky, priechody a nástupištia", ["all",
+      ["in", str("subclass"), ["literal", ["footway", "sidewalk", "crossing", "platform", "corridor"]]],
+      ["!", sharedBikePath]], "footway", [[13, 0.6], [16, 2], [20, 7]], [2.6, 2.6], 13],
     // `path` bez subclass (alebo path/bridleway) – ale nie `track`, ten má vlastnú vrstvu
     ["path", "Turistické chodníky", ["all", ["==", str("class"), "path"],
-      ["in", str("subclass"), ["literal", ["path", "bridleway", ""]]]],
+      ["in", str("subclass"), ["literal", ["path", "bridleway", ""]]], ["!", sharedBikePath]],
       "path", [[11, 0.4], [13, 0.9], [16, 2.2], [20, 8]], dashSteps(PATH_DASH), 11]
   ];
   const pathFilter = (filter) => [
