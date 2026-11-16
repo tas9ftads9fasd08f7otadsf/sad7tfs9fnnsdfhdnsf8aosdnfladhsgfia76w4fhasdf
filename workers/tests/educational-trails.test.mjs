@@ -13,7 +13,7 @@ const style = buildStyle({
   spriteUrl: "https://x/sprite",
   glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
   trailsUrl: "https://x/trails.pmtiles",
-  overrides: normalizeOverrides(saved)
+  overrides: normalizeOverrides(saved).overrides
 });
 const byId = (id) => style.layers.find((l) => l.id === id);
 const has = (expr, text) => JSON.stringify(expr).includes(text);
@@ -33,6 +33,7 @@ test("educational trails have a dash-dot layer of their own, hiking leaves them 
   assert.ok(has(edu.filter, '"edu"') && has(hiking.filter, '"edu"'));
   assert.ok(has(hiking.filter, '["!",'), "hiking leaves educational trails out");
   assert.equal(edu.metadata["frico:derived"], "trail-hiking");
+  assert.equal(edu.metadata["frico:twin"], "trail-hiking");
   assert.deepEqual(edu.paint["line-color"], hiking.paint["line-color"]);
   assert.equal(dashAt(14).length, 4, "dash, gap, dot, gap");
 });
@@ -52,4 +53,22 @@ test("the dash-dot is Mapy's length in screen pixels at z14–z16", () => {
 test("an educational trail lies one lane further out", () => {
   const offset = JSON.stringify(byId("trail-hiking-educational").paint["line-offset"]);
   assert.match(offset, /\["\*",\["\+",.*?\["coalesce",\["get","edu"\],0\]\]/);
+});
+
+// 518 bug: an override of the hiking routes reached the plain stripes, not the educational ones
+test("an educational trail takes the hiking routes' override, but keeps its dash-dot", () => {
+  const own = buildStyle({
+    theme: "svetla",
+    mapType: "turisticka",
+    tilesUrl: "https://x/tiles.pmtiles",
+    spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
+    trailsUrl: "https://x/trails.pmtiles",
+    overrides: normalizeOverrides({
+      layers: { "trail-hiking": { paint: { "line-opacity": 0.4 }, dash: "dotted" } }
+    }).overrides
+  });
+  const edu = own.layers.find((l) => l.id === "trail-hiking-educational");
+  assert.equal(edu.paint["line-opacity"], 0.4);
+  assert.equal(edu.paint["line-dasharray"][0], "step");
 });
