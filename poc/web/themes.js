@@ -1082,6 +1082,14 @@ const zs = (bands) => {
 /** Rozšíri každý stop o konštantu – použité na obrysy ciest. */
 const widen = (stops, extra) => stops.map(([z, w]) => [z, w + extra]);
 
+/** A road's border per side from `ROAD_CASING_FROM_Z`, in screen px as Mapy keeps it at every zoom. */
+export const ROAD_CASING_EDGE = { primary: 1.6, secondary: 1.6, tertiary: 1.6, minor: 1.25, service: 1.25 };
+export const ROAD_CASING_FROM_Z = 13;
+// below it the casing is the paper's colour, so a wider one would rub out what lies beside
+const casingStops = (id, stops, extra) => (ROAD_CASING_EDGE[id] === undefined
+  ? widen(stops, extra)
+  : stops.map(([z, w]) => [z, w + (z >= ROAD_CASING_FROM_Z ? 2 * ROAD_CASING_EDGE[id] : extra)]));
+
 /** Bezpečné čítanie atribútu pre `in`/porovnania (chýbajúci atribút = ""). */
 const str = (prop) => ["coalesce", ["get", prop], ""];
 const num = (prop, fallback) => ["coalesce", ["get", prop], fallback];
@@ -4389,7 +4397,7 @@ export function buildStyle({
           layout,
           paint: {
             "line-color": c[casingKey],
-            "line-width": zwRoad(widen(stops, extra)),
+            "line-width": zwRoad(casingStops(id, stops, extra)),
             ...(opts.dash ? { "line-dasharray": opts.dash } : {}),
             ...(opts.casingOpacity ? { "line-opacity": opts.casingOpacity } : {})
           }
