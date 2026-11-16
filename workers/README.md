@@ -3272,8 +3272,9 @@ vrstvy naraz a odstup od cesty je vlastnosť všetkých.
 
 Trasy s názvom alebo `ref` majú od z12 popisok **pozdĺž čiary a vo farbe
 trasy** (`0801 Chodník hrdinov SNP`). Aby sa názov nekreslil po 200-metrových
-kúskoch, Planetiler v dlaždici **zlepí úseky s rovnakými atribútmi** –
-teda tej istej trasy v tom istom pruhu (`merge_line_strings`).
+kúskoch, nesie ho vlastná vrstva `trail_name`, v ktorej Planetiler **zlepí úseky
+jednej trasy** (`merge_line_strings`). Vrstva `trail` so pásikmi sa **nezlepuje**:
+zlepenie otočí časť ciest a pásik by preskočil na druhú stranu (viď `FOLLOW_CHAINS`).
 
 Klik na pásik ukáže popup s názvom, druhom, farbou značky, sieťou a odkazom
 na reláciu v OSM.

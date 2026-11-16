@@ -284,6 +284,17 @@ if (JSON.stringify(kinds) !== JSON.stringify([...TRAIL_KIND_COLOURED].sort())) {
   );
 }
 
+// 11. the stripe layer isn't merged: a merge turns ways round and flips the stripe's side
+const schemaText = readFileSync(SCHEMA, "utf8");
+const stripeBlock = schemaText.slice(schemaText.indexOf("- id: trail\n"), schemaText.indexOf("- id: trail_name"));
+if (!stripeBlock || /merge_line_strings/.test(stripeBlock.replace(/^\s*#.*$/gm, ""))) {
+  bad.push(
+    "The `trail` layer in workers/trails/trails.yml merges line strings. A merge joins ways end " +
+      "to end and reverses some, and `line-offset` follows the line's direction, so those " +
+      "stripes jump to the other side of the way. Names ride on `trail_name`, which may merge."
+  );
+}
+
 for (const m of bad) console.log(`::error::${m}`);
 console.log(
   bad.length

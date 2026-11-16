@@ -79,10 +79,8 @@ layers:
           tier: local
         attributes: *trail_attributes
 
-    # merged so a name along the line fits
-    tile_post_process:
-      merge_line_strings:
-        min_length: 0
+    # not merged: a merge joins ways end to end and turns some round, and the style's
+    # `line-offset` side follows the line's direction (`FOLLOW_CHAINS` in routes.py)
 
   # one line per route without the lane attributes, which break `trail` into pieces at
   # every junction; the names ride on it
