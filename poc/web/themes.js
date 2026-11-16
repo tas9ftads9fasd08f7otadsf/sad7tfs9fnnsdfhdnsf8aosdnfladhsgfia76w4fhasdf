@@ -5217,6 +5217,18 @@ export function buildStyle({
     }
   }
 
+  // Mapy draws a route stripe under the roads, over the paths it marks; labels stay on top
+  {
+    const isStripe = (l) => l.source === "trails" && l.type === "line";
+    const stripes = L.filter(isStripe);
+    const firstRoad = L.findIndex((l) => /^road-[a-z_]+-casing$/.test(l.id));
+    if (stripes.length && firstRoad >= 0) {
+      const rest = L.filter((l) => !isStripe(l));
+      const at = rest.findIndex((l) => /^road-[a-z_]+-casing$/.test(l.id));
+      L.splice(0, L.length, ...rest.slice(0, at), ...stripes, ...rest.slice(at));
+    }
+  }
+
   // ================= hranice =================
   add(
     {

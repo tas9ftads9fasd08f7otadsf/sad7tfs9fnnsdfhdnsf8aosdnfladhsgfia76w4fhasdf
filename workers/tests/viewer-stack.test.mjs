@@ -24,17 +24,16 @@ test("areas lie under lines, lines under 3D, labels on top", () => {
   assert.deepEqual(bands, [...bands].sort((a, b) => a - b));
 });
 
-test("within a band the packages follow the stack, marked routes over every way", () => {
+// 520 Mapy draws a route stripe under the roads, over the paths it marks
+test("within a band the packages follow the stack, marked routes with the paths under the roads", () => {
   for (const b of [0, 1]) {
-    const layers = style.layers.filter((l) => band(l) === b);
-    const plain = layers.filter((l) => !l.id.startsWith("trail-"));
-    const ranks = plain.map(rank);
+    const ranks = style.layers.filter((l) => band(l) === b).map(rank);
     assert.deepEqual(ranks, [...ranks].sort((x, y) => x - y), `band ${b}`);
   }
   const lines = style.layers.filter((l) => band(l) === 1);
-  const lastWay = Math.max(...lines.map((l, i) => (["roads", "railways"].includes(packageOf(l)) ? i : -1)));
-  const firstTrail = lines.findIndex((l) => l.id.startsWith("trail-"));
-  assert.ok(firstTrail > lastWay, "marked routes over roads and railways");
+  const firstRoad = lines.findIndex((l) => packageOf(l) === "roads");
+  const lastTrail = Math.max(...lines.map((l, i) => (l.id.startsWith("trail-") ? i : -1)));
+  assert.ok(lastTrail >= 0 && lastTrail < firstRoad, "marked routes under the roads");
 });
 
 test("a package keeps its own order and labels keep the pipeline's", () => {
