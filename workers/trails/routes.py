@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Marked trails from OSM `type=route` relations: hiking, cycling, ski and horse routes.
 
-One line per (way, route) pair, each in its own lane (`side` + `off`), ways chained
-so lanes keep their side (`orient_ways`), sharp turns eased (`ease_corners`).
+One line per (way, route) pair, each in its own lane (`side` + `off`) on the side of the
+way's own OSM direction (`orient_ways`), sharp turns eased (`ease_corners`).
 
     python3 workers/trails/routes.py --pbf=data/trails.osm.pbf \\
         --out=data/trails.geojson --stats=trail-stats.txt
@@ -155,10 +155,15 @@ SKIP_ROLES = {
 SKIP_STATES = {"proposed", "planned", "abandoned", "removed", "disused"}
 
 
-def orient_ways(ends, sizes=None):
+# 530 Mapy takes the side from each way's own OSM direction, so chains stay unreversed
+FOLLOW_CHAINS = False
+
+
+def orient_ways(ends, sizes=None, follow_chains=True):
     """Which ways to reverse so lanes continue: `(ways to flip, conflicts, chains)`.
 
-    `ends` is `{way id: (first node, last node)}`, `sizes` its node counts.
+    `ends` is `{way id: (first node, last node)}`, `sizes` its node counts; without
+    `follow_chains` no way is reversed and the conflicts are the sides that jump.
     """
     at = defaultdict(list)
     for wid, (first, last) in ends.items():
@@ -195,7 +200,7 @@ def orient_ways(ends, sizes=None):
         against = sum(weight.get(w, 1) for w, r in rel.items() if r)
         backwards = against > sum(weight.get(w, 1) for w in rel) - against
         for wid, r in rel.items():
-            flip[wid] = r != backwards
+            flip[wid] = follow_chains and r != backwards
 
     # conflicts only count where exactly two ways meet
     conflicts = 0
@@ -447,14 +452,14 @@ def main():
     print("2/3 – who neighbours whom (lane direction) …", flush=True)
     ends = Ends(routes.by_way)
     ends.apply_file(args.pbf)
-    flipped, conflicts, chains = orient_ways(ends.ends, ends.sizes)
+    flipped, conflicts, chains = orient_ways(ends.ends, ends.sizes, FOLLOW_CHAINS)
     print(f"    {len(ends.ends)} ways in {chains} chains, "
           f"{len(flipped)} reversed")
-    # never zero, but a jump means the orientation broke
+    # with chains never zero, but a jump means the orientation broke
     pct = 100.0 * conflicts / max(1, len(ends.ends))
     print(f"    places where a lane still switches side: {conflicts} "
           f"({pct:.1f} % of ways)")
-    if pct > 5:
+    if FOLLOW_CHAINS and pct > 5:
         print("::warning::Trail lanes switch side on "
               f"{pct:.0f} % of ways – that's a lot. See `orient_ways` in "
               "workers/trails/routes.py; it should be under 5 %.")

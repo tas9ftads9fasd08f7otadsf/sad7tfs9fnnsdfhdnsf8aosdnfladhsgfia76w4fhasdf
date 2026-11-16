@@ -3089,7 +3089,7 @@ zvlášť a dostane vlastný **pruh**. Detaily, ktoré na tom závisia:
 | strana cesty | pešie (turistická, ferrata, bežky, jazdecká) `+1`, kolesové (cyklo, MTB) `−1` | po jednom chodníku vedie bežne turistická značka **aj** cyklotrasa; v jednom rade by sa druhá odsunula tak ďaleko, že by pri nej nebolo vidieť, ku ktorej ceste patrí |
 | číslovanie pruhov | na každej strane zvlášť, od cesty von: 0 · 1 · 2 … | keby boli vycentrované, koniec jednej trasy by posunul všetky ostatné |
 | poradie | sieť → druh → farba → id relácie | závisí len od trasy, takže si dve trasy na susedných úsekoch pruhy neprehodia; dôležitejšia je bližšie k ceste |
-| smer čiary | reťaz ciest, ktoré na seba **nadväzujú**, ide smerom, akým je v OSM nakreslená väčšina jej dĺžky (`orient_ways`) | `line-offset` posúva podľa smeru geometrie; Mapy.com kreslí pešie trasy vpravo od smeru v OSM a cyklotrasy vľavo – viď nižšie |
+| smer čiary | každá cesta ide smerom, akým je nakreslená v OSM (`FOLLOW_CHAINS = False`, `orient_ways` by ich vedelo zreťaziť) | `line-offset` posúva podľa smeru geometrie; Mapy.com kreslí pešie trasy vpravo od smeru v OSM a cyklotrasy vľavo – viď nižšie |
 | duplikáty | nadradená trasa a jej časť sa zlúčia | superroute a jej člen sú dve relácie na tých istých cestách; dva rovnaké pásiky vedľa seba nie sú informácia, ale chyba |
 | plná cyklotrasa | `cycleway: 1` na `highway=cycleway` a na spevnenom chodníku s `bicycle=designated` (`on_cycleway`); štýl ju tam kreslí plnou čiarou (`trail-bicycle-solid`), inde prerušovanou | tak to robí Mapy.com: plná ružová je cyklochodník, prerušovaná trasa po ceste či lesnej ceste |
 | náučný chodník | `edu: 1` pri značke so šikmým pásom alebo pri mene „náučný…" (`is_educational`); vlastný pruh vonku za značenými trasami, štýl ho kreslí čiarkou s bodkou (`trail-hiking-educational`) o pruh ďalej | tak ho kreslí Mapy.com: 10 px čiarka, 4 px medzera, 2 px bodka, mimo zelenej značky |
@@ -3128,10 +3128,14 @@ beh do logu aj do súhrnu (`side_flips`) a nad 5 % ciest to varuje – je to
 číslo, ktoré má byť malé, a keď skočí, smerovanie sa pokazilo.
 
 Fyzická strana sa berie z OSM ako na Mapy.com, ktoré kreslí pešiu trasu vpravo
-od smeru cesty v OSM a cyklotrasu vľavo a nereťazí nič. Reťaz preto ide smerom,
-akým je v OSM nakreslená väčšina jej uzlov: v Prešovskom kraji tak leží na
-strane ako na Mapy 90 % dĺžky a pásik pozdĺž chodníka preskočí na 4 miestach
-namiesto 509, keď reťaz bola celá sieť a jej smer dávalo najmenšie id uzla.
+od smeru cesty v OSM a cyklotrasu vľavo a nereťazí nič. Reťaz kedysi išla smerom,
+akým je v OSM nakreslená väčšina jej uzlov, a obrátila zvyšok: v Bratislavskom kraji
+tak 17 % ciest ležalo na opačnej strane ako na Mapy (pri 72 odmeraných cestách
+to Mapy nikdy nerobí) a cyklotrasa na ceste popri chodníku sa dostala na tú istú
+stranu ako pešia. Preto `FOLLOW_CHAINS = False`: žiadna cesta sa neobracia a strana
+preskočí tam, kde dve nadväzujúce cesty majú v OSM opačný smer, presne ako na
+Mapy (v Bratislavskom kraji 920 zo 7 581 ciest). Reťazenie ostáva v `orient_ways`
+pre prípad, že by sa vrátilo.
 
 ### Odstup od cesty: dve čísla, nie jedno
 
