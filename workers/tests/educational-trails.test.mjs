@@ -13,7 +13,7 @@ const style = buildStyle({
   spriteUrl: "https://x/sprite",
   glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
   trailsUrl: "https://x/trails.pmtiles",
-  overrides: normalizeOverrides(saved)
+  overrides: normalizeOverrides(saved).overrides
 });
 const byId = (id) => style.layers.find((l) => l.id === id);
 const has = (expr, text) => JSON.stringify(expr).includes(text);
@@ -33,6 +33,7 @@ test("educational trails have a dash-dot layer of their own, hiking leaves them 
   assert.ok(has(edu.filter, '"edu"') && has(hiking.filter, '"edu"'));
   assert.ok(has(hiking.filter, '["!",'), "hiking leaves educational trails out");
   assert.equal(edu.metadata["frico:derived"], "trail-hiking");
+  assert.equal(edu.metadata["frico:twin"], "trail-hiking");
   assert.deepEqual(edu.paint["line-color"], hiking.paint["line-color"]);
   assert.equal(dashAt(14).length, 4, "dash, gap, dot, gap");
 });

@@ -5011,6 +5011,8 @@ export function buildStyle({
           ["trasy", `${label} – náučné chodníky`, "line", {}, [...MARK_KEYS, paletteKey]]
         );
         L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
+        // its override is the hiking routes', as on a cycleway (`twinOverride`)
+        L[L.length - 1].metadata["frico:twin"] = `trail-${id}`;
       }
       if (!solidOnCycleway) continue;
       // `__` would read as a region prefix in the app, hence a plain suffix
