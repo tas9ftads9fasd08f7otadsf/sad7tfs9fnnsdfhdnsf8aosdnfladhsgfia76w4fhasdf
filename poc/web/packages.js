@@ -318,7 +318,11 @@ export function railLayers(dark, { bold = "Noto Sans Bold" } = {}) {
       { extra: ["!", SERVICE], scale: GAUGE_SCALE }),
     railLine("main", MAIN, { color: k("railGround"), width: [8, 0.4, 16, 2.6] },
       { extra: ["!", SERVICE], scale: GAUGE_SCALE, dash: [3, 3], minzoom: 8 }),
-    railLine("urban", URBAN, { color: urbanInk, width: [10, 0.8, 16, 2.6] }),
+    railLine("urban", URBAN.filter((c) => c !== "funicular"), { color: urbanInk, width: [10, 0.8, 16, 2.6] }),
+    // Mapy draws a funicular as a cable car: cabins on a band, as the app does (rikimaps 3321)
+    railLine("funicular-casing", ["funicular"], { color: k("liftInk"), width: liftWidth(LIFT_WIDTH.cabinCasing) }),
+    railLine("funicular", ["funicular"], { color: k("liftCabin"), width: liftWidth(LIFT_WIDTH.cabin) },
+      { dash: LIFT_DASH.cabin }),
     // every cable car; ski lifts are Ski & winter's
     liftLine("lift-cabin-casing", ["active"], k("liftInk"),
       { extra: ["!", GOODS], width: liftWidth(LIFT_WIDTH.cabinCasing) }),
