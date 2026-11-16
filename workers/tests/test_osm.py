@@ -199,6 +199,18 @@ class Trails(unittest.TestCase):
         self.assertEqual(self.t.way_class({"highway": "secondary"}), "road")
         self.assertEqual(self.t.way_class({}), "road")
 
+    def test_on_cycleway(self):
+        # 510 Mapy draws a cycle route solid on a cycleway and dashed on a road or track
+        self.assertTrue(self.t.on_cycleway({"highway": "cycleway"}))
+        self.assertTrue(self.t.on_cycleway({"highway": "path", "bicycle": "designated"}))
+        self.assertTrue(self.t.on_cycleway(
+            {"highway": "path", "bicycle": "designated", "surface": "paving_stones"}))
+        self.assertFalse(self.t.on_cycleway(
+            {"highway": "path", "bicycle": "designated", "surface": "gravel"}))
+        self.assertFalse(self.t.on_cycleway({"highway": "path", "bicycle": "yes"}))
+        self.assertFalse(self.t.on_cycleway({"highway": "track", "bicycle": "designated"}))
+        self.assertFalse(self.t.on_cycleway({"highway": "tertiary"}))
+
     def test_straight_line_untouched(self):
         line = [[17.0, 48.0], [17.001, 48.0], [17.002, 48.0]]
         self.assertEqual(self.t.ease_corners(line), (line, 0))

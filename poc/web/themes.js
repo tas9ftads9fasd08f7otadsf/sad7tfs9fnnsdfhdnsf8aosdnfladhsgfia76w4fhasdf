@@ -1427,6 +1427,9 @@ export const TRAIL_TYPES = [
 ];
 
 export const TRAIL_TYPE_IDS = TRAIL_TYPES.map((t) => t.id);
+
+/** Route kinds Mapy draws solid where they run on a cycleway (`cycleway` in the tiles). */
+export const TRAIL_SOLID_ON_CYCLEWAY = ["bicycle"];
 const TRAIL_BY_ID = Object.fromEntries(TRAIL_TYPES.map((t) => [t.id, t]));
 
 /**
@@ -4949,8 +4952,19 @@ export function buildStyle({
       ["trasy", "Podklad pod pásikmi trás", "line", { "line-color": "trailHalo" }]
     );
 
+    const onCycleway = ["==", num("cycleway", 0), 1];
     for (const { id, label, palette: paletteKey, dash, side } of trailTypes) {
-      const filter = ["==", str("route"), id];
+      const solidOnCycleway = TRAIL_SOLID_ON_CYCLEWAY.includes(id) && dashValue(dash);
+      const filter = solidOnCycleway
+        ? ["all", ["==", str("route"), id], ["!", onCycleway]]
+        : ["==", str("route"), id];
+      const paint = {
+        "line-color": trailColour(paletteKey),
+        // tá istá krivka, ktorá je aj rozostupom – pásiky sa dotýkajú vždy
+        "line-width": zw(side === 1 ? TRAIL_STRIPE_WALK : TRAIL_STRIPE),
+        "line-offset": trailOffset,
+        "line-opacity": tierGated([[9, 0.75], [13, 0.95]])
+      };
       add(
         {
           id: `trail-${id}`,
@@ -4960,17 +4974,26 @@ export function buildStyle({
           minzoom: 9,
           filter,
           layout: { "line-cap": "butt", ...TRAIL_JOIN },
-          paint: {
-            "line-color": trailColour(paletteKey),
-            // tá istá krivka, ktorá je aj rozostupom – pásiky sa dotýkajú vždy
-            "line-width": zw(side === 1 ? TRAIL_STRIPE_WALK : TRAIL_STRIPE),
-            "line-offset": trailOffset,
-            "line-opacity": tierGated([[9, 0.75], [13, 0.95]]),
-            ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {})
-          }
+          paint: { ...paint, ...(dashValue(dash) ? { "line-dasharray": dashValue(dash) } : {}) }
         },
         ["trasy", label, "line", {}, [...MARK_KEYS, paletteKey]]
       );
+      if (!solidOnCycleway) continue;
+      // `__` would read as a region prefix in the app, hence a plain suffix
+      add(
+        {
+          id: `trail-${id}-solid`,
+          type: "line",
+          source: "trails",
+          "source-layer": "trail",
+          minzoom: 9,
+          filter: ["all", ["==", str("route"), id], onCycleway],
+          layout: { "line-cap": "butt", ...TRAIL_JOIN },
+          paint
+        },
+        ["trasy", `${label} – po cyklochodníku`, "line", {}, [...MARK_KEYS, paletteKey]]
+      );
+      L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
     }
 
     // značka, ako je na strome: obrázok zo spritu (`poc/web/marks.js`).

@@ -3091,6 +3091,7 @@ zvlášť a dostane vlastný **pruh**. Detaily, ktoré na tom závisia:
 | poradie | sieť → druh → farba → id relácie | závisí len od trasy, takže si dve trasy na susedných úsekoch pruhy neprehodia; dôležitejšia je bližšie k ceste |
 | smer čiary | reťaz ciest, ktoré na seba **nadväzujú**, ide smerom, akým je v OSM nakreslená väčšina jej dĺžky (`orient_ways`) | `line-offset` posúva podľa smeru geometrie; Mapy.com kreslí pešie trasy vpravo od smeru v OSM a cyklotrasy vľavo – viď nižšie |
 | duplikáty | nadradená trasa a jej časť sa zlúčia | superroute a jej člen sú dve relácie na tých istých cestách; dva rovnaké pásiky vedľa seba nie sú informácia, ale chyba |
+| plná cyklotrasa | `cycleway: 1` na `highway=cycleway` a na spevnenom chodníku s `bicycle=designated` (`on_cycleway`); štýl ju tam kreslí plnou čiarou (`trail-bicycle-solid`), inde prerušovanou | tak to robí Mapy.com: plná ružová je cyklochodník, prerušovaná trasa po ceste či lesnej ceste |
 
 ### Smer čiary: prečo sa reťazí a nenormalizuje
 
