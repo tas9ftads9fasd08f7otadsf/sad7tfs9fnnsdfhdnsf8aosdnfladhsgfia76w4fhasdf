@@ -94,7 +94,9 @@ test("a layer added elsewhere moves no other package's layers", () => {
   const recorded = style.layers.map((l) => l.id);
   const before = split(style, SHEET, SPRITE, recorded);
   const grown = structuredClone(style);
-  grown.layers.splice(3, 0, { ...structuredClone(grown.layers[2]), id: "landcover-new" });
+  // 523 by id: the town's ground now opens the style, so index 2 is no landscape layer
+  const wood = grown.layers.findIndex((l) => l.id === "landcover-wood");
+  grown.layers.splice(wood + 1, 0, { ...structuredClone(grown.layers[wood]), id: "landcover-new" });
   const after = split(grown, SHEET, SPRITE, recorded);
   for (const pkg of Object.keys(before).filter((p) => p !== "landscape")) {
     assert.deepEqual(after[pkg].fragment, before[pkg].fragment, pkg);
