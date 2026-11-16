@@ -45,6 +45,9 @@ ROUTE_TYPES = {
 ROUTE_ORDER = {"hiking": 0, "ferrata": 1, "bicycle": 2, "mtb": 3, "ski": 4,
                "horse": 5}
 
+# kinds drawn in their own colour, not the route's (`TRAIL_KIND_COLOURED` in the style)
+KIND_COLOURED = {"bicycle", "mtb"}
+
 # wheeled routes on the other side than walking ones; +1 right of the line, −1 left
 SIDE_BY_ROUTE = {"hiking": 1, "ferrata": 1, "ski": 1, "horse": 1,
                  "bicycle": -1, "mtb": -1}
@@ -366,7 +369,9 @@ class Ways(osmium.SimpleHandler):
             # a route without a mark colour is drawn in its kind's colour
             # an educational trail keeps its own lane, though green like the green mark
             edu = info.get("edu", False)
-            key = (side, info["colour"], info["hex"], edu) if info["colour"] or info["hex"] \
+            # cycle routes are one magenta on Mapy, so they share a lane whatever their colour
+            coloured = (info["colour"] or info["hex"]) and info["route"] not in KIND_COLOURED
+            key = (side, info["colour"], info["hex"], edu) if coloured \
                 else (side, "", info["route"], edu)
             if key not in shared:
                 shared[key] = sum(1 for k in shared if k[0] == side)

@@ -25,6 +25,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   TRAIL_TYPES,
+  TRAIL_KIND_COLOURED,
   TRAIL_OFFSET_ZOOMS,
   TRAIL_OFFSET_ROAD,
   TRAIL_OFFSET_PATH,
@@ -270,6 +271,17 @@ if (!/def ease_corners\(/.test(py) || !/coords, eased = ease_corners\(coords\)/.
       );
     }
   }
+}
+
+// 10. the kinds drawn in their own colour share a lane in the tiles
+const kindBlock = py.match(/KIND_COLOURED\s*=\s*\{([^}]*)\}/);
+const kinds = kindBlock ? [...kindBlock[1].matchAll(/"([a-z_]+)"/g)].map((m) => m[1]).sort() : [];
+if (JSON.stringify(kinds) !== JSON.stringify([...TRAIL_KIND_COLOURED].sort())) {
+  bad.push(
+    `KIND_COLOURED in workers/trails/routes.py is [${kinds}], TRAIL_KIND_COLOURED in the style ` +
+      `[${TRAIL_KIND_COLOURED}]. A kind drawn in one colour must share one lane, or two ` +
+      "stripes of the same magenta lie side by side."
+  );
 }
 
 for (const m of bad) console.log(`::error::${m}`);
