@@ -17,16 +17,27 @@ const contrast = (a, b) => {
 };
 
 // 496 TestFlight AOoL: dark side streets nearly vanished into the ground
+// 527 a black street stands clear by its light edge, as navigation draws it at night
 test("every map type's dark side streets stand clear of the ground", () => {
   const { overrides } = normalizeOverrides(raw);
-  const faint = MAP_TYPE_IDS.flatMap((mapType) => buildStyle({
-    theme: "tmava", mapType, overrides,
-    tilesUrl: "https://x/t.pmtiles", spriteUrl: "https://x/s",
-    glyphsUrl: "https://x/{fontstack}/{range}.pbf", trailsUrl: "https://x/tr.pmtiles"
-  }).layers
-    .filter((l) => /^road-(minor|service|pedestrian)$/.test(l.id))
-    .map((l) => [mapType, l.id, l.paint?.["line-color"]])
-    .filter(([, , c]) => typeof c === "string" && contrast(c, THEMES.tmava.residential) < 1.5)
-    .map((row) => row.join(" ")));
+  const clear = (c) => typeof c !== "string" || contrast(c, THEMES.tmava.residential) >= 1.5;
+  const faint = MAP_TYPE_IDS.flatMap((mapType) => {
+    const layers = buildStyle({
+      theme: "tmava", mapType, overrides,
+      tilesUrl: "https://x/t.pmtiles", spriteUrl: "https://x/s",
+      glyphsUrl: "https://x/{fontstack}/{range}.pbf", trailsUrl: "https://x/tr.pmtiles"
+    }).layers;
+    const edge = (id) => layers.find((l) => l.id === `${id}-casing`)?.paint?.["line-color"];
+    return layers
+      .filter((l) => /^road-(minor|service|pedestrian)$/.test(l.id))
+      .filter((l) => !clear(l.paint?.["line-color"]) && !(edge(l.id) && clear(edge(l.id))))
+      .map((l) => [mapType, l.id, l.paint?.["line-color"], edge(l.id)].join(" "));
+  });
   assert.deepEqual(faint, []);
+});
+
+// 527 the edge must carry it: a black street with a black edge would vanish again
+test("a dark side street with a dark edge is caught", () => {
+  assert.ok(contrast("#000000", THEMES.tmava.residential) < 1.5);
+  assert.ok(contrast("#0e0e16", THEMES.tmava.residential) < 1.5, "#496's old near-black edge");
 });
