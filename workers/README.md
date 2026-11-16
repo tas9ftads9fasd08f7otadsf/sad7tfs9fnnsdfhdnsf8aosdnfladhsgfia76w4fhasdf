@@ -3089,7 +3089,7 @@ zvlášť a dostane vlastný **pruh**. Detaily, ktoré na tom závisia:
 | strana cesty | pešie (turistická, ferrata, bežky, jazdecká) `+1`, kolesové (cyklo, MTB) `−1` | po jednom chodníku vedie bežne turistická značka **aj** cyklotrasa; v jednom rade by sa druhá odsunula tak ďaleko, že by pri nej nebolo vidieť, ku ktorej ceste patrí |
 | číslovanie pruhov | na každej strane zvlášť, od cesty von: 0 · 1 · 2 … | keby boli vycentrované, koniec jednej trasy by posunul všetky ostatné |
 | poradie | sieť → druh → farba → id relácie | závisí len od trasy, takže si dve trasy na susedných úsekoch pruhy neprehodia; dôležitejšia je bližšie k ceste |
-| smer čiary | podľa toho, na čo cesta **nadväzuje** (`orient_ways`) | `line-offset` posúva podľa smeru geometrie – viď nižšie |
+| smer čiary | reťaz ciest, ktoré na seba **nadväzujú**, ide smerom, akým je v OSM nakreslená väčšina jej dĺžky (`orient_ways`) | `line-offset` posúva podľa smeru geometrie; Mapy.com kreslí pešie trasy vpravo od smeru v OSM a cyklotrasy vľavo – viď nižšie |
 | duplikáty | nadradená trasa a jej časť sa zlúčia | superroute a jej člen sú dve relácie na tých istých cestách; dva rovnaké pásiky vedľa seba nie sú informácia, ale chyba |
 
 ### Smer čiary: prečo sa reťazí a nenormalizuje
@@ -3110,8 +3110,9 @@ smeru na uhlopriečku. **Žiadne pravidlo nad jednou čiarou to nevyrieši** –
 čiary je vlastnosť dvojice susedov, nie jednej cesty.
 
 `orient_ways` preto berie cesty ako **hrany grafu** (vrcholy sú uzly OSM) a od
-každej neprebranej ide do šírky: susedovi pridelí smer tak, aby v spoločnom
-uzle jedna KONČILA a druhá ZAČÍNALA. Pásik potom drží stranu cez celý chodník
+každej neprebranej ide do šírky cez uzly, kde sa stretávajú **práve dve** cesty:
+susedovi pridelí smer tak, aby v spoločnom uzle jedna KONČILA a druhá ZAČÍNALA.
+Na križovatke reťaz končí. Pásik potom drží stranu cez celý chodník
 bez ohľadu na to, ako kto ktorý úsek nakreslil. Vstupom sú len koncové uzly
 (`{cesta: (uzol, uzol)}`), takže druhý priechod nad PBF nepotrebuje index
 súradníc a je lacný.
@@ -3123,9 +3124,11 @@ tak vetví, nie prostriedok chodníka. Koľko takých miest v území ostalo, p�
 beh do logu aj do súhrnu (`side_flips`) a nad 5 % ciest to varuje – je to
 číslo, ktoré má byť malé, a keď skočí, smerovanie sa pokazilo.
 
-Fyzická strana (severná či južná) je pre každú reťaz ľubovoľná, ale **stála**:
-berie sa najmenšie id cesty a v nej menšie id uzla. Dôležité je, že sa strana
-nemení pozdĺž trasy, nie to, ktorá to je.
+Fyzická strana sa berie z OSM ako na Mapy.com, ktoré kreslí pešiu trasu vpravo
+od smeru cesty v OSM a cyklotrasu vľavo a nereťazí nič. Reťaz preto ide smerom,
+akým je v OSM nakreslená väčšina jej uzlov: v Prešovskom kraji tak leží na
+strane ako na Mapy 90 % dĺžky a pásik pozdĺž chodníka preskočí na 4 miestach
+namiesto 509, keď reťaz bola celá sieť a jej smer dávalo najmenšie id uzla.
 
 ### Odstup od cesty: dve čísla, nie jedno
 

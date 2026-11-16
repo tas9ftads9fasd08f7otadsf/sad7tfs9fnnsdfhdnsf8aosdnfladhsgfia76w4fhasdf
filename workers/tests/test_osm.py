@@ -219,6 +219,19 @@ class Trails(unittest.TestCase):
         self.assertEqual(len(flip), 1)
         self.assertEqual(self.t.orient_ways({10: (1, 2), 11: (5, 6)})[2], 2)
 
+    def test_orient_ways_keeps_most_of_a_chain_as_drawn_in_osm(self):
+        # 513 Mapy draws a walking route right of the OSM direction, so most length keeps it
+        ends = {10: (2, 1), 11: (3, 2), 12: (3, 4)}
+        flip, conflicts, _ = self.t.orient_ways(ends, {10: 40, 11: 30, 12: 5})
+        self.assertEqual((flip, conflicts), ({12}, 0))
+        flip, _, _ = self.t.orient_ways(ends, {10: 2, 11: 2, 12: 50})
+        self.assertEqual(flip, {10, 11})
+
+    def test_orient_ways_starts_a_new_chain_at_a_junction(self):
+        # 513 three ways at node 2: each keeps its OSM direction instead of one network's
+        flip, _, chains = self.t.orient_ways({10: (1, 2), 11: (2, 3), 12: (4, 2)})
+        self.assertEqual((flip, chains), (set(), 3))
+
     def test_lane_order_stable_and_collapsed(self):
         base = {"route": "hiking", "colour": "red", "hex": "", "tier": "national", "ref": "", "name": ""}
         routes = [dict(base, rel=3, colour="blue", name="Modrá"),
