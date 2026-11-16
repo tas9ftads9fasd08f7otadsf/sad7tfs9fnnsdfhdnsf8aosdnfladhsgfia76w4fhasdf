@@ -3093,6 +3093,7 @@ zvlášť a dostane vlastný **pruh**. Detaily, ktoré na tom závisia:
 | duplikáty | nadradená trasa a jej časť sa zlúčia | superroute a jej člen sú dve relácie na tých istých cestách; dva rovnaké pásiky vedľa seba nie sú informácia, ale chyba |
 | plná cyklotrasa | `cycleway: 1` na `highway=cycleway` a na spevnenom chodníku s `bicycle=designated` (`on_cycleway`); štýl ju tam kreslí plnou čiarou (`trail-bicycle-solid`), inde prerušovanou | tak to robí Mapy.com: plná ružová je cyklochodník, prerušovaná trasa po ceste či lesnej ceste |
 | náučný chodník | `edu: 1` pri značke so šikmým pásom alebo pri mene „náučný…" (`is_educational`); vlastný pruh vonku za značenými trasami, štýl ho kreslí čiarkou s bodkou (`trail-hiking-educational`) o pruh ďalej | tak ho kreslí Mapy.com: 10 px čiarka, 4 px medzera, 2 px bodka, mimo zelenej značky |
+| miestna trasa | `tier: local` (sieť `lwn`, `ref` končí na M); štýl ju kreslí čiarkovanou (`trail-hiking-local`), vo svojom pruhu za ostatnými | tak ju kreslí Mapy.com: čiarka 10 px, medzera 4,75 px (z13 5,9/4,5), pásik rovnako široký |
 
 ### Smer čiary: prečo sa reťazí a nenormalizuje
 

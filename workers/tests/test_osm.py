@@ -291,6 +291,18 @@ class Trails(unittest.TestCase):
         self.assertEqual([r["rel"] for r in order], [2, 1])
         self.assertEqual(self.t.Ways.lane_slots(order), [(1, 0, 0), (1, 1, 1)])
 
+    def test_several_hiking_routes_stack_as_mapy_does(self):
+        # 529 Mapy: red, blue, green, yellow outwards, a local route last, same colours on one lane
+        base = {"route": "hiking", "colour": "", "hex": "", "tier": "regional", "ref": "", "name": ""}
+        marks = [dict(base, rel=1, colour="yellow", ref="8104"),
+                 dict(base, rel=2, colour="green", tier="local", ref="5148M"),
+                 dict(base, rel=3, colour="red", tier="national", ref="0701"),
+                 dict(base, rel=4, colour="red", tier="national", ref=""),
+                 dict(base, rel=5, colour="blue", ref="2404")]
+        order = self.t.Ways.lane_order(marks)
+        self.assertEqual([r["colour"] for r in order], ["red", "red", "blue", "yellow", "green"])
+        self.assertEqual([lane for _, _, lane in self.t.Ways.lane_slots(order)], [0, 0, 1, 2, 3])
+
     def test_is_educational(self):
         # 515 the diagonal stripe of the mark, or the name, says it is educational
         tags = __import__("tags")
