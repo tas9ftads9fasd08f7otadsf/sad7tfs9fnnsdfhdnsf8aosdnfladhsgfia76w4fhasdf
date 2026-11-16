@@ -1461,6 +1461,10 @@ export const TRAIL_TYPE_IDS = TRAIL_TYPES.map((t) => t.id);
 /** Route kinds Mapy draws solid where they run on a cycleway (`cycleway` in the tiles). */
 export const TRAIL_SOLID_ON_CYCLEWAY = ["bicycle"];
 
+/** Route kinds drawn in their kind's colour, whatever `colour` says: Mapy's cycle magenta. */
+export const TRAIL_KIND_COLOURED = ["bicycle", "mtb"];
+const TRAIL_KIND_COLOURED_KEYS = TRAIL_KIND_COLOURED.map((id) => TRAIL_TYPES.find((t) => t.id === id).palette);
+
 /** An educational trail's dash, gap, dot, gap in stripe widths by zoom band `[from, dash]`. */
 // Mapy keeps them 10, 4, 2 and 4 screen px whatever the zoom; our stripe widens
 export const TRAIL_EDUCATIONAL_DASH = [
@@ -4900,12 +4904,13 @@ export function buildStyle({
      * Farba pásika: pomenovaná značka → paleta, neznáma farba z OSM → tak,
      * ako je v dátach (atribút `hex`), žiadna farba → podľa druhu trasy.
      */
-    const trailColour = (fallbackKey) => [
+    // a kind Mapy draws in one colour ignores the route's own `colour`
+    const trailColour = (fallbackKey) => (TRAIL_KIND_COLOURED_KEYS.includes(fallbackKey) ? c[fallbackKey] : [
       "match",
       str("colour"),
       ...TRAIL_MARK_COLOURS.flatMap(([name, key]) => [name, c[key]]),
       ["coalesce", ["get", "hex"], c[fallbackKey]]
-    ];
+    ]);
 
     //     line-offset = side × (odstup(po čom vedie) + poradie × rozostup)
     //

@@ -265,6 +265,15 @@ class Trails(unittest.TestCase):
         bike = dict(base, rel=2, route="bicycle")
         self.assertEqual(sorted(r["rel"] for r in self.t.Ways.lane_order([bike, e8])), [2, 192031])
 
+    def test_cycle_routes_share_one_lane_whatever_their_colour(self):
+        # 526 in Pieniny three cycle routes tagged green, red and blue made three stripes; Mapy one
+        bike = {"route": "bicycle", "hex": ""}
+        lanes = [dict(bike, colour="green"), dict(bike, colour="red"), dict(bike, colour="blue")]
+        self.assertEqual(self.t.Ways.lane_slots(lanes), [(-1, 0, 0), (-1, 1, 0), (-1, 2, 0)])
+        hike = {"route": "hiking", "hex": ""}
+        self.assertEqual(self.t.Ways.lane_slots([dict(hike, colour="green"), dict(hike, colour="red")]),
+                         [(1, 0, 0), (1, 1, 1)])
+
     def test_lane_slots_share_a_lane_per_colour(self):
         base = {"route": "hiking", "colour": "red", "hex": ""}
         lanes = [dict(base), dict(base), dict(base, colour="blue"),

@@ -55,3 +55,13 @@ test("the solid stretch takes the route's override, but never its dash", () => {
   assert.equal(solid.paint["line-color"], "#123456");
   assert.equal(solid.paint["line-dasharray"], undefined);
 });
+
+// 526 a cycle route tagged `colour=green` was drawn green; Mapy draws every cycle route magenta
+test("cycle and MTB stripes take their kind's colour, hiking ones their mark's", () => {
+  for (const id of ["trail-bicycle", "trail-bicycle-solid", "trail-mtb", "trail-bicycle-label"]) {
+    const layer = byId(id);
+    const colour = layer.paint["line-color"] ?? layer.paint["text-color"];
+    assert.equal(typeof colour, "string", id);
+  }
+  assert.equal(byId("trail-hiking").paint["line-color"][0], "match");
+});
