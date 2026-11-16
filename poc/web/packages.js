@@ -176,6 +176,33 @@ export function packageOf(layer) {
   return layerOwners(layer).find((owner) => owner !== BASE_PACKAGE) || "landscape";
 }
 
+/** Riki Maps' default stack, bottom first: its `DefaultStack.order` as package ids. */
+export const DEFAULT_STACK = ["landscape", "rocks", "terrain", "water", "contours", "paths", "roads",
+  "railways", "ski", "boundaries", "points", "history", "names", "settlements"];
+
+// areas under lines, then 3D, then labels, as the app's `PackageStacking.band`
+const band = (type) => ({
+  background: -1, fill: 0, hillshade: 0, raster: 0, "color-relief": 0,
+  "fill-extrusion": 2, symbol: 3
+})[type] ?? 1;
+
+/** The style drawn as Riki Maps draws a region: packages in `order`, labels as built. */
+export function stackPackages(style, order = DEFAULT_STACK) {
+  const rank = Object.fromEntries(order.map((id, i) => [id, i]));
+  const ways = Math.max(...["paths", "roads", "railways"].map((id) => rank[id] ?? -1));
+  const key = (layer, index) => {
+    const b = band(layer.type);
+    if (b === 3) return [b, 0, index];
+    const pkg = packageOf(layer);
+    // marked routes ride in Paths but are drawn over every way
+    const r = pkg === "paths" && layer.id.startsWith("trail-") ? ways + 0.5 : rank[pkg] ?? order.length;
+    return [b, r, index];
+  };
+  const keyed = style.layers.map((layer, index) => ({ layer, k: key(layer, index) }));
+  keyed.sort((a, b) => a.k[0] - b.k[0] || a.k[1] - b.k[1] || a.k[2] - b.k[2]);
+  return { ...style, layers: keyed.map(({ layer }) => layer) };
+}
+
 const INK = {
   railCasing: ["#5C5650", "#B8B2AA"],
   railGround: ["#FFFFFF", "#1C1C1E"],

@@ -7,7 +7,7 @@ import {
   DEFAULT_DEM_SOURCE,
   DEFAULT_ICON_SOURCE
 } from "./themes.js";
-import { packageOf } from "./packages.js";
+import { packageOf, stackPackages } from "./packages.js";
 
 /** Draws every archive the region has; `set` is the icon set, `baseUrl` the site's. */
 export function regionStyle({ manifest, regionKey, baseUrl, set, overrides, theme, mapType,
@@ -57,7 +57,9 @@ export function regionStyle({ manifest, regionKey, baseUrl, set, overrides, them
     overrides,
     name: `FricoMaps – ${region.name}`
   });
-  return region.pmtiles || !region.cuts ? style : onCuts(style, region.cuts, baseUrl);
+  // before the cuts: they rename the base sources `packageOf` reads
+  const stacked = stackPackages(style);
+  return region.pmtiles || !region.cuts ? stacked : onCuts(stacked, region.cuts, baseUrl);
 }
 
 /** A region without its whole base map: each base layer reads its package's cut. */
