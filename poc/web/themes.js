@@ -329,10 +329,11 @@ export const THEMES = {
     trunk: "#8a6a35",
     primary: "#6a5a35",
     secondary: "#4a4238",
-    minor: "#524d65",
-    service: "#47474a",
+    // night local roads as navigation draws them: black, a light grey edge
+    minor: "#000000",
+    service: "#000000",
     pedestrian: "#3c3a4e",
-    roadCasing: "#0e0e16",
+    roadCasing: "#646361",
     // Mapy edges a bridge in grey and lets it cast a soft shadow
     bridgeCasing: "#6a6a72",
     bridgeShadow: "#000000",

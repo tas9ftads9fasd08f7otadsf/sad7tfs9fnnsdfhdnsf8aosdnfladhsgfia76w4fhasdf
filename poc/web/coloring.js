@@ -6,7 +6,8 @@ import {
   selectedIconSource,
   mergedPalette,
   DEFAULT_MAP_TYPE,
-  MAX_DISPLAY_Z
+  MAX_DISPLAY_Z,
+  THEMES
 } from "./themes.js";
 import { loadOverrides, saveOverrides, serializeOverrides } from "./devmode.js";
 import { labelLanguages } from "./languages.js";
@@ -115,7 +116,10 @@ async function loadIconSet() {
 const currentOverrides = (edits = state.edits) =>
   applyEdits(baseOverrides, edits, { darkColors: darkColors(edits).colors });
 
-function styleWith(overrides, theme = "svetla") {
+// `?theme=tmava` draws our side at night, to check the dark theme against a screenshot
+const pageTheme = THEMES[params.get("theme")] ? params.get("theme") : "svetla";
+
+function styleWith(overrides, theme = pageTheme) {
   return regionStyle({
     manifest, regionKey, baseUrl: siteUrl, set: iconSet, overrides, theme,
     mapType: DEFAULT_MAP_TYPE, languages
