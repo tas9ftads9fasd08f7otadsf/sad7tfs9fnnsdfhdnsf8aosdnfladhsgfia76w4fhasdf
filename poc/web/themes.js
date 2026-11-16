@@ -4414,7 +4414,7 @@ export function buildStyle({
             layout: { "line-cap": "butt", "line-join": "round" },
             paint: {
               "line-color": c.bridgeShadow,
-              "line-width": zwRoad(widen(stops, extra + 2 * BRIDGE_SHADOW.spread)),
+              "line-width": zwRoad(widen(casingStops(id, stops, extra), 2 * BRIDGE_SHADOW.spread)),
               "line-blur": BRIDGE_SHADOW.blur,
               "line-opacity": BRIDGE_SHADOW.opacity,
               // south-east, away from the hillshade's light; turns with the map as the shading does

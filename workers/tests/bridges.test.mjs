@@ -46,3 +46,19 @@ test("every theme has a bridge edge and shadow colour", () => {
     assert.match(String(palette.bridgeShadow), /^#[0-9a-f]{6}$/i, name);
   }
 });
+
+// 522 bug: the shadow was sized from the old borders, so it stood out unevenly past #519's edges
+test("a bridge's shadow reaches the same width beyond its edge on every road", () => {
+  const stops = (expr) => {
+    const out = {};
+    for (let i = 3; i < expr.length; i += 2) out[expr[i]] = expr[i + 1][1];
+    return out;
+  };
+  for (const [id] of ROAD_DEFS) {
+    const shadow = stops(style.layers[index(`road-${id}-shadow-bridge`)].paint["line-width"]);
+    const casing = stops(style.layers[index(`road-${id}-casing-bridge`)].paint["line-width"]);
+    for (const z of Object.keys(casing)) {
+      assert.ok(Math.abs((shadow[z] - casing[z]) / 2 - BRIDGE_SHADOW.spread) < 1e-9, `${id} z${z}`);
+    }
+  }
+});
