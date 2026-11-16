@@ -20,6 +20,7 @@ import osmium
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from tags import (  # noqa: E402
     TIER_ORDER,
+    is_educational,
     resolve_colour,
     resolve_mark,
     resolve_tier,
@@ -262,6 +263,7 @@ class Routes(osmium.SimpleHandler):
             "name": (tags.get("name:sk") or tags.get("name") or "").strip(),
             "ref": (tags.get("ref") or "").strip(),
             "rel": r.id,
+            "edu": route == "hiking" and is_educational(tags, mark),
         }
         self.routes += 1
         for m in r.members:
@@ -344,6 +346,8 @@ class Ways(osmium.SimpleHandler):
                 "cnt": len(lanes),
                 "rel": info["rel"],
             }
+            if info.get("edu"):
+                props["edu"] = 1
             if cycleway:
                 props["cycleway"] = 1
             for key in ("colour", "hex", "network", "name", "ref",
@@ -360,8 +364,10 @@ class Ways(osmium.SimpleHandler):
         for info in lanes:
             side = SIDE_BY_ROUTE.get(info["route"], 1)
             # a route without a mark colour is drawn in its kind's colour
-            key = (side, info["colour"], info["hex"]) if info["colour"] or info["hex"] \
-                else (side, "", info["route"])
+            # an educational trail keeps its own lane, though green like the green mark
+            edu = info.get("edu", False)
+            key = (side, info["colour"], info["hex"], edu) if info["colour"] or info["hex"] \
+                else (side, "", info["route"], edu)
             if key not in shared:
                 shared[key] = sum(1 for k in shared if k[0] == side)
             # lanes are numbered per side
@@ -387,6 +393,8 @@ class Ways(osmium.SimpleHandler):
         return sorted(
             kept,
             key=lambda i: (
+                # Mapy draws an educational trail outside the marked routes
+                i.get("edu", False),
                 TIER_ORDER.get(i["tier"], 9),
                 ROUTE_ORDER.get(i["route"], 9),
                 i["colour"],
