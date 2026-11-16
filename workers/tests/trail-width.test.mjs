@@ -63,11 +63,13 @@ test("local routes start at z12 and regional ones at z11", () => {
   assert.equal(at(byId("trail-halo").paint["line-opacity"], 11.5, "local"), 0);
 });
 
-// 508 Mapy draws a hiking stripe about twice as wide as a cycle route's dots
-test("walking stripes are about twice as wide as cycle ones from z13 to z16", () => {
-  const wide = Object.fromEntries(TRAIL_STRIPE_WALK);
-  const thin = Object.fromEntries(TRAIL_STRIPE);
-  for (const z of [13, 14, 16]) {
-    assert.ok(wide[z] / thin[z] >= 1.6 && wide[z] / thin[z] <= 2.1, `z${z}: ${wide[z]} vs ${thin[z]}`);
+// 509 measured on 44 random tiles: Mapy's hiking stripe is as wide as its cycle dashes
+// up to its z16 and barely wider at z17; ours was 1.5–2× wider
+test("walking stripes are as wide as cycle ones at z13–z14 and at most 1.4× wider at z16", () => {
+  const walk = Object.fromEntries(TRAIL_STRIPE_WALK);
+  const bike = Object.fromEntries(TRAIL_STRIPE);
+  for (const z of [13, 14]) {
+    assert.ok(Math.abs(walk[z] - bike[z]) <= 0.25, `z${z}: ${walk[z]} vs ${bike[z]}`);
   }
+  assert.ok(walk[16] >= bike[16] && walk[16] / bike[16] <= 1.4, `z16: ${walk[16]} vs ${bike[16]}`);
 });
