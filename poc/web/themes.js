@@ -202,6 +202,9 @@ export const THEMES = {
     service: "#ffffff",
     pedestrian: "#f2efe9",
     roadCasing: "#c8bda8",
+    // Mapy edges a bridge in grey and lets it cast a soft shadow
+    bridgeCasing: "#818180",
+    bridgeShadow: "#3a3a30",
     path: "#55534d",
     footway: "#6d6a63",
     cycleway: "#6a8fd0",
@@ -330,6 +333,9 @@ export const THEMES = {
     service: "#47474a",
     pedestrian: "#3c3a4e",
     roadCasing: "#0e0e16",
+    // Mapy edges a bridge in grey and lets it cast a soft shadow
+    bridgeCasing: "#6a6a72",
+    bridgeShadow: "#000000",
     path: "#8b8880",
     footway: "#75726a",
     cycleway: "#41618f",
@@ -457,6 +463,9 @@ export const THEMES = {
     service: "#fdfaf2",
     pedestrian: "#efe9da",
     roadCasing: "#a89878",
+    // Mapy edges a bridge in grey and lets it cast a soft shadow
+    bridgeCasing: "#7a786e",
+    bridgeShadow: "#3a3428",
     path: "#4c4b45",
     footway: "#63615a",
     cycleway: "#3060b0",
@@ -583,6 +592,9 @@ export const THEMES = {
     service: "#fffdf8",
     pedestrian: "#f8f2e8",
     roadCasing: "#d5bfa5",
+    // Mapy edges a bridge in grey and lets it cast a soft shadow
+    bridgeCasing: "#8a8478",
+    bridgeShadow: "#40382c",
     path: "#5f5c54",
     footway: "#736f66",
     cycleway: "#7a9fb8",
@@ -767,6 +779,8 @@ export const PALETTE_GROUPS = [
       ["service", "Účelová cesta"],
       ["pedestrian", "Pešia zóna"],
       ["roadCasing", "Obrys ciest"],
+      ["bridgeCasing", "Okraj mosta"],
+      ["bridgeShadow", "Tieň mosta"],
       ["roadText", "Popisok cesty"],
       ["roadConstruction", "Cesta vo výstavbe"],
       ["roadProposed", "Plánovaná cesta"],
@@ -1041,6 +1055,8 @@ const zw = (stops) => [
 
 /** Share of its road's width a slip road gets; Mapy draws interchange loops slim. */
 export const RAMP_SCALE = 0.5;
+/** A bridge's shadow: px beyond the casing each side, blur, opacity, shift; Mapy's from z14. */
+export const BRIDGE_SHADOW = { spread: 1.5, blur: 2, opacity: 0.15, translate: [1, 1.5], minzoom: 14 };
 const RAMP_FACTOR = ["case", ["==", ["get", "ramp"], 1], RAMP_SCALE, 1];
 const zwRoad = (stops) => [
   "interpolate",
@@ -4378,7 +4394,33 @@ export function buildStyle({
     ];
     const odNajmenejDolezitej = [...ROAD_DEFS].reverse();
     // obrysy idú celé pod výplne, inak by ich prekrývali križovatky
-    for (const [id, label, classes, , casingKey, stops, extra, mz] of odNajmenejDolezitej) {
+    if (opts.shadow) {
+      for (const [id, label, classes, , , stops, extra, mz] of odNajmenejDolezitej) {
+        add(
+          {
+            id: `road-${id}-shadow${suffix}`,
+            type: "line",
+            "source-layer": "transportation",
+            minzoom: Math.max(mz, BRIDGE_SHADOW.minzoom),
+            filter: filterFor(classes),
+            layout: { "line-cap": "butt", "line-join": "round" },
+            paint: {
+              "line-color": c.bridgeShadow,
+              "line-width": zwRoad(widen(stops, extra + 2 * BRIDGE_SHADOW.spread)),
+              "line-blur": BRIDGE_SHADOW.blur,
+              "line-opacity": BRIDGE_SHADOW.opacity,
+              // south-east, away from the hillshade's light; turns with the map as the shading does
+              "line-translate": BRIDGE_SHADOW.translate,
+              "line-translate-anchor": "map"
+            }
+          },
+          ["cesty", `${label} – tieň${passLabel}`, "line", { "line-color": "bridgeShadow" },
+           null, null, `road-${id}${suffix}`]
+        );
+      }
+    }
+    for (const [id, label, classes, , roadCasingKey, stops, extra, mz] of odNajmenejDolezitej) {
+      const casingKey = opts.casingKey || roadCasingKey;
       add(
         {
           id: `road-${id}-casing${suffix}`,
@@ -4563,7 +4605,7 @@ export function buildStyle({
   spolu("rail-bg");
 
   // --- mosty (nad všetkým ostatným) ---
-  roadPass("-bridge", " (most)", isBridge, { cap: "butt" });
+  roadPass("-bridge", " (most)", isBridge, { cap: "butt", casingKey: "bridgeCasing", shadow: true });
 
   // --- lanovky, kompy, móla ---
   // cabins ride a railway-like band, chairs bold dashes, drag lifts a thin dash, as on Mapy
