@@ -154,6 +154,16 @@ def split_symbol(token):
     return "", OSMC_SHAPES.get(token) or OSMC_SHAPES.get(head, "")
 
 
+EDUCATIONAL_NAME = re.compile(r"n[aá]u[cč]n|educational|lehrpfad", re.IGNORECASE)
+
+
+def is_educational(tags, mark):
+    """Whether a walking route is an educational trail: its diagonal stripe, or its name says so."""
+    if (tags.get("educational") or "").strip().lower() in ("yes", "trail"):
+        return True
+    return mark == "slash" or bool(EDUCATIONAL_NAME.search(tags.get("name") or ""))
+
+
 def resolve_mark(tags, route, colour):
     """The route's mark as `(shape, background, colour)`, or `(None, None, None)`."""
     fields = [f.strip().lower() for f in (tags.get("osmc:symbol") or "").split(":")]

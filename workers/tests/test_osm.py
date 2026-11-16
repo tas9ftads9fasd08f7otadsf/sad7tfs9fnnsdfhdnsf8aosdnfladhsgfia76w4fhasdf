@@ -273,6 +273,24 @@ class Trails(unittest.TestCase):
         self.assertEqual(self.t.Ways.lane_slots(lanes),
                          [(1, 0, 0), (1, 1, 0), (1, 2, 1), (1, 3, 0), (-1, 0, 0), (-1, 1, 1)])
 
+    def test_educational_trail_gets_a_lane_outside_the_marks(self):
+        # 515 Mapy draws a náučný chodník dash-dot outside the marks, never on the green one
+        base = {"route": "hiking", "colour": "green", "hex": "", "tier": "local", "ref": "", "name": ""}
+        edu = dict(base, rel=1, edu=True, name="Náučný chodník Bílá hora")
+        green = dict(base, rel=2, tier="regional")
+        order = self.t.Ways.lane_order([edu, green])
+        self.assertEqual([r["rel"] for r in order], [2, 1])
+        self.assertEqual(self.t.Ways.lane_slots(order), [(1, 0, 0), (1, 1, 1)])
+
+    def test_is_educational(self):
+        # 515 the diagonal stripe of the mark, or the name, says it is educational
+        tags = __import__("tags")
+        self.assertTrue(tags.is_educational({}, "slash"))
+        self.assertTrue(tags.is_educational({"name": "Náučný chodník Kliny"}, "bar"))
+        self.assertTrue(tags.is_educational({"name": "Lesnícky náučný chodník"}, None))
+        self.assertTrue(tags.is_educational({"educational": "yes"}, "bar"))
+        self.assertFalse(tags.is_educational({"name": "Tatranská magistrála"}, "bar"))
+
 
 if __name__ == "__main__":
     unittest.main()

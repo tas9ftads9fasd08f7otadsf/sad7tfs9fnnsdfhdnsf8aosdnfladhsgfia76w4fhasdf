@@ -53,6 +53,9 @@ layers:
             type: integer
           # what it runs on – `path` or `road`
           - key: way
+          # 1 on an educational trail, drawn dash-dot one lane further out
+          - key: edu
+            type: integer
           # 1 on a cycleway, where Mapy draws a cycle route solid
           - key: cycleway
             type: integer

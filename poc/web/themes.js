@@ -1436,6 +1436,12 @@ export const TRAIL_TYPE_IDS = TRAIL_TYPES.map((t) => t.id);
 
 /** Route kinds Mapy draws solid where they run on a cycleway (`cycleway` in the tiles). */
 export const TRAIL_SOLID_ON_CYCLEWAY = ["bicycle"];
+
+/** An educational trail's dash, gap, dot, gap in stripe widths by zoom band `[from, dash]`. */
+// Mapy keeps them 10, 4, 2 and 4 screen px whatever the zoom; our stripe widens
+export const TRAIL_EDUCATIONAL_DASH = [
+  [0, [5.3, 2.1, 1.05, 2.1]], [15, [4.4, 1.8, 0.9, 1.8]], [16, [3.6, 1.4, 0.7, 1.4]]
+];
 const TRAIL_BY_ID = Object.fromEntries(TRAIL_TYPES.map((t) => [t.id, t]));
 
 /**
@@ -4874,7 +4880,9 @@ export function buildStyle({
             ["case", ["==", str("way"), "path"], PATH_STOPS[i][1], ROAD_STOPS[i][1]],
             // a wider walking stripe keeps its inner edge where a cycle one's would be
             ["case", ["==", num("side", 1), 1], (PITCH_WALK[i][1] - PITCH_STOPS[i][1]) / 2, 0],
-            ["*", laneNum, ["case", ["==", num("side", 1), 1], PITCH_WALK[i][1], PITCH_STOPS[i][1]]]
+            // Mapy keeps an educational trail one lane outside the marked routes
+            ["*", ["+", laneNum, num("edu", 0)],
+              ["case", ["==", num("side", 1), 1], PITCH_WALK[i][1], PITCH_STOPS[i][1]]]
           ]
         ]
       ])
@@ -4959,11 +4967,15 @@ export function buildStyle({
     );
 
     const onCycleway = ["==", num("cycleway", 0), 1];
+    const educational = ["==", num("edu", 0), 1];
     for (const { id, label, palette: paletteKey, dash, side } of trailTypes) {
       const solidOnCycleway = TRAIL_SOLID_ON_CYCLEWAY.includes(id) && dashValue(dash);
+      const ownEducational = id === "hiking";
       const filter = solidOnCycleway
         ? ["all", ["==", str("route"), id], ["!", onCycleway]]
-        : ["==", str("route"), id];
+        : ownEducational
+          ? ["all", ["==", str("route"), id], ["!", educational]]
+          : ["==", str("route"), id];
       const paint = {
         "line-color": trailColour(paletteKey),
         // tá istá krivka, ktorá je aj rozostupom – pásiky sa dotýkajú vždy
@@ -4984,6 +4996,22 @@ export function buildStyle({
         },
         ["trasy", label, "line", {}, [...MARK_KEYS, paletteKey]]
       );
+      if (ownEducational) {
+        add(
+          {
+            id: `trail-${id}-educational`,
+            type: "line",
+            source: "trails",
+            "source-layer": "trail",
+            minzoom: 9,
+            filter: ["all", ["==", str("route"), id], educational],
+            layout: { "line-cap": "butt", ...TRAIL_JOIN },
+            paint: { ...paint, "line-dasharray": dashSteps(TRAIL_EDUCATIONAL_DASH) }
+          },
+          ["trasy", `${label} – náučné chodníky`, "line", {}, [...MARK_KEYS, paletteKey]]
+        );
+        L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
+      }
       if (!solidOnCycleway) continue;
       // `__` would read as a region prefix in the app, hence a plain suffix
       add(
