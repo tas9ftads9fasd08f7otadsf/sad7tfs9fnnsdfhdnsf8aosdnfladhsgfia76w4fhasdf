@@ -171,6 +171,7 @@ export const DASH_PRESETS = [
   { id: "dashed", label: "Čiarkovaná", dash: [4, 2] },
   { id: "dashed-long", label: "Dlhé čiarky", dash: [8, 3] },
   { id: "dashed-fine", label: "Krátke čiarky", dash: [2, 1.5] },
+  { id: "dashed-short", label: "Krátke husté čiarky (cyklotrasa)", dash: [1.75, 1.25] },
   { id: "dotted", label: "Bodkovaná", dash: [1, 2] },
   { id: "dotted-dense", label: "Bodkovaná hustá", dash: [0.8, 1] },
   { id: "dotted-sparse", label: "Bodkovaná riedka", dash: [1, 4] },

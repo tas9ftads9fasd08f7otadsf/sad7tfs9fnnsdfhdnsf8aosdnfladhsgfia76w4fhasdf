@@ -18,6 +18,13 @@ const style = buildStyle({
   overrides
 });
 const byId = (id) => style.layers.find((l) => l.id === id);
+// the stripe width between its breaks, interpolated `exponential 1.5` as the style does
+const at15 = (stops, z) => {
+  const i = stops.findIndex(([sz]) => sz >= z);
+  if (stops[i][0] === z) return stops[i][1];
+  const [[z0, v0], [z1, v1]] = [stops[i - 1], stops[i]];
+  return v0 + ((1.5 ** (z - z0) - 1) / (1.5 ** (z1 - z0) - 1)) * (v1 - v0);
+};
 const stops = (expr) => expr.slice(3).filter((_, i) => i % 2 === 1);
 
 // 443 a narrower stroke than the pitch leaves gaps between trails on one path
@@ -36,9 +43,10 @@ test("trails are bold from the overview on", () => {
 });
 
 // 443 Mapy dashes every cycle route, long-distance ones too
+// 512 with Mapy's shorter dashes and gaps
 test("cycle routes are short dashes at every zoom", () => {
   const bike = byId("trail-bicycle");
-  assert.deepEqual(bike.paint["line-dasharray"], dashValue("dashed-fine"));
+  assert.deepEqual(bike.paint["line-dasharray"], dashValue("dashed-short"));
   assert.equal(style.layers.some((l) => l.id.startsWith("trail-bicycle__var")), false);
 });
 
@@ -72,4 +80,15 @@ test("walking stripes are as wide as cycle ones at z13–z14 and at most 1.4× w
     assert.ok(Math.abs(walk[z] - bike[z]) <= 0.25, `z${z}: ${walk[z]} vs ${bike[z]}`);
   }
   assert.ok(walk[16] >= bike[16] && walk[16] / bike[16] <= 1.4, `z16: ${walk[16]} vs ${bike[16]}`);
+});
+
+// 512 Mapy's cycle dashes are 3.25–3.75 px with 2.5 px gaps from its z13 to z16; ours were longer
+test("cycle dashes are Mapy's length and gap at z12–z15", () => {
+  const [dash, gap] = dashValue("dashed-short");
+  const width = Object.fromEntries([12, 13, 14, 15].map((z) => [z, at15(TRAIL_STRIPE, z)]));
+  const mapy = { 12: [3.25, 2.5], 13: [3.5, 2.5], 14: [3.75, 2.5], 15: [3.75, 2.5] };
+  for (const [z, [d, g]] of Object.entries(mapy)) {
+    assert.ok(Math.abs(dash * width[z] - d) / d <= 0.2, `z${z}: dash ${(dash * width[z]).toFixed(2)} vs ${d}`);
+    assert.ok(Math.abs(gap * width[z] - g) / g <= 0.2, `z${z}: gap ${(gap * width[z]).toFixed(2)} vs ${g}`);
+  }
 });
