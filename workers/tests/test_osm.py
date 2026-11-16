@@ -231,6 +231,14 @@ class Trails(unittest.TestCase):
         self.assertEqual(len(flip), 1)
         self.assertEqual(self.t.orient_ways({10: (1, 2), 11: (5, 6)})[2], 2)
 
+    def test_ways_keep_their_own_direction_as_mapy_does(self):
+        # 530 Mapy sets the side from each way's own OSM direction: 72 of 72 sampled ways, chained or not
+        ends = {10: (1, 2), 11: (3, 2), 12: (3, 4)}
+        flip, conflicts, chains = self.t.orient_ways(ends, None, follow_chains=False)
+        self.assertEqual((flip, chains), (set(), 1))
+        self.assertEqual(conflicts, 2, "the two joints where the side jumps")
+        self.assertFalse(self.t.FOLLOW_CHAINS)
+
     def test_orient_ways_keeps_most_of_a_chain_as_drawn_in_osm(self):
         # 513 Mapy draws a walking route right of the OSM direction, so most length keeps it
         ends = {10: (2, 1), 11: (3, 2), 12: (3, 4)}
