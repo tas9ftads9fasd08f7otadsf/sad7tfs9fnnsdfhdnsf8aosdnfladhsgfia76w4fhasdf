@@ -3226,7 +3226,8 @@ dve čísla nemôžu ticho rozísť.
 ### Farba ide z OSM, odtieň z palety
 
 Farba sa berie z `osmc:symbol` (prvé pole je farba pásika na strome), inak
-z `colour`/`color`:
+z `colour`/`color`; pešia trasa len s `colour` bez `osmc:symbol` sa nekreslí vôbec, lebo
+Mapy.com jej nedalo pásik ani v jednom zo 7 slovenských prípadov (`Has50`):
 
 | v OSM | v dlaždiciach | v mape |
 |---|---|---|
