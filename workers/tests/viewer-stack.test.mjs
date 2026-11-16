@@ -12,7 +12,8 @@ const style = regionStyle({
   set: null, overrides: {}, theme: "svetla", mapType: undefined, languages: []
 });
 const band = (l) => ({ background: -1, fill: 0, hillshade: 0, "fill-extrusion": 2, symbol: 3 })[l.type] ?? 1;
-const rank = (l) => DEFAULT_STACK.indexOf(packageOf(l));
+// 523 a town's built-up ground lies under every package's areas
+const rank = (l) => (l.metadata?.["riki:ground"] && band(l) === 0 ? -1 : DEFAULT_STACK.indexOf(packageOf(l)));
 
 test("the stack is Riki Maps' DefaultStack, ground first and settlements last", () => {
   assert.deepEqual(DEFAULT_STACK, ["landscape", "rocks", "terrain", "water", "contours", "paths",
@@ -45,4 +46,13 @@ test("a package keeps its own order and labels keep the pipeline's", () => {
   const symbols = style.layers.filter((l) => l.type === "symbol").map((l) => l.id);
   const unstacked = stackPackages({ ...style, layers: style.layers.filter((l) => l.type === "symbol") });
   assert.deepEqual(unstacked.layers.map((l) => l.id), symbols);
+});
+
+// 523 Mapy draws a town's parks and woods over its built-up area
+test("a town's built-up area lies under every other area", () => {
+  const areas = style.layers.filter((l) => band(l) === 0);
+  const ground = areas.map((l, i) => (l.metadata?.["riki:ground"] ? i : -1)).filter((i) => i >= 0);
+  assert.ok(ground.length >= 1);
+  assert.deepEqual(ground, ground.map((_, i) => i));
+  assert.ok(areas.findIndex((l) => l.id === "landcover-wood") > Math.max(...ground));
 });

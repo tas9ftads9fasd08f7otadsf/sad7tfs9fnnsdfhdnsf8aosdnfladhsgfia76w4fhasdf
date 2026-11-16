@@ -192,6 +192,8 @@ export function stackPackages(style, order = DEFAULT_STACK) {
   const key = (layer, index) => {
     const b = band(layer.type);
     if (b === 3) return [b, 0, index];
+    // a town's built-up ground under every package's areas, as the app's `riki:ground`
+    if (b === 0 && layer.metadata?.["riki:ground"] === true) return [b, -1, index];
     // marked routes ride with Paths, under the roads as Mapy draws them
     return [b, rank[packageOf(layer)] ?? order.length, index];
   };

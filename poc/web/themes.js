@@ -5267,6 +5267,16 @@ export function buildStyle({
     }
   }
 
+  // a town's built-up ground lies under every area, so its parks and woods show as on Mapy
+  {
+    const ground = new Set(["landuse-residential", "settlement-area"]);
+    for (const l of L) if (ground.has(l.id)) l.metadata["riki:ground"] = true;
+    const isGround = (l) => l.metadata?.["riki:ground"] === true;
+    const rest = L.filter((l) => !isGround(l));
+    const after = rest.findIndex((l) => l.type !== "background");
+    L.splice(0, L.length, ...rest.slice(0, after), ...L.filter(isGround), ...rest.slice(after));
+  }
+
   // Mapy draws a route stripe under the roads, over the paths it marks; labels stay on top
   {
     const isStripe = (l) => l.source === "trails" && l.type === "line";
