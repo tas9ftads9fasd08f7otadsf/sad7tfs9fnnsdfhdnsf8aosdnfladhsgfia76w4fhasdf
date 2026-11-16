@@ -3135,6 +3135,17 @@ function outlineLayer(layer, outline) {
  * @param {string} [theme] kľúč témy – rozhoduje, či sa nad `paint` uplatní aj
  *        tmavý variant. Bez neho sa tmavý variant nikdy nepoužije.
  */
+/** What a twin (`frico:twin`) takes of its layer's override: showing, zooms, paint; never its dash. */
+function twinOverride(layer, layerOverrides) {
+  const parent = layerOverrides[(layer.metadata || {})["frico:twin"]];
+  if (!parent) return null;
+  const { visible, minzoom, maxzoom, paintDark } = parent;
+  const paint = parent.paint && Object.fromEntries(
+    Object.entries(parent.paint).filter(([prop]) => prop !== "line-dasharray"));
+  return Object.fromEntries(Object.entries({ visible, minzoom, maxzoom, paint, paintDark })
+    .filter(([, v]) => v !== undefined));
+}
+
 function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme) {
   if (!layerOverrides) return style;
   const out = [];
@@ -3144,7 +3155,7 @@ function applyLayerOverrides(style, layerOverrides, hasIcon = () => true, theme)
     // inak by poistka proti duplicite nechala tú pôvodnú
     if (patternLayerFor(layer) || variantLayerFor(layer)) continue;
 
-    const o = layerOverrides[layer.id];
+    const o = layerOverrides[layer.id] || twinOverride(layer, layerOverrides);
     // Chýbajúci kľúč = „nechaj vzor zo štýlu", `null` = „vypni ho".
     const builtin = (layer.metadata || {})["frico:pattern"] || null;
     const pat = o && "pattern" in o ? o.pattern : builtin;
@@ -5028,6 +5039,7 @@ export function buildStyle({
         ["trasy", `${label} – po cyklochodníku`, "line", {}, [...MARK_KEYS, paletteKey]]
       );
       L[L.length - 1].metadata["frico:derived"] = `trail-${id}`;
+      L[L.length - 1].metadata["frico:twin"] = `trail-${id}`;
     }
 
     // značka, ako je na strome: obrázok zo spritu (`poc/web/marks.js`).
