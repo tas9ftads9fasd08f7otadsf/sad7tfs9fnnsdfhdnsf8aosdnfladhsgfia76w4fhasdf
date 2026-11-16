@@ -136,10 +136,10 @@ SKIP_ROLES = {
 SKIP_STATES = {"proposed", "planned", "abandoned", "removed", "disused"}
 
 
-def orient_ways(ends):
+def orient_ways(ends, sizes=None):
     """Which ways to reverse so lanes continue: `(ways to flip, conflicts, chains)`.
 
-    `ends` is `{way id: (first node, last node)}`; breadth-first, one ends where the next starts.
+    `ends` is `{way id: (first node, last node)}`, `sizes` its node counts.
     """
     at = defaultdict(list)
     for wid, (first, last) in ends.items():
@@ -148,27 +148,35 @@ def orient_ways(ends):
         if last != first:
             at[last].append(wid)
 
+    # a chain runs through nodes where only two ways meet; at a junction it may turn
     flip = {}
     chains = 0
     for seed in sorted(ends):
         if seed in flip:
             continue
         chains += 1
-        first, last = ends[seed]
-        flip[seed] = first > last
+        rel = {seed: False}
         queue = deque([seed])
         while queue:
             wid = queue.popleft()
             first, last = ends[wid]
-            tail, head = (last, first) if flip[wid] else (first, last)
+            tail, head = (last, first) if rel[wid] else (first, last)
             # forward from the head and back from the tail
             for node, starts_there in ((head, True), (tail, False)):
-                for nxt in at.get(node, ()):
-                    if nxt in flip:
+                if len(at[node]) != 2:
+                    continue
+                for nxt in at[node]:
+                    if nxt in rel:
                         continue
                     nfirst, nlast = ends[nxt]
-                    flip[nxt] = nfirst != node if starts_there else nlast != node
+                    rel[nxt] = nfirst != node if starts_there else nlast != node
                     queue.append(nxt)
+        # Mapy puts walking routes right of the OSM direction: most of the chain keeps it
+        weight = sizes or {}
+        against = sum(weight.get(w, 1) for w, r in rel.items() if r)
+        backwards = against > sum(weight.get(w, 1) for w in rel) - against
+        for wid, r in rel.items():
+            flip[wid] = r != backwards
 
     # conflicts only count where exactly two ways meet
     conflicts = 0
@@ -193,11 +201,13 @@ class Ends(osmium.SimpleHandler):
         super().__init__()
         self.by_way = by_way
         self.ends = {}
+        self.sizes = {}
 
     def way(self, w):
         if w.id not in self.by_way or len(w.nodes) < 2:
             return
         self.ends[w.id] = (w.nodes[0].ref, w.nodes[-1].ref)
+        self.sizes[w.id] = len(w.nodes)
 
 
 class Routes(osmium.SimpleHandler):
@@ -405,7 +415,7 @@ def main():
     print("2/3 – who neighbours whom (lane direction) …", flush=True)
     ends = Ends(routes.by_way)
     ends.apply_file(args.pbf)
-    flipped, conflicts, chains = orient_ways(ends.ends)
+    flipped, conflicts, chains = orient_ways(ends.ends, ends.sizes)
     print(f"    {len(ends.ends)} ways in {chains} chains, "
           f"{len(flipped)} reversed")
     # never zero, but a jump means the orientation broke
