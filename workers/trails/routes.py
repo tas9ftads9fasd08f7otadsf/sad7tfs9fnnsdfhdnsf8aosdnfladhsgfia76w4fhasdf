@@ -73,10 +73,10 @@ def on_cycleway(tags):
     highway = (tags.get("highway") or "").strip().lower()
     bicycle = (tags.get("bicycle") or "").strip().lower()
     surface = (tags.get("surface") or "").strip().lower()
-    if highway == "cycleway":
-        return True
-    # a shared path counts while paved; on gravel Mapy dashes the route as on a track
-    return highway in {"path", "footway"} and bicycle == "designated" and surface not in UNPAVED
+    # on gravel Mapy dashes the route as on a track, a cycleway too (532)
+    if surface in UNPAVED:
+        return False
+    return highway == "cycleway" or (highway in {"path", "footway"} and bicycle == "designated")
 
 # MapLibre can't stitch a `miter` above 120°, so such a turn becomes 60° steps
 EASE_ABOVE_DEG = 120.0

@@ -72,3 +72,16 @@ test("a paved path or footway marked for bikes is a cycleway, not a path", { ski
     assert.deepEqual(drawn, [expected], JSON.stringify(props));
   }
 });
+
+// 532 an unpaved cycleway was a pale band; Mapy dashes it like a track (12.75/4 px at z15, as tracks)
+test("an unpaved cycleway is drawn by the track layer, not the cycleway one", { skip: !spec && NEEDS_SPEC }, () => {
+  const takes = (id, props) => spec.featureFilter(byId(id).filter)
+    .filter({ zoom: 15 }, { type: 2, properties: { class: "path", ...props } });
+  const drawn = (props) => ["road-cycleway", "road-track", "road-path"].filter((id) => takes(id, props));
+  assert.deepEqual(drawn({ subclass: "cycleway", surface: "unpaved" }), ["road-track"]);
+  assert.deepEqual(drawn({ subclass: "cycleway", surface: "paved" }), ["road-cycleway"]);
+  assert.deepEqual(drawn({ subclass: "cycleway" }), ["road-cycleway"]);
+  assert.deepEqual(drawn({ subclass: "path", bicycle: "designated", surface: "unpaved" }), ["road-path"]);
+  const filter = spec.featureFilter(byId("road-track").filter);
+  assert.equal(filter.filter({ zoom: 15 }, { type: 2, properties: { class: "track" } }), true);
+});
