@@ -4503,10 +4503,13 @@ export function buildStyle({
     ["in", str("subclass"), ["literal", ["path", "footway"]]],
     ["==", str("bicycle"), "designated"],
     ["!=", str("surface"), "unpaved"]];
+  // 532 Mapy draws an unpaved cycleway dashed like a track, 12.75/4 px at z15 as the tracks
+  const unpavedCycleway = ["all", ["==", str("subclass"), "cycleway"], ["==", str("surface"), "unpaved"]];
   const pathDefs = [
-    ["track", "Poľné a lesné cesty", ["==", str("class"), "track"], "track", [[11, 0.4], [13, 0.9], [14, 1.6], [16, 3.5], [20, 12]], dashSteps(TRACK_DASH), 11],
+    ["track", "Poľné a lesné cesty", ["any", ["==", str("class"), "track"], unpavedCycleway], "track", [[11, 0.4], [13, 0.9], [14, 1.6], [16, 3.5], [20, 12]], dashSteps(TRACK_DASH), 11],
     ["steps", "Schody", ["==", str("subclass"), "steps"], "steps", [[14, 1.2], [16, 3], [20, 10]], [1, 0.6], 14],
-    ["cycleway", "Cyklotrasy", ["any", ["==", str("subclass"), "cycleway"], sharedBikePath], "cycleway", CYCLEWAY_WIDTH, [3, 1.5], 12],
+    ["cycleway", "Cyklotrasy", ["any",
+      ["all", ["==", str("subclass"), "cycleway"], ["!", unpavedCycleway]], sharedBikePath], "cycleway", CYCLEWAY_WIDTH, [3, 1.5], 12],
     // `platform` a `corridor` majú tiež `class=path`
     ["footway", "Chodníky, priechody a nástupištia", ["all",
       ["in", str("subclass"), ["literal", ["footway", "sidewalk", "crossing", "platform", "corridor"]]],

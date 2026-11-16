@@ -207,6 +207,10 @@ class Trails(unittest.TestCase):
             {"highway": "path", "bicycle": "designated", "surface": "paving_stones"}))
         self.assertFalse(self.t.on_cycleway(
             {"highway": "path", "bicycle": "designated", "surface": "gravel"}))
+        # 532 route 007 on a gravel cycleway in the Tatras is dashed in Mapy, as on a track
+        self.assertFalse(self.t.on_cycleway({"highway": "cycleway", "surface": "gravel"}))
+        self.assertFalse(self.t.on_cycleway({"highway": "cycleway", "surface": "fine_gravel"}))
+        self.assertTrue(self.t.on_cycleway({"highway": "cycleway", "surface": "asphalt"}))
         self.assertFalse(self.t.on_cycleway({"highway": "path", "bicycle": "yes"}))
         self.assertFalse(self.t.on_cycleway({"highway": "track", "bicycle": "designated"}))
         self.assertFalse(self.t.on_cycleway({"highway": "tertiary"}))
