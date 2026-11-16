@@ -245,7 +245,7 @@ export const THEMES = {
     rockArea: "#9c9286",
     rockPattern: "#6b6154",
     // prvky mimo schémy OpenMapTiles (workers/features/features.yml)
-    cliffLine: "#7a6a58",
+    cliffLine: "#6f7064",
     ridgeLine: "#a89880",
     scrub: "#d3d8b8",
     roadConstruction: "#e0c078",
@@ -1055,6 +1055,8 @@ const zw = (stops) => [
 
 /** Share of its road's width a slip road gets; Mapy draws interchange loops slim. */
 export const RAMP_SCALE = 0.5;
+/** A cliff's opacity by zoom: Mapy draws it at its z14–z15, faint at z16, not at z17. */
+export const CLIFF_FADE = [[14, 1], [15, 0.5], [16, 0]];
 /** A bridge's shadow: px beyond the casing each side, blur, opacity, shift; Mapy's from z14. */
 export const BRIDGE_SHADOW = { spread: 1.5, blur: 2, opacity: 0.15, translate: [1, 1.5], minzoom: 14 };
 const RAMP_FACTOR = ["case", ["==", ["get", "ramp"], 1], RAMP_SCALE, 1];
@@ -4141,6 +4143,8 @@ export function buildStyle({
    */
   const hachure = ({ id, label, group, source, sourceLayer, filter,
                      paletteKey, minzoom, width, teeth, opacity = 1 }) => {
+    // a number, or zoom stops for an edge that fades close up
+    const fade = Array.isArray(opacity) ? zl(opacity) : opacity;
     const base = {
       type: "line",
       ...(source ? { source } : {}),
@@ -4156,11 +4160,12 @@ export function buildStyle({
         paint: {
           "line-color": c[paletteKey],
           "line-width": zl(width),
-          "line-opacity": opacity
+          "line-opacity": fade
         }
       },
       [group, label, "line", { "line-color": paletteKey }]
     );
+    if (!teeth) return;
     add(
       {
         ...base,
@@ -4172,7 +4177,7 @@ export function buildStyle({
           // polovica šírky zúbka: čiara sa dotýka hrany a trčí z nej von
           "line-offset": zl(teeth.map(([z, w]) => [z, w / 2])),
           "line-dasharray": [0.35, 2.2],
-          "line-opacity": opacity
+          "line-opacity": fade
         }
       },
       [group, `${label} – zúbky`, "line", { "line-color": paletteKey }]
@@ -4191,7 +4196,9 @@ export function buildStyle({
     paletteKey: "cliffLine",
     minzoom: 13,
     width: [[13, 0.6], [16, 1.4], [20, 3]],
-    teeth: [[13, 2.2], [16, 4.5], [20, 10]]
+    // Mapy: a plain edge, no teeth, gone where the rock itself shows
+    teeth: null,
+    opacity: CLIFF_FADE
   });
   add(
     {
