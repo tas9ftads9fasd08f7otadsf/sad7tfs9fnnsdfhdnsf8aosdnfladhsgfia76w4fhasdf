@@ -60,11 +60,7 @@
   },
   "trails": {
     "gap": {},
-    "types": {
-      "bicycle": {
-        "dash": "dashed-fine"
-      }
-    },
+    "types": {},
     "marks": {},
     "lanes": "colour"
   },
