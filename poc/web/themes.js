@@ -4409,7 +4409,7 @@ export function buildStyle({
     ["steps", "Schody", ["==", str("subclass"), "steps"], "steps", [[14, 1.2], [16, 3], [20, 10]], [1, 0.6], 14],
     ["cycleway", "Cyklotrasy", ["==", str("subclass"), "cycleway"], "cycleway", [[12, 0.4], [14, 1], [16, 2.2], [20, 8]], [3, 1.5], 12],
     // `platform` a `corridor` majú tiež `class=path`
-    ["footway", "Chodníky, priechody a nástupištia", ["in", str("subclass"), ["literal", ["footway", "sidewalk", "crossing", "platform", "corridor"]]], "footway", [[13, 0.6], [16, 2], [20, 7]], [2, 1.5], 13],
+    ["footway", "Chodníky, priechody a nástupištia", ["in", str("subclass"), ["literal", ["footway", "sidewalk", "crossing", "platform", "corridor"]]], "footway", [[13, 0.6], [16, 2], [20, 7]], [2.6, 2.6], 13],
     // `path` bez subclass (alebo path/bridleway) – ale nie `track`, ten má vlastnú vrstvu
     ["path", "Turistické chodníky", ["all", ["==", str("class"), "path"],
       ["in", str("subclass"), ["literal", ["path", "bridleway", ""]]]],

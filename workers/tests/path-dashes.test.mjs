@@ -30,16 +30,18 @@ const dashAt = (expr, z) => {
 // Mapy's dash and gap in CSS px at our style zoom, measured along OSM ways
 const MAPY = {
   "road-track": { 13: [6.25, 2], 14: [6, 2.25], 15: [10, 4.5], 16: [11.75, 8.5] },
-  "road-path": { 13: [3.25, 1.75], 14: [3.25, 2], 15: [5.25, 4.25], 16: [11, 6.5] }
+  "road-path": { 13: [3.25, 1.75], 14: [3.25, 2], 15: [5.25, 4.25], 16: [11, 6.5] },
+  "road-footway": { 14: [2.5, 2.62], 15: [3.25, 3.25] }
 };
 
-// 512 track and path dashes were a single pattern, too short on paths and too gappy on tracks
-test("track and path dashes are Mapy's length and gap at z13–z16", () => {
+// 512 track, path and footway dashes were too short on paths and too gappy on tracks
+test("track, path and footway dashes are Mapy's length and gap at z13–z16", () => {
   for (const [id, zooms] of Object.entries(MAPY)) {
     const paint = byId(id).paint;
     for (const [z, [dash, gap]] of Object.entries(zooms)) {
       const w = widthAt(paint["line-width"], Number(z));
-      const [d, g] = dashAt(paint["line-dasharray"], Number(z));
+      const steps = paint["line-dasharray"];
+      const [d, g] = steps[0] === "step" ? dashAt(steps, Number(z)) : steps;
       assert.ok(Math.abs(d * w - dash) / dash <= 0.15, `${id} z${z}: dash ${(d * w).toFixed(2)} vs ${dash}`);
       assert.ok(Math.abs(g * w - gap) / gap <= 0.15, `${id} z${z}: gap ${(g * w).toFixed(2)} vs ${gap}`);
     }
