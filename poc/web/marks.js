@@ -218,6 +218,9 @@ export const MARK_PAD = 1;
 /** Celá strana obrázka značky – to, čo MapLibre kreslí aj počíta do kolízie. */
 export const MARK_IMAGE = MARK_BOX + 2 * MARK_PAD;
 
+/** Polomer zaoblenia rohov v pixeloch pri `pixelRatio` 1 – Mapy.com kreslí značky ako zaoblené štvorčeky. */
+export const MARK_RADIUS = 3;
+
 /** Tenký lem okolo štvorca – bez neho biela značka na svetlej mape zmizne. */
 export const MARK_EDGE = "#00000055";
 /** Hrúbka lemu v pixeloch pri `pixelRatio` 1. */
@@ -258,6 +261,17 @@ export function renderMark(shape, bgHex, fgHex, pixelRatio = 1) {
   const bg = rozlozFarbu(bgHex);
   const fg = rozlozFarbu(fgHex);
   const ed = rozlozFarbu(MARK_EDGE);
+  // štvorec so zaoblenými rohmi, zmenšený o `inset` zo všetkých strán
+  const radius = MARK_RADIUS * r;
+  const insideRounded = (px, py, inset) => {
+    const lo = inset;
+    const hi = box - inset;
+    if (px < lo || py < lo || px >= hi || py >= hi) return false;
+    const rad = Math.max(0, radius - inset);
+    const cx = Math.min(Math.max(px, lo + rad), hi - rad);
+    const cy = Math.min(Math.max(py, lo + rad), hi - rad);
+    return (px - cx) ** 2 + (py - cy) ** 2 <= rad * rad;
+  };
   const data = new Uint8Array(size * size * 4);
 
   const SS = 4;                       // prevzorkovanie na pixel (4 × 4)
@@ -270,9 +284,9 @@ export function renderMark(shape, bgHex, fgHex, pixelRatio = 1) {
         for (let sx = 0; sx < SS; sx += 1) {
           const px = x + (sx + 0.5) / SS - pad;
           const py = y + (sy + 0.5) / SS - pad;
-          if (px < 0 || py < 0 || px >= box || py >= box) continue;
+          if (!insideRounded(px, py, 0)) continue;
           vnutri += 1;
-          if (px < edge || py < edge || px >= box - edge || py >= box - edge) {
+          if (!insideRounded(px, py, edge)) {
             lem += 1;
             continue;
           }
