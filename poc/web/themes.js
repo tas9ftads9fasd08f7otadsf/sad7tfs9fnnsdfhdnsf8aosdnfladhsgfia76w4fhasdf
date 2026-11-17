@@ -171,7 +171,7 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#9ac16a",
+    park: "#8fae6a",
     parkOutline: "#9ac16a",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
@@ -1269,10 +1269,8 @@ export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 
 /** From this zoom the buildings alone show where people live; below it, the areas. */
 export const BUILDINGS_ALONE_FROM_Z = 15;
 
-/** Length in px of the ticks inside a protected area's border; within the 8 px tile buffer. */
-export const PARK_BAND = [[10, 2.5], [13, 4], [16, 6]];
-/** Ticks along a protected area's border, in multiples of their length. */
-export const PARK_TICKS = [0.35, 3];
+/** Width in px of the band inside a protected area's border; within the 8 px tile buffer. */
+export const PARK_BAND = [[10, 5], [12, 8], [16, 8]];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
@@ -3960,7 +3958,7 @@ export function buildStyle({
     );
   }
 
-  // ticks inside the border, not a fill: a nature park covers whole ranges of rock and ice
+  // a band inside the border, not a fill: a nature park covers whole ranges of rock and ice
   add(
     {
       id: "park",
@@ -3969,15 +3967,17 @@ export function buildStyle({
       // vrstva `park` nesie aj bod pre popisok, nie len obrys
       filter: PARK_AREA,
       minzoom: 10,
+      // round joins, as a mitred offset line spikes at corners; opaque, as a translucent
+      // line darkens where it overlaps itself
+      layout: { "line-join": "round" },
       paint: {
         "line-color": c.park,
         // within the tile buffer, else tile seams inside a park show as stripes
         "line-width": zl(PARK_BAND),
-        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
-        "line-dasharray": PARK_TICKS
+        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2]))
       }
     },
-    ["uzemie", "Park (zúbky pri hranici)", "line", { "line-color": "park" }]
+    ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
   );
   add(
     {

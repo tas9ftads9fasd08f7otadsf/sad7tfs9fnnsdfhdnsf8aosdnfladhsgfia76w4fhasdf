@@ -15,18 +15,22 @@ const style = buildStyle({
 });
 const byId = (id) => style.layers.find((l) => l.id === id);
 
-test("a protected area is a solid border with ticks inside it, not a fill over the land", () => {
+// 544 Mapy's band is solid and 9–10 px wide, just inside the border
+test("a protected area is a solid border with a band inside it, not a fill over the land", () => {
   const ticks = byId("park");
   assert.equal(ticks.type, "line");
   assert.equal(style.layers.some((l) => l["source-layer"] === "park" && l.type === "fill"), false);
   const widths = ticks.paint["line-width"].slice(3).filter((_, i) => i % 2 === 1);
   const offsets = ticks.paint["line-offset"].slice(3).filter((_, i) => i % 2 === 1);
-  assert.deepEqual(offsets, widths.map((w) => w / 2), "the ticks start at the border, inward");
-  assert.ok(ticks.paint["line-dasharray"], "ticks, not a band");
+  assert.deepEqual(offsets, widths.map((w) => w / 2), "the band starts at the border, inward");
+  assert.equal(ticks.paint["line-dasharray"], undefined, "a band, not ticks");
+  assert.equal(ticks.paint["line-opacity"], undefined, "overlaps in a translucent line would darken");
+  assert.equal(ticks.layout["line-join"], "round", "no spikes at the corners");
+  assert.ok(Math.max(...widths) >= 7, "wide enough to read as a band");
   assert.equal(byId("park-outline").paint["line-dasharray"], undefined, "the border is solid");
 });
 
-test("the ticks stay within the 8 px tile buffer, so tile seams inside a park don't show", () => {
+test("the band stays within the 8 px tile buffer, so tile seams inside a park don't show", () => {
   for (const [, width] of PARK_BAND) assert.ok(width <= 8, `${width} px`);
 });
 
