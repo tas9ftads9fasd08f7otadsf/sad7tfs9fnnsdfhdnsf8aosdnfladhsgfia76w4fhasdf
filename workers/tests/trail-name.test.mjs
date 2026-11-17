@@ -24,3 +24,11 @@ test("trail names ride on whole routes, not on the lane pieces", () => {
   }
   assert.ok(nameLayer.includes("merge_line_strings"));
 });
+
+// 533 the merge reversed 17 % of the ways in the published tiles, so those stripes took the other side
+test("the stripe layer is not merged, the name layer is", () => {
+  const schema = readFileSync(new URL("../trails/trails.yml", import.meta.url), "utf8");
+  const stripes = schema.slice(schema.indexOf("- id: trail\n"), schema.indexOf("- id: trail_name"));
+  assert.ok(stripes.includes("attributes: &trail_attributes"));
+  assert.ok(!stripes.replace(/^\s*#.*$/gm, "").includes("merge_line_strings"));
+});
