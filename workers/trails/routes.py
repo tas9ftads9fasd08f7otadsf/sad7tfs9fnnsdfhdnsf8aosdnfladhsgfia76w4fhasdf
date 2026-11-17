@@ -256,9 +256,9 @@ class Routes(osmium.SimpleHandler):
             return
 
         # 531 Mapy colours a hiking route from its osmc:symbol only; 7 of 7 Slovak ones without get none
-        if route == "hiking" and not tags.get("osmc:symbol") \
-                and (tags.get("colour") or tags.get("color")):
-            self.skipped["colour without osmc:symbol"] += 1
+        # 536 nor does it draw one with no colour either: 2 of 65 sampled ways showed a stripe
+        if route == "hiking" and not tags.get("osmc:symbol"):
+            self.skipped["hiking without osmc:symbol"] += 1
             return
 
         colour, hexcolour = resolve_colour(tags)

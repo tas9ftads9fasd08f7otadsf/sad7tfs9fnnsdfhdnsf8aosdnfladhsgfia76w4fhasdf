@@ -3230,8 +3230,9 @@ dve čísla nemôžu ticho rozísť.
 ### Farba ide z OSM, odtieň z palety
 
 Farba sa berie z `osmc:symbol` (prvé pole je farba pásika na strome), inak
-z `colour`/`color`; pešia trasa len s `colour` bez `osmc:symbol` sa nekreslí vôbec, lebo
-Mapy.com jej nedalo pásik ani v jednom zo 7 slovenských prípadov (`Has50`):
+z `colour`/`color`; **pešia trasa bez `osmc:symbol` sa nekreslí vôbec**, s farbou ani bez nej:
+Mapy.com jej nedalo pásik ani v jednom zo 7 slovenských prípadov s `colour` (`Has50`) a v 61
+zo 65 meraných úsekov bez farby (Mariánska cesta, Sultans Trail, náučné chodníky bez značky):
 
 | v OSM | v dlaždiciach | v mape |
 |---|---|---|

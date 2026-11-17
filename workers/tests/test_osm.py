@@ -326,10 +326,25 @@ class Trails(unittest.TestCase):
         routes.relation(relation(colour="green", ref="Has50", network="lwn"))
         routes.relation(relation(color="red"))
         self.assertEqual((routes.routes, dict(routes.by_way)), (0, {}))
-        self.assertEqual(routes.skipped["colour without osmc:symbol"], 2)
+        self.assertEqual(routes.skipped["hiking without osmc:symbol"], 2)
         routes.relation(relation(colour="green", **{"osmc:symbol": "green:white:green_bar"}))
-        routes.relation(relation(ref="E8"))
-        self.assertEqual((routes.routes, len(routes.by_way[7])), (2, 2))
+        self.assertEqual((routes.routes, len(routes.by_way[7])), (1, 1))
+
+    def test_hiking_with_neither_colour_nor_symbol_draws_nothing(self):
+        # 536 Mariánska cesta, Sultans Trail and the Bratislava city routes drew red; Mapy draws none
+        def relation(**tags):
+            members = [SimpleNamespace(type="w", ref=9, role="")]
+            return SimpleNamespace(id=2, members=members,
+                                   tags=[SimpleNamespace(k=k, v=v) for k, v in
+                                         {"type": "route", "route": "hiking", **tags}.items()])
+        routes = self.t.Routes()
+        routes.relation(relation(ref="M05-13", network="iwn", name="Mariánska cesta"))
+        routes.relation(relation(ref="E8", network="iwn"))
+        routes.relation(relation(name="Náučný chodník Na dobrej stope", network="lwn"))
+        self.assertEqual((routes.routes, dict(routes.by_way)), (0, {}))
+        # cycle routes and walks are not hiking marks: they keep their own look
+        routes.relation(relation(route="bicycle", ref="O1", network="lcn"))
+        self.assertEqual(routes.routes, 1)
 
     def test_is_educational(self):
         # 515 the diagonal stripe of the mark, or the name, says it is educational
