@@ -161,8 +161,10 @@ class NeverStarted(unittest.TestCase):
     def test_a_job_cancelled_while_running_started(self):
         self.assertEqual(self.ask([ran("success"), ran("cancelled")]), "false")
 
-    def test_only_the_first_attempt_is_rerun(self):
-        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=2), "false")
+    def test_a_run_is_rerun_up_to_three_times(self):
+        # 551: one rerun was not enough while no macOS runner was free
+        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=3), "true")
+        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=4), "false")
 
 
 if __name__ == "__main__":
