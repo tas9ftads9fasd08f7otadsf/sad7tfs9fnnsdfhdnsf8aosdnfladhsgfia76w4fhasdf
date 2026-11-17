@@ -3925,7 +3925,7 @@ export function buildStyle({
   // hneď za `landuse` – patria k tomu istému, čo sa s územím robí.
   if (featuresUrl) {
     const featureAreas = [
-      ["parking", "Parkoviská", ["parking"], "parking", 0.9],
+      ["parking", "Parkoviská", ["parking"], "parking", 1],
       ["landfill", "Skládky a haldy", ["landfill", "spoil_heap"], "quarry", 1],
       ["farmyard", "Hospodárske dvory", ["farmyard", "greenhouse_horticulture"], "farmyard", 1],
       ["brownfield", "Opustený priemysel", ["brownfield"], "industrial", 0.7],
