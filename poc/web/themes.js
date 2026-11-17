@@ -190,6 +190,7 @@ export const THEMES = {
     playground: "#dff0d8",
     building: "#d9cfc5",
     buildingOutline: "#c4b8ac",
+    buildingShadow: "#5a4a30",
     buildingTop: "#e2d8ce",
     aeroway: "#e8e0e8",
     aerowayLine: "#ffffff",
@@ -321,6 +322,7 @@ export const THEMES = {
     playground: "#1e2a20",
     building: "#262433",
     buildingOutline: "#33304a",
+    buildingShadow: "#000000",
     buildingTop: "#302d40",
     aeroway: "#232030",
     aerowayLine: "#3a3750",
@@ -452,6 +454,7 @@ export const THEMES = {
     playground: "#d2e8b8",
     building: "#c8b8a0",
     buildingOutline: "#a89880",
+    buildingShadow: "#4a3c28",
     buildingTop: "#d8c8b0",
     aeroway: "#ddd8cc",
     aerowayLine: "#f4f1e4",
@@ -581,6 +584,7 @@ export const THEMES = {
     playground: "#e8f0d4",
     building: "#e8c8b8",
     buildingOutline: "#d0a890",
+    buildingShadow: "#4a3828",
     buildingTop: "#f0d8c8",
     aeroway: "#eee2d8",
     aerowayLine: "#fdf6ec",
@@ -763,6 +767,7 @@ export const PALETTE_GROUPS = [
     keys: [
       ["building", "Budova (plochá)"],
       ["buildingOutline", "Obrys budovy"],
+      ["buildingShadow", "Tieň budovy"],
       ["buildingTop", "Budova 3D"],
       ["houseText", "Súpisné číslo"]
     ]
@@ -1056,6 +1061,8 @@ const zw = (stops) => [
 
 /** Share of its road's width a slip road gets; Mapy draws interchange loops slim. */
 export const RAMP_SCALE = 0.5;
+/** A house's shadow, south-east as on Mapy: shift in px, opacity, from which zoom (not at night). */
+export const BUILDING_SHADOW = { translate: [1, 1.5], opacity: 0.22, minzoom: 15 };
 /** A cliff's opacity by zoom: Mapy draws it at its z14–z15, faint at z16, not at z17. */
 export const CLIFF_FADE = [[14, 1], [15, 0.5], [16, 0]];
 /** A bridge's shadow: px beyond the casing each side, blur, opacity, shift; Mapy's from z14. */
@@ -4324,7 +4331,31 @@ export function buildStyle({
     ["doprava", "Móla (plocha)", "area", { "fill-color": "pier" }]
   );
 
+  // a house's shadow lies under it, Mapy's: a darker copy shifted south-east, never at night
+  const buildingShadow = (id, source, minzoom, maxzoom) => {
+    if (theme === "tmava") return;
+    add(
+      {
+        id: `${id}-shadow`,
+        type: "fill",
+        ...(source ? { source } : {}),
+        "source-layer": "building",
+        minzoom: Math.max(minzoom, BUILDING_SHADOW.minzoom),
+        ...(maxzoom ? { maxzoom } : {}),
+        paint: {
+          "fill-color": c.buildingShadow,
+          "fill-opacity": BUILDING_SHADOW.opacity,
+          "fill-translate": BUILDING_SHADOW.translate,
+          "fill-translate-anchor": "map"
+        }
+      },
+      ["budovy", "Tieň budov", "area", { "fill-color": "buildingShadow" }, null, null, id]
+    );
+    L[L.length - 1].metadata["frico:derived"] = id;
+  };
+
   // do z16 ploché výplne, nad tým 3D bloky (render_height z OSM)
+  buildingShadow("building", null, 13, 16);
   add(
     {
       id: "building",
@@ -4379,6 +4410,7 @@ export function buildStyle({
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
     );
+    buildingShadow("building-pkg", "buildings", 12);
     add(
       {
         id: "building-pkg",
