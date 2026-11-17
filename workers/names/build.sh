@@ -25,7 +25,7 @@ printf '%s\t%s\t%s\t%s\n' "76" "Geographical names prefilter" "$(( $(date +%s) -
 # empty isn't an error for a small test; `contents.json` says the layer is absent
 # counted, not weighed: a few named places make a file smaller than other packages' floor
 if [ "$(osmium fileinfo -e -g data.count.nodes data/names.osm.pbf)" -eq 0 ]; then
-  echo "::warning::This area names no place, mountain, valley, plain or region – the \`names\` package isn't made."
+  echo "::warning::This area names no place, mountain, valley, plain, region or wood – the \`names\` package isn't made."
   echo "enabled=false" >> "$GITHUB_OUTPUT"
   exit 0
 fi

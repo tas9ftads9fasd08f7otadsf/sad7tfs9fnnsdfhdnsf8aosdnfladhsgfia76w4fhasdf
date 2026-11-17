@@ -91,7 +91,7 @@ DESCRIPTIONS = {
     # 14: the schema's highest `min_zoom` is 13, one more is headroom
     "history_maxzoom": "max zoom of army and history tiles",
     "names": ("make geographical names (cities, villages, settlements, mountains, "
-                      "valleys, plains, regions) – package `names`"),
+                      "valleys, plains, regions, woods) – package `names`"),
     # 14: the schema's highest `min_zoom` is 12, two more are headroom
     "names_maxzoom": "max zoom of geographical names tiles",
     "ski": ("make ski & winter (ski areas, pistes, lifts, cross-country trails, "

@@ -12,7 +12,7 @@ FILTER = os.path.join(_WORKERS, "names", "filter.txt")
 BUILD = os.path.join(_WORKERS, "names", "build.sh")
 
 # the app switches each of these on and off by its layer id
-KINDS = ("city", "village", "settlement", "mountain", "valley", "plain", "region")
+KINDS = ("city", "village", "settlement", "mountain", "valley", "plain", "region", "area")
 EVERY_BLOCK = ("class", "name", "osm_id")
 
 bad = []
