@@ -7,7 +7,7 @@
       "track": "#867a5a",
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
-      "buildingOutline": "#cec2b2",
+      "buildingOutline": "#c2b79b",
       "water": "#9ec5e2",
       "river": "#92b8da",
       "rock": "#c8cbba",
@@ -1195,6 +1195,100 @@
           "paint": {
             "line-opacity": 0.3
           }
+        },
+        "building-pkg": {
+          "variants": [
+            {
+              "attr": "class",
+              "values": [
+                "church",
+                "chapel",
+                "cathedral",
+                "mosque",
+                "synagogue",
+                "temple",
+                "shrine",
+                "monastery",
+                "religious"
+              ],
+              "label": "Sakrálne",
+              "paint": {
+                "fill-color": "#a09d95"
+              },
+              "outline": {
+                "color": "#8f8f8f",
+                "width": 1,
+                "opacity": 1
+              }
+            },
+            {
+              "attr": "amenity",
+              "values": [
+                "place_of_worship"
+              ],
+              "label": "Miesto uctievania",
+              "paint": {
+                "fill-color": "#a09d95"
+              },
+              "outline": {
+                "color": "#8f8f8f",
+                "width": 1,
+                "opacity": 1
+              }
+            },
+            {
+              "attr": "amenity",
+              "values": [
+                "fire_station",
+                "police",
+                "courthouse",
+                "townhall",
+                "school",
+                "kindergarten",
+                "college",
+                "university",
+                "hospital",
+                "library",
+                "community_centre",
+                "post_office",
+                "prison",
+                "clinic"
+              ],
+              "label": "Verejné budovy",
+              "paint": {
+                "fill-color": "#ececf1"
+              },
+              "outline": {
+                "color": "#b3b3bb",
+                "width": 1,
+                "opacity": 1
+              }
+            },
+            {
+              "attr": "class",
+              "values": [
+                "public",
+                "civic",
+                "government",
+                "school",
+                "kindergarten",
+                "university",
+                "college",
+                "hospital",
+                "fire_station",
+                "train_station"
+              ],
+              "label": "Verejné budovy (druh)",
+              "paint": {
+                "fill-color": "#ececf1"
+              },
+              "outline": {
+                "color": "#b3b3bb",
+                "width": 1,
+                "opacity": 1
+              }
+            }
+          ]
         }
       },
       "poi": {

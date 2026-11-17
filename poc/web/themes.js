@@ -191,6 +191,7 @@ export const THEMES = {
     building: "#d9cfc5",
     buildingOutline: "#c4b8ac",
     buildingTop: "#e2d8ce",
+    buildingShadow: "#cfc2a4",
     aeroway: "#e8e0e8",
     aerowayLine: "#ffffff",
     motorway: "#f0a862",
@@ -319,6 +320,7 @@ export const THEMES = {
     building: "#262433",
     buildingOutline: "#33304a",
     buildingTop: "#302d40",
+    buildingShadow: "#17161f",
     aeroway: "#232030",
     aerowayLine: "#3a3750",
     motorway: "#b0763a",
@@ -446,6 +448,7 @@ export const THEMES = {
     building: "#c8b8a0",
     buildingOutline: "#a89880",
     buildingTop: "#d8c8b0",
+    buildingShadow: "#b8a88c",
     aeroway: "#ddd8cc",
     aerowayLine: "#f4f1e4",
     motorway: "#e88a4a",
@@ -572,6 +575,7 @@ export const THEMES = {
     building: "#e8c8b8",
     buildingOutline: "#d0a890",
     buildingTop: "#f0d8c8",
+    buildingShadow: "#d8b9a4",
     aeroway: "#eee2d8",
     aerowayLine: "#fdf6ec",
     motorway: "#e08a7a",
@@ -751,6 +755,7 @@ export const PALETTE_GROUPS = [
       ["building", "Budova (plochá)"],
       ["buildingOutline", "Obrys budovy"],
       ["buildingTop", "Budova 3D"],
+      ["buildingShadow", "Tieň budovy"],
       ["houseText", "Súpisné číslo"]
     ]
   },
@@ -4303,6 +4308,22 @@ export function buildStyle({
         }
       },
       ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
+    );
+    // a soft shadow to the lower right, as Mapy draws it, under the flat building
+    add(
+      {
+        id: "building-shadow",
+        type: "fill",
+        source: "buildings",
+        "source-layer": "building",
+        minzoom: 15,
+        paint: {
+          "fill-color": c.buildingShadow,
+          "fill-translate": zl([[15, ["literal", [1, 1]]], [18, ["literal", [3, 3]]]]),
+          "fill-opacity": zl([[15, 0], [16, 0.8]])
+        }
+      },
+      ["budovy", "Tieň budov (balík sídla)", "area", { "fill-color": "buildingShadow" }]
     );
     add(
       {
