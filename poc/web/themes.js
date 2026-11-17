@@ -6499,6 +6499,14 @@ export function buildStyle({
     );
   }
 
+  // MapLibre places the last layer's labels first: a street name must come after the points
+  // of interest, or a dense old town's palaces take every spot and no street is named
+  {
+    const at = L.findIndex((l) => l.id === "road-name");
+    const last = Math.max(...L.map((l, i) => (/^poi-/.test(l.id) ? i : -1)));
+    if (at >= 0 && last > at) L.splice(last, 0, ...L.splice(at, 1));
+  }
+
   // najprv profil typu mapy, až potom úpravy – tie musia vedieť profil prebiť
   applyMapType(style, mapTypeId);
   // poradie sa mení nad hotovým štýlom: presúva sa aj vzor a okraj
