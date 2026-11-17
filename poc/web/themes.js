@@ -220,7 +220,8 @@ export const THEMES = {
     boundaryBand: "#4f7a3e",
     boundaryLocal: "#b8a0c8",
     placeText: "#333333",
-    roadText: "#5a4a3a",
+    // Mapy sets a street name in pure black (darkest pixels #000000, ours were #605142)
+    roadText: "#000000",
     waterText: "#4a7bab",
     poiText: "#666655",
     textHalo: "#ffffff",
