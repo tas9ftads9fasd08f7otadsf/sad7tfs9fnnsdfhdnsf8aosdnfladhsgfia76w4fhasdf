@@ -49,3 +49,15 @@ test("both street-name layers keep the same look and sit between the points of i
   }
   assert.ok(index("road-name-main") > index("road-name"), "a main road's name is placed before a minor street's");
 });
+
+// 546 once a minor street no longer takes the room at z14, a pub took it from the 503 shield; Mapy keeps the number
+test("a road shield is placed over the points of interest and under the street names", () => {
+  const shields = style.layers.filter((l) => /^road-shield-/.test(l.id));
+  assert.ok(shields.length >= 4);
+  for (const shield of shields) {
+    for (const poi of style.layers.filter((l) => /^poi-/.test(l.id))) {
+      assert.ok(index(shield.id) > index(poi.id), `${shield.id} over ${poi.id}`);
+    }
+    assert.ok(index(shield.id) < index("road-name"), `${shield.id} under the street names`);
+  }
+});

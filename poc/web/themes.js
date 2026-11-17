@@ -6601,8 +6601,10 @@ export function buildStyle({
     const last = Math.max(...L.map((l, i) => (/^poi-/.test(l.id) ? i : -1)));
     if (at >= 0 && last > at) {
       const names = L.filter((l) => /^road-name(-main)?$/.test(l.id));
-      for (const l of names) L.splice(L.indexOf(l), 1);
-      L.splice(last + 1 - names.length, 0, ...names);
+      // a road's number is worth more than a pub: the shields go over the points of interest
+      const shields = L.filter((l) => /^road-shield-/.test(l.id));
+      for (const l of [...names, ...shields]) L.splice(L.indexOf(l), 1);
+      L.splice(last + 1 - names.length - shields.length, 0, ...shields, ...names);
     }
   }
 
