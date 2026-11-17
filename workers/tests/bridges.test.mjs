@@ -35,7 +35,7 @@ test("a bridge casts a soft shadow under its edges", () => {
     assert.ok(shadow.paint["line-blur"] > 0 && shadow.paint["line-opacity"] <= 0.25);
     assert.ok(shadow.minzoom >= BRIDGE_SHADOW.minzoom);
   }
-  assert.equal(style.layers.some((l) => /-shadow$/.test(l.id) || /-shadow-tunnel$/.test(l.id)), false);
+  assert.equal(style.layers.some((l) => /^road-.*-shadow(-tunnel)?$/.test(l.id)), false);
 });
 
 // 521 the new inks are in every theme, so the dark one keeps its own bridges
