@@ -3904,7 +3904,7 @@ export function buildStyle({
     );
   }
 
-  // 508 vinice majú ikonku úponku, ako na Mapy.com; od z14, nižšie by to bola plocha značiek
+  // 548 vinice majú ikonku úponku, ako na Mapy.com; od z14, nižšie by to bola plocha značiek
   add(
     {
       id: "landcover-vineyard-icons",
@@ -4988,7 +4988,7 @@ export function buildStyle({
     L[L.length - 1].metadata["frico:derived"] = "feature-power";
   }
 
-  // 508 napätie nad vedením, ako na Mapy.com: „110 kV"
+  // 548 napätie nad vedením, ako na Mapy.com: „110 kV"
   if (featuresUrl) {
     add(
       {
