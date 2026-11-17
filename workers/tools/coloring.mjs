@@ -10,7 +10,7 @@
  *   node workers/tools/coloring.mjs save                    edits into poc/web/style-overrides.json
  *
  * COLORING_SITE is the deployed viewer (tiles/manifest.json under it), MAPY_API_KEY the reference key.
- * Flags: --state=<edits json> (default coloring/edits.json), --out=<dir> (default coloring/), --region=<key>.
+ * Flags: --theme=tmava draws our side in the dark theme, --state=<edits json> (default coloring/edits.json), --out=<dir> (default coloring/), --region=<key>.
  */
 import { createRequire } from "node:module";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -89,8 +89,10 @@ async function openPage(state) {
   await page.addInitScript((key) => {
     localStorage.setItem("fricomaps.coloring.key", key);
   }, process.env.MAPY_API_KEY || "");
-  const region = args.region ? `?region=${encodeURIComponent(args.region)}` : "";
-  await page.goto(`${site}/coloring.html${region}`);
+  const query = new URLSearchParams();
+  if (args.region) query.set("region", args.region);
+  if (args.theme) query.set("theme", args.theme);
+  await page.goto(`${site}/coloring.html${query.size ? `?${query}` : ""}`);
   await page.waitForFunction(() => window.coloring?.ready, null, { timeout: 120000 });
   await page.evaluate(() => window.coloring.ready);
   await page.evaluate((e) => window.coloring.loadEdits(e), state);
