@@ -1113,7 +1113,7 @@ const zs = (bands) => {
 const widen = (stops, extra) => stops.map(([z, w]) => [z, w + extra]);
 
 /** A road's border per side from `ROAD_CASING_FROM_Z`, in screen px as Mapy keeps it at every zoom. */
-export const ROAD_CASING_EDGE = { primary: 1.6, secondary: 1.6, tertiary: 1.6, minor: 1.25, service: 1.25 };
+export const ROAD_CASING_EDGE = { primary: 1.6, secondary: 1.6, tertiary: 1.6, minor: 1.25, service: 1.25, pedestrian: 1.75 };
 export const ROAD_CASING_FROM_Z = 13;
 // below it the casing is the paper's colour, so a wider one would rub out what lies beside
 const casingStops = (id, stops, extra) => (ROAD_CASING_EDGE[id] === undefined
@@ -1151,6 +1151,7 @@ const PARK_MARKED = ["!", ["any",
   ["in", "(external)", str("class")]]];
 // a named park is a point of interest in the tiles; its name, not a tree, marks it
 export const PARK_POINT_CLASSES = ["park", "garden"];
+const PEDESTRIAN_STREET = ["all", ["==", str("class"), "path"], ["==", str("subclass"), "pedestrian"]];
 const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
 
 /**
@@ -3394,7 +3395,7 @@ export const ROAD_DEFS = [
   ["service", "Účelové cesty", ["service"], "service", "roadCasing",
     [[12, 0.3], [13, 0.5], [14, 1], [15, 2.5], [16, 5.25], [20, 54]], 1.2, 12],
   ["pedestrian", "Pešie zóny", ["pedestrian"], "pedestrian", "roadCasing",
-    [[12, 0.3], [13, 0.6], [14, 2.4], [16, 7], [20, 63]], 1.2, 12]
+    [[12, 0.3], [13, 0.6], [14, 1.6], [15, 2.5], [16, 7], [20, 63]], 1.2, 12]
 ];
 
 /** Prípony troch priechodov ciest (tunel → povrch → most) – pre kontrolu. */
@@ -4461,9 +4462,12 @@ export function buildStyle({
    */
   const roadPass = (suffix, passLabel, extraFilter, opts = {}) => {
     const layout = { "line-cap": opts.cap || "round", "line-join": "round" };
-    const filterFor = (classes) => [
+    // the base tiles carry a pedestrian street as a path of subclass pedestrian
+    const filterFor = (classes, id) => [
       "all",
-      ["in", str("class"), ["literal", classes]],
+      id === "pedestrian"
+        ? ["any", ["in", str("class"), ["literal", classes]], PEDESTRIAN_STREET]
+        : ["in", str("class"), ["literal", classes]],
       extraFilter
     ];
     const odNajmenejDolezitej = [...ROAD_DEFS].reverse();
@@ -4476,7 +4480,7 @@ export function buildStyle({
             type: "line",
             "source-layer": "transportation",
             minzoom: Math.max(mz, BRIDGE_SHADOW.minzoom),
-            filter: filterFor(classes),
+            filter: filterFor(classes, id),
             layout: { "line-cap": "butt", "line-join": "round" },
             paint: {
               "line-color": c.bridgeShadow,
@@ -4501,7 +4505,7 @@ export function buildStyle({
           type: "line",
           "source-layer": "transportation",
           minzoom: Math.max(mz, CASING_MIN_Z),
-          filter: filterFor(classes),
+          filter: filterFor(classes, id),
           layout,
           paint: {
             "line-color": c[casingKey],
@@ -4521,7 +4525,7 @@ export function buildStyle({
           type: "line",
           "source-layer": "transportation",
           minzoom: mz,
-          filter: filterFor(classes),
+          filter: filterFor(classes, id),
           layout,
           paint: {
             "line-color": c[colorKey],
