@@ -4,5 +4,8 @@
 # cities, villages, settlements and regions
 nwr/place
 
-# mountains, valleys and plains
-nwr/natural=peak,volcano,hill,mountain_range,ridge,arete,valley,gorge,canyon,plain,plateau,basin
+# mountains, valleys and plains, and named woods, heaths and wetlands
+nwr/natural=peak,volcano,hill,mountain_range,ridge,arete,valley,gorge,canyon,plain,plateau,basin,wood,scrub,heath,grassland,wetland
+
+# named forests and meadows
+nwr/landuse=forest,meadow

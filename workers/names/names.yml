@@ -37,6 +37,11 @@ definitions:
     natural: [plain, plateau, basin]
   - &region_tags
     place: [region, state, province, county]
+  # a wood, a forest or a meadow one asks for by its name
+  - &area_tags
+    __any__:
+      - natural: [wood, scrub, heath, grassland, wetland]
+      - landuse: [forest, meadow]
 
   - &name_attrs
     - key: class
@@ -171,6 +176,16 @@ layers:
         min_zoom: 5
         include_when:
           __all__: [*region_tags, *named]
+        attributes: *name_attrs
+
+  # 8. named woods, forests, meadows, heaths and wetlands, one point each
+  - id: area
+    features:
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 11
+        include_when:
+          __all__: [*area_tags, *named]
         attributes: *name_attrs
 
 # TESTS: `workers/lib/verify-schema.sh workers/names/names.yml`
@@ -336,3 +351,41 @@ examples:
         tags:
           class: region
           name: Spiš
+
+  - name: A named wood is one point in it, its class the natural tag's
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        natural: wood
+        name: Panský les
+    output:
+      - layer: area
+        geometry: point
+        min_zoom: 11
+        tags:
+          class: wood
+          name: Panský les
+
+  - name: A named forest is an area too
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        landuse: forest
+        name: Hájik
+    output:
+      - layer: area
+        geometry: point
+        min_zoom: 11
+        tags:
+          class: forest
+          name: Hájik
+
+  - name: An unnamed wood is no name at all
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        natural: wood
+    output: []
