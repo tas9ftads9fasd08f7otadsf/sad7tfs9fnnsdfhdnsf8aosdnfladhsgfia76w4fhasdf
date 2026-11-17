@@ -3375,6 +3375,7 @@ export function applyLayerOrder(style, order) {
  * pole je jej jediný zdroj pravdy a preto je exportované.
  */
 // z20 is z16 ×9, under the road's real width, so a town street stops short of its houses
+// tertiary, minor and service fills are Mapy's white run across a road, one zoom on
 export const ROAD_DEFS = [
   ["motorway", "Diaľnice", ["motorway"], "motorway", "motorwayCasing",
     [[4, 0.5], [6, 0.9], [10, 3], [14, 8], [16, 18], [20, 162]], 3, 4],
@@ -3385,13 +3386,13 @@ export const ROAD_DEFS = [
   ["secondary", "Cesty II. triedy", ["secondary"], "secondary", "roadCasing",
     [[8, 0.4], [10, 0.7], [12, 2], [14, 5], [16, 12], [20, 108]], 2, 8],
   ["tertiary", "Cesty III. triedy", ["tertiary"], "secondary", "roadCasing",
-    [[9, 0.35], [11, 0.6], [12, 1.6], [14, 4.2], [16, 10], [20, 90]], 1.8, 9],
+    [[9, 0.35], [11, 1.9], [12, 2.75], [13, 3.5], [14, 4.75], [15, 7.5], [16, 12.5], [20, 90]], 1.8, 9],
   // `living_street` schéma nevydáva – `highway=living_street` mapuje na
   // `minor` rovnako ako `residential` a `unclassified`.
   ["minor", "Miestne cesty", ["minor", "raceway", "busway", "bus_guideway"], "minor", "roadCasing",
-    [[11, 0.3], [12, 0.6], [14, 3.5], [16, 9], [20, 81]], 1.6, 11],
+    [[11, 0.3], [12, 0.6], [13, 1.3], [14, 1.6], [15, 3.9], [16, 8], [20, 81]], 1.6, 11],
   ["service", "Účelové cesty", ["service"], "service", "roadCasing",
-    [[12, 0.3], [13, 0.5], [14, 2], [16, 6], [20, 54]], 1.2, 12],
+    [[12, 0.3], [13, 0.5], [14, 1], [15, 2.5], [16, 5.25], [20, 54]], 1.2, 12],
   ["pedestrian", "Pešie zóny", ["pedestrian"], "pedestrian", "roadCasing",
     [[12, 0.3], [13, 0.6], [14, 2.4], [16, 7], [20, 63]], 1.2, 12]
 ];
