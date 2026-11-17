@@ -313,7 +313,7 @@ export const THEMES = {
     sand: "#2a2820",
     ice: "#1e2630",
     wetland: "#18241d",
-    rock: "#34312a",
+    rock: "#4c473c",
     residential: "#1b1b28",
     industrial: "#201b28",
     cemetery: "#1a231c",
@@ -382,7 +382,7 @@ export const THEMES = {
     contour: "#4f4b40",
     contourMajor: "#6f6a5c",
     contourText: "#8e8a7c",
-    rockArea: "#403c33",
+    rockArea: "#5c5649",
     rockPattern: "#6a6152",
     // prvky mimo schémy OpenMapTiles (workers/features/features.yml)
     cliffLine: "#8a7a64",
