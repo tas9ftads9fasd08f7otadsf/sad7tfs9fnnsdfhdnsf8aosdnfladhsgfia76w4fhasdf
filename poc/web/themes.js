@@ -6518,7 +6518,8 @@ export function buildStyle({
     ["village", "Obce", ["village"], 9, REG, zl([[9, 10], [16, 15]])],
     // bold capitals tell towns from villages close up and cities at every zoom, as on Mapy.com
     ["town", "Mestá", ["town"], 7, BOLD, zl([[7, 11], [14, 18]]), 13],
-    ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [13, 22]]), 0],
+    // Mapy sets a city at 14px up to z9, then at 27px from z10 on
+    ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [9, 14], [10, 27], [13, 27]]), 0],
     ["state", "Kraje a regióny", ["state", "province"], 4, BOLD, zl([[4, 11], [8, 15]])],
     ["country", "Štáty", ["country"], 2, BOLD, zl([[2, 11], [6, 18]])]
   ];
