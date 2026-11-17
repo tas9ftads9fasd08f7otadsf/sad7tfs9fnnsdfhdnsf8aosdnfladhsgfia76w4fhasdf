@@ -1158,12 +1158,29 @@
               "paint": {
                 "fill-color": "#e9e9da"
               }
+            },
+            {
+              "attr": "subclass",
+              "values": [
+                "vineyard"
+              ],
+              "label": "vinice",
+              "paint": {
+                "fill-color": "#e0ecc3"
+              }
             }
           ]
         },
         "landuse-cemetery": {
           "paint": {
             "fill-color": "#d2e6b4"
+          },
+          "pattern": {
+            "id": "cross",
+            "color": "#a3b79f",
+            "size": 12,
+            "weight": 0.8,
+            "opacity": 0.9
           }
         },
         "landuse-school": {
