@@ -184,6 +184,7 @@ export const DASH_PRESETS = [
   { id: "dashed-short", label: "Krátke husté čiarky (cyklotrasa)", dash: [1.75, 1.25] },
   { id: "dotted", label: "Bodkovaná", dash: [1, 2] },
   { id: "dotted-dense", label: "Bodkovaná hustá", dash: [0.8, 1] },
+  { id: "dotted-bold", label: "Bodkovaná výrazná (horská cyklotrasa)", dash: [1.5, 1.2] },
   { id: "dotted-sparse", label: "Bodkovaná riedka", dash: [1, 4] },
   { id: "dash-dot", label: "Čiarka-bodka", dash: [5, 1.5, 1, 1.5] },
   { id: "dash-dot-dot", label: "Čiarka-bodka-bodka (náučný chodník)", dash: [6, 1.5, 1, 1.5, 1, 1.5] },

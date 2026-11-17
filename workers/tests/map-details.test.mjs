@@ -73,3 +73,39 @@ test("only the first two routes of a lane get a mark", () => {
   assert.ok(marks.length > 0);
   for (const l of marks) assert.match(JSON.stringify(l.filter), /"<=".*1\]/s, l.id);
 });
+
+// 549 Mapy's paths and tracks are lighter and about a third thinner than ours were
+test("paths and tracks are drawn in Mapy's light brown, thin", () => {
+  const track = byId("road-track");
+  const path = byId("road-path");
+  assert.equal(track.paint["line-color"], "#9b9275");
+  assert.equal(path.paint["line-color"], "#968c70");
+  for (const layer of [track, path]) assert.ok(layer.paint["line-dasharray"], `${layer.id} stays dashed`);
+});
+
+// 549 our contours were two to four times as strong as Mapy's; the 50 and 100 m lines are fainter and thinner
+test("contour lines are faint close up, the 100 m ones thin", () => {
+  const lines = buildStyle({
+    theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", contoursUrl: "https://x/contours.pmtiles", overrides
+  });
+  // close up (the last step) the opacity is the expression's last value
+  const closeUp = (id) => lines.layers.find((l) => l.id === id).paint["line-opacity"].at(-1);
+  for (const id of ["contour-minor", "contour-mid", "contour-major"]) {
+    assert.ok(closeUp(id) <= 0.3, `${id} ${closeUp(id)}`);
+  }
+  const widthAt16 = (id) => {
+    const w = lines.layers.find((l) => l.id === id).paint["line-width"];
+    return w[w.indexOf(16) + 1];
+  };
+  assert.ok(widthAt16("contour-major") <= 1.2, "the 100 m line is about 1 px");
+});
+
+// 549 Mapy's mountain-bike route is bold round dots
+test("a mountain-bike route is drawn in bold dots", () => {
+  const trails = buildStyle({
+    theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", trailsUrl: "https://x/trails.pmtiles", overrides
+  });
+  assert.deepEqual(trails.layers.find((l) => l.id === "trail-mtb").paint["line-dasharray"], [1.5, 1.2]);
+});
