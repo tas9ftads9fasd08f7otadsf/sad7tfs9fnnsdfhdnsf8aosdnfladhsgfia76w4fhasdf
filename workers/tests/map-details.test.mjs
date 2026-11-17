@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildStyle, normalizeOverrides } from "../../poc/web/themes.js";
+import { buildStyle, normalizeOverrides, ROAD_DEFS } from "../../poc/web/themes.js";
 import { PATTERN_IDS, collectPatternNames } from "../../poc/web/patterns.js";
 
 const saved = JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)));
@@ -42,5 +42,14 @@ test("every theme has a vine colour", () => {
   for (const theme of ["svetla", "tmava", "outdoor", "retro"]) {
     const vines = build(theme).layers.find((l) => l.id === "landcover-vineyard-icons");
     assert.match(vines.paint["fill-pattern"], /^pat:vines:[0-9a-f]{6}:/, theme);
+  }
+});
+
+// 548 a primary road's fill was 25 to 30 % wider than a secondary one, Mapy draws it about as wide
+test("a primary road is hardly wider than a secondary one", () => {
+  const stops = (id) => Object.fromEntries(ROAD_DEFS.find((d) => d[0] === id)[5]);
+  for (const z of [14, 16]) {
+    const ratio = stops("primary")[z] / stops("secondary")[z];
+    assert.ok(ratio >= 1 && ratio <= 1.1, `z${z}: ${ratio.toFixed(2)}`);
   }
 });

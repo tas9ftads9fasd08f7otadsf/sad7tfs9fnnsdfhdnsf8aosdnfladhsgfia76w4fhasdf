@@ -3416,7 +3416,7 @@ export const ROAD_DEFS = [
   ["trunk", "Rýchlostné cesty", ["trunk"], "trunk", "roadCasing",
     [[5, 0.45], [7, 0.8], [10, 2.6], [14, 7], [16, 16], [20, 144]], 2.6, 5],
   ["primary", "Cesty I. triedy", ["primary"], "primary", "roadCasing",
-    [[6, 0.4], [8, 0.75], [10, 2.2], [14, 6.5], [16, 15], [20, 135]], 2.4, 6],
+    [[6, 0.36], [8, 0.65], [10, 1.9], [14, 5.2], [16, 12.5], [20, 112]], 2.4, 6],
   ["secondary", "Cesty II. triedy", ["secondary"], "secondary", "roadCasing",
     [[8, 0.4], [10, 0.7], [12, 2], [14, 5], [16, 12], [20, 108]], 2, 8],
   ["tertiary", "Cesty III. triedy", ["tertiary"], "secondary", "roadCasing",
