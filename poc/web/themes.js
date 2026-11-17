@@ -1149,6 +1149,8 @@ const PARK_MARKED = ["!", ["any",
   ["==", str("class"), "protected_area"],
   ["in", "ochranné_pásmo", str("class")],
   ["in", "(external)", str("class")]]];
+// a named park is a point of interest in the tiles; its name, not a tree, marks it
+export const PARK_POINT_CLASSES = ["park", "garden"];
 const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
 
 /**
@@ -6172,6 +6174,9 @@ export function buildStyle({
     : null;
   const poiFilter = (base) =>
     notHidden ? (base ? ["all", base, notHidden] : notHidden) : base;
+  // a park is named in green by `poi-park-name`, as on Mapy.com; no tree stands for it
+  const notPark = ["!", ["in", str("class"), ["literal", PARK_POINT_CLASSES]]];
+  const generalPoi = (base) => poiFilter(base ? ["all", base, notPark] : notPark);
 
   // z14–16: len dôležitejšie POI
   add(
@@ -6181,7 +6186,7 @@ export function buildStyle({
       "source-layer": "poi",
       minzoom: DETAIL_Z,
       maxzoom: 16,
-      filter: poiFilter(["<=", num("rank", 100), 24]),
+      filter: generalPoi(["<=", num("rank", 100), 24]),
       layout: poiLayout,
       paint: poiPaint
     },
@@ -6194,11 +6199,35 @@ export function buildStyle({
       type: "symbol",
       "source-layer": "poi",
       minzoom: 16,
-      ...(poiFilter(null) ? { filter: poiFilter(null) } : {}),
+      filter: generalPoi(null),
       layout: { ...poiLayout, "text-allow-overlap": false },
       paint: poiPaint
     },
     ["poi", "POI – všetky (z16+)", "point", poiPalette]
+  );
+
+  add(
+    {
+      id: "poi-park-name",
+      type: "symbol",
+      "source-layer": "poi",
+      minzoom: DETAIL_Z,
+      filter: poiFilter(["all", ["in", str("class"), ["literal", PARK_POINT_CLASSES]], ["has", "name"]]),
+      layout: {
+        "text-field": nameExpr,
+        "text-font": REG,
+        "text-size": zl([[14, 11], [16, 13], [18, 15]]),
+        "text-max-width": 8,
+        "text-padding": 6,
+        "symbol-sort-key": num("rank", 100)
+      },
+      paint: {
+        "text-color": c.parkText,
+        "text-halo-color": c.textHalo,
+        "text-halo-width": 1.2
+      }
+    },
+    ["popisky", "Názvy parkov", "text", { "text-color": "parkText", "text-halo-color": "textHalo" }]
   );
 
   // body z vlastných dlaždíc (prameň, jaskyňa, rozhľadňa, štôlňa): schéma
