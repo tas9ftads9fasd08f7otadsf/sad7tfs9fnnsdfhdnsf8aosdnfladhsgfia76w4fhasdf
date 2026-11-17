@@ -171,7 +171,7 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#8fae6a",
+    park: "#86a763",
     parkOutline: "#9ac16a",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
