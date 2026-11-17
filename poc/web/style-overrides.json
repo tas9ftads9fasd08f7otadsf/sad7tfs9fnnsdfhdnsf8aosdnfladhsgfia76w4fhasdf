@@ -1215,6 +1215,9 @@
               "label": "Sakrálne",
               "paint": {
                 "fill-color": "#a09d95"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
               }
             },
             {
@@ -1225,6 +1228,9 @@
               "label": "Miesto uctievania",
               "paint": {
                 "fill-color": "#a09d95"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
               }
             },
             {
@@ -1248,6 +1254,9 @@
               "label": "Verejné budovy",
               "paint": {
                 "fill-color": "#ececf1"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
               }
             },
             {
@@ -1267,6 +1276,30 @@
               "label": "Verejné budovy (druh)",
               "paint": {
                 "fill-color": "#ececf1"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
+              }
+            },
+            {
+              "attr": "class",
+              "values": [
+                "industrial",
+                "warehouse",
+                "factory",
+                "manufacture",
+                "hangar",
+                "service",
+                "storage_tank",
+                "silo",
+                "depot"
+              ],
+              "label": "Priemyselné",
+              "paint": {
+                "fill-color": "#d4d1cc"
+              },
+              "paintDark": {
+                "fill-color": "#2f2d3a"
               }
             }
           ]

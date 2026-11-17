@@ -2715,8 +2715,9 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
  * ČITATEĽNOSTI mapy aj panela: každý variant je vlastná vrstva (a s obrysom
  * dve), takže osem rozlíšení nad poľnou cestou je šestnásť vrstiev, ktoré sa
  * kreslia cez seba a v ktorých sa už nedá povedať, ktorá je ktorá.
+ * 548: šesť, lebo budovy majú päť druhov (sakrálne, verejné, priemyselné…).
  */
-export const MAX_VARIANTS = 4;
+export const MAX_VARIANTS = 6;
 
 /** Najviac hodnôt v jednom variante (`surface` má v OSM desiatky, nie stovky). */
 const MAX_VARIANT_VALUES = 24;
@@ -2785,6 +2786,18 @@ function cleanVariants(raw, id, problems, where) {
       if (c !== undefined) paint[prop] = c;
     }
     if (Object.keys(paint).length) clean.paint = paint;
+
+    // 548 a variant keeps its colours in the dark theme only when it names them
+    const paintDark = {};
+    for (const [prop, value] of Object.entries(v.paintDark || {})) {
+      if (!isColorProp(prop)) {
+        problems.push(`${kde}: tmavý variant sa dá zadať len pre "*-color", nie pre "${prop}".`);
+        continue;
+      }
+      const c = cleanValue(prop, value, id, problems, `${where}variant ${i + 1} (tmavý): `);
+      if (c !== undefined) paintDark[prop] = c;
+    }
+    if (Object.keys(paintDark).length) clean.paintDark = paintDark;
 
     const layout = {};
     for (const [prop, value] of Object.entries(v.layout || {})) {
@@ -3117,9 +3130,10 @@ function variantLayers(layer, variants, hasIcon, dark = false) {
       paint: { ...(layer.paint || {}) },
       metadata: { ...zaklad.metadata, "frico:derived": koren, "frico:variant": layer.id }
     };
-    for (const [prop, value] of Object.entries(v.paint || {})) {
-      // variant nemá tmavú farbu, v tmavej téme si nechá farbu predlohy
-      if (dark && isColorProp(prop)) continue;
+    for (const [prop, light] of Object.entries(v.paint || {})) {
+      // bez tmavej farby si variant v tmavej téme nechá farbu predlohy
+      const value = dark && isColorProp(prop) ? v.paintDark?.[prop] : light;
+      if (value === undefined) continue;
       const nv = overrideValue(vrstva.paint[prop], value, PAINT_DEFAULTS[prop]);
       if (nv !== undefined) vrstva.paint[prop] = nv;
     }

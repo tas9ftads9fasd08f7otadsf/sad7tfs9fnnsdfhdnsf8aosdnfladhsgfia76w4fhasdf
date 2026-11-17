@@ -31,3 +31,21 @@ test("churches are grey and public buildings pale grey", () => {
 test("a building's outline is Mapy's darker tan", () => {
   assert.equal(byId("building-pkg").paint["fill-outline-color"], "#c2b79b");
 });
+
+// 548 Mapy draws industrial buildings grey
+test("industrial buildings are grey", () => {
+  assert.equal(byId("building-pkg__var5").paint["fill-color"], "#d4d1cc");
+  assert.match(JSON.stringify(byId("building-pkg__var5").filter), /"warehouse"/);
+});
+
+// 548 the types are told apart by night too, in their own dark colours
+test("building types keep their own colours in the dark theme", () => {
+  const dark = buildStyle({
+    theme: "tmava", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", buildingsUrl: "https://x/buildings.pmtiles", overrides
+  });
+  const get = (id) => dark.layers.find((l) => l.id === id);
+  assert.equal(get("building-pkg__var1").paint["fill-color"], "#4a4752");
+  assert.equal(get("building-pkg__var3").paint["fill-color"], "#3c3b4c");
+  assert.notEqual(get("building-pkg__var1").paint["fill-color"], get("building-pkg").paint["fill-color"]);
+});
