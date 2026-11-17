@@ -34,7 +34,7 @@ test("a building casts a soft shadow to the lower right, under it", () => {
   const shadow = byId("building-shadow");
   assert.equal(shadow.paint["fill-color"], THEMES.svetla.buildingShadow);
   const from = shadow.paint["fill-translate"][4];
-  assert.deepEqual(from[1], [1, 1], "down and right");
+  assert.deepEqual(from[1], [1.5, 1.5], "down and right");
   assert.ok(index("building-shadow") < index("building-pkg"));
   assert.equal(shadow.minzoom, 15);
 });
@@ -47,4 +47,30 @@ test("every theme has a shadow colour", () => {
 
 test("a building's outline is Mapy's darker tan", () => {
   assert.equal(byId("building-pkg").paint["fill-outline-color"], "#c2b79b");
+});
+
+// 508 Mapy draws industrial buildings grey on a lighter industrial ground
+test("industrial buildings are grey", () => {
+  assert.equal(byId("building-pkg__var5").paint["fill-color"], "#d4d1cc");
+  assert.match(JSON.stringify(byId("building-pkg__var5").filter), /"warehouse"/);
+});
+
+// 508 the types are told apart by night too, in their own dark colours
+test("building types keep their own colours in the dark theme", () => {
+  const dark = buildStyle({
+    theme: "tmava", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", buildingsUrl: "https://x/buildings.pmtiles", overrides
+  });
+  const get = (id) => dark.layers.find((l) => l.id === id);
+  assert.equal(get("building-pkg__var1").paint["fill-color"], "#4a4752");
+  assert.equal(get("building-pkg__var3").paint["fill-color"], "#3c3b4c");
+  assert.equal(get("building-pkg__var1__outline").paint["line-color"], "#5c5a66");
+  assert.notEqual(get("building-pkg__var1").paint["fill-color"], get("building-pkg").paint["fill-color"]);
+});
+
+// 508 the town stays tinted close up, in Mapy's cream
+test("the residential area keeps its cream tint close up", () => {
+  const residential = byId("landuse-residential");
+  assert.equal(residential.paint["fill-opacity"], undefined);
+  assert.equal(residential.paint["fill-color"].at(-1), "#efe6d4");
 });

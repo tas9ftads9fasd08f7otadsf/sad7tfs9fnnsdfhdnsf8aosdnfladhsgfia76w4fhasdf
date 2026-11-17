@@ -192,7 +192,7 @@
               [
                 13,
                 20,
-                "#d8d5ce"
+                "#e6e2d9"
               ]
             ]
           },
@@ -1218,7 +1218,11 @@
               "outline": {
                 "color": "#8f8f8f",
                 "width": 1,
-                "opacity": 1
+                "opacity": 1,
+                "colorDark": "#5c5a66"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
               }
             },
             {
@@ -1233,7 +1237,11 @@
               "outline": {
                 "color": "#8f8f8f",
                 "width": 1,
-                "opacity": 1
+                "opacity": 1,
+                "colorDark": "#5c5a66"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
               }
             },
             {
@@ -1261,7 +1269,11 @@
               "outline": {
                 "color": "#b3b3bb",
                 "width": 1,
-                "opacity": 1
+                "opacity": 1,
+                "colorDark": "#4c4c5a"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
               }
             },
             {
@@ -1285,7 +1297,38 @@
               "outline": {
                 "color": "#b3b3bb",
                 "width": 1,
-                "opacity": 1
+                "opacity": 1,
+                "colorDark": "#4c4c5a"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
+              }
+            },
+            {
+              "attr": "class",
+              "values": [
+                "industrial",
+                "warehouse",
+                "factory",
+                "manufacture",
+                "hangar",
+                "service",
+                "storage_tank",
+                "silo",
+                "depot"
+              ],
+              "label": "Priemyselné",
+              "paint": {
+                "fill-color": "#d4d1cc"
+              },
+              "paintDark": {
+                "fill-color": "#2f2d3a"
+              },
+              "outline": {
+                "color": "#b7b5ad",
+                "width": 1,
+                "opacity": 1,
+                "colorDark": "#403e4e"
               }
             }
           ]

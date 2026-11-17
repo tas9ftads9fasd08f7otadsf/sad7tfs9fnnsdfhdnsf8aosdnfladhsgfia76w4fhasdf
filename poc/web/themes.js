@@ -191,7 +191,7 @@ export const THEMES = {
     building: "#d9cfc5",
     buildingOutline: "#c4b8ac",
     buildingTop: "#e2d8ce",
-    buildingShadow: "#cfc2a4",
+    buildingShadow: "#c8b99c",
     aeroway: "#e8e0e8",
     aerowayLine: "#ffffff",
     motorway: "#f0a862",
@@ -2634,8 +2634,9 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
  * ČITATEĽNOSTI mapy aj panela: každý variant je vlastná vrstva (a s obrysom
  * dve), takže osem rozlíšení nad poľnou cestou je šestnásť vrstiev, ktoré sa
  * kreslia cez seba a v ktorých sa už nedá povedať, ktorá je ktorá.
+ * 508: šesť, lebo budovy majú päť druhov (sakrálne, verejné, priemyselné…).
  */
-export const MAX_VARIANTS = 4;
+export const MAX_VARIANTS = 6;
 
 /** Najviac hodnôt v jednom variante (`surface` má v OSM desiatky, nie stovky). */
 const MAX_VARIANT_VALUES = 24;
@@ -2705,6 +2706,18 @@ function cleanVariants(raw, id, problems, where) {
     }
     if (Object.keys(paint).length) clean.paint = paint;
 
+    // 508 a variant keeps its colours in the dark theme only when it names them
+    const paintDark = {};
+    for (const [prop, value] of Object.entries(v.paintDark || {})) {
+      if (!isColorProp(prop)) {
+        problems.push(`${kde}: tmavý variant sa dá zadať len pre "*-color", nie pre "${prop}".`);
+        continue;
+      }
+      const c = cleanValue(prop, value, id, problems, `${where}variant ${i + 1} (tmavý): `);
+      if (c !== undefined) paintDark[prop] = c;
+    }
+    if (Object.keys(paintDark).length) clean.paintDark = paintDark;
+
     const layout = {};
     for (const [prop, value] of Object.entries(v.layout || {})) {
       const c = cleanValue(prop, value, id, problems, `${where}variant ${i + 1}: `,
@@ -2737,6 +2750,7 @@ function cleanVariants(raw, id, problems, where) {
           width: w,
           opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
         };
+        if (isColor(v.outline.colorDark)) clean.outline.colorDark = String(v.outline.colorDark).toLowerCase();
         if (v.outline.dash && v.outline.dash !== "solid") {
           if (!DASH_IDS.includes(v.outline.dash)) {
             problems.push(`${kde}: neznámy vzor okraja "${v.outline.dash}".`);
@@ -3035,9 +3049,10 @@ function variantLayers(layer, variants, hasIcon, dark = false) {
       paint: { ...(layer.paint || {}) },
       metadata: { ...zaklad.metadata, "frico:derived": koren, "frico:variant": layer.id }
     };
-    for (const [prop, value] of Object.entries(v.paint || {})) {
-      // variant nemá tmavú farbu, v tmavej téme si nechá farbu predlohy
-      if (dark && isColorProp(prop)) continue;
+    for (const [prop, light] of Object.entries(v.paint || {})) {
+      // bez tmavej farby si variant v tmavej téme nechá farbu predlohy
+      const value = dark && isColorProp(prop) ? v.paintDark?.[prop] : light;
+      if (value === undefined) continue;
       const nv = overrideValue(vrstva.paint[prop], value, PAINT_DEFAULTS[prop]);
       if (nv !== undefined) vrstva.paint[prop] = nv;
     }
@@ -3058,7 +3073,9 @@ function variantLayers(layer, variants, hasIcon, dark = false) {
       vrstva.layout = { ...(vrstva.layout || {}), "icon-image": v.icon };
     }
     // obrys variantu sa hlási ku koreňu, inak by ho presun poradia nechal stáť
-    const obrys = v.outline ? outlineLayer(vrstva, v.outline) : null;
+    const outline = v.outline && dark && v.outline.colorDark
+      ? { ...v.outline, color: v.outline.colorDark } : v.outline;
+    const obrys = outline ? outlineLayer(vrstva, outline) : null;
     if (obrys) {
       obrys.metadata = { ...obrys.metadata, "frico:derived": koren };
       if (layer.type === "line") out.push(obrys);
@@ -3817,7 +3834,6 @@ export function buildStyle({
         filter: ["in", str("class"), ["literal", classes]],
         paint: {
           "fill-color": c[paletteKey],
-          ...(id === "residential" ? { "fill-opacity": zl([[BUILDINGS_ALONE_FROM_Z - 1, 1], [BUILDINGS_ALONE_FROM_Z, 0]]) } : {})
         }
       },
       ["uzemie", label, "area", { "fill-color": paletteKey }]
@@ -4319,8 +4335,8 @@ export function buildStyle({
         minzoom: 15,
         paint: {
           "fill-color": c.buildingShadow,
-          "fill-translate": zl([[15, ["literal", [1, 1]]], [18, ["literal", [3, 3]]]]),
-          "fill-opacity": zl([[15, 0], [16, 0.8]])
+          "fill-translate": zl([[15, ["literal", [1.5, 1.5]]], [18, ["literal", [4, 4]]]]),
+          "fill-opacity": zl([[15, 0], [16, 1]])
         }
       },
       ["budovy", "Tieň budov (balík sídla)", "area", { "fill-color": "buildingShadow" }]

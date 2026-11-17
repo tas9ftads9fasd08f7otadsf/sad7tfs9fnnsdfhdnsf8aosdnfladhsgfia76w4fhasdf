@@ -26,9 +26,9 @@ test("close up the buildings alone show where people live", () => {
   const { layers } = styleOf("https://x/buildings.pmtiles");
   const byId = (id) => layers.find((l) => l.id === id);
   assert.equal(byId("building-pkg").type, "fill");
-  for (const id of ["landuse-residential", "settlement-area"]) {
-    const opacity = stops(byId(id).paint["fill-opacity"]);
-    assert.equal(opacity[BUILDINGS_ALONE_FROM_Z], 0, id);
-    assert.ok(opacity[BUILDINGS_ALONE_FROM_Z - 1] > 0, id);
-  }
+  const opacity = stops(byId("settlement-area").paint["fill-opacity"]);
+  assert.equal(opacity[BUILDINGS_ALONE_FROM_Z], 0);
+  assert.ok(opacity[BUILDINGS_ALONE_FROM_Z - 1] > 0);
+  // 508 Mapy keeps a cream tint under the town close up, so the residential area stays drawn
+  assert.equal(byId("landuse-residential").paint["fill-opacity"], undefined);
 });
