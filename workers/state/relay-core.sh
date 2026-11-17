@@ -56,22 +56,24 @@ trap on_cancel INT TERM
 
 run_link() { echo "$SERVER/$REPO/actions/runs/$1"; }
 
+# 551 a missing macOS runner is often back minutes later, so the rerun is repeated
+RERUNS_MAX=3
 # GitHub ended the run with jobs that never got a runner, and none of ours failed
-NEVER_STARTED_JQ='.attempt == 1
-  and ([.jobs[] | select(.conclusion == "failure")] | length) == 0
-  and ([.jobs[] | select(.status != "completed"
-         or (.conclusion == "cancelled" and ((.steps // []) | length) == 0))] | length) > 0'
+NEVER_STARTED_JQ=".attempt <= $RERUNS_MAX
+  and ([.jobs[] | select(.conclusion == \"failure\")] | length) == 0
+  and ([.jobs[] | select(.status != \"completed\"
+         or (.conclusion == \"cancelled\" and ((.steps // []) | length) == 0))] | length) > 0"
 never_started() {
   gh run view "$1" --repo "$REPO" --json attempt,jobs --jq "$NEVER_STARTED_JQ" 2>/dev/null || true
 }
 
-# 551 after the rerun, only the `.aar` job still has no runner: the map is deployed
-ARCHIVE_ONLY_LOST_JQ='.attempt > 1
-  and ([.jobs[] | select(.conclusion == "failure")] | length) == 0
-  and ([.jobs[] | select((.status != "completed"
-         or (.conclusion == "cancelled" and ((.steps // []) | length) == 0))
-         and (.name | startswith("Packages as Apple Archive") | not))] | length) == 0
-  and ([.jobs[] | select(.status != "completed" or .conclusion == "cancelled")] | length) > 0'
+# 551 after the last rerun, only the `.aar` job has no runner: the map is deployed
+ARCHIVE_ONLY_LOST_JQ=".attempt > $RERUNS_MAX
+  and ([.jobs[] | select(.conclusion == \"failure\")] | length) == 0
+  and ([.jobs[] | select((.status != \"completed\"
+         or (.conclusion == \"cancelled\" and ((.steps // []) | length) == 0))
+         and (.name | startswith(\"Packages as Apple Archive\") | not))] | length) == 0
+  and ([.jobs[] | select(.status != \"completed\" or .conclusion == \"cancelled\")] | length) > 0"
 archive_only_lost() {
   gh run view "$1" --repo "$REPO" --json attempt,jobs --jq "$ARCHIVE_ONLY_LOST_JQ" 2>/dev/null || true
 }
@@ -142,7 +144,7 @@ relay_main() {
       case "$state" in
         "completed failure")
           if [ "$(never_started "$RUNNING_ID")" = "true" ]; then
-            log "::warning::Region $RUNNING_REGION (run $RUNNING_ID) failed with jobs GitHub never started – running it once more."
+            log "::warning::Region $RUNNING_REGION (run $RUNNING_ID) failed with jobs GitHub never started – running it again."
             # `--failed`: a missing macOS runner mustn't cost a whole region rebuild
             if gh run rerun "$RUNNING_ID" --failed --repo "$REPO"; then
               pause "$POLL_S"

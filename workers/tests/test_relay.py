@@ -174,8 +174,10 @@ class NeverStarted(unittest.TestCase):
     def test_a_job_cancelled_while_running_started(self):
         self.assertEqual(self.ask([ran("success"), ran("cancelled")]), "false")
 
-    def test_only_the_first_attempt_is_rerun(self):
-        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=2), "false")
+    def test_a_run_is_rerun_up_to_three_times(self):
+        # 551: one rerun was not enough while no macOS runner was free
+        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=3), "true")
+        self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=4), "false")
 
 
 ARCHIVE = {"name": "Packages as Apple Archive (.aar)", "status": "completed",
@@ -184,7 +186,7 @@ ARCHIVE = {"name": "Packages as Apple Archive (.aar)", "status": "completed",
 
 @needs_cmd("bash", "jq")
 class ArchiveOnlyLost(unittest.TestCase):
-    def ask(self, jobs, attempt=2):
+    def ask(self, jobs, attempt=4):
         src = "COUNTRY=x REPO=x REGION_WF=x . workers/state/relay-core.sh; printf %s \"$ARCHIVE_ONLY_LOST_JQ\""
         jq = subprocess.run(["bash", "-c", src], cwd=ROOT, capture_output=True, text=True, check=True).stdout
         run = json.dumps({"attempt": attempt, "jobs": jobs})
@@ -201,7 +203,7 @@ class ArchiveOnlyLost(unittest.TestCase):
         self.assertEqual(self.ask([ran("failure"), ARCHIVE]), "false")
 
     def test_the_first_attempt_is_rerun_instead(self):
-        self.assertEqual(self.ask([ran("success"), ARCHIVE], attempt=1), "false")
+        self.assertEqual(self.ask([ran("success"), ARCHIVE], attempt=3), "false")
 
 
 if __name__ == "__main__":
