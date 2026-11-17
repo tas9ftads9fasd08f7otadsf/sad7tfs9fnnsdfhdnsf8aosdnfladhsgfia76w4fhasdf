@@ -22,7 +22,7 @@ test("a peak is its name, the icon in the middle line and the bare height", () =
   assert.deepEqual(gapStyle, {});
   assert.ok(name && JSON.stringify(height).includes("ele"));
   assert.ok(!JSON.stringify(height).includes(" m"), "no unit after the height");
-  assert.deepEqual(heightStyle["text-font"], ["literal", ["Noto Sans Bold"]]);
+  assert.deepEqual(heightStyle["text-font"], ["literal", ["Noto Sans Italic"]]);
   assert.equal(layout["text-anchor"], "center");
   assert.equal(layout["text-offset"], undefined);
   assert.ok(layout["icon-size"] <= 0.6, "a small triangle");

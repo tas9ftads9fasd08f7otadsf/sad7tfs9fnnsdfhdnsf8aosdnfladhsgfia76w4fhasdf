@@ -192,6 +192,7 @@ export const THEMES = {
     buildingOutline: "#c4b8ac",
     buildingTop: "#e2d8ce",
     buildingShadow: "#c8b99c",
+    vineIcon: "#b9c78d",
     aeroway: "#e8e0e8",
     aerowayLine: "#ffffff",
     motorway: "#f0a862",
@@ -321,6 +322,7 @@ export const THEMES = {
     buildingOutline: "#33304a",
     buildingTop: "#302d40",
     buildingShadow: "#17161f",
+    vineIcon: "#3b4a2c",
     aeroway: "#232030",
     aerowayLine: "#3a3750",
     motorway: "#b0763a",
@@ -449,6 +451,7 @@ export const THEMES = {
     buildingOutline: "#a89880",
     buildingTop: "#d8c8b0",
     buildingShadow: "#b8a88c",
+    vineIcon: "#a9b87d",
     aeroway: "#ddd8cc",
     aerowayLine: "#f4f1e4",
     motorway: "#e88a4a",
@@ -576,6 +579,7 @@ export const THEMES = {
     buildingOutline: "#d0a890",
     buildingTop: "#f0d8c8",
     buildingShadow: "#d8b9a4",
+    vineIcon: "#c0c090",
     aeroway: "#eee2d8",
     aerowayLine: "#fdf6ec",
     motorway: "#e08a7a",
@@ -756,6 +760,7 @@ export const PALETTE_GROUPS = [
       ["buildingOutline", "Obrys budovy"],
       ["buildingTop", "Budova 3D"],
       ["buildingShadow", "Tieň budovy"],
+      ["vineIcon", "Ikona vinice"],
       ["houseText", "Súpisné číslo"]
     ]
   },
@@ -3807,6 +3812,21 @@ export function buildStyle({
     );
   }
 
+  // 508 vinice majú ikonku úponku, ako na Mapy.com; od z14, nižšie by to bola plocha značiek
+  add(
+    {
+      id: "landcover-vineyard-icons",
+      type: "fill",
+      "source-layer": "landcover",
+      minzoom: 14,
+      filter: ["any", ["==", str("class"), "vineyard"], ["==", str("subclass"), "vineyard"]],
+      paint: {
+        "fill-pattern": patternImageName({ id: "vines", color: c.vineIcon, size: 24, weight: 0.8 })
+      }
+    },
+    ["krajina", "Vinice – ikonky", "area", {}]
+  );
+
   // využitie územia: presne tie triedy, ktoré schéma naozaj vydáva (26 hodnôt,
   // Tables.java: osm_landuse_polygon)
   const landuse = [
@@ -4774,6 +4794,34 @@ export function buildStyle({
       );
     }
 
+  }
+
+  // 508 napätie nad vedením, ako na Mapy.com: „110 kV"
+  if (featuresUrl) {
+    add(
+      {
+        id: "feature-power-label",
+        type: "symbol",
+        source: "features",
+        "source-layer": "feature_line",
+        minzoom: 14,
+        filter: ["all", ["==", str("class"), "power_line"], [">=", num("voltage", 0), 1000]],
+        layout: {
+          "symbol-placement": "line",
+          "symbol-spacing": 480,
+          "text-field": ["concat", ["to-string", ["/", num("voltage", 0), 1000]], " kV"],
+          "text-font": ITAL,
+          "text-size": zl([[14, 9], [17, 11]]),
+          "text-max-angle": 45
+        },
+        paint: {
+          "text-color": c.powerLine,
+          "text-halo-color": c.textHalo,
+          "text-halo-width": 1.4
+        }
+      },
+      ["prvky", "Napätie vedenia", "text", { "text-color": "powerLine", "text-halo-color": "textHalo" }]
+    );
   }
 
   // zjazdovky, bežky, skialpy, sánkovačky a zimné chodníky – každý druh vlastná vrstva
@@ -6113,7 +6161,7 @@ export function buildStyle({
           nameExpr, { "text-font": ["literal", ITAL] },
           "\n\u00a0\n", {},
           ["case", ["has", "ele"], ["to-string", ["get", "ele"]], "\u00a0"],
-          { "text-font": ["literal", BOLD] }
+          { "text-font": ["literal", ITAL] }
         ],
         "text-font": ITAL,
         "text-size": zl([[9, 9.5], [14, 12.5], [20, 15]]),
