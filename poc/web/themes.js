@@ -201,6 +201,8 @@ export const THEMES = {
     secondary: "#f7ecc8",
     minor: "#ffffff",
     service: "#ffffff",
+    serviceClosed: "#ececf1",
+    serviceClosedEdge: "#b8b6af",
     pedestrian: "#f2efe9",
     roadCasing: "#c8bda8",
     // Mapy edges a bridge in grey and lets it cast a soft shadow
@@ -336,6 +338,8 @@ export const THEMES = {
     // night local roads as navigation draws them: black, a light grey edge
     minor: "#000000",
     service: "#000000",
+    serviceClosed: "#1a1a1f",
+    serviceClosedEdge: "#55545a",
     pedestrian: "#3c3a4e",
     roadCasing: "#646361",
     // Mapy edges a bridge in grey and lets it cast a soft shadow
@@ -467,6 +471,8 @@ export const THEMES = {
     secondary: "#f5e9b8",
     minor: "#fdfaf2",
     service: "#fdfaf2",
+    serviceClosed: "#e9e8ee",
+    serviceClosedEdge: "#a8a398",
     pedestrian: "#efe9da",
     roadCasing: "#a89878",
     // Mapy edges a bridge in grey and lets it cast a soft shadow
@@ -597,6 +603,8 @@ export const THEMES = {
     secondary: "#f5e2c5",
     minor: "#fffdf8",
     service: "#fffdf8",
+    serviceClosed: "#f0eff3",
+    serviceClosedEdge: "#c9bfb2",
     pedestrian: "#f8f2e8",
     roadCasing: "#d5bfa5",
     // Mapy edges a bridge in grey and lets it cast a soft shadow
@@ -785,6 +793,8 @@ export const PALETTE_GROUPS = [
       ["secondary", "Cesta II./III. triedy"],
       ["minor", "Miestna cesta"],
       ["service", "Účelová cesta"],
+      ["serviceClosed", "Cesta bez vjazdu"],
+      ["serviceClosedEdge", "Obrys cesty bez vjazdu"],
       ["pedestrian", "Pešia zóna"],
       ["roadCasing", "Obrys ciest"],
       ["bridgeCasing", "Okraj mosta"],
@@ -1151,6 +1161,9 @@ const PARK_MARKED = ["!", ["any",
   ["in", "(external)", str("class")]]];
 // a named park is a point of interest in the tiles; its name, not a tree, marks it
 export const PARK_POINT_CLASSES = ["park", "garden"];
+// Mapy draws a service road closed to the public pale blue-grey, a parking aisle white
+const CLOSED_SERVICE = ["in", str("access"), ["literal", ["no", "private"]]];
+export const CLOSED_SERVICE_MIN_Z = 14;
 const PEDESTRIAN_STREET = ["all", ["==", str("class"), "path"], ["==", str("subclass"), "pedestrian"]];
 const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
 
@@ -4471,6 +4484,25 @@ export function buildStyle({
       extraFilter
     ];
     const odNajmenejDolezitej = [...ROAD_DEFS].reverse();
+    const closedService = (stops, extra, casing) => add(
+      {
+        id: `road-service-closed${casing ? "-casing" : ""}${suffix}`,
+        type: "line",
+        "source-layer": "transportation",
+        minzoom: CLOSED_SERVICE_MIN_Z,
+        filter: ["all", filterFor(["service"], "service"), CLOSED_SERVICE],
+        layout,
+        paint: {
+          "line-color": casing ? c.serviceClosedEdge : c.serviceClosed,
+          "line-width": zwRoad(casing ? casingStops("service", stops, extra) : stops),
+          ...(casing && opts.dash ? { "line-dasharray": opts.dash } : {}),
+          ...(casing && opts.casingOpacity ? { "line-opacity": opts.casingOpacity } : {}),
+          ...(!casing && opts.opacity ? { "line-opacity": opts.opacity } : {})
+        }
+      },
+      ["cesty", casing ? "Cesta bez vjazdu – obrys" : "Cesta bez vjazdu", "line",
+        { "line-color": casing ? "serviceClosedEdge" : "serviceClosed" }]
+    );
     // obrysy idú celé pod výplne, inak by ich prekrývali križovatky
     if (opts.shadow) {
       for (const [id, label, classes, , , stops, extra, mz] of odNajmenejDolezitej) {
@@ -4517,6 +4549,7 @@ export function buildStyle({
         ["cesty", `${label} – obrys${passLabel}`, "line", { "line-color": casingKey },
          null, null, `road-${id}${suffix}`]
       );
+      if (id === "service") closedService(stops, extra, true);
     }
     for (const [id, label, classes, colorKey, , stops, , mz] of odNajmenejDolezitej) {
       add(
@@ -4535,6 +4568,7 @@ export function buildStyle({
         },
         ["cesty", `${label}${passLabel}`, "line", { "line-color": colorKey }]
       );
+      if (id === "service") closedService(stops, 0, false);
     }
   };
 
