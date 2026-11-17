@@ -67,17 +67,6 @@ never_started() {
   gh run view "$1" --repo "$REPO" --json attempt,jobs --jq "$NEVER_STARTED_JQ" 2>/dev/null || true
 }
 
-# 551 after the last rerun, only the `.aar` job has no runner: the map is deployed
-ARCHIVE_ONLY_LOST_JQ=".attempt > $RERUNS_MAX
-  and ([.jobs[] | select(.conclusion == \"failure\")] | length) == 0
-  and ([.jobs[] | select((.status != \"completed\"
-         or (.conclusion == \"cancelled\" and ((.steps // []) | length) == 0))
-         and (.name | startswith(\"Packages as Apple Archive\") | not))] | length) == 0
-  and ([.jobs[] | select(.status != \"completed\" or .conclusion == \"cancelled\")] | length) > 0"
-archive_only_lost() {
-  gh run view "$1" --repo "$REPO" --json attempt,jobs --jq "$ARCHIVE_ONLY_LOST_JQ" 2>/dev/null || true
-}
-
 # the whole picture in every leg, rebuilt from the baton
 FAILED=0
 write_summary() {
@@ -151,10 +140,6 @@ relay_main() {
               continue
             fi
             log "::warning::Run $RUNNING_ID couldn't be started again – it counts as failed."
-          fi
-          if [ "$(archive_only_lost "$RUNNING_ID")" = "true" ]; then
-            log "::warning::Region $RUNNING_REGION (run $RUNNING_ID) is built and deployed; only its .aar job got no macOS runner – counted as success."
-            state="completed success"
           fi
           break ;;
         completed*) break ;;

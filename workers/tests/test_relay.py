@@ -28,10 +28,6 @@ def never_started(run, answer, times=None):
     return dict(rule, times=times) if times else rule
 
 
-def archive_only_lost(run, answer):
-    return {"match": rf"^run view {run} .*attempt,jobs", "out": answer}
-
-
 def listed(*runs):
     rows = [{"databaseId": i, "createdAt": at, "displayTitle": f"Map · Build map region · {r}"}
             for i, r, at in runs]
@@ -117,15 +113,6 @@ class Relay(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertIn(f"{a}:success:111", self.read("baton"))
 
-    def test_aar_job_without_runner_after_the_rerun_counts_as_success(self):
-        # 551: a missing macOS runner failed regions that were built and deployed
-        a, b = REGIONS[:2]
-        r = self.relay(f"111:{a}|{b}||1", [
-            view(111, "completed failure"), never_started(111, "false", times=1),
-            archive_only_lost(111, "true"), NEW_RUN])
-        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
-        self.assertIn(f"{a}:success:111", self.read("baton"))
-
     def test_legs_are_capped(self):
         cap = len(REGIONS) * 3 + 2
         r = self.relay(f"111:{REGIONS[0]}|||{cap}", [view(111, "completed success")])
@@ -178,32 +165,6 @@ class NeverStarted(unittest.TestCase):
         # 551: one rerun was not enough while no macOS runner was free
         self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=3), "true")
         self.assertEqual(self.ask([QUEUED_THEN_CANCELLED], attempt=4), "false")
-
-
-ARCHIVE = {"name": "Packages as Apple Archive (.aar)", "status": "completed",
-           "conclusion": "cancelled", "steps": []}
-
-
-@needs_cmd("bash", "jq")
-class ArchiveOnlyLost(unittest.TestCase):
-    def ask(self, jobs, attempt=4):
-        src = "COUNTRY=x REPO=x REGION_WF=x . workers/state/relay-core.sh; printf %s \"$ARCHIVE_ONLY_LOST_JQ\""
-        jq = subprocess.run(["bash", "-c", src], cwd=ROOT, capture_output=True, text=True, check=True).stdout
-        run = json.dumps({"attempt": attempt, "jobs": jobs})
-        return subprocess.run(["jq", jq], input=run, capture_output=True, text=True, check=True).stdout.strip()
-
-    def test_only_the_archive_job_lost_after_the_rerun(self):
-        # 551
-        self.assertEqual(self.ask([ran("success"), ARCHIVE]), "true")
-
-    def test_another_job_without_runner_is_not_forgiven(self):
-        self.assertEqual(self.ask([ran("success"), ARCHIVE, dict(QUEUED_THEN_CANCELLED, name="Water")]), "false")
-
-    def test_a_real_failure_is_not_forgiven(self):
-        self.assertEqual(self.ask([ran("failure"), ARCHIVE]), "false")
-
-    def test_the_first_attempt_is_rerun_instead(self):
-        self.assertEqual(self.ask([ran("success"), ARCHIVE], attempt=3), "false")
 
 
 if __name__ == "__main__":
