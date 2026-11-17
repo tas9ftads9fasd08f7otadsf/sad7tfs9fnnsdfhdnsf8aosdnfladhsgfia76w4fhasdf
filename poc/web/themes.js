@@ -6556,10 +6556,11 @@ export function buildStyle({
   const places = [
     ["neighbourhood", "Štvrte a samoty", ["neighbourhood", "isolated_dwelling", "farm", "quarter"], 13, REG, zl([[13, 9], [18, 13]])],
     ["hamlet", "Osady", ["hamlet"], 12, REG, zl([[12, 10], [18, 14]])],
-    ["suburb", "Mestské časti", ["suburb"], 11, REG, zl([[11, 11], [18, 15]])],
-    ["village", "Obce", ["village"], 9, REG, zl([[9, 10], [16, 15]])],
+    ["suburb", "Mestské časti", ["suburb"], 11, REG, zl([[11, 11], [12, 13.5], [13, 15.5], [14, 18], [18, 20]])],
+    ["village", "Obce", ["village"], 9, REG, zl([[9, 11], [10, 14], [12, 17], [13, 19.5], [14, 22], [16, 24]])],
+    // sizes from the width of Mapy's labels beside ours, 1.2 to 1.5 times ours before
     // bold capitals tell towns from villages close up and cities at every zoom, as on Mapy.com
-    ["town", "Mestá", ["town"], 7, BOLD, zl([[7, 11], [14, 18]]), 13],
+    ["town", "Mestá", ["town"], 7, BOLD, zl([[7, 12], [9, 13.6], [10, 16.7], [11, 20], [12, 22], [13, 23], [14, 24]]), 13],
     // Mapy sets a city at 14px up to z9, then at 27px from z10 on
     ["city", "Veľké mestá", ["city"], 4, BOLD, zl([[4, 12], [9, 14], [10, 27], [13, 27]]), 0],
     ["state", "Kraje a regióny", ["state", "province"], 4, BOLD, zl([[4, 11], [8, 15]])],
