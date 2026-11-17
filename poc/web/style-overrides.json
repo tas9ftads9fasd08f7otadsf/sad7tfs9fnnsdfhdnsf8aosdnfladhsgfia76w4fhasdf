@@ -994,18 +994,23 @@
             "line-color": [
               [
                 0,
-                14,
+                13,
                 "#c8bda8"
               ],
               [
-                15,
+                14,
                 20,
-                "#b9b096"
+                "#bcb7b4"
               ]
             ]
           },
           "paintDark": {
             "line-color": "#646361"
+          }
+        },
+        "road-pedestrian": {
+          "paint": {
+            "line-color": "#e0e5f2"
           }
         },
         "landcover-grass": {
