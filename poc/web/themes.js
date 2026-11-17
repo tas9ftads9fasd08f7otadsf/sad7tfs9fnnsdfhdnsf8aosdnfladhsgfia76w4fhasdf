@@ -3882,7 +3882,10 @@ export function buildStyle({
         filter: ["in", str("class"), ["literal", classes]],
         paint: {
           "fill-color": c[paletteKey],
-          ...(id === "residential" ? { "fill-opacity": zl([[BUILDINGS_ALONE_FROM_Z - 1, 1], [BUILDINGS_ALONE_FROM_Z, 0]]) } : {})
+          // Mapy keeps a town's light ground at every zoom; at night the buildings stand alone
+          ...(id === "residential" && theme === "tmava"
+            ? { "fill-opacity": zl([[BUILDINGS_ALONE_FROM_Z - 1, 1], [BUILDINGS_ALONE_FROM_Z, 0]]) }
+            : {})
         }
       },
       ["uzemie", label, "area", { "fill-color": paletteKey }]
