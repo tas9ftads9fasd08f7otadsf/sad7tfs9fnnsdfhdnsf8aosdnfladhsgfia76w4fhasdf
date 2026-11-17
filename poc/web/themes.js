@@ -1164,6 +1164,9 @@ export const PARK_POINT_CLASSES = ["park", "garden"];
 // Mapy draws a service road closed to the public pale blue-grey, a parking aisle white
 const CLOSED_SERVICE = ["in", str("access"), ["literal", ["no", "private"]]];
 export const CLOSED_SERVICE_MIN_Z = 14;
+export const ROAD_NAME_MAIN_CLASSES = ["motorway", "trunk", "primary", "secondary", "tertiary"];
+export const ROAD_NAME_MAIN_FROM_Z = 14;
+export const ROAD_NAME_MINOR_FROM_Z = 15;
 const PEDESTRIAN_STREET = ["all", ["==", str("class"), "path"], ["==", str("subclass"), "pedestrian"]];
 const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
 
@@ -6086,12 +6089,14 @@ export function buildStyle({
     }
   }
 
-  add(
+  // Mapy names the main roads from its z15 and the rest from z16, a zoom each after ours
+  const nameRoad = (id, label, filter, minzoom) => add(
     {
-      id: "road-name",
+      id,
       type: "symbol",
       "source-layer": "transportation_name",
-      minzoom: 13,
+      minzoom,
+      filter,
       layout: {
         "symbol-placement": "line",
         "text-field": nameExpr,
@@ -6107,13 +6112,11 @@ export function buildStyle({
         "text-halo-width": 1.2
       }
     },
-    [
-      "popisky",
-      "Názvy ulíc a ciest",
-      "text",
-      { "text-color": "roadText", "text-halo-color": "textHalo" }
-    ]
+    ["popisky", label, "text", { "text-color": "roadText", "text-halo-color": "textHalo" }]
   );
+  const MAIN_ROAD = ["in", str("class"), ["literal", ROAD_NAME_MAIN_CLASSES]];
+  nameRoad("road-name", "Názvy ulíc a ciest", ["!", MAIN_ROAD], ROAD_NAME_MINOR_FROM_Z);
+  nameRoad("road-name-main", "Názvy hlavných ciest", MAIN_ROAD, ROAD_NAME_MAIN_FROM_Z);
 
   // súpisné a orientačné čísla – iba na najväčšom detaile
   add(
@@ -6596,7 +6599,13 @@ export function buildStyle({
   {
     const at = L.findIndex((l) => l.id === "road-name");
     const last = Math.max(...L.map((l, i) => (/^poi-/.test(l.id) ? i : -1)));
-    if (at >= 0 && last > at) L.splice(last, 0, ...L.splice(at, 1));
+    if (at >= 0 && last > at) {
+      const names = L.filter((l) => /^road-name(-main)?$/.test(l.id));
+      // a road's number is worth more than a pub: the shields go over the points of interest
+      const shields = L.filter((l) => /^road-shield-/.test(l.id));
+      for (const l of [...names, ...shields]) L.splice(L.indexOf(l), 1);
+      L.splice(last + 1 - names.length - shields.length, 0, ...shields, ...names);
+    }
   }
 
   // najprv profil typu mapy, až potom úpravy – tie musia vedieť profil prebiť
