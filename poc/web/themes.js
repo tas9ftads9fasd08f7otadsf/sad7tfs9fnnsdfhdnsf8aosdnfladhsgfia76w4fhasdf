@@ -267,7 +267,8 @@ export const THEMES = {
     wall: "#8a7a66",
     fence: "#a8a08e",
     hedge: "#9dc088",
-    powerLine: "#9a94a8",
+    // Mapy draws a power line a plain mid grey, not the lilac we had
+    powerLine: "#a0a0a0",
     cutline: "#c8bfa8",
     treeRow: "#8fbf78",
     pisteArea: "#e8f2fa",
@@ -1062,6 +1063,8 @@ const zw = (stops) => [
 
 /** Share of its road's width a slip road gets; Mapy draws interchange loops slim. */
 export const RAMP_SCALE = 0.5;
+/** A pylon's tick on a power line: its length and thickness along the line, and the gap, in px (Mapy's). */
+export const POWER_TICK = { length: 5, dash: 0.2, every: 60 };
 /** A house's shadow, south-east as on Mapy: shift in px, opacity, from which zoom (not at night). */
 export const BUILDING_SHADOW = { translate: [1, 1.5], opacity: 0.22, minzoom: 15 };
 /** A cliff's opacity by zoom: Mapy draws it at its z14–z15, faint at z16, not at z17. */
@@ -4841,8 +4844,9 @@ export function buildStyle({
     const featureLines = [
       ["power", "Elektrické vedenie", ["power_line"], "powerLine",
         [[11, 0.5], [14, 0.9], [16, 1.4], [20, 3]], null, 11],
+      // Mapy draws low voltage as the main line: solid, with a tick for each pylon
       ["power-minor", "Vedenie nízkeho napätia", ["power_minor"], "powerLine",
-        [[14, 0.4], [16, 0.8], [20, 1.8]], [4, 3], 14],
+        [[14, 0.9], [16, 1.4], [20, 3]], null, 14],
       ["cutline", "Prieseky", ["cutline"], "cutline",
         [[13, 0.9], [16, 2.2], [20, 6]], [6, 3], 13],
       ["pipeline", "Nadzemné potrubie", ["pipeline"], "powerLine",
@@ -4884,6 +4888,25 @@ export function buildStyle({
       );
     }
 
+    // a tick across the line for each pylon: a wide line cut to hairline dashes, 60 px apart
+    add(
+      {
+        id: "feature-power-ticks",
+        type: "line",
+        source: "features",
+        "source-layer": "feature_line",
+        minzoom: 13,
+        filter: ["in", str("class"), ["literal", ["power_line", "power_minor"]]],
+        layout: { "line-cap": "butt", "line-join": "round" },
+        paint: {
+          "line-color": c.powerLine,
+          "line-width": POWER_TICK.length,
+          "line-dasharray": [POWER_TICK.dash, POWER_TICK.every / POWER_TICK.length - POWER_TICK.dash]
+        }
+      },
+      ["prvky", "Elektrické vedenie – stĺpy", "line", { "line-color": "powerLine" }, null, null, "feature-power"]
+    );
+    L[L.length - 1].metadata["frico:derived"] = "feature-power";
   }
 
   // zjazdovky, bežky, skialpy, sánkovačky a zimné chodníky – každý druh vlastná vrstva
