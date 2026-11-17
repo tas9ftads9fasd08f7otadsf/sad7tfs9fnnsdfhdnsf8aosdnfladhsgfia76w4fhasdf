@@ -1384,7 +1384,8 @@ export const TRAIL_MARK_STACK = { base: MARK_BOX / 2 + 6, step: MARK_BOX };
 export const TRAIL_MARK_PADDING = 0;
 
 /** Koľko priečok stĺpika sa vymenuje (pozri `icon-offset` v štýle). */
-export const TRAIL_MARK_STACK_MAX = 4;
+// 548 dve priečky, nie päť: stĺpik značiek nemá byť vysoký ako legenda
+export const TRAIL_MARK_STACK_MAX = 1;
 
 /**
  * Predvolené hodnoty pri `TRAIL_MARK_ZOOM` – to, čo prepisuje developer mode.
@@ -5345,6 +5346,8 @@ export function buildStyle({
     };
     // krok stĺpika je z developer módu, tak ako rozostup a veľkosť značky
     const markOffset = stackOffset(TRAIL_MARK_STACK.base, markPx.step);
+    // a route further down the lane than the stack has rungs gets no mark of its own
+    const inStack = ["<=", laneNum, TRAIL_MARK_STACK_MAX];
     for (const t of trailTypes) {
       if (!drawsMark(t)) continue;
       const { id, label, markPick } = t;
@@ -5355,7 +5358,7 @@ export function buildStyle({
           source: "trails",
           "source-layer": "trail",
           minzoom: MARK_MINZOOM,
-          filter: ["all", ["==", str("route"), id], ["has", "mark"]],
+          filter: ["all", ["==", str("route"), id], ["has", "mark"], inStack],
           layout: {
             "symbol-placement": "line",
             "symbol-spacing": zl(
@@ -5405,8 +5408,8 @@ export function buildStyle({
           minzoom: 13,
           // ikonka je náhrada, nie druhý symbol: ostáva tam, kde značka nie je
           filter: drawsMark(t)
-            ? ["all", ["==", str("route"), id], ["!", ["has", "mark"]]]
-            : ["==", str("route"), id],
+            ? ["all", ["==", str("route"), id], ["!", ["has", "mark"]], inStack]
+            : ["all", ["==", str("route"), id], inStack],
           layout: {
             "symbol-placement": "line",
             "symbol-spacing": 390,

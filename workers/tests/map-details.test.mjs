@@ -3,9 +3,14 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { buildStyle, normalizeOverrides, ROAD_DEFS } from "../../poc/web/themes.js";
 import { PATTERN_IDS, collectPatternNames } from "../../poc/web/patterns.js";
+import { renderMark, markShape, MARK_PAD } from "../../poc/web/marks.js";
 
 const saved = JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)));
 const { overrides, problems } = normalizeOverrides(saved);
+const withTrails = (theme) => buildStyle({
+  theme, mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+  glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", trailsUrl: "https://x/trails.pmtiles", overrides
+});
 const build = (theme) => buildStyle({
   theme, mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
   glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", featuresUrl: "https://x/features.pmtiles", overrides
@@ -52,4 +57,19 @@ test("a primary road is hardly wider than a secondary one", () => {
     const ratio = stops("primary")[z] / stops("secondary")[z];
     assert.ok(ratio >= 1 && ratio <= 1.1, `z${z}: ${ratio.toFixed(2)}`);
   }
+});
+
+// 548 Mapy.com's route marks are small rounded squares, not tall stacks of legend plates
+test("a route mark has rounded corners", () => {
+  const { width, data } = renderMark(markShape("bar"), "#ffffff", "#d42a2a", 1);
+  const alpha = (x, y) => data[(y * width + x) * 4 + 3];
+  assert.ok(alpha(MARK_PAD, MARK_PAD) < 128, "the corner is cut");
+  assert.equal(alpha(Math.floor(width / 2), Math.floor(width / 2)), 255, "the middle is full");
+  assert.equal(alpha(Math.floor(width / 2), MARK_PAD + 3), 255, "the edge midpoint is full");
+});
+
+test("only the first two routes of a lane get a mark", () => {
+  const marks = withTrails("svetla").layers.filter((l) => /^trail-.*-mark$/.test(l.id));
+  assert.ok(marks.length > 0);
+  for (const l of marks) assert.match(JSON.stringify(l.filter), /"<=".*1\]/s, l.id);
 });
