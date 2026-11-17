@@ -133,6 +133,16 @@ export const PATTERNS = [
     ]
   },
   {
+    // 548 vinica: tenký úponok na podstavci, ako ho kreslí Mapy.com
+    id: "vines",
+    label: "Vinič (vinice)",
+    shapes: [
+      seg(0.4, 0.72, 0.62, 0.72),
+      ...poly([[0.52, 0.72], [0.52, 0.3], [0.58, 0.22], [0.64, 0.3], [0.58, 0.42], [0.46, 0.44],
+               [0.4, 0.54], [0.5, 0.62], [0.6, 0.57]])
+    ]
+  },
+  {
     id: "cross",
     label: "Krížiky (cintorín)",
     shapes: [seg(0.5, 0.2, 0.5, 0.8), seg(0.32, 0.42, 0.68, 0.42)]

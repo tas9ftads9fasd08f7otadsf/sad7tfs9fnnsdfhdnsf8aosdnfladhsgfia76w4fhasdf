@@ -192,6 +192,7 @@ export const THEMES = {
     buildingOutline: "#c4b8ac",
     buildingShadow: "#5a4a30",
     buildingTop: "#e2d8ce",
+    vineIcon: "#b9c78d",
     aeroway: "#e8e0e8",
     aerowayLine: "#ffffff",
     motorway: "#f0a862",
@@ -313,7 +314,7 @@ export const THEMES = {
     sand: "#2a2820",
     ice: "#1e2630",
     wetland: "#18241d",
-    rock: "#34312a",
+    rock: "#4c473c",
     residential: "#1b1b28",
     industrial: "#201b28",
     cemetery: "#1a231c",
@@ -328,6 +329,7 @@ export const THEMES = {
     buildingOutline: "#33304a",
     buildingShadow: "#000000",
     buildingTop: "#302d40",
+    vineIcon: "#3b4a2c",
     aeroway: "#232030",
     aerowayLine: "#3a3750",
     motorway: "#b0763a",
@@ -382,7 +384,7 @@ export const THEMES = {
     contour: "#4f4b40",
     contourMajor: "#6f6a5c",
     contourText: "#8e8a7c",
-    rockArea: "#403c33",
+    rockArea: "#5c5649",
     rockPattern: "#6a6152",
     // prvky mimo schémy OpenMapTiles (workers/features/features.yml)
     cliffLine: "#8a7a64",
@@ -462,6 +464,7 @@ export const THEMES = {
     buildingOutline: "#a89880",
     buildingShadow: "#4a3c28",
     buildingTop: "#d8c8b0",
+    vineIcon: "#a9b87d",
     aeroway: "#ddd8cc",
     aerowayLine: "#f4f1e4",
     motorway: "#e88a4a",
@@ -594,6 +597,7 @@ export const THEMES = {
     buildingOutline: "#d0a890",
     buildingShadow: "#4a3828",
     buildingTop: "#f0d8c8",
+    vineIcon: "#c0c090",
     aeroway: "#eee2d8",
     aerowayLine: "#fdf6ec",
     motorway: "#e08a7a",
@@ -779,6 +783,7 @@ export const PALETTE_GROUPS = [
       ["buildingOutline", "Obrys budovy"],
       ["buildingShadow", "Tieň budovy"],
       ["buildingTop", "Budova 3D"],
+      ["vineIcon", "Ikona vinice"],
       ["houseText", "Súpisné číslo"]
     ]
   },
@@ -1379,7 +1384,8 @@ export const TRAIL_MARK_STACK = { base: MARK_BOX / 2 + 6, step: MARK_BOX };
 export const TRAIL_MARK_PADDING = 0;
 
 /** Koľko priečok stĺpika sa vymenuje (pozri `icon-offset` v štýle). */
-export const TRAIL_MARK_STACK_MAX = 4;
+// 548 dve priečky, nie päť: stĺpik značiek nemá byť vysoký ako legenda
+export const TRAIL_MARK_STACK_MAX = 1;
 
 /**
  * Predvolené hodnoty pri `TRAIL_MARK_ZOOM` – to, čo prepisuje developer mode.
@@ -2715,8 +2721,9 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
  * ČITATEĽNOSTI mapy aj panela: každý variant je vlastná vrstva (a s obrysom
  * dve), takže osem rozlíšení nad poľnou cestou je šestnásť vrstiev, ktoré sa
  * kreslia cez seba a v ktorých sa už nedá povedať, ktorá je ktorá.
+ * 548: šesť, lebo budovy majú päť druhov (sakrálne, verejné, priemyselné…).
  */
-export const MAX_VARIANTS = 4;
+export const MAX_VARIANTS = 6;
 
 /** Najviac hodnôt v jednom variante (`surface` má v OSM desiatky, nie stovky). */
 const MAX_VARIANT_VALUES = 24;
@@ -2785,6 +2792,18 @@ function cleanVariants(raw, id, problems, where) {
       if (c !== undefined) paint[prop] = c;
     }
     if (Object.keys(paint).length) clean.paint = paint;
+
+    // 548 a variant keeps its colours in the dark theme only when it names them
+    const paintDark = {};
+    for (const [prop, value] of Object.entries(v.paintDark || {})) {
+      if (!isColorProp(prop)) {
+        problems.push(`${kde}: tmavý variant sa dá zadať len pre "*-color", nie pre "${prop}".`);
+        continue;
+      }
+      const c = cleanValue(prop, value, id, problems, `${where}variant ${i + 1} (tmavý): `);
+      if (c !== undefined) paintDark[prop] = c;
+    }
+    if (Object.keys(paintDark).length) clean.paintDark = paintDark;
 
     const layout = {};
     for (const [prop, value] of Object.entries(v.layout || {})) {
@@ -3117,9 +3136,10 @@ function variantLayers(layer, variants, hasIcon, dark = false) {
       paint: { ...(layer.paint || {}) },
       metadata: { ...zaklad.metadata, "frico:derived": koren, "frico:variant": layer.id }
     };
-    for (const [prop, value] of Object.entries(v.paint || {})) {
-      // variant nemá tmavú farbu, v tmavej téme si nechá farbu predlohy
-      if (dark && isColorProp(prop)) continue;
+    for (const [prop, light] of Object.entries(v.paint || {})) {
+      // bez tmavej farby si variant v tmavej téme nechá farbu predlohy
+      const value = dark && isColorProp(prop) ? v.paintDark?.[prop] : light;
+      if (value === undefined) continue;
       const nv = overrideValue(vrstva.paint[prop], value, PAINT_DEFAULTS[prop]);
       if (nv !== undefined) vrstva.paint[prop] = nv;
     }
@@ -3397,7 +3417,7 @@ export const ROAD_DEFS = [
   ["trunk", "Rýchlostné cesty", ["trunk"], "trunk", "roadCasing",
     [[5, 0.45], [7, 0.8], [10, 2.6], [14, 7], [16, 16], [20, 144]], 2.6, 5],
   ["primary", "Cesty I. triedy", ["primary"], "primary", "roadCasing",
-    [[6, 0.4], [8, 0.75], [10, 2.2], [14, 6.5], [16, 15], [20, 135]], 2.4, 6],
+    [[6, 0.36], [8, 0.65], [10, 1.9], [14, 5.2], [16, 12.5], [20, 112]], 2.4, 6],
   ["secondary", "Cesty II. triedy", ["secondary"], "secondary", "roadCasing",
     [[8, 0.4], [10, 0.7], [12, 2], [14, 5], [16, 12], [20, 108]], 2, 8],
   ["tertiary", "Cesty III. triedy", ["tertiary"], "secondary", "roadCasing",
@@ -3884,6 +3904,21 @@ export function buildStyle({
     );
   }
 
+  // 548 vinice majú ikonku úponku, ako na Mapy.com; od z14, nižšie by to bola plocha značiek
+  add(
+    {
+      id: "landcover-vineyard-icons",
+      type: "fill",
+      "source-layer": "landcover",
+      minzoom: 14,
+      filter: ["any", ["==", str("class"), "vineyard"], ["==", str("subclass"), "vineyard"]],
+      paint: {
+        "fill-pattern": patternImageName({ id: "vines", color: c.vineIcon, size: 24, weight: 0.8 })
+      }
+    },
+    ["krajina", "Vinice – ikonky", "area", {}]
+  );
+
   // využitie územia: presne tie triedy, ktoré schéma naozaj vydáva (26 hodnôt,
   // Tables.java: osm_landuse_polygon)
   const landuse = [
@@ -3925,7 +3960,7 @@ export function buildStyle({
   // hneď za `landuse` – patria k tomu istému, čo sa s územím robí.
   if (featuresUrl) {
     const featureAreas = [
-      ["parking", "Parkoviská", ["parking"], "parking", 0.9],
+      ["parking", "Parkoviská", ["parking"], "parking", 1],
       ["landfill", "Skládky a haldy", ["landfill", "spoil_heap"], "quarry", 1],
       ["farmyard", "Hospodárske dvory", ["farmyard", "greenhouse_horticulture"], "farmyard", 1],
       ["brownfield", "Opustený priemysel", ["brownfield"], "industrial", 0.7],
@@ -4953,6 +4988,34 @@ export function buildStyle({
     L[L.length - 1].metadata["frico:derived"] = "feature-power";
   }
 
+  // 548 napätie nad vedením, ako na Mapy.com: „110 kV"
+  if (featuresUrl) {
+    add(
+      {
+        id: "feature-power-label",
+        type: "symbol",
+        source: "features",
+        "source-layer": "feature_line",
+        minzoom: 14,
+        filter: ["all", ["==", str("class"), "power_line"], [">=", num("voltage", 0), 1000]],
+        layout: {
+          "symbol-placement": "line",
+          "symbol-spacing": 480,
+          "text-field": ["concat", ["to-string", ["/", num("voltage", 0), 1000]], " kV"],
+          "text-font": ITAL,
+          "text-size": zl([[14, 9], [17, 11]]),
+          "text-max-angle": 45
+        },
+        paint: {
+          "text-color": c.powerLine,
+          "text-halo-color": c.textHalo,
+          "text-halo-width": 1.4
+        }
+      },
+      ["prvky", "Napätie vedenia", "text", { "text-color": "powerLine", "text-halo-color": "textHalo" }]
+    );
+  }
+
   // zjazdovky, bežky, skialpy, sánkovačky a zimné chodníky – každý druh vlastná vrstva
   if (skiUrl) {
     // farba podľa obťažnosti, tie isté kľúče palety ako pri značkách trás
@@ -5283,6 +5346,8 @@ export function buildStyle({
     };
     // krok stĺpika je z developer módu, tak ako rozostup a veľkosť značky
     const markOffset = stackOffset(TRAIL_MARK_STACK.base, markPx.step);
+    // a route further down the lane than the stack has rungs gets no mark of its own
+    const inStack = ["<=", laneNum, TRAIL_MARK_STACK_MAX];
     for (const t of trailTypes) {
       if (!drawsMark(t)) continue;
       const { id, label, markPick } = t;
@@ -5293,7 +5358,7 @@ export function buildStyle({
           source: "trails",
           "source-layer": "trail",
           minzoom: MARK_MINZOOM,
-          filter: ["all", ["==", str("route"), id], ["has", "mark"]],
+          filter: ["all", ["==", str("route"), id], ["has", "mark"], inStack],
           layout: {
             "symbol-placement": "line",
             "symbol-spacing": zl(
@@ -5343,8 +5408,8 @@ export function buildStyle({
           minzoom: 13,
           // ikonka je náhrada, nie druhý symbol: ostáva tam, kde značka nie je
           filter: drawsMark(t)
-            ? ["all", ["==", str("route"), id], ["!", ["has", "mark"]]]
-            : ["==", str("route"), id],
+            ? ["all", ["==", str("route"), id], ["!", ["has", "mark"]], inStack]
+            : ["all", ["==", str("route"), id], inStack],
           layout: {
             "symbol-placement": "line",
             "symbol-spacing": 390,
@@ -6403,7 +6468,7 @@ export function buildStyle({
           nameExpr, { "text-font": ["literal", ITAL] },
           "\n\u00a0\n", {},
           ["case", ["has", "ele"], ["to-string", ["get", "ele"]], "\u00a0"],
-          { "text-font": ["literal", BOLD] }
+          { "text-font": ["literal", ITAL] }
         ],
         "text-font": ITAL,
         "text-size": zl([[9, 9.5], [14, 12.5], [20, 15]]),

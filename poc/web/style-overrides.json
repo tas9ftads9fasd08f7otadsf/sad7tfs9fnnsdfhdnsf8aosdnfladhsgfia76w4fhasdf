@@ -7,7 +7,7 @@
       "track": "#867a5a",
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
-      "buildingOutline": "#cec2b2",
+      "buildingOutline": "#c2b79b",
       "water": "#9ec5e2",
       "river": "#92b8da",
       "rock": "#c8cbba",
@@ -202,6 +202,23 @@
           },
           "paintDark": {
             "fill-color": "#483d3d"
+          },
+          "outline": {
+            "color": "#c1b79b",
+            "width": 1,
+            "opacity": [
+              [
+                0,
+                13,
+                0
+              ],
+              [
+                14,
+                20,
+                1
+              ]
+            ],
+            "colorDark": "#5a5050"
           }
         },
         "road-service": {
@@ -270,7 +287,47 @@
           "paintDark": {
             "line-color": "#78787c"
           },
-          "dash": "dashed"
+          "dash": "dashed",
+          "variants": [
+            {
+              "attr": "surface",
+              "values": [
+                "paved"
+              ],
+              "label": "Spevnená",
+              "dash": "solid",
+              "paint": {
+                "line-color": [
+                  [
+                    0,
+                    14,
+                    "#857b5f"
+                  ],
+                  [
+                    15,
+                    20,
+                    "#e0e5f2"
+                  ]
+                ]
+              },
+              "outline": {
+                "color": "#a9a9b2",
+                "width": 1,
+                "opacity": [
+                  [
+                    0,
+                    14,
+                    0
+                  ],
+                  [
+                    15,
+                    20,
+                    1
+                  ]
+                ]
+              }
+            }
+          ]
         },
         "road-footway": {
           "paint": {
@@ -499,7 +556,47 @@
                 8
               ]
             ]
-          }
+          },
+          "variants": [
+            {
+              "attr": "surface",
+              "values": [
+                "paved"
+              ],
+              "label": "Spevnená",
+              "dash": "solid",
+              "paint": {
+                "line-color": [
+                  [
+                    0,
+                    14,
+                    "#857b5f"
+                  ],
+                  [
+                    15,
+                    20,
+                    "#e0e5f2"
+                  ]
+                ]
+              },
+              "outline": {
+                "color": "#a9a9b2",
+                "width": 1,
+                "opacity": [
+                  [
+                    0,
+                    14,
+                    0
+                  ],
+                  [
+                    15,
+                    20,
+                    1
+                  ]
+                ]
+              }
+            }
+          ]
         },
         "trail-hiking-mark": {
           "minzoom": 16
@@ -1061,12 +1158,29 @@
               "paint": {
                 "fill-color": "#e9e9da"
               }
+            },
+            {
+              "attr": "subclass",
+              "values": [
+                "vineyard"
+              ],
+              "label": "vinice",
+              "paint": {
+                "fill-color": "#e0ecc3"
+              }
             }
           ]
         },
         "landuse-cemetery": {
           "paint": {
             "fill-color": "#d2e6b4"
+          },
+          "pattern": {
+            "id": "cross",
+            "color": "#a3b79f",
+            "size": 12,
+            "weight": 0.8,
+            "opacity": 0.9
           }
         },
         "landuse-school": {
@@ -1099,6 +1213,113 @@
           "paint": {
             "line-opacity": 0.3
           }
+        },
+        "building-pkg": {
+          "variants": [
+            {
+              "attr": "class",
+              "values": [
+                "church",
+                "chapel",
+                "cathedral",
+                "mosque",
+                "synagogue",
+                "temple",
+                "shrine",
+                "monastery",
+                "religious"
+              ],
+              "label": "Sakrálne",
+              "paint": {
+                "fill-color": "#a09d95"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
+              }
+            },
+            {
+              "attr": "amenity",
+              "values": [
+                "place_of_worship"
+              ],
+              "label": "Miesto uctievania",
+              "paint": {
+                "fill-color": "#a09d95"
+              },
+              "paintDark": {
+                "fill-color": "#4a4752"
+              }
+            },
+            {
+              "attr": "amenity",
+              "values": [
+                "fire_station",
+                "police",
+                "courthouse",
+                "townhall",
+                "school",
+                "kindergarten",
+                "college",
+                "university",
+                "hospital",
+                "library",
+                "community_centre",
+                "post_office",
+                "prison",
+                "clinic"
+              ],
+              "label": "Verejné budovy",
+              "paint": {
+                "fill-color": "#ececf1"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
+              }
+            },
+            {
+              "attr": "class",
+              "values": [
+                "public",
+                "civic",
+                "government",
+                "school",
+                "kindergarten",
+                "university",
+                "college",
+                "hospital",
+                "fire_station",
+                "train_station"
+              ],
+              "label": "Verejné budovy (druh)",
+              "paint": {
+                "fill-color": "#ececf1"
+              },
+              "paintDark": {
+                "fill-color": "#3c3b4c"
+              }
+            },
+            {
+              "attr": "class",
+              "values": [
+                "industrial",
+                "warehouse",
+                "factory",
+                "manufacture",
+                "hangar",
+                "service",
+                "storage_tank",
+                "silo",
+                "depot"
+              ],
+              "label": "Priemyselné",
+              "paint": {
+                "fill-color": "#d4d1cc"
+              },
+              "paintDark": {
+                "fill-color": "#2f2d3a"
+              }
+            }
+          ]
         }
       },
       "poi": {
