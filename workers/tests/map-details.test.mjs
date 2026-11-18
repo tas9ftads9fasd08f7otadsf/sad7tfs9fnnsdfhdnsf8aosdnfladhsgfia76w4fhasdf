@@ -109,3 +109,18 @@ test("a mountain-bike route is drawn in bold dots", () => {
   });
   assert.deepEqual(trails.layers.find((l) => l.id === "trail-mtb").paint["line-dasharray"], [1.5, 1.2]);
 });
+
+// 553 route names and numbers were left off: at 420 px spacing and 60° a winding route got no label
+test("a route's name is tried every 170 to 230 px and may bend 90°", () => {
+  const trails = buildStyle({
+    theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", trailsUrl: "https://x/trails.pmtiles", overrides
+  });
+  const labels = trails.layers.filter((l) => /^trail-.*-label$/.test(l.id));
+  assert.ok(labels.length >= 5);
+  for (const l of labels) {
+    assert.equal(l.layout["text-max-angle"], 90, l.id);
+    const spacing = l.layout["symbol-spacing"].filter((v) => typeof v === "number" && v > 100);
+    assert.ok(spacing.every((v) => v <= 250), `${l.id} ${spacing}`);
+  }
+});
