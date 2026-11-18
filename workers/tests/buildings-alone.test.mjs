@@ -49,3 +49,12 @@ test("by day a town's ground stays drawn at every zoom, in a light peach close u
   assert.equal(colour[0], "step");
   assert.match(colour[colour.length - 1], /^#(ef|f0|f1|f2)[0-9a-f]{2}[cd][0-9a-f]$/i);
 });
+
+// 552 the overview area took the buildings' colour, so from z12 to z15 its houses vanished into it
+test("a town's overview area is not painted in its buildings' colour, in any theme", () => {
+  for (const theme of ["svetla", "tmava", "outdoor", "retro"]) {
+    const { layers } = styleOf("https://x/buildings.pmtiles", theme);
+    const colour = (id) => JSON.stringify(layers.find((l) => l.id === id).paint["fill-color"]);
+    assert.notEqual(colour("settlement-area"), colour("building-pkg"), theme);
+  }
+});

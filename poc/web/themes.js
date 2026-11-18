@@ -4466,11 +4466,12 @@ export function buildStyle({
         minzoom: 11,
         maxzoom: 15,
         paint: {
-          "fill-color": c.building,
+          // the town's ground, not the buildings' colour: the houses drawn over it from z12 show
+          "fill-color": c.residential,
           "fill-opacity": zl([[11, 0.85], [BUILDINGS_ALONE_FROM_Z - 1, 0.85], [BUILDINGS_ALONE_FROM_Z, 0]])
         }
       },
-      ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
+      ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "residential" }]
     );
     buildingShadow("building-pkg", "buildings", 12);
     add(
