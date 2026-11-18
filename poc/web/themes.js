@@ -1476,7 +1476,7 @@ export const TRAIL_TYPES = [
     short: "horská cyklotrasa",
     palette: "trailMtb",
     icons: ["bicycle"],
-    dash: "dotted-dense",
+    dash: "dotted-bold",
     side: -1
   },
   {
