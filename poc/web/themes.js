@@ -5462,9 +5462,10 @@ export function buildStyle({
             "text-field": trailLabel,
             "text-font": REG,
             "text-size": zl([[12, 9], [14, 10.5], [18, 13]]),
-            "symbol-spacing": 420,
-            // mountain trails wind; at 30° the long names never fit
-            "text-max-angle": 60,
+            // a route is a few hundred px long in a tile; at 420 most got no label at all
+            "symbol-spacing": zl([[12, 170], [16, 230]]),
+            // a vertex every 4 to 6 px turns 10 to 20° each, so a label's bends add up
+            "text-max-angle": 90,
             "text-padding": 6,
             // popisok sa odsunie nabok, nech neleží na pásikoch
             "text-offset": [0, 0.8],

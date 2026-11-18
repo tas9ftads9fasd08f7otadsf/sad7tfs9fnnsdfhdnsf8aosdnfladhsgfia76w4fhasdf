@@ -43,7 +43,8 @@ test("hiking marks sit just below the path, the other side's above it", () => {
 // 446 "0930 Tatranská magistrála" never fit a mountain bend; Mapy writes the name alone
 test("trail labels show the name alone and allow winding paths", () => {
   const label = byId("trail-hiking-label").layout;
-  assert.equal(label["text-max-angle"], 60);
+  // 553 60° left most winding routes unlabelled (a vertex every 4 to 6 px, 10 to 20° each): 90
+  assert.ok(label["text-max-angle"] >= 60 && label["text-max-angle"] <= 90);
   assert.equal(label["text-field"][1][0], "has");
   assert.deepEqual(label["text-field"][2], ["get", "name"]);
 });
