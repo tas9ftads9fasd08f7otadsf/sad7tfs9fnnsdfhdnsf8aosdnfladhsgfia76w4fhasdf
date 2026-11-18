@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { buildStyle, normalizeOverrides, BUILDINGS_ALONE_FROM_Z } from "../../poc/web/themes.js";
+import { buildStyle, normalizeOverrides, BUILDINGS_ALONE_FROM_Z, SETTLEMENT_AREA_UNDER_HOUSES } from "../../poc/web/themes.js";
 
 const saved = JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)));
 
@@ -48,4 +48,16 @@ test("by day a town's ground stays drawn at every zoom, in a light peach close u
   const colour = ground.paint["fill-color"];
   assert.equal(colour[0], "step");
   assert.match(colour[colour.length - 1], /^#(ef|f0|f1|f2)[0-9a-f]{2}[cd][0-9a-f]$/i);
+});
+
+// 552 run 840 kept the overview area at 0.85 in the houses' colour, so from z12 they vanished into it
+test("where a town's houses are drawn, its overview area thins enough for them to show", () => {
+  for (const theme of ["svetla", "tmava", "outdoor", "retro"]) {
+    const { layers } = styleOf("https://x/buildings.pmtiles", theme);
+    const opacity = stops(layers.find((l) => l.id === "settlement-area").paint["fill-opacity"]);
+    for (let z = 13; z < BUILDINGS_ALONE_FROM_Z; z += 1) {
+      assert.ok(opacity[z] <= SETTLEMENT_AREA_UNDER_HOUSES, `${theme} z${z}`);
+    }
+    assert.equal(opacity[11], 0.85, `${theme} overview`);
+  }
 });
