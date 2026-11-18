@@ -1277,6 +1277,9 @@ export const realWidthPx = (metres, z) => (metres * 2 ** z) / (METRES_PER_PX_Z0 
 /** From this zoom the buildings alone show where people live; below it, the areas. */
 export const BUILDINGS_ALONE_FROM_Z = 15;
 
+/** The built-up area's opacity once its houses are drawn over it, so they stand out. */
+export const SETTLEMENT_AREA_UNDER_HOUSES = 0.4;
+
 /** Width in px of the band inside a protected area's border; within the 8 px tile buffer. */
 export const PARK_BAND = [[10, 5], [12, 8], [16, 8]];
 
@@ -4466,12 +4469,14 @@ export function buildStyle({
         minzoom: 11,
         maxzoom: 15,
         paint: {
-          // the town's ground, not the buildings' colour: the houses drawn over it from z12 show
-          "fill-color": c.residential,
-          "fill-opacity": zl([[11, 0.85], [BUILDINGS_ALONE_FROM_Z - 1, 0.85], [BUILDINGS_ALONE_FROM_Z, 0]])
+          "fill-color": c.building,
+          // as solid as its houses from z12, they would vanish into it: it thins as they come
+          "fill-opacity": zl([[11, 0.85], [12, 0.85], [13, SETTLEMENT_AREA_UNDER_HOUSES],
+                              [BUILDINGS_ALONE_FROM_Z - 1, SETTLEMENT_AREA_UNDER_HOUSES],
+                              [BUILDINGS_ALONE_FROM_Z, 0]])
         }
       },
-      ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "residential" }]
+      ["budovy", "Plocha sídla (balík sídla)", "area", { "fill-color": "building" }]
     );
     buildingShadow("building-pkg", "buildings", 12);
     add(
