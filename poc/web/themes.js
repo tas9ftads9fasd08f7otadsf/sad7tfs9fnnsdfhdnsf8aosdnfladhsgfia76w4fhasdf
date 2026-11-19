@@ -4202,8 +4202,8 @@ export function buildStyle({
         layout: {
           "symbol-placement": "line",
           // `ele` môže z GDALu prísť ako desatinné číslo
-          "text-field": ["concat", ["to-string", ["round", num("ele", 0)]], " m"],
-          "text-font": REG,
+          "text-field": ["to-string", ["round", num("ele", 0)]],
+          "text-font": BOLD,
           "text-size": zl([[13, 9], [16, 11], [20, 13]]),
           "symbol-spacing": CONTOUR_LABEL_SPACING,
           "text-max-angle": 25,
@@ -4651,6 +4651,8 @@ export function buildStyle({
   ];
   // zblízka má cesta šírku, akú má na zemi: pás pod prerušovanou čiarou
   for (const [id, label, filter] of pathDefs) {
+    // Mapy draws no pale strip under a track or a path, only under paved ways
+    if (id === "track" || id === "path") continue;
     const metres = PATH_GROUND_M[id];
     add(
       {
@@ -4925,6 +4927,20 @@ export function buildStyle({
       opacity: 0.75
     });
 
+    // a wall is a grey line with small ticks along it, as Mapy.com draws it
+    hachure({
+      id: "feature-wall",
+      label: "Múry a hradby",
+      group: "prvky",
+      source: "features",
+      sourceLayer: "feature_line",
+      filter: ["==", str("class"), "wall"],
+      paletteKey: "wall",
+      minzoom: 14,
+      width: [[14, 0.9], [16, 2], [20, 4.5]],
+      teeth: [[14, 2], [16, 3.8], [20, 8]]
+    });
+
     // [id, popis, triedy, kľúč palety, stopy šírky, prerušovanie, minzoom]
     const featureLines = [
       ["power", "Elektrické vedenie", ["power_line"], "powerLine",
@@ -4938,8 +4954,6 @@ export function buildStyle({
         [[13, 0.6], [16, 1.4], [20, 3]], [8, 3], 13],
       ["dam", "Priehradné múry a hate", ["dam", "weir", "lock_gate"], "dam",
         [[13, 1], [16, 3], [20, 8]], null, 13],
-      ["wall", "Múry a hradby", ["wall"], "wall",
-        [[14, 0.7], [16, 1.6], [20, 4]], null, 14],
       ["hedge", "Živé ploty", ["hedge"], "hedge",
         [[15, 0.9], [17, 1.8], [20, 4]], null, 15],
       ["fence", "Ploty a zábradlia", ["fence"], "fence",
@@ -6198,7 +6212,11 @@ export function buildStyle({
       "source-layer": "housenumber",
       minzoom: 17,
       layout: {
-        "text-field": ["get", "housenumber"],
+        // Mapy.com writes the number after the slash ("120/54" is "54")
+        "text-field": ["let", "n", ["to-string", ["coalesce", ["get", "housenumber"], ""]],
+          ["case", [">=", ["index-of", "/", ["var", "n"]], 0],
+            ["slice", ["var", "n"], ["+", ["index-of", "/", ["var", "n"]], 1]],
+            ["var", "n"]]],
         "text-font": REG,
         "text-size": zl([[17, 10], [20, 13]]),
         "text-allow-overlap": false

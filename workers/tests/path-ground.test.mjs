@@ -22,7 +22,11 @@ const widthAt = (layer, z) => {
 test("zoomed in, a path is as wide as it is on the ground, under its dashes", () => {
   const layers = style("turisticka").layers;
   const ids = layers.map((l) => l.id);
-  for (const [id, metres] of Object.entries(PATH_GROUND_M)) {
+  // 554 Mapy draws no pale strip under a track or a path at z17 and z18, only under paved ways
+  for (const id of ["track", "path"]) {
+    assert.equal(ids.includes(`road-${id}__ground`), false, `road-${id} has no ground`);
+  }
+  for (const [id, metres] of Object.entries(PATH_GROUND_M).filter(([id]) => !["track", "path"].includes(id))) {
     const ground = layers.find((l) => l.id === `road-${id}__ground`);
     assert.ok(ground, `road-${id} has no ground`);
     assert.ok(ids.indexOf(ground.id) < ids.indexOf(`road-${id}`), "the ground is under the line");
