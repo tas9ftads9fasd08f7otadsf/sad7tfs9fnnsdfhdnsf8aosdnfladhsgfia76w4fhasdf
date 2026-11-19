@@ -152,6 +152,14 @@ def node_tags(tags, country, by_country=None):
     return out
 
 
+def packed(sign, tags):
+    """Sprite names a sign node needs: its own, and a town sign's end once its town side is known."""
+    names = [sign]
+    if sign.endswith(".ts.city_limit") and tags.get("town_side"):
+        names.append(f"{sign}_end")
+    return names
+
+
 def on_paths(pbf, country):
     """Ids of the sign nodes that stand on a path and on no road."""
     import osmium
@@ -200,7 +208,8 @@ def rewrite(pbf, out, country, by_country):
                 return
             self.kept += 1
             if "sign" in tags:
-                self.used[tags["sign"]] += 1
+                for name in packed(tags["sign"], dict(n.tags)):
+                    self.used[name] += 1
             self.report[(tagged(dict(n.tags)), tags.get("sign", ""))] += 1
             if n.id in pathside:
                 tags["sign_on"] = "path"
