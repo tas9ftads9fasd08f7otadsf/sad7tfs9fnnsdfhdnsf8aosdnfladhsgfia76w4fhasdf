@@ -3277,6 +3277,10 @@ kúskoch, nesie ho vlastná vrstva `trail_name`, v ktorej Planetiler **zlepí ú
 jednej trasy** (`merge_line_strings`). Vrstva `trail` so pásikmi sa **nezlepuje**:
 zlepenie otočí časť ciest a pásik by preskočil na druhú stranu (viď `FOLLOW_CHAINS`).
 
+Rovnako značky: kreslia sa z vrstvy `trail_mark`, zlepenej po trasách s jej pruhom
+(`side`, `off`, `lane`). Značka stojí narovno a odstupuje na obrazovke, takže jej
+otočenie čiary neprekáža; na `trail` stála značka na každom krátkom úseku cesty.
+
 Klik na pásik ukáže popup s názvom, druhom, farbou značky, sieťou a odkazom
 na reláciu v OSM.
 
