@@ -235,6 +235,21 @@ def town_signs(ways, contexts, towns, built_up):
     return out
 
 
+def town_sides(ways, towns, built_up):
+    """`{node: degrees}`: from each town sign on a road, the way into its village."""
+    out = {}
+    for way in ways.values():
+        for i, ref in enumerate(way["refs"]):
+            if ref not in towns or ref in out:
+                continue
+            sides = {"forward": way["line"][i:], "backward": way["line"][:i + 1][::-1]}
+            sides = {k: v for k, v in sides.items() if len(v) > 1}
+            village = village_side(towns[ref], sides, built_up)
+            if village is not None:
+                out[ref] = along(sides[village], SIGN_M)[1]
+    return out
+
+
 def merged(junction, town):
     """The town signs, and the junction signs no town sign stands near."""
     return town + [s for s in junction
@@ -288,8 +303,8 @@ def classify(ways, built_up):
             for wid, w in ways.items()}
 
 
-def rewrite(pbf, out, contexts):
-    """`out` is `pbf` with `speed_context` on every motor way."""
+def rewrite(pbf, out, contexts, sides=None):
+    """`out` is `pbf` with `speed_context` on every motor way and `town_side` on town signs."""
     import osmium
 
     class Rewrite(osmium.SimpleHandler):
@@ -298,7 +313,8 @@ def rewrite(pbf, out, contexts):
             self.w = writer
 
         def node(self, n):
-            self.w.add_node(n)
+            side = (sides or {}).get(n.id)
+            self.w.add_node(n if side is None else n.replace(tags={**dict(n.tags), "town_side": str(side)}))
 
         def way(self, w):
             found = contexts.get(w.id)
@@ -343,7 +359,7 @@ def main():
     ways, towns, signed = read(a.pbf)
     built_up = context.BuiltUp(context.built_up_areas(a.pbf))
     contexts = classify(ways, built_up)
-    rewrite(a.pbf, a.out, contexts)
+    rewrite(a.pbf, a.out, contexts, town_sides(ways, towns, built_up))
     found = merged(signs(ways, contexts), town_signs(ways, contexts, towns, built_up))
     ends = dead_ends(ways, contexts, signed, region_test(a.outline))
     # Planetiler's GeoJSON reader dies on an empty `features` list, not on an empty file

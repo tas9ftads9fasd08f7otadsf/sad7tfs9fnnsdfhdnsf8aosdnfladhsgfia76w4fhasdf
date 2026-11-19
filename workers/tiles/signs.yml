@@ -30,6 +30,9 @@ layers:
           - key: direction
             value:
               tag_value: sign_direction
+          # degrees from a town sign into its town, so a driver leaving sees its end
+          - key: town_side
+            type: integer
           # `path` on a way cars don't fit: the Paths layer draws it
           - key: way
             value:
