@@ -124,3 +124,40 @@ test("a route's name is tried every 170 to 230 px and may bend 90°", () => {
     assert.ok(spacing.every((v) => v <= 250), `${l.id} ${spacing}`);
   }
 });
+
+// 554 Mapy's dashes on a track lengthen with the zoom (about 6, 12, 16 line widths); ours stayed at 4
+test("tracks and paths are dashed longer the closer you look", () => {
+  for (const id of ["road-track", "road-path"]) {
+    const dash = byId(id).paint["line-dasharray"];
+    assert.equal(dash[0], "step", id);
+    const lengths = [dash[2], dash[4], dash[6]].map((a) => a[1][0]);
+    assert.ok(lengths[0] < lengths[1] && lengths[1] < lengths[2], `${id} ${lengths}`);
+    assert.ok(lengths[2] >= 14, `${id} closest dash ${lengths[2]}`);
+  }
+});
+
+// 554 Mapy writes the number after the slash on a house, ours "120/54"
+test("a house number shows the part after the slash", () => {
+  const field = byId("housenumber").layout["text-field"];
+  assert.equal(field[0], "let");
+  assert.match(JSON.stringify(field), /"slice"/);
+  assert.match(JSON.stringify(field), /"index-of","\/"/);
+});
+
+// 554 Mapy labels a contour with its bare height in bold
+test("a contour label is the bare height in bold", () => {
+  const withContours = buildStyle({
+    theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", contoursUrl: "https://x/contours.pmtiles", overrides
+  });
+  const label = withContours.layers.find((l) => l.id === "contour-label").layout;
+  assert.doesNotMatch(JSON.stringify(label["text-field"]), / m"/);
+  assert.deepEqual(label["text-font"], ["Noto Sans Bold"]);
+});
+
+// 554 Mapy draws a wall as a thin grey line with ticks along it, ours was a thick brown line
+test("a wall is a grey line with ticks", () => {
+  assert.equal(byId("feature-wall").paint["line-color"], "#8f8f8f");
+  assert.ok(byId("feature-wall-teeth"), "the ticks");
+  assert.ok(byId("feature-wall-teeth").paint["line-dasharray"], "spaced ticks");
+});

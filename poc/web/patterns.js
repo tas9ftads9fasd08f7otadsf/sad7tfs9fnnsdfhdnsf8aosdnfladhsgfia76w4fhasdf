@@ -180,6 +180,8 @@ export const DASH_PRESETS = [
   { id: "solid", label: "Plná", dash: null },
   { id: "dashed", label: "Čiarkovaná", dash: [4, 2] },
   { id: "dashed-long", label: "Dlhé čiarky", dash: [8, 3] },
+  { id: "dashed-wide", label: "Široké čiarky (poľné cesty zblízka)", dash: [12, 3.5] },
+  { id: "dashed-extra", label: "Najdlhšie čiarky (poľné cesty z blízka)", dash: [16, 5] },
   { id: "dashed-fine", label: "Krátke čiarky", dash: [2, 1.5] },
   { id: "dashed-short", label: "Krátke husté čiarky (cyklotrasa)", dash: [1.75, 1.25] },
   { id: "dotted", label: "Bodkovaná", dash: [1, 2] },

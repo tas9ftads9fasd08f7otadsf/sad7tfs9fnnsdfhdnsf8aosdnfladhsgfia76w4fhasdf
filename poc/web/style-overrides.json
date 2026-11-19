@@ -24,7 +24,8 @@
       "ice": "#d8f0fb",
       "trailYellow": "#f2d200",
       "background": "#f1f0e5",
-      "hillHighlight": "#ffffff99"
+      "hillHighlight": "#ffffff99",
+      "wall": "#8f8f8f"
     }
   },
   "layers": {},
@@ -305,7 +306,23 @@
           "paintDark": {
             "line-color": "#78787c"
           },
-          "dash": "dashed",
+          "dash": [
+            [
+              0,
+              14,
+              "dashed"
+            ],
+            [
+              15,
+              16,
+              "dashed-wide"
+            ],
+            [
+              17,
+              24,
+              "dashed-extra"
+            ]
+          ],
           "variants": [
             {
               "attr": "surface",
@@ -614,6 +631,23 @@
                 ]
               }
             }
+          ],
+          "dash": [
+            [
+              0,
+              14,
+              "dashed"
+            ],
+            [
+              15,
+              16,
+              "dashed-wide"
+            ],
+            [
+              17,
+              24,
+              "dashed-extra"
+            ]
           ]
         },
         "trail-hiking-mark": {
