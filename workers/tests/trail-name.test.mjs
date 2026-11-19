@@ -18,7 +18,7 @@ test("trail names ride on whole routes, not on the lane pieces", () => {
     assert.equal(label["source-layer"], "trail_name", id);
   }
   const schema = readFileSync(new URL("../trails/trails.yml", import.meta.url), "utf8");
-  const nameLayer = schema.slice(schema.indexOf("- id: trail_name"), schema.indexOf("examples:"));
+  const nameLayer = schema.slice(schema.indexOf("- id: trail_name"), schema.indexOf("- id: trail_mark"));
   for (const lane of ["side", "off", "lane", "cnt", "way"]) {
     assert.ok(!nameLayer.includes(`key: ${lane}\n`), `${lane} would cut the route into pieces`);
   }
@@ -31,4 +31,31 @@ test("the stripe layer is not merged, the name layer is", () => {
   const stripes = schema.slice(schema.indexOf("- id: trail\n"), schema.indexOf("- id: trail_name"));
   assert.ok(stripes.includes("attributes: &trail_attributes"));
   assert.ok(!stripes.replace(/^\s*#.*$/gm, "").includes("merge_line_strings"));
+});
+
+// 556 TestFlight AHUj: a mark stood on every short way of `trail`, a few metres apart in a town
+test("trail marks ride on routes merged in the tile, with their lane but no line direction", () => {
+  const style = buildStyle({
+    theme: "svetla",
+    mapType: "turisticka",
+    tilesUrl: "https://x/tiles.pmtiles",
+    spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
+    trailsUrl: "https://x/trails.pmtiles"
+  });
+  const marks = style.layers.filter((l) => /^trail-.*-(mark|icon)$/.test(l.id));
+  assert.ok(marks.length > 0);
+  for (const layer of marks) {
+    assert.equal(layer["source-layer"], "trail_mark", layer.id);
+    assert.equal(layer.layout["icon-rotation-alignment"], "viewport", layer.id);
+  }
+  const schema = readFileSync(new URL("../trails/trails.yml", import.meta.url), "utf8");
+  const markLayer = schema.slice(schema.indexOf("- id: trail_mark"), schema.indexOf("examples:"));
+  for (const key of ["route", "mark", "mark_bg", "mark_fg", "side", "off", "lane", "tier"]) {
+    assert.ok(markLayer.includes(`key: ${key}\n`), `the marks read ${key}`);
+  }
+  for (const piece of ["cnt", "way", "name", "ref", "cycleway"]) {
+    assert.ok(!markLayer.includes(`key: ${piece}\n`), `${piece} would cut the route into pieces`);
+  }
+  assert.ok(markLayer.includes("merge_line_strings"));
 });

@@ -106,6 +106,31 @@ layers:
       merge_line_strings:
         min_length: 0
 
+  # the marks stand upright and step aside on screen, so a merge turning a way round
+  # moves none; on `trail` every short way took a mark of its own
+  - id: trail_mark
+    features:
+      - source: trails
+        geometry: line
+        min_zoom: 12
+        attributes:
+          - key: route
+          - key: mark
+          - key: mark_bg
+          - key: mark_fg
+          - key: tier
+          - key: side
+            type: integer
+          - key: off
+            type: double
+          - key: lane
+            type: double
+          - key: rel
+            type: long
+    tile_post_process:
+      merge_line_strings:
+        min_length: 0
+
 examples:
   - name: A trail's name rides on a line without lane attributes
     input:
@@ -141,6 +166,17 @@ examples:
           name: Tatranská magistrála
           ref: "0930"
           rel: 1208354
+      - layer: trail_mark
+        geometry: line
+        min_zoom: 12
+        allow_extra_tags: false
+        tags:
+          route: hiking
+          tier: national
+          side: 1
+          off: 1
+          lane: 1
+          rel: 1208354
 
   - name: A route with neither name nor number has no label line
     input:
@@ -153,5 +189,8 @@ examples:
         side: 1
     output:
       - layer: trail
+        geometry: line
+        allow_extra_tags: true
+      - layer: trail_mark
         geometry: line
         allow_extra_tags: true

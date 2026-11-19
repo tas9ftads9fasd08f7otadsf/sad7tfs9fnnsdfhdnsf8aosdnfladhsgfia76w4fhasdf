@@ -5376,7 +5376,8 @@ export function buildStyle({
           id: `trail-${id}-mark`,
           type: "symbol",
           source: "trails",
-          "source-layer": "trail",
+          // merged per route: on `trail` a mark stood on every short way
+          "source-layer": "trail_mark",
           minzoom: MARK_MINZOOM,
           filter: ["all", ["==", str("route"), id], ["has", "mark"], inStack],
           layout: {
@@ -5424,7 +5425,7 @@ export function buildStyle({
           id: `trail-${id}-icon`,
           type: "symbol",
           source: "trails",
-          "source-layer": "trail",
+          "source-layer": "trail_mark",
           minzoom: 13,
           // ikonka je náhrada, nie druhý symbol: ostáva tam, kde značka nie je
           filter: drawsMark(t)
