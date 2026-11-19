@@ -76,6 +76,15 @@ class NodeTags(unittest.TestCase):
 
 
 
+class Packed(unittest.TestCase):
+    # 555 TestFlight ABeg: a driver leaving a town is shown its end, whose image must be packed
+    def test_a_town_sign_with_its_side_packs_its_end(self):
+        self.assertEqual(s.packed("sk.ts.city_limit", {"town_side": "90"}),
+                         ["sk.ts.city_limit", "sk.ts.city_limit_end"])
+        self.assertEqual(s.packed("sk.ts.city_limit", {}), ["sk.ts.city_limit"])
+        self.assertEqual(s.packed("sk.ts.253-50", {"town_side": "90"}), ["sk.ts.253-50"])
+
+
 class AtHome(unittest.TestCase):
     def test_a_foreign_code_takes_the_home_sign(self):
         by_country = s.folders()

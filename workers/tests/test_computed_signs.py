@@ -100,6 +100,12 @@ class TownSigns(unittest.TestCase):
         self.ways[300]["road"] = ("motorroad", None)
         self.assertEqual(self.found({2: ("begin", None)}), [("motorroad", 270), ("urban_motorroad", 90)])
 
+    # 555 TestFlight ABeg: a town sign showed its entry to a driver leaving the town
+    def test_a_town_sign_knows_its_town_side(self):
+        self.assertEqual(speed.town_sides(self.ways, {2: ("begin", None)}, self.east), {2: 90})
+        self.assertEqual(speed.town_sides(self.ways, {2: ("end", "forward")}, self.nowhere), {2: 270})
+        self.assertEqual(speed.town_sides(self.ways, {2: ("begin", None)}, self.nowhere), {})
+
     def test_town_sign_tags(self):
         self.assertEqual(speed.town_sign({"traffic_sign": "city_limit"}), ("begin", None))
         self.assertEqual(speed.town_sign({"traffic_sign": "city_limit", "city_limit": "end",
@@ -220,8 +226,13 @@ class Region(unittest.TestCase):
                            check=True, capture_output=True)
             with open(geo, encoding="utf-8") as f:
                 features = json.load(f)["features"]
+            import osmium
+            # 555 TestFlight ABeg: the sign itself says which way its town lies
+            sides = [n.tags["town_side"] for n in osmium.FileProcessor(os.path.join(tmp, "out.osm.pbf"))
+                     if n.is_node() and "town_side" in n.tags]
         self.assertEqual(sorted((f["properties"]["speed_context"], f["properties"]["direction"])
                                 for f in features), [("rural", 270), ("urban", 90)])
+        self.assertEqual(sides, ["90"])
 
     def test_no_sign_is_an_empty_file(self):
         with tempfile.TemporaryDirectory() as tmp:
