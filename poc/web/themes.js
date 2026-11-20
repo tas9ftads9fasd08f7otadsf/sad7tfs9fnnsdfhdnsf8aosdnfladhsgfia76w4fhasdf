@@ -1084,6 +1084,11 @@ export const POWER_TICK = { length: 5, dash: 0.2, every: 60 };
 export const BUILDING_SHADOW = { translate: [1, 1.5], opacity: 0.22, minzoom: 15 };
 /** A cliff's opacity by zoom: Mapy draws it at its z14–z15, faint at z16, not at z17. */
 export const CLIFF_FADE = [[14, 1], [15, 0.5], [16, 0]];
+/** Town streets from the transport package until the base tiles' `minor` starts at z12. */
+export const EARLY_STREETS = {
+  classes: ["residential", "living_street", "unclassified", "road"],
+  minzoom: 11, maxzoom: 12, width: [[11, 0.5], [12, 0.8]]
+};
 /** A bridge's shadow: px beyond the casing each side, blur, opacity, shift; Mapy's from z14. */
 export const BRIDGE_SHADOW = { spread: 1.5, blur: 2, opacity: 0.15, translate: [1, 1.5], minzoom: 14 };
 const RAMP_FACTOR = ["case", ["==", ["get", "ramp"], 1], RAMP_SCALE, 1];
@@ -3697,8 +3702,8 @@ export function buildStyle({
         '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     };
   }
-  // dopravná sieť (balík `cesty`): štýl z nej kreslí len obmedzenia na ceste
-  // (výška, šírka, hmotnosť, rýchlosť). Čiary ciest sú v základnej mape.
+  // dopravná sieť (balík `cesty`): štýl z nej kreslí obmedzenia na ceste a ulice
+  // pred z12; ostatné čiary ciest sú v základnej mape.
   if (transportUrl) {
     style.sources.transport = {
       type: "vector",
@@ -4687,6 +4692,25 @@ export function buildStyle({
         paint: { "line-color": c[paletteKey], "line-width": zw(stops), "line-dasharray": dash }
       },
       ["chodniky", label, "line", { "line-color": paletteKey }]
+    );
+  }
+
+  // the base tiles carry minor streets from z12; a town would read empty below that
+  if (transportUrl) {
+    add(
+      {
+        id: "road-minor-early",
+        type: "line",
+        source: "transport",
+        "source-layer": "transport",
+        minzoom: EARLY_STREETS.minzoom,
+        maxzoom: EARLY_STREETS.maxzoom,
+        filter: ["all", ["in", str("class"), ["literal", EARLY_STREETS.classes]],
+          ["!", ["has", "tunnel"]]],
+        layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": c.roadCasing, "line-width": zw(EARLY_STREETS.width) }
+      },
+      ["cesty", "Miestne cesty – pred z12", "line", { "line-color": "roadCasing" }]
     );
   }
 
