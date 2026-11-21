@@ -1192,6 +1192,32 @@
             ]
           }
         },
+        "aeroway-area": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                12,
+                "#e1d4b6"
+              ],
+              [
+                13,
+                13,
+                "#d5d3cd"
+              ],
+              [
+                14,
+                14,
+                "#dcdad4"
+              ],
+              [
+                15,
+                20,
+                "#e6e2da"
+              ]
+            ]
+          }
+        },
         "road-pedestrian": {
           "paint": {
             "line-color": "#e0e5f2"

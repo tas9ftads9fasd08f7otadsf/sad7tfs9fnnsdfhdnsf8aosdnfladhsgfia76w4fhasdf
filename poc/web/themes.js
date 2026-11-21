@@ -4326,38 +4326,38 @@ export function buildStyle({
       // `aeroway` má dráhy ako čiary a odbavovacie plochy ako polygóny
       filter: polygonOnly(
         ["in", str("class"), ["literal", ["apron", "aerodrome", "heliport"]]]),
-      paint: { "fill-color": c.aeroway }
+      paint: { "fill-color": c.aeroway, "fill-outline-color": c.roadCasing }
     },
-    ["letiska", "Letiskové plochy", "area", { "fill-color": "aeroway" }]
+    ["letiska", "Letiskové plochy", "area", { "fill-color": "aeroway", "fill-outline-color": "roadCasing" }]
   );
-  add(
-    {
-      id: "aeroway-runway",
-      type: "line",
-      "source-layer": "aeroway",
-      minzoom: 10,
-      filter: ["==", ["get", "class"], "runway"],
-      paint: {
-        "line-color": c.aeroway,
-        "line-width": zw([[10, 1], [14, 8], [16, 20], [20, 70]])
-      }
-    },
-    ["letiska", "Vzletové dráhy", "line", { "line-color": "aeroway" }]
-  );
-  add(
-    {
-      id: "aeroway-taxiway",
-      type: "line",
-      "source-layer": "aeroway",
-      minzoom: 11,
-      filter: ["in", str("class"), ["literal", ["taxiway", "helipad"]]],
-      paint: {
-        "line-color": c.aeroway,
-        "line-width": zw([[11, 0.6], [14, 3], [16, 8], [20, 26]])
-      }
-    },
-    ["letiska", "Rolovacie dráhy", "line", { "line-color": "aeroway" }]
-  );
+  // Mapy's runway and taxiway are white with a tan border, 1.25 px a side, wider from its z15
+  const AIRFIELD_EDGE = 2.5;
+  const runwayWidth = [[10, 1], [12, 6], [13, 11.75], [14, 11.75], [15, 18], [16, 18], [20, 70]];
+  const taxiwayWidth = [[11, 0.6], [13, 1.75], [14, 1.75], [15, 5.75], [16, 8.25], [20, 26]];
+  const airfieldLine = (id, label, filter, minzoom, widths) => {
+    add(
+      {
+        id: `${id}-casing`,
+        type: "line",
+        "source-layer": "aeroway",
+        minzoom: Math.max(minzoom, 13),
+        filter,
+        paint: {
+          "line-color": c.roadCasing,
+          "line-width": zw(widths.map(([z, w]) => [z, w + (z >= 13 ? AIRFIELD_EDGE : 0)]))
+        }
+      },
+      ["letiska", `${label} – obrys`, "line", { "line-color": "roadCasing" }]
+    );
+    add(
+      { id, type: "line", "source-layer": "aeroway", minzoom, filter,
+        paint: { "line-color": c.aerowayLine, "line-width": zw(widths) } },
+      ["letiska", label, "line", { "line-color": "aerowayLine" }]
+    );
+  };
+  airfieldLine("aeroway-runway", "Vzletové dráhy", ["==", ["get", "class"], "runway"], 10, runwayWidth);
+  airfieldLine("aeroway-taxiway", "Rolovacie dráhy",
+    ["in", str("class"), ["literal", ["taxiway", "helipad"]]], 11, taxiwayWidth);
 
   // vrstva `transportation` nesie aj polygóny – pešiu zónu, mólo, teleso mosta.
   // Pozor: `class` na rozlíšenie nestačí, chodníky a mólo sú bežne čiary
