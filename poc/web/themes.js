@@ -4038,7 +4038,10 @@ export function buildStyle({
       layout: { "line-join": "round" },
       paint: {
         "line-color": c.parkOutline,
-        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]])
+        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]]),
+        // Mapy's border has no crisp rim: a hard line would keep the corners square
+        "line-blur": 1,
+        "line-opacity": 0.6
       }
     },
     ["uzemie", "Park (obrys)", "line", { "line-color": "parkOutline" }]

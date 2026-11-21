@@ -32,6 +32,8 @@ test("a protected area is a solid border with a band inside it, not a fill over 
   assert.equal(ticks.layout["line-join"], "round", "no spikes at the corners");
   assert.ok(Math.max(...widths) >= 7, "wide enough to read as a band");
   assert.equal(byId("park-outline").paint["line-dasharray"], undefined, "the border is solid");
+  const rim = byId("park-outline").paint;
+  assert.ok(rim["line-blur"] >= 1 && rim["line-opacity"] < 1, "the rim is soft, so it keeps no square corner");
 });
 
 test("the band stays within the 8 px tile buffer, so tile seams inside a park don't show", () => {
