@@ -1285,8 +1285,10 @@ export const BUILDINGS_ALONE_FROM_Z = 15;
 /** The built-up area's opacity once its houses are drawn over it, so they stand out. */
 export const SETTLEMENT_AREA_UNDER_HOUSES = 0.4;
 
-/** Width in px of the band inside a protected area's border; within the 8 px tile buffer. */
-export const PARK_BAND = [[10, 5], [12, 8], [16, 8]];
+/** Width in px of the band inside a protected area's border; with its blur within the 8 px tile buffer. */
+export const PARK_BAND = [[10, 4], [12, 7], [16, 7]];
+/** Softens the band, which rounds its corners; half of it spills beyond the band each side. */
+export const PARK_BAND_BLUR = 2.5;
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
@@ -4020,7 +4022,8 @@ export function buildStyle({
         "line-color": c.park,
         // within the tile buffer, else tile seams inside a park show as stripes
         "line-width": zl(PARK_BAND),
-        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2]))
+        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
+        "line-blur": PARK_BAND_BLUR
       }
     },
     ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
@@ -4035,7 +4038,10 @@ export function buildStyle({
       layout: { "line-join": "round" },
       paint: {
         "line-color": c.parkOutline,
-        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]])
+        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]]),
+        // Mapy's border has no crisp rim: a hard line would keep the corners square
+        "line-blur": 1,
+        "line-opacity": 0.6
       }
     },
     ["uzemie", "Park (obrys)", "line", { "line-color": "parkOutline" }]
