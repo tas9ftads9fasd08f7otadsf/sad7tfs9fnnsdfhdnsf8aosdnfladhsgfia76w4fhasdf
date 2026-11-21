@@ -1171,6 +1171,27 @@
             "line-color": "#646361"
           }
         },
+        "park": {
+          "paint": {
+            "line-color": [
+              [
+                0,
+                12,
+                "#85a562"
+              ],
+              [
+                13,
+                14,
+                "#9bb37b"
+              ],
+              [
+                15,
+                20,
+                "#abc08d"
+              ]
+            ]
+          }
+        },
         "road-pedestrian": {
           "paint": {
             "line-color": "#e0e5f2"

@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildStyle, PARK_BAND } from "../../poc/web/themes.js";
+import { readFileSync } from "node:fs";
+import { buildStyle, normalizeOverrides, PARK_BAND } from "../../poc/web/themes.js";
 import { styleSpec, NEEDS_SPEC } from "./spec.mjs";
 
 const spec = styleSpec();
@@ -50,4 +51,32 @@ test("Natura 2000 sites and buffer zones get no border, reserves and parks do", 
     }
     assert.equal(shown(id, "prírodná_rezervácia", "Point"), false, `${id} label point`);
   }
+});
+
+// 558 Mapy's band is dark far out and pale close in (#85a562 at z12, #abc08d at z15); ours stayed dark and read as a strange border
+test("by day the band is dark at z12 and pale from z15, and the night band keeps its own colour", () => {
+  const build = (theme) => buildStyle({
+    theme,
+    mapType: "turisticka",
+    tilesUrl: "https://x/tiles.pmtiles",
+    spriteUrl: "https://x/sprite",
+    glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf",
+    overrides: normalizeOverrides(JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)))).overrides
+  }).layers.find((l) => l.id === "park").paint["line-color"];
+  const at = (expr, z) => {
+    if (!Array.isArray(expr)) return expr;
+    let out = expr[2];
+    for (let i = 3; i < expr.length; i += 2) if (expr[i] <= z) out = expr[i + 1];
+    return out;
+  };
+  const light = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16)).reduce((a, b) => a + b);
+  const day = build("svetla");
+  assert.equal(at(day, 12), "#85a562");
+  assert.equal(at(day, 15), "#abc08d");
+  assert.equal(at(day, 18), "#abc08d");
+  assert.ok(light(at(day, 15)) - light(at(day, 12)) >= 60, "paler close in");
+  assert.ok(light(at(day, 13)) > light(at(day, 12)) && light(at(day, 13)) < light(at(day, 15)), "fading in between");
+  const night = at(build("tmava"), 15);
+  assert.ok(typeof night === "string" && !/^#(85a562|9bb37b|abc08d)$/.test(night), "the night band is not the day one");
+  assert.ok(light(night) < light(at(day, 12)), "and stays dark");
 });
