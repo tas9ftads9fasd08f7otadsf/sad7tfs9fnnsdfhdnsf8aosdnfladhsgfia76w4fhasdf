@@ -8,7 +8,7 @@
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
       "buildingOutline": "#c2b79b",
-      "water": "#9ec5e2",
+      "water": "#98bddb",
       "river": "#92b8da",
       "rock": "#c8cbba",
       "rockPattern": "#a6aa9a",
@@ -25,7 +25,8 @@
       "trailYellow": "#f2d200",
       "background": "#f1f0e5",
       "hillHighlight": "#ffffff99",
-      "wall": "#8f8f8f"
+      "wall": "#8f8f8f",
+      "buildingShadow": "#5d647f"
     }
   },
   "layers": {},
@@ -188,8 +189,18 @@
               ],
               [
                 13,
+                13,
+                "#dad4c5"
+              ],
+              [
+                14,
+                14,
+                "#dddad4"
+              ],
+              [
+                15,
                 20,
-                "#d8d5ce"
+                "#e5e1d9"
               ]
             ]
           },
@@ -771,18 +782,23 @@
             "fill-color": [
               [
                 0,
-                12,
+                11,
                 "#bcd9a0"
+              ],
+              [
+                12,
+                12,
+                "#c3dea4"
               ],
               [
                 13,
                 14,
-                "#c8e4a9"
+                "#d0ebb1"
               ],
               [
                 15,
                 20,
-                "#cceaab"
+                "#ceebaf"
               ]
             ]
           },
@@ -801,12 +817,12 @@
               [
                 12,
                 12,
-                "#abc68c"
+                "#c9e0ad"
               ],
               [
                 13,
                 14,
-                "#c4dea6"
+                "#cde4b1"
               ],
               [
                 15,
@@ -1293,7 +1309,7 @@
         },
         "landcover-golf": {
           "paint": {
-            "fill-color": "#cfe2b3"
+            "fill-color": "#d6e9bb"
           }
         },
         "water-outline": {
@@ -1302,6 +1318,25 @@
           }
         },
         "building-pkg": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                13,
+                "#e2d3b9"
+              ],
+              [
+                14,
+                14,
+                "#e7dabc"
+              ],
+              [
+                15,
+                20,
+                "#e2d3b9"
+              ]
+            ]
+          },
           "variants": [
             {
               "attr": "class",
