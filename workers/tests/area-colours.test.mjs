@@ -22,14 +22,14 @@ const colour = (layers, id, z, prop = "fill-color") => {
   return out;
 };
 
-// 560 each is the colour that brings our rendered pixels to Mapy's on 59 tiles of 12 places at z13–z17
+// 560 each colour brings our pixels to Mapy's on 59 tiles, at the zooms it is set for
 const WANT = {
   "landcover-scrub": { 12: "#c9e0ad", 13: "#cde4b1", 14: "#cde4b1" },
-  "landcover-wood": { 12: "#c3dea4", 13: "#d0ebb1", 14: "#d0ebb1", 15: "#ceebaf" },
+  "landcover-wood": { 12: "#c3dea4", 13: "#c8e4a9", 14: "#d0ebb1", 15: "#ceebaf" },
   "landcover-golf": { 13: "#d6e9bb", 16: "#d6e9bb" },
   "landuse-industrial": { 13: "#dad4c5", 14: "#dddad4", 15: "#e5e1d9", 16: "#e5e1d9" },
   "building-pkg": { 13: "#e2d3b9", 14: "#e7dabc", 15: "#e2d3b9" },
-  water: { 13: "#98bddb" },
+  water: { 12: "#98bddb", 13: "#98bddb", 14: "#9ec5e2", 16: "#9ec5e2" },
   "building-pkg-shadow": { 15: "#5d647f" }
 };
 test("by day each area has the colour that brings it to Mapy's", () => {

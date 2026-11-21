@@ -8,7 +8,7 @@
       "scrub": "#c2d9a3",
       "building": "#e2d3b9",
       "buildingOutline": "#c2b79b",
-      "water": "#98bddb",
+      "water": "#9ec5e2",
       "river": "#92b8da",
       "rock": "#c8cbba",
       "rockPattern": "#a6aa9a",
@@ -792,6 +792,11 @@
               ],
               [
                 13,
+                13,
+                "#c8e4a9"
+              ],
+              [
+                14,
                 14,
                 "#d0ebb1"
               ],
@@ -804,6 +809,22 @@
           },
           "paintDark": {
             "fill-color": "#17251a"
+          }
+        },
+        "water": {
+          "paint": {
+            "fill-color": [
+              [
+                0,
+                13,
+                "#98bddb"
+              ],
+              [
+                14,
+                20,
+                "#9ec5e2"
+              ]
+            ]
           }
         },
         "landcover-scrub": {
