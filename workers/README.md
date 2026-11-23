@@ -2773,7 +2773,7 @@ kontroluje oba súbory pri každej zmene.
 
 ```json
 {
-  "_comment": "…", "_updated_at": "2026-08-11T18:35:52Z", "_updated_ts": 1760207752,
+  "_comment": "…", "_updated_ts": 1760207752,
 
   "slovensko": {
     "name": "Slovakia",
@@ -2788,7 +2788,7 @@ kontroluje oba súbory pri každej zmene.
         "contours_maxzoom": 16, "contour_interval": 5, "rocks_maxzoom": 16,
         "rock_slope": 50, "dem_source": "dmr5", "layers": ["vrstevnice_dmr5_5m", "…"],
         "drive": "slovensko/zilinsky", "run": "105",
-        "updated_at": "2026-08-11T18:35:52Z", "updated_ts": 1760207752,
+        "updated_ts": 1760207752,
         "subregions": {
           "sulovske_skaly": { "name": "Súľovské skaly",
                               "area_bbox": [18.53, 49.11, 18.72, 49.22], "maps": { … } }
@@ -2801,7 +2801,7 @@ kontroluje oba súbory pri každej zmene.
 
 **Hlavný kľúč je krajina** – rovno v koreni, bez obálky. Metadáta katalógu ležia
 vedľa nej a poznať ich je po čom: začínajú podčiarkovníkom (`_comment`,
-`_updated_at`, `_updated_ts`). Je to tá istá konvencia ako vo
+`_updated_ts`). Je to tá istá konvencia ako vo
 `areas` v [`config/map-settings.json`](../config/map-settings.json), kde sú kľúče pohorí tiež v koreni
 a `_comment` medzi nimi – kto katalóg číta, preskočí kľúče na `_`.
 
@@ -2864,12 +2864,12 @@ necommitol (nový súbor, o ktorom `git diff` mlčí; oboje je odvtedy opravené
 stráži to `workers/lint/catalog.py`). Katalóg rýchlych testov mal preto
 `formats.zip` a nikdy `formats.aar`.
 
-**Kedy tá mapa vznikla, hovorí položka dvakrát:** `updated_at` je ISO 8601
-v UTC (dá sa prečítať okom a zoradiť ako text) a `updated_ts` sú sekundy od
-epochy (vek mapy je jedno odčítanie, bez parsovania dátumu). Sú to dva zápisy
-JEDNÉHO okamihu, nie dve merania – skladá ich `teraz()` v `catalog.py`. To isté
-nesie každý balík zvlášť, lebo balík z inej pipeline (`wikipedia`) je iný vek
-než mapa. V koreni katalógu je ten istý pár ako `_updated_at` / `_updated_ts`.
+**Kedy tá mapa vznikla, hovorí `updated_ts`:** sekundy od epochy (Unix seconds),
+iný zápis dátumu katalóg nemá – vek mapy je jedno odčítanie, bez parsovania
+dátumu. Skladá ich `teraz()` v `catalog.py`. To isté nesie každý balík zvlášť,
+lebo balík z inej pipeline (`wikipedia`) je iný vek než mapa. V koreni katalógu
+je to `_updated_ts`. Staršie katalógy s `updated_at` / `_updated_at` čítače
+prejdú, lebo neznáme kľúče sú dovolené; nové ich nepíšu.
 
 A po **neúspešnom nahratí sa nezapíše vôbec**
 (`if: steps.publish.outcome == 'success'`) – zoznam, ktorý ukazuje na súbory,
