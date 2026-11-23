@@ -108,11 +108,9 @@ for path in CATALOGS:
         if not is_test(last) and path == CATALOG_TEST:
             bad.append(f"{path}: {where} is no quick test (the key doesn't end in "
                        f"`_test<N>km2`), so it belongs in {CATALOG}.")
-        # both: `updated_at` for the eye, `updated_ts` for arithmetic
-        for field in ("updated_at", "updated_ts"):
-            if p.get(field) in (None, ""):
-                bad.append(f"{path}: {where} has no `{field}` – the catalog can't "
-                           f"tell when that map was made.")
+        if p.get("updated_ts") in (None, ""):
+            bad.append(f"{path}: {where} has no `updated_ts` – the catalog can't "
+                       f"tell when that map was made.")
         for kind, m in p["maps"].items():
             if kind in LEGACY:
                 bad.append(f"{path}: {where} still has the former key `{kind}` – "
@@ -441,8 +439,6 @@ def _catalog_trial():
                       f"former part keys (`trasy` → `trails`).")
 
     # when the map was made: tried for real, `updated_ts` may exist and never land
-    import calendar
-    import time as _time
     with tempfile.TemporaryDirectory() as tmp:
         path = f"{tmp}/maps.json"
         with contextlib.redirect_stdout(io.StringIO()):
@@ -454,21 +450,8 @@ def _catalog_trial():
             errors.append(f"{CATALOG_PY}: the write didn't keep the catalog as it "
                           f"found it – `{CATALOG_SH}` has nothing to merge and the "
                           f"commit reverts another's write of the same run.")
-    for field in ("updated_at", "updated_ts"):
-        if node.get(field) in (None, ""):
-            errors.append(f"{CATALOG_PY}: the written entry has no `{field}`.")
-    if node.get("updated_at") and node.get("updated_ts") is not None:
-        try:
-            from_text = calendar.timegm(
-                _time.strptime(node["updated_at"], "%Y-%m-%dT%H:%M:%SZ"))
-        except ValueError:
-            from_text = None
-            errors.append(f"{CATALOG_PY}: `updated_at` is no ISO 8601 UTC "
-                          f"(`{node['updated_at']}`) – text sorting needs one shape.")
-        if from_text is not None and from_text != node["updated_ts"]:
-            errors.append(f"{CATALOG_PY}: `updated_at` and `updated_ts` speak of "
-                          f"different instants ({node['updated_at']} vs "
-                          f"{node['updated_ts']}).")
+    if node.get("updated_ts") in (None, ""):
+        errors.append(f"{CATALOG_PY}: the written entry has no `updated_ts`.")
     if not any(m.get("updated_ts") is not None
                for m in (node.get("maps") or {}).values()):
         errors.append(f"{CATALOG_PY}: no package of the entry has `updated_ts`.")

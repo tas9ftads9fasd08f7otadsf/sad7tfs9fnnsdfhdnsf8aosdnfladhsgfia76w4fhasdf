@@ -158,11 +158,19 @@ class Write(unittest.TestCase):
         maps = {}
         with mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "7"}):
             catalog.write_package(maps, "", "t.aar", 10, "B", "aar", sha="s1")
-            catalog.write_package(maps, "", "t.zip", 20, "A", "zip", at="2026", at_ts=1)
+            catalog.write_package(maps, "", "t.zip", 20, "A", "zip", at_ts=1)
         base = maps["base"]
         self.assertEqual(sorted(base["formats"]), ["aar", "zip"])
         self.assertEqual((base["file"], base["run"]), ("t.zip", "7"), "the top mirrors the ZIP")
         self.assertEqual(base["app"], packages.package("base")["app"])
+
+    def test_dates_are_unix_seconds_only(self):
+        # 562: a catalog dated twice carried an ISO text that had to agree with the seconds
+        maps = {}
+        catalog.write_package(maps, "", "t.zip", 20, "A", "zip", at_ts=1760207752)
+        self.assertEqual(maps["base"]["updated_ts"], 1760207752)
+        self.assertNotIn("updated_at", maps["base"])
+        self.assertIsInstance(catalog.now(), int)
 
     def test_unchanged_isnt_rewritten(self):
         with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()):

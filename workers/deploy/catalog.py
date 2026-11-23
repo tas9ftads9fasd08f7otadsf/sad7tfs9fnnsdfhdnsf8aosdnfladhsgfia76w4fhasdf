@@ -140,9 +140,8 @@ def name_node(node, regions, key, kind):
 
 
 def now():
-    """(ISO 8601 UTC, epoch seconds) – one instant, read by eye and by subtraction."""
-    t = time.time()
-    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(t)), int(t)
+    """Unix seconds, the only date format of the catalog."""
+    return int(time.time())
 
 
 def region_models(man, reg):
@@ -258,7 +257,7 @@ def unchanged(maps, kind, fmt, sha, live):
     return record if link_id(record) in live else None
 
 
-def write_package(maps, kind, name, size, fid, fmt, at="", at_ts=None,
+def write_package(maps, kind, name, size, fid, fmt, at_ts=None,
                   sha="", models=None, published=None):
     """One package in one format into a `maps` entry; the top mirrors the ZIP for older readers."""
     kept = published_record(maps if published is None else published, kind, fmt)
@@ -274,8 +273,6 @@ def write_package(maps, kind, name, size, fid, fmt, at="", at_ts=None,
             # provenance per package: wiki is built by another pipeline
             "run": env("GITHUB_RUN_NUMBER"),
         }
-        if at:
-            record["updated_at"] = at
         if at_ts is not None:
             record["updated_ts"] = at_ts
         # contents, not date: the same build twice is no new map for the app
@@ -472,7 +469,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     migrate(data)
     is_test = os.path.basename(path) == CATALOG_TEST
     data["_comment"] = (COMMENT_TEST if is_test else "") + COMMENT
-    data["_updated_at"], data["_updated_ts"] = now()
+    data["_updated_ts"] = now()
 
     cat = cat or parts
     mountain = len(cat) > 1 and cat[0] == names.MOUNTAINS
@@ -501,14 +498,13 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         # an addition, not a rewrite: a separate pipeline knows only its package
         name_node(node, regions, cat[-1], "region")
         node["drive"] = drive or node.get("drive") or "/".join(parts)
-        # `updated_at` and `run` of the region say which run built the map
-        node.setdefault("updated_at", data["_updated_at"])
+        # `updated_ts` and `run` of the region say which run built the map
         node.setdefault("updated_ts", data["_updated_ts"])
         node.setdefault("run", env("GITHUB_RUN_NUMBER"))
         maps = node.setdefault("maps", {})
         for kind, name, size, fid, fmt, sha in uploaded:
             write_package(maps, kind, name, size, fid, fmt,
-                          at=data["_updated_at"], at_ts=data["_updated_ts"],
+                          at_ts=data["_updated_ts"],
                           sha=sha, models=region_models(man, reg))
         tidy(maps, retired, live, {fid for _k, _n, _v, fid, _f, _s in uploaded})
         stamp_ids(data, regions)
@@ -517,7 +513,6 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         "name": node.get("name"),
         "drive": drive or "/".join(parts),
         # the entry is written whole, so creation = rewrite
-        "updated_at": data["_updated_at"],
         "updated_ts": data["_updated_ts"],
         "run": env("GITHUB_RUN_NUMBER"),
         "layers": list(layers or []),
@@ -572,7 +567,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         entry = kept
     for kind, name, size, fid, fmt, sha in uploaded:
         write_package(entry["maps"], kind, name, size, fid, fmt,
-                      at=data["_updated_at"], at_ts=data["_updated_ts"],
+                      at_ts=data["_updated_ts"],
                       sha=sha, models=region_models(man, reg), published=old_maps)
     # a format this run didn't build stays until its own job replaces it
     for kind in {k or "base" for k, *_ in uploaded}:
