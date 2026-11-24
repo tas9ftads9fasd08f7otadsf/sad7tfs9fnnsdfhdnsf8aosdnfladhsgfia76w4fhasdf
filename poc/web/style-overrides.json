@@ -19,7 +19,7 @@
       "trailMtb": "#ba42e4",
       "rail": "#5a5a5a",
       "aerialway": "#4f4f4f",
-      "hillShadow": "#33452ab3",
+      "hillShadow": "#2c3f24c4",
       "hillAccent": "#5a6a4a38",
       "ice": "#d8f0fb",
       "trailYellow": "#f2d200",
@@ -744,23 +744,23 @@
             "hillshade-exaggeration": [
               [
                 6,
-                0.55
+                0.6
               ],
               [
                 10,
-                0.7
+                0.75
               ],
               [
                 12,
-                0.8
+                0.88
               ],
               [
                 13,
-                0.7
+                0.78
               ],
               [
                 14,
-                0.6
+                0.62
               ],
               [
                 16,
