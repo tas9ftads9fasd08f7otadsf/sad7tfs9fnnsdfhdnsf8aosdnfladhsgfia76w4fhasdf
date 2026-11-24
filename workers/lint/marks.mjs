@@ -231,8 +231,10 @@ for (const t of TRAIL_TYPES) {
         `would carry two symbols fighting for space.`
     );
   }
-  const label = order.get(`trail-${t.id}-label`);
-  if (label != null && order.get(`trail-${t.id}-mark`) > label) {
+  // 563 a route number is a label of its own now, and the mark goes before it too
+  const label = Math.min(order.get(`trail-${t.id}-label`) ?? Infinity,
+    order.get(`trail-${t.id}-ref`) ?? Infinity);
+  if (label !== Infinity && order.get(`trail-${t.id}-mark`) > label) {
     error(
       "poc/web/themes.js",
       `\`trail-${t.id}-mark\` comes after the trail labels. MapLibre places symbols ` +
