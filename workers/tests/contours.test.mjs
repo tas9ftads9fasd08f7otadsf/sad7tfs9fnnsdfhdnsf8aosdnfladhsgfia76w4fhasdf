@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { buildStyle, CONTOUR_MIN_Z, CONTOUR_LABEL_MIN_Z } from "../../poc/web/themes.js";
+import { readFileSync } from "node:fs";
+import { buildStyle, normalizeOverrides, CONTOUR_MIN_Z, CONTOUR_LABEL_MIN_Z } from "../../poc/web/themes.js";
+import { valueAtZoom } from "../../poc/web/layer-style.js";
 import { styleSpec, NEEDS_SPEC } from "./spec.mjs";
 
 const spec = styleSpec();
@@ -41,4 +43,22 @@ test("heights name the index lines, their top uphill on turned lines", { skip: !
   assert.equal(drawn("contour-label-upright", { ele: 550 }), true);
   assert.equal(byId("contour-label").layout["text-keep-upright"], false, "top uphill, as the line runs");
   assert.equal(byId("contour-label-upright").layout["text-keep-upright"], true);
+});
+
+// 570 the owner: heights without a white border, bolder lines
+test("heights have no white rim and the lines are stronger than before", () => {
+  const overrides = JSON.parse(readFileSync(new URL("../../poc/web/style-overrides.json", import.meta.url)));
+  const tuned = buildStyle({
+    theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/t.pmtiles", spriteUrl: "https://x/s",
+    glyphsUrl: "https://x/{fontstack}/{range}.pbf", contoursUrl: "https://x/c.pmtiles",
+    overrides: normalizeOverrides(overrides).overrides
+  });
+  const layer = (id) => tuned.layers.find((l) => l.id === id);
+  for (const id of ["contour-label", "contour-label-upright"]) {
+    assert.equal(layer(id).paint["text-halo-width"], undefined, id);
+    assert.deepEqual(layer(id).layout["text-font"], ["Noto Sans Bold"], id);
+  }
+  const at16 = (id, prop) => valueAtZoom(layer(id).paint[prop], 16);
+  assert.ok(at16("contour-minor", "line-opacity") >= 0.3);
+  assert.ok(at16("contour-major", "line-opacity") >= 0.45);
 });

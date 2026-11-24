@@ -1625,7 +1625,7 @@ export const CONTOUR_WIDTH = [[12, 0.4], [16, 0.7], [20, 1.4]];
 export const CONTOUR_INDEX_WIDTH = [[11, 0.5], [16, 1.4], [20, 2.6]];
 export const CONTOUR_OPACITY = [[12, 0], [13, 0.55]];
 export const CONTOUR_INDEX_OPACITY = [[11, 0], [12, 0.55]];
-export const CONTOUR_LABEL_SIZE = [[13, 10], [16, 11], [20, 13]];
+export const CONTOUR_LABEL_SIZE = [[13, 10.5], [16, 12], [20, 14]];
 
 /** How much of a road shows through the hill it tunnels under. */
 export const TUNNEL_OPACITY = 0.45;
@@ -4356,17 +4356,14 @@ export function buildStyle({
           "text-padding": 8,
           "text-keep-upright": !uphill
         },
-        paint: {
-          "text-color": c.contourText,
-          "text-halo-color": c.textHalo,
-          "text-halo-width": 1
-        }
+        // no white rim: it lit up every height in the forest
+        paint: { "text-color": c.contourText }
       },
       [
         "vrstevnice",
         uphill ? "Popisky nadmorskej výšky" : "Popisky nadmorskej výšky (staré dlaždice)",
         "text",
-        { "text-color": "contourText", "text-halo-color": "textHalo" }
+        { "text-color": "contourText" }
       ]
     );
     contourLabel("contour-label", true);
