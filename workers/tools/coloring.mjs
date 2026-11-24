@@ -8,7 +8,7 @@
  *   node workers/tools/coloring.mjs clear --layer=water --prop=fill-color [--zoom=15]
  *   node workers/tools/coloring.mjs done                    mark the shown tile as matching
  *   node workers/tools/coloring.mjs save                    edits into poc/web/style-overrides.json
- *   node workers/tools/coloring.mjs compare 48.462,17.260 14 [--size=3]   a block of tiles, side by side
+ *   node workers/tools/coloring.mjs compare 48.462,17.260 14 [--width=512 --height=512]   the page's two maps
  *
  * COLORING_SITE is the deployed viewer (tiles/manifest.json under it), MAPY_API_KEY the reference key.
  * Flags: --theme=tmava draws our side in the dark theme, --tiles=<dir> serves the region's .pmtiles from a local build, --state=<edits json> (default coloring/edits.json), --out=<dir> (default coloring/), --region=<key>.
@@ -18,7 +18,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { extname, join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { emptyEdits, setColor, clearColor, styleZoomOf, tileKey, nextTile, blockAround, byteRange } from "../../poc/web/coloring-core.js";
+import { emptyEdits, setColor, clearColor, styleZoomOf, tileKey, nextTile, byteRange } from "../../poc/web/coloring-core.js";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const WEB = join(ROOT, "poc", "web");
@@ -81,7 +81,7 @@ function fulfillRange(route, file) {
 }
 
 /** The page on the site's own origin, its files from this checkout: Pages answers no CORS preflight. */
-async function openPage(state) {
+async function openPage(state, { width = 1200, height = 900, scale = 1 } = {}) {
   const site = (process.env.COLORING_SITE || args.site || "").replace(/\/$/, "");
   if (!site) fail("COLORING_SITE is the deployed viewer, e.g. https://<user>.github.io/<repo>");
   const require = createRequire(join(ROOT, "noop.js"));
@@ -95,7 +95,7 @@ async function openPage(state) {
   const browser = await chromium.launch({
     proxy, args: ["--use-gl=angle", "--use-angle=swiftshader", "--ignore-gpu-blocklist"]
   });
-  const page = await browser.newPage({ viewport: { width: 1200, height: 900 } });
+  const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: scale });
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && errors.push(m.text().slice(0, 300)));
@@ -157,48 +157,23 @@ async function show(tile) {
   }
 }
 
-/** A size × size block of reference tiles around a place: ours left, the reference right, and what is drawn. */
+/** The comparison page's two maps at a place: ours left, the reference right, and what ours draws. */
 async function compare(place, z) {
   const [lat, lon] = String(place || "").split(",").map(Number);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isInteger(z)) {
+  if (!Number.isFinite(lat) || !Number.isFinite(lon) || !Number.isFinite(z)) {
     fail("compare <lat>,<lon> <reference zoom>");
   }
-  const size = Number(args.size || 3);
-  const block = blockAround(lon, lat, z, size);
-  const { browser, page, errors } = await openPage(readState());
-  const drawn = new Map();
+  const width = Number(args.width || 512);
+  const height = Number(args.height || 512);
+  // at 2× the reference's 256@2x tiles show pixel for pixel, as in `tile`
+  const { browser, page, errors } = await openPage(readState(), { width: width * 2 + 80, height: height + 300, scale: 2 });
   try {
-    const parts = [];
-    for (const t of block) {
-      const report = await page.evaluate((at) => window.coloring.goto(at.z, at.x, at.y), t);
-      parts.push({ i: t.i, j: t.j, ...(await page.evaluate(() => window.coloring.images())) });
-      for (const item of [...report.items, ...report.symbols]) {
-        const seen = drawn.get(item.layer) || { layer: item.layer, share: 0, classes: new Set() };
-        seen.share += item.share / block.length;
-        for (const c of item.classes || []) seen.classes.add(c);
-        drawn.set(item.layer, seen);
-      }
-    }
-    const png = await page.evaluate(async ({ parts, size }) => {
-      const canvas = document.createElement("canvas");
-      canvas.width = size * 512 * 2 + 16;
-      canvas.height = size * 512;
-      const ctx = canvas.getContext("2d");
-      ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      const load = (src) => new Promise((resolve) => { const im = new Image(); im.onload = () => resolve(im); im.src = src; });
-      for (const p of parts) {
-        ctx.drawImage(await load(p.ours), p.i * 512, p.j * 512);
-        ctx.drawImage(await load(p.ref), size * 512 + 16 + p.i * 512, p.j * 512);
-      }
-      return canvas.toDataURL("image/png");
-    }, { parts, size });
+    const layers = await page.evaluate((v) => window.coloring.view(v),
+      { lon, lat, zoom: styleZoomOf(z), width, height });
     mkdirSync(OUT, { recursive: true });
-    const base = join(OUT, `compare-${z}-${lat}-${lon}`);
-    writeFileSync(`${base}.png`, Buffer.from(png.split(",")[1], "base64"));
-    const layers = [...drawn.values()].sort((a, b) => b.share - a.share)
-      .map((d) => ({ layer: d.layer, share: Math.round(d.share * 1000) / 1000, classes: [...d.classes] }));
-    console.log(JSON.stringify({ image: `${base}.png`, styleZoom: styleZoomOf(z), tiles: `${tileKey(block[0])} +${size}`, layers, errors }, null, 1));
+    const image = join(OUT, `compare-${z}-${lat}-${lon}.png`);
+    await page.locator(".maps").screenshot({ path: image });
+    console.log(JSON.stringify({ image, styleZoom: styleZoomOf(z), layers, errors }, null, 1));
   } finally {
     await browser.close();
   }

@@ -21,19 +21,24 @@ bands, which zoom an element starts or stops at, and what isn't drawn at all.
   comparison in a browser.
 - Playwright and Chromium must work (`require("playwright")`).
 
-## Zooms
+## Zooms and pixels
 
-Mapy's `256@2x` tile at zoom `z` is our style at `z − 1`; pixels match one to one. The app's
-debug line shows **style** zoom: a screenshot at `z 13.2` is Mapy's z14. `docs/mapy-style.md`
-uses Mapy's zooms.
+Mapy's `256@2x` tile at zoom `z` is our style at `z − 1`. The app's debug line shows **style**
+zoom: a screenshot at `z 13.2` is Mapy's 14.2. `docs/mapy-style.md` uses Mapy's zooms.
+Mapy's tiles are drawn at 2×: a width read off its image in pixels is **half** that in the
+style (a 20 px band on Mapy's image is `line-width: 10`). `compare` shoots at 2× too, so the
+two halves of its image measure alike.
 
 ## Loop for one element
 
 1. **Book** a ticket (CLAUDE.md), one per element or a small batch of related ones.
 2. **Compare** a place at three Mapy zooms where the element changes, usually 12, 14 and 16:
-   `node workers/tools/coloring.mjs compare <lat>,<lon> <z> --size=2 --out=<dir>`.
-   Open the PNG: ours left, Mapy right. A screenshot from the app names its place and zoom.
-3. **Find the layer**: the JSON lists every layer drawn with its classes; then
+   `node workers/tools/coloring.mjs compare <lat>,<lon> <z> --out=<dir>`. It drives the
+   prepared comparison page (`coloring.html`, its two synced maps) and shoots them: ours left,
+   Mapy right. The same page in a browser, `$COLORING_SITE/coloring.html`, is for looking around
+   by hand; send the owner its link with `#tile=<z>/<x>/<y>` for a place. A screenshot from the
+   app names its place and zoom.
+3. **Find the layer**: the JSON lists every layer our map drew with its classes; then
    `grep -n 'id: "<layer>"' poc/web/themes.js`. Constants for widths and zooms sit near the top
    of `themes.js`, colours in `THEMES.svetla`, map-type differences in `map-types.js`.
 4. **Measure Mapy**: crop and enlarge its tile (PIL), read widths in px, colours with
@@ -64,4 +69,7 @@ uses Mapy's zooms.
   512): anything offset inward wider than that stripes tile seams. Draw it from a line layer
   instead (`park_border` is the example).
 - Mapy's labels and icons differ in font; compare their zoom and density, not glyphs.
-- `compare` waits for each tile to settle; a tile past the region's edge settles after 15 s.
+- `compare` waits for both maps to settle; past the region's edge that takes 15 s.
+- A thing Mapy names but we don't: check the package has it (`pmtiles` + `mapbox_vector_tile`
+  on the region's archive) before the style; a layer may carry lines the style only reads as
+  points (valleys did).

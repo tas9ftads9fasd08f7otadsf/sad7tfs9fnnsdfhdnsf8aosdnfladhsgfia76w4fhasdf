@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   tileBounds, tileAt, tileCenter, nextTile, styleZoomOf, providerUrl, colorHex, deltaE,
   summarize, tileMatches, emptyEdits, setColor, clearColor, zoomValue, applyEdits, darkColorsOf,
-  blockAround, byteRange, settled
+  drawnLayers, byteRange, settled
 } from "../../poc/web/coloring-core.js";
 import { emptyOverrides, normalizeOverrides, buildStyle } from "../../poc/web/themes.js";
 
@@ -82,12 +82,13 @@ test("the dark colours to keep come from the dark style", () => {
   assert.deepEqual(unkept, []);
 });
 
-// 565 a compare block is centred on the place it was asked for
-test("a block of tiles is centred on its place, row by row", () => {
-  const block = blockAround(17.26048, 48.46239, 14, 3);
-  assert.equal(block.length, 9);
-  assert.deepEqual(block[4], { z: 14, x: 8977, y: 5663, i: 1, j: 1 });
-  assert.deepEqual(block.map((t) => [t.i, t.j]).slice(0, 4), [[0, 0], [1, 0], [2, 0], [0, 1]]);
+// 565 compare lists what our map drew there, by layer, so a difference leads to its layer
+test("the drawn layers are counted by layer, most first, with their classes", () => {
+  const f = (id, cls) => ({ layer: { id }, properties: cls ? { class: cls } : {} });
+  assert.deepEqual(drawnLayers([f("park", "chko"), f("water"), f("park", "npr"), f("park", "chko")]), [
+    { layer: "park", count: 3, classes: ["chko", "npr"] },
+    { layer: "water", count: 1, classes: [] }
+  ]);
 });
 
 // 565 a local archive answers range requests as Pages does, or the viewer can't read it

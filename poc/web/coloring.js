@@ -34,7 +34,8 @@ import {
   clearColor,
   applyEdits,
   darkColorsOf,
-  settled
+  settled,
+  drawnLayers
 } from "./coloring-core.js";
 
 const STORE = "fricomaps.coloring";
@@ -80,6 +81,8 @@ let iconSet = null;
 let baseOverrides = emptyOverrides();
 let roadSigns = null;
 let views;
+// a free view for `compare`: no tile is analysed and no tile frame is drawn
+let viewing = false;
 let probe;
 let tile = null;
 let report = null;
@@ -164,7 +167,7 @@ function refStyle() {
 const FRAME = "tile-frame";
 
 function drawFrame(map) {
-  if (!tile || !map.isStyleLoaded()) return;
+  if (!tile || viewing || !map.isStyleLoaded()) return;
   const [w, s, e, n] = tileBounds(tile.z, tile.x, tile.y);
   const data = {
     type: "Feature",
@@ -203,6 +206,7 @@ function makeViews() {
   const settle = () => {
     clearTimeout(timer);
     timer = setTimeout(() => {
+      if (viewing) return;
       const c = ours.getCenter();
       const z = Math.min(MAX_DISPLAY_Z + 1, Math.max(2, Math.round(ours.getZoom()) + 1));
       const at = tileAt(c.lng, c.lat, z);
@@ -448,6 +452,19 @@ const coloring = {
     const t = nextTile(tile, manifest.regions[regionKey].bbox);
     if (!t) return { ...report, last: true };
     return coloring.goto(t.z, t.x, t.y);
+  },
+  /** Both maps at a place and style zoom, `width` × `height` px each; resolves to what ours draws. */
+  view: async ({ lon, lat, zoom, width = 600, height = 600 }) => {
+    viewing = true;
+    document.querySelector(".maps").style.gridTemplateColumns = `${width}px ${width}px`;
+    for (const m of [views.ours, views.ref]) {
+      m.getContainer().parentElement.style.height = `${height}px`;
+      if (m.getLayer(FRAME)) m.setLayoutProperty(FRAME, "visibility", "none");
+      m.resize();
+    }
+    views.ours.jumpTo({ center: [lon, lat], zoom, bearing: 0, pitch: 0 });
+    await Promise.all([settled(views.ours), settled(views.ref)]);
+    return drawnLayers(views.ours.queryRenderedFeatures());
   },
   edits: () => structuredClone(state.edits),
   loadEdits: async (edits) => {

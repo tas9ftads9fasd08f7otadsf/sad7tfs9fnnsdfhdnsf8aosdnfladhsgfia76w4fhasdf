@@ -45,16 +45,17 @@ export const settled = (map, wait = IDLE_WAIT_MS) => new Promise((resolve) => {
   map.triggerRepaint();
 });
 
-/** The `size` × `size` tiles at `z` centred on a place, row by row. */
-export function blockAround(lon, lat, z, size) {
-  const centre = tileAt(lon, lat, z);
-  const x0 = centre.x - Math.floor(size / 2);
-  const y0 = centre.y - Math.floor(size / 2);
-  const out = [];
-  for (let j = 0; j < size; j += 1) {
-    for (let i = 0; i < size; i += 1) out.push({ z, x: x0 + i, y: y0 + j, i, j });
+/** Rendered features by layer, most first: `[{ layer, count, classes }]`. */
+export function drawnLayers(features) {
+  const by = new Map();
+  for (const f of features) {
+    const seen = by.get(f.layer.id) || { layer: f.layer.id, count: 0, classes: new Set() };
+    seen.count += 1;
+    if (f.properties?.class) seen.classes.add(f.properties.class);
+    by.set(f.layer.id, seen);
   }
-  return out;
+  return [...by.values()].sort((a, b) => b.count - a.count)
+    .map(({ layer, count, classes }) => ({ layer, count, classes: [...classes].slice(0, 8) }));
 }
 
 /** `[start, end]` of a `Range: bytes=…` header within `length` bytes, or null for the whole. */

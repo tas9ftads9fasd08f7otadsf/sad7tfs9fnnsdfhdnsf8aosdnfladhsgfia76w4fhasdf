@@ -55,16 +55,20 @@ current colour to `paintDark` where none is set, and names the layers where it c
 
 ## More than colour
 
-Widths, dashes, which zoom a thing appears at: compare a block of tiles around a place and look.
+Widths, dashes, which zoom a thing appears at: the page's two maps side by side at any place and
+zoom, as a person sees them in `coloring.html`.
 
 ```bash
-node workers/tools/coloring.mjs compare 48.46239,17.26048 14 --size=3
+node workers/tools/coloring.mjs compare 48.46239,17.26048 14.2 [--width=512 --height=512]
 ```
 
-It writes `coloring/compare-<z>-<lat>-<lon>.png` (ours left, the reference right, tile for tile)
-and prints every layer drawn there with its share and the classes it drew. A change to the
+The zoom is the reference's (style zoom + 1) and may be fractional. It writes
+`coloring/compare-<z>-<lat>-<lon>.png` (ours left, the reference right, at 2×, so a reference
+pixel is half a style pixel) and prints every layer our map drew there, with its classes. In the
+page, `window.coloring.view({ lon, lat, zoom, width, height })` does the same. A change to the
 pipeline is checked before it is deployed with `--tiles=<dir>`: the region's `.pmtiles` in that
 folder replace the deployed ones. [mapy-style.md](mapy-style.md) lists what already follows Mapy.
 
 In the page the same is `window.coloring`: `goto(z, x, y)`, `report()`, `set({...})`,
-`clear({...})`, `next()`, `edits()`, `loadEdits(json)`, `overrides()`, `images()`, `save()`.
+`clear({...})`, `next()`, `edits()`, `loadEdits(json)`, `overrides()`, `images()`, `save()`,
+`view({...})`.
