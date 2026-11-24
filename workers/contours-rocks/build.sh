@@ -356,6 +356,9 @@ if [ "$ONLY" != 'rocks' ]; then
     "raise contour_interval (e.g. 20 m) or turn them off for this area." "$CCAP"
   CZ="$PM_Z"
   # Mapy writes a height with its top uphill; gdal_contour leaves the higher side on the right
+  python3 -c 'import pmtiles, mapbox_vector_tile' 2>/dev/null \
+    || python3 -m pip install --quiet --break-system-packages pmtiles mapbox-vector-tile \
+    || python3 -m pip install --quiet pmtiles mapbox-vector-tile
   python3 workers/contours-rocks/uphill.py contours-out/contours.pmtiles
 fi
 

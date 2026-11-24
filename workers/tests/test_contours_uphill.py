@@ -52,5 +52,18 @@ class Uphill(unittest.TestCase):
             {"type": "MultiLineString", "coordinates": [[[1, 1], [0, 0]], [[3, 3], [2, 2]]]})
 
 
+class UphillInTheBuild(unittest.TestCase):
+    # 573 bug: the contours job ran uphill.py on a runner without mapbox_vector_tile
+    def test_the_build_installs_the_packages_before_the_step(self):
+        script = open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                                   "contours-rocks", "build.sh")).read()
+        step = script.index("contours-rocks/uphill.py")
+        install = script.rfind("pip install", 0, step)
+        self.assertNotEqual(install, -1, "no install before the step")
+        line = script[install:script.index("\n", install)]
+        for package in ("pmtiles", "mapbox-vector-tile"):
+            self.assertIn(package, line)
+
+
 if __name__ == "__main__":
     unittest.main()
