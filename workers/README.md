@@ -228,6 +228,14 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   každému bodu vrstvy `housenumber` `render_height` budovy, v ktorej stojí
   (alebo do 3 m od jej steny), a aplikácia ho postaví na strechu.
 
+  **Hranica chráneného územia je aj čiara.** Pás CHKO a národného parku je
+  ako na Mapy.com 22 px široký, no polygón `park` má v dlaždici len 8 px okraj,
+  takže pás z jeho orezanej hrany by pruhoval švy dlaždíc.
+  [`workers/tiles/park-border.py`](tiles/park-border.py) od z11 zloží každé
+  územie z dlaždice a jej susedov a jeho hranicu zapíše do vrstvy `park_border`
+  ako čiaru s 32 px okrajom, v smere hodinových ručičiek, takže územie je
+  vpravo a štýl ho posúva kladným `line-offset`.
+
   **Hranica sa pred rezom zjednoduší na 10 m.** `osmium extract --polygon`
   testuje každý uzol PBF proti každej úsečke hranice, takže čas rezu rastie
   s počtom bodov. Namerané na relácii Prešovského kraja (388271, plná geometria

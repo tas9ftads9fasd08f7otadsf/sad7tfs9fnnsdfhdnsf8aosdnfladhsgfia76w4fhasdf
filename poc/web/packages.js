@@ -91,7 +91,8 @@ const BASE_CLAIMS = {
   housenumber: "roads",
   water: "water", water_name: "water", waterway: "water",
   boundary: "boundaries",
-  landcover: "landscape", landuse: "landscape", park: "landscape", mountain_peak: "landscape",
+  landcover: "landscape", landuse: "landscape", park: "landscape", park_border: "landscape",
+  mountain_peak: "landscape",
   aeroway: "landscape", aerodrome_label: "landscape",
   poi: "points",
   building: "settlements", place: "settlements"
