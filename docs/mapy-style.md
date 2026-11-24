@@ -19,7 +19,7 @@ How to compare: `.claude/skills/mapy-restyle/SKILL.md`. Colours alone: [coloring
 
 | Element | Mapy.com | Style | Ours | Ticket |
 |---|---|---|---|---|
-| CHKO, national park | none at z12; from z13 a solid band ~20–22 px inside the border, pale green `#a9c487` over open land, crisp edges | `park` from z12 | follows (`park_border` line layer from `workers/tiles/park-border.py`) | 564 |
+| CHKO, national park | from z13 a soft, see-through band inside the border, ~14 px at z13, ~18 px at z15, ~12 px at z17.5: a stronger green, then a paler one | `park`, `park-fade` from z12, 55–60 % opacity, blur 4 px far out | follows | 564, 574 |
 | Reserves (NPR, PR, PP, CHA) | from z14 a 2.5–4 px line `#90b862` with short ticks pointing inside, one every ~13 px at z14 and ~22 px at z16 | `park-outline`, `park-outline-teeth` from z13 | follows | 564 |
 | Natura 2000, buffer zones | not drawn | — | not drawn | 544 |
 | Protected-area name | `CHKO …` in green italics along the area | `park-name`, `park-area-name` | follows | |
