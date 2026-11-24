@@ -23,6 +23,9 @@ nwr/waterway=dam,weir,lock_gate,waterfall
 nwr/amenity=parking
 nwr/landuse=landfill,farmyard,greenhouse_horticulture,brownfield
 
+# military ranges, named by a letter on Mapy.com
+nwr/military=training_area,training_ground,range,danger_area
+
 # monuments and mining heritage beyond the OpenMapTiles `historic` three
 nwr/historic=archaeological_site,battlefield,fort,manor,tomb,wayside_cross,wayside_shrine,memorial,boundary_stone,milestone,charcoal_pile,mine,mine_shaft,mineshaft,adit
 

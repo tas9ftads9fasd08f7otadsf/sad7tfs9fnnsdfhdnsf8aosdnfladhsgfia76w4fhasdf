@@ -341,7 +341,6 @@
                 "paved"
               ],
               "label": "Spevnená",
-              "dash": "solid",
               "paint": {
                 "line-color": [
                   [
@@ -356,6 +355,7 @@
                   ]
                 ]
               },
+              "dash": "solid",
               "outline": {
                 "color": "#a9a9b2",
                 "width": 1,
@@ -603,6 +603,23 @@
               ]
             ]
           },
+          "dash": [
+            [
+              0,
+              14,
+              "dashed"
+            ],
+            [
+              15,
+              16,
+              "dashed-wide"
+            ],
+            [
+              17,
+              24,
+              "dashed-extra"
+            ]
+          ],
           "variants": [
             {
               "attr": "surface",
@@ -610,7 +627,6 @@
                 "paved"
               ],
               "label": "Spevnená",
-              "dash": "solid",
               "paint": {
                 "line-color": [
                   [
@@ -625,6 +641,7 @@
                   ]
                 ]
               },
+              "dash": "solid",
               "outline": {
                 "color": "#a9a9b2",
                 "width": 1,
@@ -642,23 +659,6 @@
                 ]
               }
             }
-          ],
-          "dash": [
-            [
-              0,
-              14,
-              "dashed"
-            ],
-            [
-              15,
-              16,
-              "dashed-wide"
-            ],
-            [
-              17,
-              24,
-              "dashed-extra"
-            ]
           ]
         },
         "trail-hiking-mark": {
@@ -947,21 +947,21 @@
               [
                 13,
                 20,
-                0.3
+                0.5
               ]
             ],
             "line-width": [
               [
                 11,
-                0.45
+                0.5
               ],
               [
                 16,
-                1.1
+                1.4
               ],
               [
                 20,
-                2.2
+                2.8
               ]
             ]
           },
@@ -992,7 +992,21 @@
               [
                 13,
                 20,
-                0.2
+                0.35
+              ]
+            ],
+            "line-width": [
+              [
+                12,
+                0.5
+              ],
+              [
+                16,
+                0.9
+              ],
+              [
+                20,
+                1.8
               ]
             ]
           },
@@ -1463,36 +1477,6 @@
               }
             }
           ]
-        },
-        "contour-mid": {
-          "paint": {
-            "line-opacity": [
-              [
-                0,
-                12,
-                1
-              ],
-              [
-                13,
-                20,
-                0.3
-              ]
-            ],
-            "line-width": [
-              [
-                12,
-                0.45
-              ],
-              [
-                16,
-                0.75
-              ],
-              [
-                20,
-                1.6
-              ]
-            ]
-          }
         }
       },
       "poi": {

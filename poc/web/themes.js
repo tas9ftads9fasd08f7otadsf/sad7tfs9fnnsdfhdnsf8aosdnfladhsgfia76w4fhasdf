@@ -186,6 +186,7 @@ export const THEMES = {
     school: "#f0e8d8",
     military: "#d8d8d4",
     militaryBorder: "#8c8c88",
+    militaryText: "#999999",
     quarry: "#ddd6cc",
     pitch: "#dbe4c4",
     garden: "#dfe6c6",
@@ -249,7 +250,7 @@ export const THEMES = {
     winterSports: "#e0eef6",
     contour: "#8b8676",
     contourMajor: "#77725f",
-    contourText: "#6a6555",
+    contourText: "#525a48",
     rockArea: "#9c9286",
     rockPattern: "#6b6154",
     // prvky mimo schémy OpenMapTiles (workers/features/features.yml)
@@ -326,6 +327,7 @@ export const THEMES = {
     school: "#242015",
     military: "#3a3a38",
     militaryBorder: "#8a8a86",
+    militaryText: "#8a8a86",
     quarry: "#242028",
     pitch: "#26281d",
     garden: "#26261c",
@@ -464,6 +466,7 @@ export const THEMES = {
     school: "#e6dcc0",
     military: "#d4d4d0",
     militaryBorder: "#8c8c88",
+    militaryText: "#999999",
     quarry: "#cfc7b4",
     pitch: "#d0dab2",
     garden: "#d5dcb8",
@@ -600,6 +603,7 @@ export const THEMES = {
     school: "#f5ead5",
     military: "#dcdcd6",
     militaryBorder: "#909088",
+    militaryText: "#999999",
     quarry: "#e2d8cc",
     pitch: "#e2e6c8",
     garden: "#e6e6cc",
@@ -779,6 +783,7 @@ export const PALETTE_GROUPS = [
       ["school", "Školstvo"],
       ["military", "Vojenský priestor"],
       ["militaryBorder", "Okraj vojenského priestoru"],
+      ["militaryText", "Názov vojenského priestoru"],
       ["quarry", "Lom / skládka"],
       ["garden", "Záhrada / sad"],
       ["playground", "Ihrisko / zoo"],
@@ -1325,6 +1330,11 @@ export const MILITARY_BAND = [[10, 2.5], [11, 3.5], [13, 10], [15, 15]];
 /** The land shows through, as on Mapy.com; a border is straight enough not to fold over itself. */
 export const MILITARY_BAND_OPACITY = 0.4;
 
+/** Mapy.com names a military district and writes its ranges' letters from its z11. */
+export const MILITARY_NAME_MIN_Z = 10;
+export const MILITARY_NAME_SIZE = [[10, 13], [11, 15], [13, 15], [14, 13]];
+export const MILITARY_RANGE_SIZE = [[10, 17], [11, 22]];
+
 /** Mapy.com names valleys from its z14, along the valley, letters well apart. */
 export const VALLEY_NAME_MIN_Z = 13;
 export const VALLEY_TEXT_SIZE = [[13, 11], [14, 13], [16, 15]];
@@ -1618,7 +1628,17 @@ export const STREAM_WIDTH = [[11, 0.7], [12, 1.2], [14, 1.6], [16, 2.4], [20, 7]
 export const STREAM_MINZOOM = 11;
 
 /** Px between heights on one contour; Mapy writes one or two per screen. */
-export const CONTOUR_LABEL_SPACING = 700;
+export const CONTOUR_LABEL_SPACING = 600;
+/** Mapy.com's contours: every 10 m, every 50 m stronger and named, all from its z13. */
+export const CONTOUR_STEP_M = 10;
+export const CONTOUR_INDEX_M = 50;
+export const CONTOUR_MIN_Z = 12;
+export const CONTOUR_LABEL_MIN_Z = 13;
+export const CONTOUR_WIDTH = [[12, 0.4], [16, 0.7], [20, 1.4]];
+export const CONTOUR_INDEX_WIDTH = [[11, 0.5], [16, 1.4], [20, 2.6]];
+export const CONTOUR_OPACITY = [[12, 0], [13, 0.55]];
+export const CONTOUR_INDEX_OPACITY = [[11, 0], [12, 0.55]];
+export const CONTOUR_LABEL_SIZE = [[13, 10.5], [16, 12], [20, 14]];
 
 /** How much of a road shows through the hill it tunnels under. */
 export const TUNNEL_OPACITY = 0.45;
@@ -2160,6 +2180,16 @@ function cleanLayoutScalar(prop, value, id, problems, where, atZoom = "") {
  * to isté meno vlastnosti: okraj má hornú medzu (40 px) a hlásenie o „šírke
  * okraja", nie o `line-width` – tú vlastnosť v súbore úprav nikto nenapísal.
  */
+/** An outline's opacity, one number or bands by zoom: a casing can fade in like Mapy.com's footways. */
+function outlineOpacity(value, id, problems, where) {
+  if (Array.isArray(value)) {
+    const byZoom = cleanValue("line-opacity", value, id, problems, where);
+    if (byZoom !== undefined) return byZoom;
+  }
+  const opacity = Number(value);
+  return Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+}
+
 function outlineWidthScalar(prop, value, id, problems, where, atZoom = "") {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0 || n > 40) {
@@ -2739,15 +2769,11 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
       } else if (def.outline.dash != null && !DASH_IDS.includes(def.outline.dash)) {
         problems.push(`${where}Vrstva "${id}": neznámy vzor okraja "${def.outline.dash}".`);
       } else {
-        // a casing can fade in by zoom, like Mapy.com's footways
-        const byZoom = Array.isArray(def.outline.opacity)
-          ? cleanValue("line-opacity", def.outline.opacity, id, problems, where) : undefined;
-        const opacity = Number(def.outline.opacity);
         clean.outline = {
           color: String(def.outline.color).toLowerCase(),
           width,
           dash: def.outline.dash && def.outline.dash !== "solid" ? def.outline.dash : undefined,
-          opacity: byZoom ?? (Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1)
+          opacity: outlineOpacity(def.outline.opacity, id, problems, where)
         };
         if (!clean.outline.dash) delete clean.outline.dash;
         // tmavý variant okraja – to isté ako `paintDark`, len na odvodenej vrstve
@@ -2884,11 +2910,10 @@ function cleanVariants(raw, id, problems, where) {
       if (!isColor(v.outline.color)) {
         problems.push(`${kde}: farba okraja nie je hex (${v.outline.color}).`);
       } else if (w !== undefined) {
-        const opacity = Number(v.outline.opacity);
         clean.outline = {
           color: String(v.outline.color).toLowerCase(),
           width: w,
-          opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
+          opacity: outlineOpacity(v.outline.opacity, id, problems, `${where}variant ${i + 1}: `)
         };
         if (v.outline.dash && v.outline.dash !== "solid") {
           if (!DASH_IDS.includes(v.outline.dash)) {
@@ -2902,6 +2927,27 @@ function cleanVariants(raw, id, problems, where) {
     out.push(clean);
   }
   return out;
+}
+
+/** `style-overrides.json` as saving writes it: every section, in one order. */
+export function overridesFile(overrides) {
+  const payload = {
+    version: 2,
+    icons: overrides.icons,
+    hillshade: overrides.hillshade,
+    palette: overrides.palette,
+    layers: overrides.layers,
+    order: overrides.order,
+    poi: overrides.poi,
+    // every section must be written, or it silently never reaches the repo
+    trails: overrides.trails,
+    shields: overrides.shields,
+    routeShields: overrides.routeShields,
+    iconSets: overrides.iconSets,
+    customIcons: overrides.customIcons,
+    maps: overrides.maps
+  };
+  return `${JSON.stringify(payload, null, 2)}\n`;
 }
 
 /** `true`, ak sada úprav naozaj niečo mení. */
@@ -4303,7 +4349,10 @@ export function buildStyle({
   // vrstevnice sú nad vodou a pod budovami a cestami, ale nad tieňovaním
   // aj skalami: čiara musí ostať čitateľná aj cez sivú stenu
   if (contoursUrl) {
-    const contourLine = (id, label, level, minzoom, width, paletteKey) =>
+    const ele = num("ele", 0);
+    // heights, not the archive's classes: a 5 m and a 10 m interval draw the same lines
+    const onStep = (m) => ["==", ["%", ele, m], 0];
+    const contourLine = (id, label, level, minzoom, width, opacity, filter, paletteKey) =>
       add(
         {
           id: `contour-${id}`,
@@ -4311,55 +4360,54 @@ export function buildStyle({
           source: "contours",
           "source-layer": "contour",
           minzoom,
-          filter: ["==", str("level"), level],
+          filter,
           paint: {
             "line-color": c[paletteKey],
             "line-width": zl(width),
-            "line-opacity": zl([[minzoom, 0], [minzoom + 1, 0.55]])
+            "line-opacity": zl(opacity)
           }
         },
         ["vrstevnice", label, "line", { "line-color": paletteKey }]
       );
 
-    // triedy sa nezapínajú naraz: od z11 hlavná, od z12 polovičná, od z13
-    // základná, a každá sa vynára z nuly (`line-opacity`).
-    // Pod `TERRAIN_MIN_Z` nie je ani jedna – na tej mierke je z nich sivý závoj.
-    contourLine("minor", "Vrstevnice po 10 m", "minor", 13, [[13, 0.4], [16, 0.7], [20, 1.4]], "contour");
-    contourLine("mid", "Vrstevnice po 50 m", "mid", 12, [[12, 0.5], [16, 0.9], [20, 1.8]], "contour");
-    contourLine("major", "Vrstevnice po 100 m", "major", TERRAIN_MIN_Z,
-                [[TERRAIN_MIN_Z, 0.5], [16, 1.4], [20, 2.6]], "contourMajor");
+    // as on Mapy.com: a line every 10 m and a stronger one every 50 m, both from its z13
+    contourLine("major", "Vrstevnice po 50 m", "major", TERRAIN_MIN_Z, CONTOUR_INDEX_WIDTH,
+                CONTOUR_INDEX_OPACITY, onStep(CONTOUR_INDEX_M), "contourMajor");
+    contourLine("minor", "Vrstevnice po 10 m", "minor", CONTOUR_MIN_Z, CONTOUR_WIDTH,
+                CONTOUR_OPACITY, ["all", onStep(CONTOUR_STEP_M), ["!", onStep(CONTOUR_INDEX_M)]], "contour");
 
-    add(
+    // the index heights, with their top uphill; a line the pipeline hasn't turned stays upright
+    const contourLabel = (id, uphill) => add(
       {
-        id: "contour-label",
+        id,
         type: "symbol",
         source: "contours",
         "source-layer": "contour",
-        minzoom: 13,
-        filter: ["in", str("level"), ["literal", ["major", "mid"]]],
+        minzoom: CONTOUR_LABEL_MIN_Z,
+        filter: ["all", onStep(CONTOUR_INDEX_M), uphill ? ["has", "uphill"] : ["!", ["has", "uphill"]]],
         layout: {
           "symbol-placement": "line",
           // `ele` môže z GDALu prísť ako desatinné číslo
-          "text-field": ["to-string", ["round", num("ele", 0)]],
+          "text-field": ["to-string", ["round", ele]],
           "text-font": BOLD,
-          "text-size": zl([[13, 9], [16, 11], [20, 13]]),
+          "text-size": zl(CONTOUR_LABEL_SIZE),
           "symbol-spacing": CONTOUR_LABEL_SPACING,
           "text-max-angle": 25,
-          "text-padding": 8
+          "text-padding": 8,
+          "text-keep-upright": !uphill
         },
-        paint: {
-          "text-color": c.contourText,
-          "text-halo-color": c.textHalo,
-          "text-halo-width": 1.4
-        }
+        // no white rim: it lit up every height in the forest
+        paint: { "text-color": c.contourText }
       },
       [
         "vrstevnice",
-        "Popisky nadmorskej výšky",
+        uphill ? "Popisky nadmorskej výšky" : "Popisky nadmorskej výšky (staré dlaždice)",
         "text",
-        { "text-color": "contourText", "text-halo-color": "textHalo" }
+        { "text-color": "contourText" }
       ]
     );
+    contourLabel("contour-label", true);
+    contourLabel("contour-label-upright", false);
   }
 
   // bralné hrany a hrebene z OSM – nie skaly z DEM. `natural=cliff/ridge/arete`
@@ -5954,7 +6002,8 @@ export function buildStyle({
           minzoom: mz,
           filter: ["all",
             ["==", num("admin_level", 0), level],
-            ["has", "name"]],
+            ["has", "name"],
+            ["!=", str("landuse"), "military"]],
           layout: {
             "text-field": nameExpr,
             "text-font": REG,
@@ -6867,6 +6916,39 @@ export function buildStyle({
       },
       ["sidla", label, "text", { "text-color": "placeText", "text-halo-color": "textHalo" }]
     );
+  }
+
+  // a military district is named in grey from afar, its ranges by their letter, as on Mapy.com;
+  // last, so MapLibre places them before the peaks and hamlets inside
+  const militaryLabel = (id, label, source, sourceLayer, filter, text, size) => add(
+    {
+      id,
+      type: "symbol",
+      source,
+      "source-layer": sourceLayer,
+      minzoom: MILITARY_NAME_MIN_Z,
+      filter: ["all", ["==", ["geometry-type"], "Point"], filter],
+      layout: {
+        "text-field": text,
+        "text-font": BOLD,
+        "text-size": zl(size),
+        "text-max-width": 9
+      },
+      paint: {
+        "text-color": c.militaryText,
+        "text-halo-color": c.textHalo,
+        "text-halo-width": 1.5
+      }
+    },
+    ["popisky", label, "text", { "text-color": "militaryText", "text-halo-color": "textHalo" }]
+  );
+  if (boundariesUrl) {
+    militaryLabel("military-name", "Názvy vojenských obvodov", "boundaries", "boundary_label",
+      ["==", str("landuse"), "military"], nameExpr, MILITARY_NAME_SIZE);
+  }
+  if (featuresUrl) {
+    militaryLabel("military-range-name", "Písmená vojenských priestorov", "features", "feature_area",
+      ["==", str("class"), "military_range"], ["coalesce", ["get", "ref"], nameExpr], MILITARY_RANGE_SIZE);
   }
 
   // MapLibre places the last layer's labels first: a street name must come after the points

@@ -173,6 +173,8 @@ class BoundaryLabels(unittest.TestCase):
         self.assertNotIn("named_by_place", tags[("r", 303)], "a namesake elsewhere")
         self.assertNotIn("named_by_place", tags[("r", 304)], "only municipalities")
         self.assertEqual(tags[("r", 301)]["name"], "Svätý Jur")
+        # 568 bug: the district's own name gave way to its hamlet point, which says only "Záhorie"
+        self.assertNotIn("named_by_place", tags[("r", 305)], "a military district names itself")
 
 
 class PlaceTwins(unittest.TestCase):

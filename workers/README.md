@@ -583,6 +583,11 @@ v mape diera. Stráži to [`lint/zoom-floor.py`](lint/zoom-floor.py).
 Výsledok je nacacheovaný podľa bboxu, zdroja výšok a intervalu — vrstevnice
 závisia len od územia, takže sa pri ďalšom builde mapy nepočítajú znova.
 
+Štýl kreslí ako Mapy.com len čiary po 10 m a každú 50 m silnejšie s výškou,
+bez ohľadu na interval v dátach; čiary po 10 m majú stĺpec `ten` a sú v dlaždiciach
+už od z12. Výška má vrch do kopca: gdal_contour nechá vyšší terén vpravo, tak
+[`uphill.py`](contours-rocks/uphill.py) každú čiaru otočí a označí `uphill`.
+
 Ovládanie vo workflowe: `contours` (zap/vyp), `contour_interval` (default
 5 m; zvýrazňuje sa každá 10. čiara ako hlavná a každá 5. ako polovičná, čiže
 pri 5 m sú to 50 a 25 m), `contour_maxzoom` (default 14) a
