@@ -2,7 +2,8 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   tileBounds, tileAt, tileCenter, nextTile, styleZoomOf, providerUrl, colorHex, deltaE,
-  summarize, tileMatches, emptyEdits, setColor, clearColor, zoomValue, applyEdits, darkColorsOf
+  summarize, tileMatches, emptyEdits, setColor, clearColor, zoomValue, applyEdits, darkColorsOf,
+  drawnLayers, byteRange, settled
 } from "../../poc/web/coloring-core.js";
 import { emptyOverrides, normalizeOverrides, buildStyle } from "../../poc/web/themes.js";
 
@@ -79,4 +80,32 @@ test("the dark colours to keep come from the dark style", () => {
   const { colors, unkept } = darkColorsOf(style, edits);
   assert.equal(colors[layer.id]["fill-color"], colorHex(layer.paint["fill-color"]));
   assert.deepEqual(unkept, []);
+});
+
+// 565 compare lists what our map drew there, by layer, so a difference leads to its layer
+test("the drawn layers are counted by layer, most first, with their classes", () => {
+  const f = (id, cls) => ({ layer: { id }, properties: cls ? { class: cls } : {} });
+  assert.deepEqual(drawnLayers([f("park", "chko"), f("water"), f("park", "npr"), f("park", "chko")]), [
+    { layer: "park", count: 3, classes: ["chko", "npr"] },
+    { layer: "water", count: 1, classes: [] }
+  ]);
+});
+
+// 565 a local archive answers range requests as Pages does, or the viewer can't read it
+test("a byte range is cut within the file", () => {
+  assert.deepEqual(byteRange("bytes=0-16383", 100000), [0, 16383]);
+  assert.deepEqual(byteRange("bytes=99000-", 100000), [99000, 99999]);
+  assert.deepEqual(byteRange("bytes=90000-200000", 100000), [90000, 99999]);
+  assert.equal(byteRange(undefined, 100000), null);
+});
+
+// 565 bug: a tile past the region's edge left the probe never idle and `compare` hung for good
+test("a map that never goes idle still lets the tile be read", async () => {
+  const stuck = { once: () => {}, triggerRepaint: () => {} };
+  assert.equal(await Promise.race([settled(stuck, 20).then(() => "read"),
+    new Promise((r) => setTimeout(() => r("hung"), 500))]), "read");
+  let done;
+  const quick = { once: (_, f) => { done = f; }, triggerRepaint: () => done() };
+  assert.equal(await Promise.race([settled(quick, 10000).then(() => "read"),
+    new Promise((r) => setTimeout(() => r("hung"), 500))]), "read");
 });
