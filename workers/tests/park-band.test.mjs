@@ -6,6 +6,7 @@ import {
   PARK_RESERVE_TICKS
 } from "../../poc/web/themes.js";
 import { styleSpec, NEEDS_SPEC } from "./spec.mjs";
+import { valueAtZoom } from "../../poc/web/layer-style.js";
 
 const spec = styleSpec();
 
@@ -30,16 +31,20 @@ test("a landscape area has Mapy's two bands inside the border line from z12: str
   for (const l of [band, fade]) {
     assert.equal(l["source-layer"], "park_border");
     assert.equal(l.minzoom, PARK_BAND_MIN_Z);
-    assert.equal(l.paint["line-opacity"], undefined, "a translucent line darkens at its joins");
+    // 574 owner: opaque, the band hid the land and was huge from afar, worst at night
+    assert.ok(valueAtZoom(l.paint["line-opacity"], 13) <= 0.65, "the land shows through");
+    assert.ok(valueAtZoom(l.paint["line-blur"], 12) >= valueAtZoom(l.paint["line-blur"], 16), "soft far out");
     assert.equal(l.layout["line-join"], "round", "no spikes at the corners");
   }
   assert.equal(PARK_BAND_MIN_Z, 12, "Mapy's z13");
   const widths = stops(band.paint["line-width"]);
   assert.deepEqual(stops(band.paint["line-offset"]), widths.map((w) => w / 2), "inward from the border");
-  assert.deepEqual(stops(fade.paint["line-offset"]), PARK_BAND_FADE.map(([, w]) => PARK_BAND[0][1] + w / 2),
+  assert.deepEqual(stops(fade.paint["line-offset"]), PARK_BAND_FADE.map(([, w], i) => PARK_BAND[i][1] + w / 2),
     "the pale band starts where the strong one ends");
-  const total = PARK_BAND[0][1] + Math.max(...PARK_BAND_FADE.map(([, w]) => w));
-  assert.ok(total >= 18 && total <= 24, `Mapy's 36–44 px at 2× is ${total} px`);
+  const total = (i) => PARK_BAND[i][1] + PARK_BAND_FADE[i][1];
+  assert.ok(total(1) >= 16 && total(1) <= 18, `Mapy's z15 band is about 18 px, ours ${total(1)}`);
+  // 574 Mapy's band narrows close up: about 12 px at its z17.5
+  assert.ok(total(PARK_BAND.length - 1) <= 13, `close up ${total(PARK_BAND.length - 1)} px`);
   assert.ok(style.layers.indexOf(fade) < style.layers.indexOf(band));
 });
 
@@ -88,9 +93,10 @@ test("Natura 2000 sites and buffer zones get no border; parks a band, reserves a
   });
 
 // 564 Mapy's band over open land is #9ab972–#a0be7c, the pale one #b6d196–#ccd8b4
+// 574 translucent now: a darker colour at 55 % gives the same green over a meadow
 test("by day the bands are Mapy's greens at every zoom, the night keeps its own", () => {
-  assert.equal(byId("park").paint["line-color"], "#9fbc7a");
-  assert.equal(byId("park-fade").paint["line-color"], "#c0d6a4");
-  assert.notEqual(build("tmava").layers.find((l) => l.id === "park").paint["line-color"], "#9fbc7a");
-  assert.equal(THEMES.svetla.park, "#9fbc7a");
+  assert.equal(byId("park").paint["line-color"], "#7fa35a");
+  assert.equal(byId("park-fade").paint["line-color"], "#c9d6b1");
+  assert.notEqual(build("tmava").layers.find((l) => l.id === "park").paint["line-color"], "#7fa35a");
+  assert.equal(THEMES.svetla.park, "#7fa35a");
 });
