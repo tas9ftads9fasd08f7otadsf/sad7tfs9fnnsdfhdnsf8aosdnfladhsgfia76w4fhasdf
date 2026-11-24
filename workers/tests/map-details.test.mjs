@@ -19,12 +19,14 @@ const style = build("svetla");
 const byId = (id) => style.layers.find((l) => l.id === id);
 
 // 548 Mapy draws a vine on every vineyard, a cross on every grave field and the voltage on a power line
-test("vineyards carry vine icons from z14, in their own colour", () => {
+// 577 Mapy's vines show from its z13 (our z12), about 20 px apart; ours waited for its z15
+test("vineyards carry vine icons from Mapy's z13, in their own colour", () => {
   assert.deepEqual(problems, []);
   assert.ok(PATTERN_IDS.includes("vines"));
   const icons = byId("landcover-vineyard-icons");
-  assert.equal(icons.minzoom, 14);
+  assert.equal(icons.minzoom, 12);
   assert.match(icons.paint["fill-pattern"], /^pat:vines:/);
+  assert.match(icons.paint["fill-pattern"], /^pat:vines:[0-9a-f]{6}:20:/, "a 20 px tile, so vines stand about 20 px apart");
   assert.match(JSON.stringify(icons.filter), /"vineyard"/);
   assert.ok(collectPatternNames(style).some((n) => n.startsWith("pat:vines:")), "the pipeline bakes it");
   assert.equal(byId("landcover-garden__var3").paint["fill-color"], "#e0ecc3");
