@@ -1330,6 +1330,10 @@ export const MILITARY_BAND = [[10, 2.5], [11, 3.5], [13, 10], [15, 15]];
 /** The land shows through, as on Mapy.com; a border is straight enough not to fold over itself. */
 export const MILITARY_BAND_OPACITY = 0.4;
 
+/** Mapy.com shows a vineyard's vine icons from its z13, about 20 px apart. */
+export const VINEYARD_ICONS_MIN_Z = 12;
+export const VINEYARD_ICON_PX = 20;
+
 /** Mapy.com names a military district and writes its ranges' letters from its z11. */
 export const MILITARY_NAME_MIN_Z = 10;
 export const MILITARY_NAME_SIZE = [[10, 13], [11, 15], [13, 15], [14, 13]];
@@ -4003,16 +4007,16 @@ export function buildStyle({
     );
   }
 
-  // 548 vinice majú ikonku úponku, ako na Mapy.com; od z14, nižšie by to bola plocha značiek
+  // 548 vinice majú ikonku úponku, ako na Mapy.com, a ako tam od jeho z13
   add(
     {
       id: "landcover-vineyard-icons",
       type: "fill",
       "source-layer": "landcover",
-      minzoom: 14,
+      minzoom: VINEYARD_ICONS_MIN_Z,
       filter: ["any", ["==", str("class"), "vineyard"], ["==", str("subclass"), "vineyard"]],
       paint: {
-        "fill-pattern": patternImageName({ id: "vines", color: c.vineIcon, size: 24, weight: 0.8 })
+        "fill-pattern": patternImageName({ id: "vines", color: c.vineIcon, size: VINEYARD_ICON_PX, weight: 0.8 })
       }
     },
     ["krajina", "Vinice – ikonky", "area", {}]
