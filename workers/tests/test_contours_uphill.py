@@ -43,6 +43,8 @@ class Uphill(unittest.TestCase):
         self.assertNotIn("contour", plain)
         self.assertNotEqual(open(path, "rb").read(), before)
 
+    # 572 bug: without the guard the stdlib-only unit job failed importing mapbox_vector_tile
+    @needs("pmtiles", "mapbox_vector_tile")
     def test_reversed_geometry(self):
         uphill = worker("contours-rocks/uphill.py")
         self.assertEqual(uphill.reversed_geometry(
