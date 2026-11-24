@@ -26,6 +26,7 @@ How to compare: `.claude/skills/mapy-restyle/SKILL.md`. Colours alone: [coloring
 | Valley names | from z14, once along the valley, lower-case italics in dark brown `#453833`, letters well apart, bending with the valley | `names-valley-line` (`line-center`), `names-valley` for points, from z13 | follows; the names package keeps a valley's line 128 px past each tile edge | 566 |
 | Military district | forest and fields as they are, a grey outline; shooting ranges grey areas with a letter | `landuse-military` | a flat tan fill over everything | to do |
 | Contours | from z13 | contour layers | follows | |
+| Hill shading | dark green-grey shadows far out (5th percentile of forest luminance 143 at z13, 152 at z14), lighter close up (171 at z15) | `hillshade`, palette `hillShadow` | follows within ~5 levels | 571 |
 | Paths, tracks, local trails | from z12 | road and trail layers | follows | |
 | Memorials, graves | none at z15 | POI | follows | |
 
