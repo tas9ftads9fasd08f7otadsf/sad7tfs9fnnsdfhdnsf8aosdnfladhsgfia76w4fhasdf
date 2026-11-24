@@ -1,7 +1,7 @@
 # Planetiler custom schema – contours from a digital terrain model.
 #
 # OSM has no heights; the input comes from an external DEM via gdal_contour.
-# `level`: major = multiples of 100 m, mid = of 50 m, minor = the rest.
+# `level`: major = every tenth line, mid = every fifth, minor = the rest; `ten` = a multiple of 10 m.
 schema_name: FricoMaps contours
 schema_description: Contours and elevation from a DEM
 attribution: © Richard Dvorský / <a href="https://www.geoportal.sk/">ÚGKK SR · DMR 5.0 (LiDAR) · CC BY 4.0</a> / <a href="https://sonny.4lima.de/">Sonny's LiDAR DTM</a> / <a href="https://spacedata.copernicus.eu/">Copernicus DEM</a>
@@ -36,13 +36,76 @@ layers:
           - key: ele
             type: integer
           - key: level
-      # the base interval – only zoomed in, or the map turns black
+      # the 10 m lines from z12, as Mapy.com draws them from its z13
+      - source: contours
+        geometry: line
+        min_zoom: 12
+        include_when:
+          __all__:
+            - level: minor
+            - ten: "yes"
+        attributes:
+          - key: ele
+            type: integer
+          - key: level
+      # the rest of the base interval – only zoomed in, or the map turns black
       - source: contours
         geometry: line
         min_zoom: 13
         include_when:
           level: minor
+        exclude_when:
+          ten: "yes"
         attributes:
           - key: ele
             type: integer
           - key: level
+
+# TESTS: `java -jar planetiler.jar verify workers/contours-rocks/contours.yml`
+examples:
+  # 570 Mapy.com draws a line every 10 m from its z13, our z12
+  - name: A 10 m line is in the tiles from z12
+    input:
+      source: contours
+      geometry: line
+      tags:
+        ele: 520
+        level: minor
+        ten: "yes"
+    output:
+      layer: contour
+      geometry: line
+      min_zoom: 12
+      tags:
+        ele: 520
+        level: minor
+  - name: A 5 m line waits for z13
+    input:
+      source: contours
+      geometry: line
+      tags:
+        ele: 525
+        level: minor
+        ten: "no"
+    output:
+      layer: contour
+      geometry: line
+      min_zoom: 13
+      tags:
+        ele: 525
+        level: minor
+  - name: An index line is in the tiles from z11
+    input:
+      source: contours
+      geometry: line
+      tags:
+        ele: 550
+        level: major
+        ten: "yes"
+    output:
+      layer: contour
+      geometry: line
+      min_zoom: 11
+      tags:
+        ele: 550
+        level: major

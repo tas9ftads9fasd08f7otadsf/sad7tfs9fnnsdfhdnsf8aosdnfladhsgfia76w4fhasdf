@@ -84,21 +84,22 @@ test("paths and tracks are drawn in Mapy's light brown, thin", () => {
 });
 
 // 549 our contours were two to four times as strong as Mapy's; the 50 and 100 m lines are fainter and thinner
-test("contour lines are faint close up, the 100 m ones thin", () => {
+// 570 the 25 m class is gone, and the owner wants the lines bolder: still translucent, the index under 1.5 px
+test("contour lines are translucent close up, the index ones thin", () => {
   const lines = buildStyle({
     theme: "svetla", mapType: "turisticka", tilesUrl: "https://x/tiles.pmtiles", spriteUrl: "https://x/sprite",
     glyphsUrl: "https://x/fonts/{fontstack}/{range}.pbf", contoursUrl: "https://x/contours.pmtiles", overrides
   });
   // close up (the last step) the opacity is the expression's last value
   const closeUp = (id) => lines.layers.find((l) => l.id === id).paint["line-opacity"].at(-1);
-  for (const id of ["contour-minor", "contour-mid", "contour-major"]) {
-    assert.ok(closeUp(id) <= 0.3, `${id} ${closeUp(id)}`);
+  for (const id of ["contour-minor", "contour-major"]) {
+    assert.ok(closeUp(id) <= 0.5, `${id} ${closeUp(id)}`);
   }
   const widthAt16 = (id) => {
     const w = lines.layers.find((l) => l.id === id).paint["line-width"];
     return w[w.indexOf(16) + 1];
   };
-  assert.ok(widthAt16("contour-major") <= 1.2, "the 100 m line is about 1 px");
+  assert.ok(widthAt16("contour-major") <= 1.5, "the index line is about 1.5 px");
 });
 
 // 549 Mapy's mountain-bike route is bold round dots

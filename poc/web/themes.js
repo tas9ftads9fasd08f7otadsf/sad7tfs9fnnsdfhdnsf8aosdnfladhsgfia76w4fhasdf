@@ -249,7 +249,7 @@ export const THEMES = {
     winterSports: "#e0eef6",
     contour: "#8b8676",
     contourMajor: "#77725f",
-    contourText: "#6a6555",
+    contourText: "#525a48",
     rockArea: "#9c9286",
     rockPattern: "#6b6154",
     // prvky mimo schémy OpenMapTiles (workers/features/features.yml)
@@ -1615,7 +1615,17 @@ export const STREAM_WIDTH = [[11, 0.7], [12, 1.2], [14, 1.6], [16, 2.4], [20, 7]
 export const STREAM_MINZOOM = 11;
 
 /** Px between heights on one contour; Mapy writes one or two per screen. */
-export const CONTOUR_LABEL_SPACING = 700;
+export const CONTOUR_LABEL_SPACING = 600;
+/** Mapy.com's contours: every 10 m, every 50 m stronger and named, all from its z13. */
+export const CONTOUR_STEP_M = 10;
+export const CONTOUR_INDEX_M = 50;
+export const CONTOUR_MIN_Z = 12;
+export const CONTOUR_LABEL_MIN_Z = 13;
+export const CONTOUR_WIDTH = [[12, 0.4], [16, 0.7], [20, 1.4]];
+export const CONTOUR_INDEX_WIDTH = [[11, 0.5], [16, 1.4], [20, 2.6]];
+export const CONTOUR_OPACITY = [[12, 0], [13, 0.55]];
+export const CONTOUR_INDEX_OPACITY = [[11, 0], [12, 0.55]];
+export const CONTOUR_LABEL_SIZE = [[13, 10.5], [16, 12], [20, 14]];
 
 /** How much of a road shows through the hill it tunnels under. */
 export const TUNNEL_OPACITY = 0.45;
@@ -4299,7 +4309,10 @@ export function buildStyle({
   // vrstevnice sú nad vodou a pod budovami a cestami, ale nad tieňovaním
   // aj skalami: čiara musí ostať čitateľná aj cez sivú stenu
   if (contoursUrl) {
-    const contourLine = (id, label, level, minzoom, width, paletteKey) =>
+    const ele = num("ele", 0);
+    // heights, not the archive's classes: a 5 m and a 10 m interval draw the same lines
+    const onStep = (m) => ["==", ["%", ele, m], 0];
+    const contourLine = (id, label, level, minzoom, width, opacity, filter, paletteKey) =>
       add(
         {
           id: `contour-${id}`,
@@ -4307,55 +4320,54 @@ export function buildStyle({
           source: "contours",
           "source-layer": "contour",
           minzoom,
-          filter: ["==", str("level"), level],
+          filter,
           paint: {
             "line-color": c[paletteKey],
             "line-width": zl(width),
-            "line-opacity": zl([[minzoom, 0], [minzoom + 1, 0.55]])
+            "line-opacity": zl(opacity)
           }
         },
         ["vrstevnice", label, "line", { "line-color": paletteKey }]
       );
 
-    // triedy sa nezapínajú naraz: od z11 hlavná, od z12 polovičná, od z13
-    // základná, a každá sa vynára z nuly (`line-opacity`).
-    // Pod `TERRAIN_MIN_Z` nie je ani jedna – na tej mierke je z nich sivý závoj.
-    contourLine("minor", "Vrstevnice po 10 m", "minor", 13, [[13, 0.4], [16, 0.7], [20, 1.4]], "contour");
-    contourLine("mid", "Vrstevnice po 50 m", "mid", 12, [[12, 0.5], [16, 0.9], [20, 1.8]], "contour");
-    contourLine("major", "Vrstevnice po 100 m", "major", TERRAIN_MIN_Z,
-                [[TERRAIN_MIN_Z, 0.5], [16, 1.4], [20, 2.6]], "contourMajor");
+    // as on Mapy.com: a line every 10 m and a stronger one every 50 m, both from its z13
+    contourLine("major", "Vrstevnice po 50 m", "major", TERRAIN_MIN_Z, CONTOUR_INDEX_WIDTH,
+                CONTOUR_INDEX_OPACITY, onStep(CONTOUR_INDEX_M), "contourMajor");
+    contourLine("minor", "Vrstevnice po 10 m", "minor", CONTOUR_MIN_Z, CONTOUR_WIDTH,
+                CONTOUR_OPACITY, ["all", onStep(CONTOUR_STEP_M), ["!", onStep(CONTOUR_INDEX_M)]], "contour");
 
-    add(
+    // the index heights, with their top uphill; a line the pipeline hasn't turned stays upright
+    const contourLabel = (id, uphill) => add(
       {
-        id: "contour-label",
+        id,
         type: "symbol",
         source: "contours",
         "source-layer": "contour",
-        minzoom: 13,
-        filter: ["in", str("level"), ["literal", ["major", "mid"]]],
+        minzoom: CONTOUR_LABEL_MIN_Z,
+        filter: ["all", onStep(CONTOUR_INDEX_M), uphill ? ["has", "uphill"] : ["!", ["has", "uphill"]]],
         layout: {
           "symbol-placement": "line",
           // `ele` môže z GDALu prísť ako desatinné číslo
-          "text-field": ["to-string", ["round", num("ele", 0)]],
+          "text-field": ["to-string", ["round", ele]],
           "text-font": BOLD,
-          "text-size": zl([[13, 9], [16, 11], [20, 13]]),
+          "text-size": zl(CONTOUR_LABEL_SIZE),
           "symbol-spacing": CONTOUR_LABEL_SPACING,
           "text-max-angle": 25,
-          "text-padding": 8
+          "text-padding": 8,
+          "text-keep-upright": !uphill
         },
-        paint: {
-          "text-color": c.contourText,
-          "text-halo-color": c.textHalo,
-          "text-halo-width": 1.4
-        }
+        // no white rim: it lit up every height in the forest
+        paint: { "text-color": c.contourText }
       },
       [
         "vrstevnice",
-        "Popisky nadmorskej výšky",
+        uphill ? "Popisky nadmorskej výšky" : "Popisky nadmorskej výšky (staré dlaždice)",
         "text",
-        { "text-color": "contourText", "text-halo-color": "textHalo" }
+        { "text-color": "contourText" }
       ]
     );
+    contourLabel("contour-label", true);
+    contourLabel("contour-label-upright", false);
   }
 
   // bralné hrany a hrebene z OSM – nie skaly z DEM. `natural=cliff/ridge/arete`
