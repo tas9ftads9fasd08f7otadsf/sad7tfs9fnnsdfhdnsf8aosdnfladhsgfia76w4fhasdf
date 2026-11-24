@@ -171,7 +171,8 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#a9c787",
+    park: "#9fbc7a",
+    parkFade: "#c0d6a4",
     parkOutline: "#90b862",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
@@ -309,6 +310,7 @@ export const THEMES = {
     forest: "#17251a",
     grass: "#232219",
     park: "#2b4a2d",
+    parkFade: "#253f28",
     parkOutline: "#3a6038",
     parkText: "#8fc87a",
     sand: "#2a2820",
@@ -444,6 +446,7 @@ export const THEMES = {
     forest: "#9ecb84",
     grass: "#dcdec2",
     park: "#88b070",
+    parkFade: "#b8d0a2",
     parkOutline: "#88b070",
     parkText: "#3a7430",
     sand: "#ecdfb5",
@@ -577,6 +580,7 @@ export const THEMES = {
     forest: "#c7dfa8",
     grass: "#eae9d4",
     park: "#a8c890",
+    parkFade: "#c8dcb4",
     parkOutline: "#a8c890",
     parkText: "#4a8a40",
     sand: "#f5e8cc",
@@ -743,6 +747,7 @@ export const PALETTE_GROUPS = [
       ["forest", "Les"],
       ["grass", "Tráva / lúka / pole"],
       ["park", "Park"],
+      ["parkFade", "Park – svetlý pás"],
       ["parkOutline", "Obrys parku"],
       ["parkText", "Názov chráneného územia"],
       ["sand", "Piesok"],
@@ -1290,15 +1295,17 @@ export const BUILDINGS_ALONE_FROM_Z = 15;
 /** The built-up area's opacity once its houses are drawn over it, so they stand out. */
 export const SETTLEMENT_AREA_UNDER_HOUSES = 0.4;
 
-/** Width in px of the band inside a landscape area's or national park's border, as on Mapy.com. */
-export const PARK_BAND = [[12, 20], [13, 22], [16, 22]];
-/** Mapy.com draws the band from its z13 and a reserve's ticked line from its z14. */
+/** Width in px of the strong band inside a landscape area's or national park's border. */
+export const PARK_BAND = [[12, 10], [16, 10]];
+/** The paler band inside the strong one, as on Mapy.com: wider far out. */
+export const PARK_BAND_FADE = [[12, 12], [14, 10], [15, 8]];
+/** Mapy.com draws the bands from its z13 and a reserve's ticked line from its z14. */
 export const PARK_BAND_MIN_Z = 12;
 export const PARK_RESERVE_MIN_Z = 13;
-export const PARK_RESERVE_LINE = [[13, 2.5], [15, 3.5], [18, 5]];
-/** Tick length; a tick is a third of it wide, one every 2.7 lengths. */
-export const PARK_RESERVE_TICKS = [[13, 5], [15, 8], [18, 12]];
-export const PARK_RESERVE_TICK_DASHES = [0.32, 2.4];
+export const PARK_RESERVE_LINE = [[13, 1.5], [15, 2.5], [18, 3.5]];
+/** Tick length; a tick is a third of it wide, one every two lengths. */
+export const PARK_RESERVE_TICKS = [[13, 3], [15, 4.5], [18, 7]];
+export const PARK_RESERVE_TICK_DASHES = [0.33, 2];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
@@ -4070,6 +4077,22 @@ export function buildStyle({
   };
 
   // a band inside the border, not a fill: a nature park covers whole ranges of rock and ice
+  add(
+    {
+      id: "park-fade",
+      type: "line",
+      "source-layer": "park_border",
+      filter: PARK_LANDSCAPE,
+      minzoom: PARK_BAND_MIN_Z,
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": c.parkFade,
+        "line-width": zl(PARK_BAND_FADE),
+        "line-offset": zl(PARK_BAND_FADE.map(([z, w]) => [z, PARK_BAND[0][1] + w / 2]))
+      }
+    },
+    ["uzemie", "Park (svetlý pás)", "line", { "line-color": "parkFade" }]
+  );
   add(
     {
       id: "park",

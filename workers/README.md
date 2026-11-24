@@ -229,7 +229,8 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   (alebo do 3 m od jej steny), a aplikácia ho postaví na strechu.
 
   **Hranica chráneného územia je aj čiara.** Pás CHKO a národného parku je
-  ako na Mapy.com 22 px široký, no polygón `park` má v dlaždici len 8 px okraj,
+  ako na Mapy.com 10 px sýty a za ním 8 – 12 px svetlejší, no polygón `park`
+  má v dlaždici len 8 px okraj,
   takže pás z jeho orezanej hrany by pruhoval švy dlaždíc.
   [`workers/tiles/park-border.py`](tiles/park-border.py) od z11 zloží každé
   územie z dlaždice a jej susedov a jeho hranicu zapíše do vrstvy `park_border`
