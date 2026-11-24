@@ -184,7 +184,8 @@ export const THEMES = {
     cemetery: "#d3e0d0",
     hospital: "#f6e0e0",
     school: "#f0e8d8",
-    military: "#eee0d8",
+    military: "#d8d8d4",
+    militaryBorder: "#8c8c88",
     quarry: "#ddd6cc",
     pitch: "#dbe4c4",
     garden: "#dfe6c6",
@@ -322,7 +323,8 @@ export const THEMES = {
     cemetery: "#1a231c",
     hospital: "#281b20",
     school: "#242015",
-    military: "#2a1f1f",
+    military: "#3a3a38",
+    militaryBorder: "#8a8a86",
     quarry: "#242028",
     pitch: "#26281d",
     garden: "#26261c",
@@ -458,7 +460,8 @@ export const THEMES = {
     cemetery: "#c5d4b5",
     hospital: "#eedcd0",
     school: "#e6dcc0",
-    military: "#e2cfc4",
+    military: "#d4d4d0",
+    militaryBorder: "#8c8c88",
     quarry: "#cfc7b4",
     pitch: "#d0dab2",
     garden: "#d5dcb8",
@@ -592,7 +595,8 @@ export const THEMES = {
     cemetery: "#e0e5d2",
     hospital: "#f8e2dc",
     school: "#f5ead5",
-    military: "#f0dcd4",
+    military: "#dcdcd6",
+    militaryBorder: "#909088",
     quarry: "#e2d8cc",
     pitch: "#e2e6c8",
     garden: "#e6e6cc",
@@ -770,6 +774,7 @@ export const PALETTE_GROUPS = [
       ["hospital", "Nemocnica"],
       ["school", "Školstvo"],
       ["military", "Vojenský priestor"],
+      ["militaryBorder", "Okraj vojenského priestoru"],
       ["quarry", "Lom / skládka"],
       ["garden", "Záhrada / sad"],
       ["playground", "Ihrisko / zoo"],
@@ -1308,6 +1313,14 @@ export const PARK_RESERVE_TICKS = [[13, 3], [15, 4.5], [18, 7]];
 export const PARK_RESERVE_TICK_DASHES = [0.33, 2];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
+/** Mapy.com's grey wash over a military area, gone by its z14, where the land shows plain. */
+export const MILITARY_WASH = [[10, 0.45], [12, 0.45], [13, 0]];
+export const MILITARY_WASH_MAX_Z = 13;
+/** Width in px of the grey band inside a military area's border, Mapy.com's 7 to 30 px at 2×. */
+export const MILITARY_BAND = [[10, 2.5], [11, 3.5], [13, 10], [15, 15]];
+/** The land shows through, as on Mapy.com; a border is straight enough not to fold over itself. */
+export const MILITARY_BAND_OPACITY = 0.4;
+
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
 export const PATH_GROUND_MIN_Z = 16;
 
@@ -3959,7 +3972,6 @@ export function buildStyle({
     ["cemetery", "Cintorín", ["cemetery"], "cemetery"],
     ["hospital", "Nemocnica", ["hospital"], "hospital"],
     ["school", "Školstvo", ["school", "university", "college", "kindergarten", "library"], "school"],
-    ["military", "Vojenský priestor", ["military"], "military"],
     ["quarry", "Lom", ["quarry"], "quarry"],
     ["playground", "Ihriská a zoo", ["playground", "theme_park", "zoo"], "playground"],
     ["pitch", "Športoviská", ["pitch", "stadium", "track"], "pitch"],
@@ -3985,6 +3997,34 @@ export function buildStyle({
       ["uzemie", label, "area", { "fill-color": paletteKey }]
     );
   }
+
+  // Mapy.com keeps a military area's land as it is: a grey wash far out, a grey band inside its border
+  add(
+    {
+      id: "landuse-military",
+      type: "fill",
+      "source-layer": "landuse",
+      filter: ["==", str("class"), "military"],
+      maxzoom: MILITARY_WASH_MAX_Z,
+      paint: { "fill-color": c.military, "fill-opacity": zl(MILITARY_WASH) }
+    },
+    ["uzemie", "Vojenský priestor", "area", { "fill-color": "military" }]
+  );
+  add(
+    {
+      id: "military-band",
+      type: "line",
+      "source-layer": "military_border",
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": c.militaryBorder,
+        "line-width": zl(MILITARY_BAND),
+        "line-offset": zl(MILITARY_BAND.map(([z, w]) => [z, w / 2])),
+        "line-opacity": MILITARY_BAND_OPACITY
+      }
+    },
+    ["uzemie", "Vojenský priestor (pás pri hranici)", "line", { "line-color": "militaryBorder" }]
+  );
 
   // plochy z vlastných dlaždíc: schéma ich ako plochu nemá vôbec. Kreslia sa
   // hneď za `landuse` – patria k tomu istému, čo sa s územím robí.
