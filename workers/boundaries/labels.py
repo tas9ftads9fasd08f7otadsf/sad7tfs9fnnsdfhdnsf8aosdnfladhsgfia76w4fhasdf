@@ -29,6 +29,9 @@ class Collect(osmium.SimpleHandler):
         t = a.tags
         if t.get("boundary") != "administrative" or t.get("admin_level") != MUNICIPALITY:
             return
+        # a military district is named as a district, its hamlet point only says "Záhorie"
+        if t.get("landuse") == "military":
+            return
         ring = [(n.lon, n.lat) for outer in a.outer_rings() for n in outer if n.location.valid()]
         if ring:
             key = ("w" if a.from_way() else "r", a.orig_id())

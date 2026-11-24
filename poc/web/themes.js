@@ -185,6 +185,7 @@ export const THEMES = {
     hospital: "#f6e0e0",
     school: "#f0e8d8",
     military: "#eee0d8",
+    militaryText: "#999999",
     quarry: "#ddd6cc",
     pitch: "#dbe4c4",
     garden: "#dfe6c6",
@@ -324,6 +325,7 @@ export const THEMES = {
     hospital: "#281b20",
     school: "#242015",
     military: "#2a1f1f",
+    militaryText: "#8a8a86",
     quarry: "#242028",
     pitch: "#26281d",
     garden: "#26261c",
@@ -461,6 +463,7 @@ export const THEMES = {
     hospital: "#eedcd0",
     school: "#e6dcc0",
     military: "#e2cfc4",
+    militaryText: "#999999",
     quarry: "#cfc7b4",
     pitch: "#d0dab2",
     garden: "#d5dcb8",
@@ -596,6 +599,7 @@ export const THEMES = {
     hospital: "#f8e2dc",
     school: "#f5ead5",
     military: "#f0dcd4",
+    militaryText: "#999999",
     quarry: "#e2d8cc",
     pitch: "#e2e6c8",
     garden: "#e6e6cc",
@@ -774,6 +778,7 @@ export const PALETTE_GROUPS = [
       ["hospital", "Nemocnica"],
       ["school", "Školstvo"],
       ["military", "Vojenský priestor"],
+      ["militaryText", "Názov vojenského priestoru"],
       ["quarry", "Lom / skládka"],
       ["garden", "Záhrada / sad"],
       ["playground", "Ihrisko / zoo"],
@@ -1313,6 +1318,11 @@ export const PARK_RESERVE_TICKS = [[13, 3], [15, 4.5], [18, 7]];
 export const PARK_RESERVE_TICK_DASHES = [0.33, 2];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
+/** Mapy.com names a military district and writes its ranges' letters from its z11. */
+export const MILITARY_NAME_MIN_Z = 10;
+export const MILITARY_NAME_SIZE = [[10, 13], [11, 15], [13, 15], [14, 13]];
+export const MILITARY_RANGE_SIZE = [[10, 17], [11, 22]];
+
 /** Mapy.com names valleys from its z14, along the valley, letters well apart. */
 export const VALLEY_NAME_MIN_Z = 13;
 export const VALLEY_TEXT_SIZE = [[13, 11], [14, 13], [16, 15]];
@@ -5914,7 +5924,8 @@ export function buildStyle({
           minzoom: mz,
           filter: ["all",
             ["==", num("admin_level", 0), level],
-            ["has", "name"]],
+            ["has", "name"],
+            ["!=", str("landuse"), "military"]],
           layout: {
             "text-field": nameExpr,
             "text-font": REG,
@@ -6827,6 +6838,39 @@ export function buildStyle({
       },
       ["sidla", label, "text", { "text-color": "placeText", "text-halo-color": "textHalo" }]
     );
+  }
+
+  // a military district is named in grey from afar, its ranges by their letter, as on Mapy.com;
+  // last, so MapLibre places them before the peaks and hamlets inside
+  const militaryLabel = (id, label, source, sourceLayer, filter, text, size) => add(
+    {
+      id,
+      type: "symbol",
+      source,
+      "source-layer": sourceLayer,
+      minzoom: MILITARY_NAME_MIN_Z,
+      filter: ["all", ["==", ["geometry-type"], "Point"], filter],
+      layout: {
+        "text-field": text,
+        "text-font": BOLD,
+        "text-size": zl(size),
+        "text-max-width": 9
+      },
+      paint: {
+        "text-color": c.militaryText,
+        "text-halo-color": c.textHalo,
+        "text-halo-width": 1.5
+      }
+    },
+    ["popisky", label, "text", { "text-color": "militaryText", "text-halo-color": "textHalo" }]
+  );
+  if (boundariesUrl) {
+    militaryLabel("military-name", "Názvy vojenských obvodov", "boundaries", "boundary_label",
+      ["==", str("landuse"), "military"], nameExpr, MILITARY_NAME_SIZE);
+  }
+  if (featuresUrl) {
+    militaryLabel("military-range-name", "Písmená vojenských priestorov", "features", "feature_area",
+      ["==", str("class"), "military_range"], ["coalesce", ["get", "ref"], nameExpr], MILITARY_RANGE_SIZE);
   }
 
   // MapLibre places the last layer's labels first: a street name must come after the points
