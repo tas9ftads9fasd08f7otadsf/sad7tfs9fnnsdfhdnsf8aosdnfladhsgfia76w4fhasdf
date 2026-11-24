@@ -1385,6 +1385,9 @@ export const TRAIL_MARK_ZOOM = 16;
  */
 export const TRAIL_MARK_STACK = { base: MARK_BOX / 2 + 6, step: MARK_BOX };
 
+/** A route number bends no more than this between its digits, so it reads straight. */
+export const TRAIL_REF_MAX_ANGLE = 10;
+
 /**
  * Miesto okolo značky, ktoré si drží voľné (v pixeloch obrazovky).
  *
@@ -5503,11 +5506,7 @@ export function buildStyle({
           // whole routes: `trail` is cut at every junction and no name fits a piece
           "source-layer": "trail_name",
           minzoom: 12,
-          filter: [
-            "all",
-            ["==", str("route"), id],
-            ["any", ["has", "name"], ["has", "ref"]]
-          ],
+          filter: ["all", ["==", str("route"), id], ["has", "name"]],
           layout: {
             "symbol-placement": "line",
             "text-field": trailLabel,
@@ -5532,6 +5531,40 @@ export function buildStyle({
         [
           "trasy",
           `${label} – názvy`,
+          "text",
+          { "text-halo-color": "textHalo" },
+          [...MARK_KEYS, paletteKey]
+        ]
+      );
+      // TestFlight AApL: "24 05" split on a bend, so a number goes only where the route runs straight
+      add(
+        {
+          id: `trail-${id}-ref`,
+          type: "symbol",
+          source: "trails",
+          "source-layer": "trail_name",
+          minzoom: 12,
+          filter: ["all", ["==", str("route"), id], ["!", ["has", "name"]], ["has", "ref"]],
+          layout: {
+            "symbol-placement": "line",
+            "text-field": ["get", "ref"],
+            "text-font": REG,
+            "text-size": zl([[12, 9], [14, 10.5], [18, 13]]),
+            "symbol-spacing": zl([[12, 170], [16, 230]]),
+            "text-max-angle": TRAIL_REF_MAX_ANGLE,
+            "text-padding": 6,
+            "text-offset": [0, 0.8],
+            "symbol-sort-key": trailSort
+          },
+          paint: {
+            "text-color": trailColour(paletteKey),
+            "text-halo-color": c.textHalo,
+            "text-halo-width": 1.6
+          }
+        },
+        [
+          "trasy",
+          `${label} – čísla`,
           "text",
           { "text-halo-color": "textHalo" },
           [...MARK_KEYS, paletteKey]
