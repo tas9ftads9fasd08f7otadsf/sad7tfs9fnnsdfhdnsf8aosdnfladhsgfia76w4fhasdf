@@ -293,7 +293,8 @@ PY
     -dialect SQLITE -sql "SELECT *, CASE
          WHEN $(on_step "$MAJOR") THEN 'major'
          WHEN $(on_step "$MID") THEN 'mid'
-         ELSE 'minor' END AS level
+         ELSE 'minor' END AS level,
+       CASE WHEN $(on_step 10) THEN 'yes' ELSE 'no' END AS ten
        FROM contours WHERE ele IS NOT NULL $LOWLAND_SQL"
 
   # rounding by the limit curve (quadratic B-spline); the number is the chord sag
@@ -354,6 +355,8 @@ if [ "$ONLY" != 'rocks' ]; then
     "$CZ" "$CBUDGET_MB" 10 "Contours" \
     "raise contour_interval (e.g. 20 m) or turn them off for this area." "$CCAP"
   CZ="$PM_Z"
+  # Mapy writes a height with its top uphill; gdal_contour leaves the higher side on the right
+  python3 workers/contours-rocks/uphill.py contours-out/contours.pmtiles
 fi
 
 if [ "$ONLY" != 'contours' ]; then

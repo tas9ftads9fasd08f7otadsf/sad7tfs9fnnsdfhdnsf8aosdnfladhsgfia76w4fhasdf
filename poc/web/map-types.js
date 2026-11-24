@@ -196,11 +196,10 @@ export const MAP_TYPES = [
       { match: { id: TOPIC_LAYERS }, visible: false },
       { match: { id: ROAD_SIGNS }, minzoom: 15 },
       { match: { id: "poi-road" }, visible: true, minzoom: 10 },
-      // Vrstevnice len naznačia kopec: 10 m preč, zvyšok stlmený.
+      // Vrstevnice len naznačia kopec: 10 m preč, 50 m stlmené.
       { match: { id: "contour-minor" }, visible: false },
-      { match: { id: "contour-mid" }, opacity: 0.5 },
       { match: { id: "contour-major" }, opacity: 0.65 },
-      { match: { id: "contour-label" }, minzoom: 14 },
+      { match: { id: ["contour-label", "contour-label-upright"] }, minzoom: 14 },
       { match: { id: ROCKS }, visible: false },
       { match: { id: ALL_TRAILS }, visible: false },
       { match: { id: PISTES }, visible: false },

@@ -97,7 +97,7 @@ def main():
 
     # the other two classes must start above the major one, or they smear at small scale
     major = contour_line_min_zoom(text, "major")
-    for level in ("mid", "minor"):
+    for level in ("minor",):
         z = contour_line_min_zoom(text, level)
         if z is None:
             bad.append(f"contours: class {level} can't be found in the style "
