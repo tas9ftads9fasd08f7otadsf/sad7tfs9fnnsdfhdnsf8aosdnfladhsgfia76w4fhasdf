@@ -171,8 +171,8 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#9fbc7a",
-    parkFade: "#c0d6a4",
+    park: "#7fa35a",
+    parkFade: "#c9d6b1",
     parkOutline: "#90b862",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
@@ -1310,10 +1310,13 @@ export const BUILDINGS_ALONE_FROM_Z = 15;
 /** The built-up area's opacity once its houses are drawn over it, so they stand out. */
 export const SETTLEMENT_AREA_UNDER_HOUSES = 0.4;
 
-/** Width in px of the strong band inside a landscape area's or national park's border. */
-export const PARK_BAND = [[12, 10], [16, 10]];
-/** The paler band inside the strong one, as on Mapy.com: wider far out. */
-export const PARK_BAND_FADE = [[12, 12], [14, 10], [15, 8]];
+/** Width in px of the strong band inside a landscape area's border: Mapy's narrows close up. */
+export const PARK_BAND = [[12, 8], [14, 9], [15, 8], [16, 7.5]];
+/** The paler band inside the strong one, at the same zooms. */
+export const PARK_BAND_FADE = [[12, 6], [14, 8], [15, 7], [16, 5]];
+/** Both bands let the land show through, as on Mapy.com, and are soft far out. */
+export const PARK_BAND_OPACITY = [[12, 0.6], [14, 0.55]];
+export const PARK_BAND_BLUR = [[12, 4], [15, 1]];
 /** Mapy.com draws the bands from its z13 and a reserve's ticked line from its z14. */
 export const PARK_BAND_MIN_Z = 12;
 export const PARK_RESERVE_MIN_Z = 13;
@@ -4184,7 +4187,9 @@ export function buildStyle({
       paint: {
         "line-color": c.parkFade,
         "line-width": zl(PARK_BAND_FADE),
-        "line-offset": zl(PARK_BAND_FADE.map(([z, w]) => [z, PARK_BAND[0][1] + w / 2]))
+        "line-offset": zl(PARK_BAND_FADE.map(([z, w], i) => [z, PARK_BAND[i][1] + w / 2])),
+        "line-opacity": zl(PARK_BAND_OPACITY),
+        "line-blur": zl(PARK_BAND_BLUR)
       }
     },
     ["uzemie", "Park (svetlý pás)", "line", { "line-color": "parkFade" }]
@@ -4200,8 +4205,9 @@ export function buildStyle({
       paint: {
         "line-color": c.park,
         "line-width": zl(PARK_BAND),
-        // opaque: a translucent line darkens wherever its joins overlap
-        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2]))
+        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
+        "line-opacity": zl(PARK_BAND_OPACITY),
+        "line-blur": zl(PARK_BAND_BLUR)
       }
     },
     ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
