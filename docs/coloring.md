@@ -53,5 +53,22 @@ Edits live in `coloring/edits.json` (`--state=` for another file), so several ru
 continue one another's work. The dark theme keeps its own colour: saving writes the dark style's
 current colour to `paintDark` where none is set, and names the layers where it can't.
 
+## More than colour
+
+Widths, dashes, which zoom a thing appears at: the page's two maps side by side at any place and
+zoom, as a person sees them in `coloring.html`.
+
+```bash
+node workers/tools/coloring.mjs compare 48.46239,17.26048 14.2 [--width=512 --height=512]
+```
+
+The zoom is the reference's (style zoom + 1) and may be fractional. It writes
+`coloring/compare-<z>-<lat>-<lon>.png` (ours left, the reference right, at 2×, so a reference
+pixel is half a style pixel) and prints every layer our map drew there, with its classes. In the
+page, `window.coloring.view({ lon, lat, zoom, width, height })` does the same. A change to the
+pipeline is checked before it is deployed with `--tiles=<dir>`: the region's `.pmtiles` in that
+folder replace the deployed ones. [mapy-style.md](mapy-style.md) lists what already follows Mapy.
+
 In the page the same is `window.coloring`: `goto(z, x, y)`, `report()`, `set({...})`,
-`clear({...})`, `next()`, `edits()`, `loadEdits(json)`, `overrides()`, `images()`, `save()`.
+`clear({...})`, `next()`, `edits()`, `loadEdits(json)`, `overrides()`, `images()`, `save()`,
+`view({...})`.
