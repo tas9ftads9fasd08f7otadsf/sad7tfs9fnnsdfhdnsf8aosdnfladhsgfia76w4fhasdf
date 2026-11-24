@@ -23,7 +23,7 @@ How to compare: `.claude/skills/mapy-restyle/SKILL.md`. Colours alone: [coloring
 | Reserves (NPR, PR, PP, CHA) | from z14 a 2.5–4 px line `#90b862` with short ticks pointing inside, one every ~13 px at z14 and ~22 px at z16 | `park-outline`, `park-outline-teeth` from z13 | follows | 564 |
 | Natura 2000, buffer zones | not drawn | — | not drawn | 544 |
 | Protected-area name | `CHKO …` in green italics along the area | `park-name`, `park-area-name` | follows | |
-| Military district | forest and fields as they are, a grey outline; shooting ranges grey areas with a letter | `landuse-military` | a flat tan fill over everything | to do |
+| Military district | no fill: the land shows; a light grey wash to z13; a grey translucent band inside the border, 7 px at z12, 20 px at z14, 30 px at z16 (2×); shooting ranges paler grey with a letter | `landuse-military` to z12, `military-band` | follows; no district name or range letters yet | 567 |
 | Contours | from z13 | contour layers | follows | |
 | Paths, tracks, local trails | from z12 | road and trail layers | follows | |
 | Memorials, graves | none at z15 | POI | follows | |
