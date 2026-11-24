@@ -101,8 +101,8 @@ while : ; do
   # a 3D map stands each house number on its roof
   python3 workers/tiles/house-number-heights.py "$OUT"
 
-  # the protected-area band is wider than the base map's tile buffer
-  python3 workers/tiles/park-border.py "$OUT"
+  # protected and military areas' bands are wider than the base map's tile buffer
+  python3 workers/tiles/area-borders.py "$OUT"
 
   # traffic signs, as the roads carry them; without them the base map still draws
   workers/tiles/signs.sh "$OUT" "$Z" "${CLIP[@]}" \
