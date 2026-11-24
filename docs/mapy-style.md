@@ -27,6 +27,7 @@ How to compare: `.claude/skills/mapy-restyle/SKILL.md`. Colours alone: [coloring
 | Military district | no fill: the land shows; a light grey wash to z13; a grey translucent band inside the border, 7 px at z12, 20 px at z14, 30 px at z16 (2×); shooting ranges paler grey with a letter | `landuse-military` to z12, `military-band` | follows; the district's name and the range letters too (568) | 567 |
 | Contours | from z13 a faint line every 10 m, every 50 m a stronger one named in bold dark green-grey, its top uphill; no 5 m lines | `contour-minor` from z12, `contour-major`, `contour-label` from z13 | follows; old archives keep upright heights (`contour-label-upright`) | 570 |
 | Hill shading | dark green-grey shadows far out (5th percentile of forest luminance 143 at z13, 152 at z14), lighter close up (171 at z15) | `hillshade`, palette `hillShadow` | follows within ~5 levels | 571 |
+| Railway | grey `#717170` band with white dashes in its middle, dash = gap ≈ 4× dash width; ~4 px at z12, ~2.5 px per track at z14, ~4.5 px at z16 | `rail-bg`, `rail-hatch` (dash `rail-centre`) | follows | 575 |
 | Road numbers | motorways and first- and second-class roads numbered; third-class roads (four digits) never | `road-shield-*`; hiking map gates `tertiary` off | follows | 576 |
 | Vineyards | pale green with small vine icons about 20 px apart from z13 | `landcover-vineyard-icons` from z12, pattern tile 20 px | follows | 577 |
 | Paths, tracks, local trails | from z12 | road and trail layers | follows | |

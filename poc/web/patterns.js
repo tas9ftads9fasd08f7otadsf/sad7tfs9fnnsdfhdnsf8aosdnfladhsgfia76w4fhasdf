@@ -196,6 +196,8 @@ export const DASH_PRESETS = [
   // dopisovať pri každej zmene šírky. Predtým tu bolo `[0.3, 2.5]` – krátke
   // svetlé zúbky na dlhom tmavom, čiže priečky, nie čiarkovaná čiara.
   { id: "rail", label: "Čiarkovaná 1 : 1 (železnica)", dash: [1, 1] },
+  // white dashes inside a grey band, as long as their gaps and four times as long as wide
+  { id: "rail-centre", label: "Biele čiarky v strede pásu (železnica ako Mapy.com)", dash: [4, 4] },
   { id: "ties", label: "Priečky", dash: [1, 3] },
   { id: "ladder", label: "Rebrík (lanovka)", dash: [6, 2] }
 ];
