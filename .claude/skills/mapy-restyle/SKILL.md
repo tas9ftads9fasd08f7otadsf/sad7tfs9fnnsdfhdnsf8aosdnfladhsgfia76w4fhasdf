@@ -70,6 +70,10 @@ two halves of its image measure alike.
   instead (`park_border` is the example).
 - Mapy's labels and icons differ in font; compare their zoom and density, not glyphs.
 - `compare` waits for both maps to settle; past the region's edge that takes 15 s.
+- Measure widths at whole zooms: between them Mapy's raster tiles are scaled.
+- A line label shows only where it fits on the piece of line a tile holds. Give the layer a wide
+  `buffer` in its Planetiler schema (valleys have 64) and place it `line-center`; a long
+  `symbol-spacing` leaves no anchor on a line that runs on into the next tile.
 - A thing Mapy names but we don't: check the package has it (`pmtiles` + `mapbox_vector_tile`
   on the region's archive) before the style; a layer may carry lines the style only reads as
   points (valleys did).

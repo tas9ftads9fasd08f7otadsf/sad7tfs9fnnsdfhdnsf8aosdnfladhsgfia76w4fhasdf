@@ -126,6 +126,8 @@ layers:
 
   # 5. valleys, gorges and canyons
   - id: valley
+    # a name runs along the whole valley; with the default 4 px a tile held too little of it
+    buffer: 64
     features:
       - source: osm
         geometry: polygon_point_on_surface
