@@ -2147,6 +2147,16 @@ function cleanLayoutScalar(prop, value, id, problems, where, atZoom = "") {
  * to isté meno vlastnosti: okraj má hornú medzu (40 px) a hlásenie o „šírke
  * okraja", nie o `line-width` – tú vlastnosť v súbore úprav nikto nenapísal.
  */
+/** An outline's opacity, one number or bands by zoom: a casing can fade in like Mapy.com's footways. */
+function outlineOpacity(value, id, problems, where) {
+  if (Array.isArray(value)) {
+    const byZoom = cleanValue("line-opacity", value, id, problems, where);
+    if (byZoom !== undefined) return byZoom;
+  }
+  const opacity = Number(value);
+  return Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1;
+}
+
 function outlineWidthScalar(prop, value, id, problems, where, atZoom = "") {
   const n = Number(value);
   if (!Number.isFinite(n) || n <= 0 || n > 40) {
@@ -2726,15 +2736,11 @@ function cleanLayers(rawLayers, target, problems, where, images = []) {
       } else if (def.outline.dash != null && !DASH_IDS.includes(def.outline.dash)) {
         problems.push(`${where}Vrstva "${id}": neznámy vzor okraja "${def.outline.dash}".`);
       } else {
-        // a casing can fade in by zoom, like Mapy.com's footways
-        const byZoom = Array.isArray(def.outline.opacity)
-          ? cleanValue("line-opacity", def.outline.opacity, id, problems, where) : undefined;
-        const opacity = Number(def.outline.opacity);
         clean.outline = {
           color: String(def.outline.color).toLowerCase(),
           width,
           dash: def.outline.dash && def.outline.dash !== "solid" ? def.outline.dash : undefined,
-          opacity: byZoom ?? (Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1)
+          opacity: outlineOpacity(def.outline.opacity, id, problems, where)
         };
         if (!clean.outline.dash) delete clean.outline.dash;
         // tmavý variant okraja – to isté ako `paintDark`, len na odvodenej vrstve
@@ -2871,11 +2877,10 @@ function cleanVariants(raw, id, problems, where) {
       if (!isColor(v.outline.color)) {
         problems.push(`${kde}: farba okraja nie je hex (${v.outline.color}).`);
       } else if (w !== undefined) {
-        const opacity = Number(v.outline.opacity);
         clean.outline = {
           color: String(v.outline.color).toLowerCase(),
           width: w,
-          opacity: Number.isFinite(opacity) ? Math.min(1, Math.max(0, opacity)) : 1
+          opacity: outlineOpacity(v.outline.opacity, id, problems, `${where}variant ${i + 1}: `)
         };
         if (v.outline.dash && v.outline.dash !== "solid") {
           if (!DASH_IDS.includes(v.outline.dash)) {
@@ -2889,6 +2894,27 @@ function cleanVariants(raw, id, problems, where) {
     out.push(clean);
   }
   return out;
+}
+
+/** `style-overrides.json` as saving writes it: every section, in one order. */
+export function overridesFile(overrides) {
+  const payload = {
+    version: 2,
+    icons: overrides.icons,
+    hillshade: overrides.hillshade,
+    palette: overrides.palette,
+    layers: overrides.layers,
+    order: overrides.order,
+    poi: overrides.poi,
+    // every section must be written, or it silently never reaches the repo
+    trails: overrides.trails,
+    shields: overrides.shields,
+    routeShields: overrides.routeShields,
+    iconSets: overrides.iconSets,
+    customIcons: overrides.customIcons,
+    maps: overrides.maps
+  };
+  return `${JSON.stringify(payload, null, 2)}\n`;
 }
 
 /** `true`, ak sada úprav naozaj niečo mení. */
