@@ -171,8 +171,9 @@ export const THEMES = {
     river: "#a4c8e8",
     forest: "#b7d69f",
     grass: "#e4e6d2",
-    park: "#86a763",
-    parkOutline: "#9ac16a",
+    park: "#9fbc7a",
+    parkFade: "#c0d6a4",
+    parkOutline: "#90b862",
     parkText: "#3d7d32",
     sand: "#f0e6c8",
     ice: "#eef6fa",
@@ -310,6 +311,7 @@ export const THEMES = {
     forest: "#17251a",
     grass: "#232219",
     park: "#2b4a2d",
+    parkFade: "#253f28",
     parkOutline: "#3a6038",
     parkText: "#8fc87a",
     sand: "#2a2820",
@@ -446,6 +448,7 @@ export const THEMES = {
     forest: "#9ecb84",
     grass: "#dcdec2",
     park: "#88b070",
+    parkFade: "#b8d0a2",
     parkOutline: "#88b070",
     parkText: "#3a7430",
     sand: "#ecdfb5",
@@ -580,6 +583,7 @@ export const THEMES = {
     forest: "#c7dfa8",
     grass: "#eae9d4",
     park: "#a8c890",
+    parkFade: "#c8dcb4",
     parkOutline: "#a8c890",
     parkText: "#4a8a40",
     sand: "#f5e8cc",
@@ -747,6 +751,7 @@ export const PALETTE_GROUPS = [
       ["forest", "Les"],
       ["grass", "Tráva / lúka / pole"],
       ["park", "Park"],
+      ["parkFade", "Park – svetlý pás"],
       ["parkOutline", "Obrys parku"],
       ["parkText", "Názov chráneného územia"],
       ["sand", "Piesok"],
@@ -1183,7 +1188,12 @@ export const ROAD_NAME_MAIN_CLASSES = ["motorway", "trunk", "primary", "secondar
 export const ROAD_NAME_MAIN_FROM_Z = 14;
 export const ROAD_NAME_MINOR_FROM_Z = 15;
 const PEDESTRIAN_STREET = ["all", ["==", str("class"), "path"], ["==", str("subclass"), "pedestrian"]];
-const PARK_AREA = ["all", ["in", ["geometry-type"], ["literal", ["Polygon", "MultiPolygon"]]], PARK_MARKED];
+/** Spellings of protected landscape areas and national parks; the rest are reserves. */
+export const PARK_LANDSCAPE_CLASSES = ["national_park", "národný_park", "národní_park", "krajinná_oblasť",
+  "krajinná_oblast", "park_narodowy", "park_krajobrazowy", "nationalpark"];
+const IS_LANDSCAPE = ["any", ...PARK_LANDSCAPE_CLASSES.map((cls) => ["in", cls, str("class")])];
+const PARK_LANDSCAPE = ["all", PARK_MARKED, IS_LANDSCAPE];
+const PARK_RESERVE = ["all", PARK_MARKED, ["!", IS_LANDSCAPE]];
 
 /**
  * Triedy `mountain_peak`, ktoré nie sú bodovým vrcholom, ale pretiahnutým
@@ -1290,10 +1300,17 @@ export const BUILDINGS_ALONE_FROM_Z = 15;
 /** The built-up area's opacity once its houses are drawn over it, so they stand out. */
 export const SETTLEMENT_AREA_UNDER_HOUSES = 0.4;
 
-/** Width in px of the band inside a protected area's border; with its blur within the 8 px tile buffer. */
-export const PARK_BAND = [[10, 4], [12, 7], [16, 7]];
-/** Softens the band, which rounds its corners; half of it spills beyond the band each side. */
-export const PARK_BAND_BLUR = 2.5;
+/** Width in px of the strong band inside a landscape area's or national park's border. */
+export const PARK_BAND = [[12, 10], [16, 10]];
+/** The paler band inside the strong one, as on Mapy.com: wider far out. */
+export const PARK_BAND_FADE = [[12, 12], [14, 10], [15, 8]];
+/** Mapy.com draws the bands from its z13 and a reserve's ticked line from its z14. */
+export const PARK_BAND_MIN_Z = 12;
+export const PARK_RESERVE_MIN_Z = 13;
+export const PARK_RESERVE_LINE = [[13, 1.5], [15, 2.5], [18, 3.5]];
+/** Tick length; a tick is a third of it wide, one every two lengths. */
+export const PARK_RESERVE_TICKS = [[13, 3], [15, 4.5], [18, 7]];
+export const PARK_RESERVE_TICK_DASHES = [0.33, 2];
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
 /** Mapy.com names valleys from its z14, along the valley, letters well apart. */
@@ -4019,46 +4036,103 @@ export function buildStyle({
     );
   }
 
+  /**
+   * Hrana so zúbkami – bralo, násyp, zárez. Kolmé čiarky MapLibre nevie, tak
+   * sa robia druhou čiarou: širokou, prerušovanou a odsunutou nabok, z čoho
+   * ostanú krátke hrubé kúsky. Kladný offset je vpravo v smere čiary a presne
+   * tam je podľa konvencie OSM dolná strana.
+   */
+  const hachure = ({ id, label, group, source, sourceLayer, filter,
+                     paletteKey, minzoom, width, teeth, dashes = [0.35, 2.2], opacity = 1 }) => {
+    // a number, or zoom stops for an edge that fades close up
+    const fade = Array.isArray(opacity) ? zl(opacity) : opacity;
+    const base = {
+      type: "line",
+      ...(source ? { source } : {}),
+      "source-layer": sourceLayer,
+      minzoom,
+      filter
+    };
+    add(
+      {
+        ...base,
+        id,
+        layout: { "line-cap": "butt", "line-join": "round" },
+        paint: {
+          "line-color": c[paletteKey],
+          "line-width": zl(width),
+          "line-opacity": fade
+        }
+      },
+      [group, label, "line", { "line-color": paletteKey }]
+    );
+    if (!teeth) return;
+    add(
+      {
+        ...base,
+        id: `${id}-teeth`,
+        layout: { "line-cap": "butt" },
+        paint: {
+          "line-color": c[paletteKey],
+          "line-width": zl(teeth),
+          // polovica šírky zúbka: čiara sa dotýka hrany a trčí z nej von
+          "line-offset": zl(teeth.map(([z, w]) => [z, w / 2])),
+          "line-dasharray": dashes,
+          "line-opacity": fade
+        }
+      },
+      [group, `${label} – zúbky`, "line", { "line-color": paletteKey }]
+    );
+    spolu(id);
+  };
+
   // a band inside the border, not a fill: a nature park covers whole ranges of rock and ice
+  add(
+    {
+      id: "park-fade",
+      type: "line",
+      "source-layer": "park_border",
+      filter: PARK_LANDSCAPE,
+      minzoom: PARK_BAND_MIN_Z,
+      layout: { "line-join": "round" },
+      paint: {
+        "line-color": c.parkFade,
+        "line-width": zl(PARK_BAND_FADE),
+        "line-offset": zl(PARK_BAND_FADE.map(([z, w]) => [z, PARK_BAND[0][1] + w / 2]))
+      }
+    },
+    ["uzemie", "Park (svetlý pás)", "line", { "line-color": "parkFade" }]
+  );
   add(
     {
       id: "park",
       type: "line",
-      "source-layer": "park",
-      // vrstva `park` nesie aj bod pre popisok, nie len obrys
-      filter: PARK_AREA,
-      minzoom: 10,
-      // round joins, as a mitred offset line spikes at corners; opaque, as a translucent
-      // line darkens where it overlaps itself
+      "source-layer": "park_border",
+      filter: PARK_LANDSCAPE,
+      minzoom: PARK_BAND_MIN_Z,
       layout: { "line-join": "round" },
       paint: {
         "line-color": c.park,
-        // within the tile buffer, else tile seams inside a park show as stripes
         "line-width": zl(PARK_BAND),
-        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2])),
-        "line-blur": PARK_BAND_BLUR
+        // opaque: a translucent line darkens wherever its joins overlap
+        "line-offset": zl(PARK_BAND.map(([z, w]) => [z, w / 2]))
       }
     },
     ["uzemie", "Park (pás pri hranici)", "line", { "line-color": "park" }]
   );
-  add(
-    {
-      id: "park-outline",
-      type: "line",
-      "source-layer": "park",
-      filter: PARK_AREA,
-      minzoom: 10,
-      layout: { "line-join": "round" },
-      paint: {
-        "line-color": c.parkOutline,
-        "line-width": zl([[10, 0.8], [13, 1.6], [16, 2.2], [20, 3]]),
-        // Mapy's border has no crisp rim: a hard line would keep the corners square
-        "line-blur": 1,
-        "line-opacity": 0.6
-      }
-    },
-    ["uzemie", "Park (obrys)", "line", { "line-color": "parkOutline" }]
-  );
+  // a reserve is a thin line with ticks pointing inside
+  hachure({
+    id: "park-outline",
+    label: "Rezervácia (obrys)",
+    group: "uzemie",
+    sourceLayer: "park_border",
+    filter: PARK_RESERVE,
+    paletteKey: "parkOutline",
+    minzoom: PARK_RESERVE_MIN_Z,
+    width: PARK_RESERVE_LINE,
+    teeth: PARK_RESERVE_TICKS,
+    dashes: PARK_RESERVE_TICK_DASHES
+  });
 
   // skalné plochy sú tesne pod tieňovaním, nie pri vrstevniciach: skala je tvar
   // terénu. Nad tieňovaním by z nej bola plochá škvrna bez reliéfu.
@@ -4247,56 +4321,6 @@ export function buildStyle({
       ]
     );
   }
-
-  /**
-   * Hrana so zúbkami – bralo, násyp, zárez. Kolmé čiarky MapLibre nevie, tak
-   * sa robia druhou čiarou: širokou, prerušovanou a odsunutou nabok, z čoho
-   * ostanú krátke hrubé kúsky. Kladný offset je vpravo v smere čiary a presne
-   * tam je podľa konvencie OSM dolná strana.
-   */
-  const hachure = ({ id, label, group, source, sourceLayer, filter,
-                     paletteKey, minzoom, width, teeth, opacity = 1 }) => {
-    // a number, or zoom stops for an edge that fades close up
-    const fade = Array.isArray(opacity) ? zl(opacity) : opacity;
-    const base = {
-      type: "line",
-      ...(source ? { source } : {}),
-      "source-layer": sourceLayer,
-      minzoom,
-      filter
-    };
-    add(
-      {
-        ...base,
-        id,
-        layout: { "line-cap": "butt", "line-join": "round" },
-        paint: {
-          "line-color": c[paletteKey],
-          "line-width": zl(width),
-          "line-opacity": fade
-        }
-      },
-      [group, label, "line", { "line-color": paletteKey }]
-    );
-    if (!teeth) return;
-    add(
-      {
-        ...base,
-        id: `${id}-teeth`,
-        layout: { "line-cap": "butt" },
-        paint: {
-          "line-color": c[paletteKey],
-          "line-width": zl(teeth),
-          // polovica šírky zúbka: čiara sa dotýka hrany a trčí z nej von
-          "line-offset": zl(teeth.map(([z, w]) => [z, w / 2])),
-          "line-dasharray": [0.35, 2.2],
-          "line-opacity": fade
-        }
-      },
-      [group, `${label} – zúbky`, "line", { "line-color": paletteKey }]
-    );
-    spolu(id);
-  };
 
   // bralné hrany a hrebene z OSM – nie skaly z DEM. `natural=cliff/ridge/arete`
   // sú v dlaždiciach ako línie vo vrstve `mountain_peak` (od z13).
