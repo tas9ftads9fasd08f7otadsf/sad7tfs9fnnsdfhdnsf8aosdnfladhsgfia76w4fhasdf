@@ -233,6 +233,7 @@ export const THEMES = {
     poiIconHalo: "#ffffff",
     peakText: "#251d12",
     geoText: "#6a6252",
+    valleyText: "#453833",
     peakIcon: "#3a2e1c",
     aerodromeIcon: "#6a6a80",
     onewayIcon: "#8a7a6a",
@@ -371,6 +372,7 @@ export const THEMES = {
     poiIconHalo: "#14141f",
     peakText: "#a8a08a",
     geoText: "#a8a090",
+    valleyText: "#b8ad98",
     peakIcon: "#b09a70",
     aerodromeIcon: "#8a8ab0",
     onewayIcon: "#7a7a90",
@@ -504,6 +506,7 @@ export const THEMES = {
     poiIconHalo: "#f4f1e4",
     peakText: "#2a170a",
     geoText: "#5a4a2e",
+    valleyText: "#45382e",
     peakIcon: "#4a2410",
     aerodromeIcon: "#4a5a7a",
     onewayIcon: "#6a5a45",
@@ -637,6 +640,7 @@ export const THEMES = {
     poiIconHalo: "#fdf6ec",
     peakText: "#35271c",
     geoText: "#8a7362",
+    valleyText: "#5a4a40",
     peakIcon: "#5a3f2a",
     aerodromeIcon: "#7a7a95",
     onewayIcon: "#a89080",
@@ -896,6 +900,7 @@ export const PALETTE_GROUPS = [
       ["placeText", "Názov sídla"],
       ["textHalo", "Obrys písmen (čitateľnosť)"],
       ["geoText", "Názov pohoria / oblasti"],
+      ["valleyText", "Názov doliny"],
       ["poiText", "Popisok POI"],
       ["poiIcon", "Ikona POI"],
       ["poiIconHalo", "Obrys ikony POI"],
@@ -1291,6 +1296,11 @@ export const PARK_BAND = [[10, 4], [12, 7], [16, 7]];
 export const PARK_BAND_BLUR = 2.5;
 
 /** Skutočná šírka chodníkov a poľných ciest v metroch, od ktorej sa kreslí ich pás. */
+/** Mapy.com names valleys from its z14, along the valley, letters well apart. */
+export const VALLEY_NAME_MIN_Z = 13;
+export const VALLEY_TEXT_SIZE = [[13, 11], [14, 13], [16, 15]];
+export const VALLEY_LETTER_SPACING = 0.3;
+
 export const PATH_GROUND_M = { track: 3, steps: 2, cycleway: 2.5, footway: 2, path: 1.2 };
 export const PATH_GROUND_MIN_Z = 16;
 
@@ -6686,8 +6696,7 @@ export function buildStyle({
     for (const [id, label, layer, filter, minzoom, maxzoom, size] of [
       ["names-range", "Pohoria (balík názvy)", "mountain",
         ["all", onePoint, ["==", str("class"), "mountain_range"]], 8, 14, [[8, 12], [10, 15], [12, 18], [14, 20]]],
-      ["names-plain", "Kotliny a roviny (balík názvy)", "plain", onePoint, 9, 14, [[9, 12], [12, 16], [14, 18]]],
-      ["names-valley", "Doliny (balík názvy)", "valley", onePoint, 12, null, [[12, 11], [15, 14], [18, 16]]]
+      ["names-plain", "Kotliny a roviny (balík názvy)", "plain", onePoint, 9, 14, [[9, 12], [12, 16], [14, 18]]]
     ]) {
       add(
         {
@@ -6704,6 +6713,53 @@ export function buildStyle({
         ["geo", label, "text", geoPalette]
       );
     }
+  }
+
+  // a valley is named along its line in spaced italics, as on Mapy.com; one drawn as a point or
+  // an area keeps the same letters
+  if (namesUrl) {
+    const valleyLayout = {
+      "text-field": nameExpr,
+      "text-font": ITAL,
+      "text-size": zl(VALLEY_TEXT_SIZE),
+      "text-letter-spacing": VALLEY_LETTER_SPACING,
+      "text-max-width": 8,
+      "symbol-sort-key": num("rank", 100)
+    };
+    const valleyPaint = { "text-color": c.valleyText, "text-halo-color": c.textHalo, "text-halo-width": 1.4 };
+    const valleyPalette = { "text-color": "valleyText", "text-halo-color": "textHalo" };
+    add(
+      {
+        id: "names-valley-line",
+        type: "symbol",
+        source: "names",
+        "source-layer": "valley",
+        minzoom: VALLEY_NAME_MIN_Z,
+        filter: ["==", ["geometry-type"], "LineString"],
+        layout: {
+          ...valleyLayout,
+          // once, in the middle of the valley; bending with it as Mapy's letters do
+          "symbol-placement": "line-center",
+          "text-max-angle": 80,
+          "text-keep-upright": true
+        },
+        paint: valleyPaint
+      },
+      ["geo", "Doliny pozdĺž (balík názvy)", "text", valleyPalette]
+    );
+    add(
+      {
+        id: "names-valley",
+        type: "symbol",
+        source: "names",
+        "source-layer": "valley",
+        minzoom: VALLEY_NAME_MIN_Z,
+        filter: ["==", ["geometry-type"], "Point"],
+        layout: valleyLayout,
+        paint: valleyPaint
+      },
+      ["geo", "Doliny (balík názvy)", "text", valleyPalette]
+    );
   }
 
   // ---- sídla ----
