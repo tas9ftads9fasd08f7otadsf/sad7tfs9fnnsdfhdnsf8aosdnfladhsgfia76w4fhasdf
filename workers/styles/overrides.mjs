@@ -22,7 +22,8 @@ import {
   TRAIL_MARK_DEFAULTS,
   TRAIL_MARK_ZOOM,
   isRelative,
-  mapTypeDef
+  mapTypeDef,
+  overridesFile
 } from "../../poc/web/themes.js";
 
 // `workers/styles` → the repo root is TWO levels up
@@ -234,21 +235,5 @@ if (args.check) {
   process.exit(0);
 }
 
-const payload = {
-  version: 2,
-  icons: overrides.icons,
-  hillshade: overrides.hillshade,
-  palette: overrides.palette,
-  layers: overrides.layers,
-  order: overrides.order,
-  poi: overrides.poi,
-  // every section must be written, or it silently never reaches the repo
-  trails: overrides.trails,
-  shields: overrides.shields,
-  routeShields: overrides.routeShields,
-  iconSets: overrides.iconSets,
-  customIcons: overrides.customIcons,
-  maps: overrides.maps
-};
-writeFileSync(TARGET, `${JSON.stringify(payload, null, 2)}\n`);
+writeFileSync(TARGET, overridesFile(overrides));
 console.log(`✓ written to ${TARGET}`);
