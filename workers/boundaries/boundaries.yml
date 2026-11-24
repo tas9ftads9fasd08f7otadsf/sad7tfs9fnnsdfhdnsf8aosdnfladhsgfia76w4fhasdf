@@ -28,6 +28,8 @@ definitions:
         tag_value: "name:en"
     - key: admin_level
     - key: ref
+    # a military district is drawn and named like one, as on Mapy.com
+    - key: landuse
     # `wikidata` links to anything else (our Wikipedia package too)
     - key: wikidata
     - key: wikipedia
@@ -234,6 +236,32 @@ examples:
           name: Slovensko
           name_en: Slovakia
           admin_level: 2
+
+  # 568 Mapy names a military district in grey; the style needs to know it is one
+  - name: A military district carries its land use
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        boundary: administrative
+        admin_level: "8"
+        landuse: military
+        name: Záhorie (vojenský obvod)
+    output:
+      - layer: boundary
+        geometry: polygon
+        min_zoom: 8
+        tags:
+          name: Záhorie (vojenský obvod)
+          admin_level: 8
+          landuse: military
+      - layer: boundary_label
+        geometry: point
+        min_zoom: 8
+        tags:
+          name: Záhorie (vojenský obvod)
+          admin_level: 8
+          landuse: military
 
   - name: A region is from z4
     input:

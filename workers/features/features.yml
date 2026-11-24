@@ -195,6 +195,19 @@ layers:
   # PLOCHY
   - id: feature_area
     features:
+      # a military range's letter, one point per area; the base map draws the area itself
+      - source: osm
+        geometry: polygon_point_on_surface
+        min_zoom: 10
+        include_when:
+          military: [training_area, training_ground, range, danger_area]
+        exclude_when:
+          boundary: administrative
+        attributes:
+          - key: name
+          - key: ref
+          - key: class
+            value: military_range
       # `amenity=parking` is only a point in OpenMapTiles, yet at a trailhead it's the area one looks for
       - source: osm
         geometry: polygon
@@ -261,4 +274,25 @@ layers:
             value: shingle
 
   # points are in `workers/features/points.yml`, a separate package in the app
+
+# TESTS: `java -jar planetiler.jar verify workers/features/features.yml`
+examples:
+  # 568 Mapy writes a range's letter in it, as "B" in the Záhorie district
+  - name: A military range is one point with its letter
+    input:
+      source: osm
+      geometry: polygon
+      tags:
+        landuse: military
+        military: training_ground
+        name: B
+        ref: B
+    output:
+      layer: feature_area
+      geometry: point
+      min_zoom: 10
+      tags:
+        name: B
+        ref: B
+        class: military_range
 

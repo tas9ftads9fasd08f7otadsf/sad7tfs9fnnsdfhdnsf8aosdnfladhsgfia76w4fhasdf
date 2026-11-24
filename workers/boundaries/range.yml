@@ -28,6 +28,8 @@ definitions:
         tag_value: "name:en"
     - key: admin_level
     - key: ref
+    # a military district is drawn and named like one, as on Mapy.com
+    - key: landuse
     # `wikidata` links to anything else (our Wikipedia package too)
     - key: wikidata
     - key: wikipedia
