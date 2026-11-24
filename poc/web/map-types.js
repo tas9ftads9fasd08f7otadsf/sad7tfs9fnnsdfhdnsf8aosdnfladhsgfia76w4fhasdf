@@ -74,6 +74,8 @@ const OTHER_TRAILS = /^trail-(hiking|bicycle|mtb|horse)(-icon|-mark|-label)?$/;
 const SKI_TRAILS = /^trail-ski(-icon|-mark|-label)?$/;
 /** Všetky značené trasy vrátane podkladu pod pásikmi. */
 const ALL_TRAILS = /^trail-/;
+/** Past the deepest zoom any map draws: a class gated from here never shows. */
+const NEVER_Z = 25;
 /** Style zoom (Mapy's z12) where the default map adds paths, local trails and minor peaks. */
 export const OVERVIEW_DETAIL_Z = 11;
 /**
@@ -143,6 +145,8 @@ export const MAP_TYPES = [
       { match: { id: "trail-halo" }, minzoom: OVERVIEW_DETAIL_Z + 2 },
       // Mapy's contours start at its z13; the index lines alone drew hundreds at its z12
       { match: { id: "contour-major" }, minzoomFloor: OVERVIEW_DETAIL_Z + 1 },
+      // Mapy numbers no third-class road at any zoom; ours wrote "1083" from its z13
+      { match: { id: "road-shield-secondary" }, classesFrom: { minzoom: NEVER_Z, classes: ["tertiary"] } },
       // a town centre held 76 memorials and 18 graves at Mapy's z15, which shows none
       { match: { id: "feature-point" },
         classesFrom: { minzoom: 16, classes: ["memorial", "tomb", "wayside_cross", "wayside_shrine"] } },
