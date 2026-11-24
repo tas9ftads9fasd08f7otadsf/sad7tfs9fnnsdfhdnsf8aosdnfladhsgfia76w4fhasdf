@@ -33,7 +33,8 @@ import {
   setColor,
   clearColor,
   applyEdits,
-  darkColorsOf
+  darkColorsOf,
+  settled
 } from "./coloring-core.js";
 
 const STORE = "fricomaps.coloring";
@@ -227,10 +228,7 @@ function makeProbe() {
   }));
 }
 
-const idle = (map) => new Promise((resolve) => {
-  map.once("idle", resolve);
-  map.triggerRepaint();
-});
+const idle = (map) => settled(map);
 
 function pixels(source) {
   const canvas = document.createElement("canvas");

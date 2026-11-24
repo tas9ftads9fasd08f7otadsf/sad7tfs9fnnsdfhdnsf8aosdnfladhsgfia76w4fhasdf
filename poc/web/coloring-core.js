@@ -32,6 +32,38 @@ export function tileAt(lon, lat, z) {
   return { z, x: Math.min(n - 1, Math.max(0, x)), y: Math.min(n - 1, Math.max(0, y)) };
 }
 
+/** Past the region's edge a DEM tile with no data stays loading for good, so idle never comes. */
+export const IDLE_WAIT_MS = 15000;
+
+/** Resolves once the map has drawn everything, or after `wait` ms if a tile never loads. */
+export const settled = (map, wait = IDLE_WAIT_MS) => new Promise((resolve) => {
+  const timer = setTimeout(resolve, wait);
+  map.once("idle", () => {
+    clearTimeout(timer);
+    resolve();
+  });
+  map.triggerRepaint();
+});
+
+/** The `size` × `size` tiles at `z` centred on a place, row by row. */
+export function blockAround(lon, lat, z, size) {
+  const centre = tileAt(lon, lat, z);
+  const x0 = centre.x - Math.floor(size / 2);
+  const y0 = centre.y - Math.floor(size / 2);
+  const out = [];
+  for (let j = 0; j < size; j += 1) {
+    for (let i = 0; i < size; i += 1) out.push({ z, x: x0 + i, y: y0 + j, i, j });
+  }
+  return out;
+}
+
+/** `[start, end]` of a `Range: bytes=…` header within `length` bytes, or null for the whole. */
+export function byteRange(header, length) {
+  const m = /bytes=(\d+)-(\d*)/.exec(header || "");
+  if (!m) return null;
+  return [Number(m[1]), m[2] ? Math.min(Number(m[2]), length - 1) : length - 1];
+}
+
 /** The next tile of the region's bbox at the same zoom, row by row; null past the last. */
 export function nextTile({ z, x, y }, bbox) {
   const a = tileAt(bbox[0], bbox[3], z);

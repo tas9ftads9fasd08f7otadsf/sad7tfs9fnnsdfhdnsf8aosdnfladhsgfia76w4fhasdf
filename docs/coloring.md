@@ -53,5 +53,18 @@ Edits live in `coloring/edits.json` (`--state=` for another file), so several ru
 continue one another's work. The dark theme keeps its own colour: saving writes the dark style's
 current colour to `paintDark` where none is set, and names the layers where it can't.
 
+## More than colour
+
+Widths, dashes, which zoom a thing appears at: compare a block of tiles around a place and look.
+
+```bash
+node workers/tools/coloring.mjs compare 48.46239,17.26048 14 --size=3
+```
+
+It writes `coloring/compare-<z>-<lat>-<lon>.png` (ours left, the reference right, tile for tile)
+and prints every layer drawn there with its share and the classes it drew. A change to the
+pipeline is checked before it is deployed with `--tiles=<dir>`: the region's `.pmtiles` in that
+folder replace the deployed ones. [mapy-style.md](mapy-style.md) lists what already follows Mapy.
+
 In the page the same is `window.coloring`: `goto(z, x, y)`, `report()`, `set({...})`,
 `clear({...})`, `next()`, `edits()`, `loadEdits(json)`, `overrides()`, `images()`, `save()`.
