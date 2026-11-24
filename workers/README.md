@@ -232,10 +232,12 @@ Mapa · úpravy štýlu          style-overrides.json z developer módu
   ako na Mapy.com 10 px sýty a za ním 8 – 12 px svetlejší, no polygón `park`
   má v dlaždici len 8 px okraj,
   takže pás z jeho orezanej hrany by pruhoval švy dlaždíc.
-  [`workers/tiles/park-border.py`](tiles/park-border.py) od z11 zloží každé
+  [`workers/tiles/area-borders.py`](tiles/area-borders.py) od z11 zloží každé
   územie z dlaždice a jej susedov a jeho hranicu zapíše do vrstvy `park_border`
   ako čiaru s 32 px okrajom, v smere hodinových ručičiek, takže územie je
-  vpravo a štýl ho posúva kladným `line-offset`.
+  vpravo a štýl ho posúva kladným `line-offset`. Rovnako zapíše vojenské
+  priestory (`landuse` triedy `military`) do `military_border`: Mapy.com ich
+  nezafarbí, len im dá do 15 px široký sivý pás pri hranici.
 
   **Hranica sa pred rezom zjednoduší na 10 m.** `osmium extract --polygon`
   testuje každý uzol PBF proti každej úsečke hranice, takže čas rezu rastie

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Add `park_border`: each protected area's border as a line running clockwise around it."""
+"""Add each protected and military area's border as a line running clockwise around it."""
 import argparse
 import gzip
 import importlib.util
@@ -21,8 +21,8 @@ _spec = importlib.util.spec_from_file_location(
 lift = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(lift)
 
-SOURCE = "park"
-LAYER = "park_border"
+# (source layer, the classes taken or None for all, border layer)
+RULES = [("park", None, "park_border"), ("landuse", {"military"}, "military_border")]
 # the style's band is wider than the base map's 8 px buffer, so its line reaches further
 BUFFER_PX = 32
 # a 22 px band along every kink of an OSM border folds over itself
@@ -30,19 +30,21 @@ SIMPLIFY_PX = 2
 TILE_PX = 512
 
 
-def areas(reader, gz, z, x, y):
-    """The tile's protected areas as `{id: (properties, polygon in tile units, extent)}`."""
+def areas(reader, gz, z, x, y, source, classes):
+    """The tile's areas of `source` as `{id: (properties, polygon in tile units, extent)}`."""
     data = reader.get(z, x, y)
     if not data:
         return {}
     raw = gzip.decompress(data) if gz else data
-    _, own = lift.split(raw, SOURCE)
+    _, own = lift.split(raw, source)
     if not own:
         return {}
-    layer = mapbox_vector_tile.decode(own, default_options={"y_coord_down": True})[SOURCE]
+    layer = mapbox_vector_tile.decode(own, default_options={"y_coord_down": True})[source]
     out = {}
     for f in layer["features"]:
         if f.get("id") is None or not f["geometry"]["type"].endswith("Polygon"):
+            continue
+        if classes is not None and f["properties"].get("class") not in classes:
             continue
         out[f["id"]] = (f["properties"], shape(f["geometry"]).buffer(0), layer.get("extent", 4096))
     return out
@@ -69,13 +71,14 @@ def border(polygon, extent):
 
 
 class Borders:
-    def __init__(self, reader, gz):
+    def __init__(self, reader, gz, source, classes, name):
         self.reader, self.gz = reader, gz
+        self.source, self.classes, self.name = source, classes, name
         self.memo = {}
 
     def areas(self, z, x, y):
         if (z, x, y) not in self.memo:
-            self.memo[(z, x, y)] = areas(self.reader, self.gz, z, x, y)
+            self.memo[(z, x, y)] = areas(self.reader, self.gz, z, x, y, self.source, self.classes)
         return self.memo[(z, x, y)]
 
     def layer(self, z, x, y):
@@ -99,7 +102,7 @@ class Borders:
         if not features:
             return b""
         return mapbox_vector_tile.encode(
-            [{"name": LAYER, "features": features}],
+            [{"name": self.name, "features": features}],
             default_options={"extents": extent, "y_coord_down": True})
 
 
@@ -114,28 +117,29 @@ def main():
         reader = Reader(MmapSource(src))
         header, metadata = reader.header(), reader.metadata()
         gz = header["tile_compression"] == Compression.GZIP
-        borders = Borders(reader, gz)
+        borders = [Borders(reader, gz, *rule) for rule in RULES]
         with open(tmp, "wb") as dst:
             writer = Writer(dst)
             for (z, x, y), data in sorted(all_tiles(reader.get_bytes),
                                           key=lambda t: zxy_to_tileid(*t[0])):
                 if z >= args.from_z:
                     raw = gzip.decompress(data) if gz else data
-                    rest, _ = lift.split(raw, LAYER)
-                    extra = borders.layer(z, x, y)
+                    for b in borders:
+                        raw, _ = lift.split(raw, b.name)
+                    extra = b"".join(b.layer(z, x, y) for b in borders)
                     if extra:
                         # mtime=0, or equal tiles hash apart and lose deduplication
-                        data = gzip.compress(rest + extra, 9, mtime=0) if gz else rest + extra
+                        data = gzip.compress(raw + extra, 9, mtime=0) if gz else raw + extra
                         added += 1
                 writer.write_tile(zxy_to_tileid(z, x, y), data)
             layers = metadata.get("vector_layers")
-            if isinstance(layers, list) and not any(v.get("id") == LAYER for v in layers):
-                layers.append({"id": LAYER, "fields": {"class": "String"},
-                               "minzoom": args.from_z, "maxzoom": header["max_zoom"]})
+            for b in borders:
+                if isinstance(layers, list) and not any(v.get("id") == b.name for v in layers):
+                    layers.append({"id": b.name, "fields": {"class": "String"},
+                                   "minzoom": args.from_z, "maxzoom": header["max_zoom"]})
             writer.finalize(header, metadata)
     os.replace(tmp, args.archive)
-    print(f"{args.archive}: protected-area borders in {added} tiles from z{args.from_z}",
-          file=sys.stderr)
+    print(f"{args.archive}: area borders in {added} tiles from z{args.from_z}", file=sys.stderr)
     return 0
 
 

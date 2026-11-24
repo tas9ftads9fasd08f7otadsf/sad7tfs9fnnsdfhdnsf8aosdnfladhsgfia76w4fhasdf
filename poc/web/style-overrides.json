@@ -1342,11 +1342,6 @@
             ]
           }
         },
-        "landuse-military": {
-          "paint": {
-            "fill-color": "#d8cfbd"
-          }
-        },
         "landcover-golf": {
           "paint": {
             "fill-color": "#d6e9bb"

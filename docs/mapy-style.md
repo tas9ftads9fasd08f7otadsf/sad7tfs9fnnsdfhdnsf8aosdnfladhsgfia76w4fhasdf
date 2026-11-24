@@ -24,7 +24,7 @@ How to compare: `.claude/skills/mapy-restyle/SKILL.md`. Colours alone: [coloring
 | Natura 2000, buffer zones | not drawn | — | not drawn | 544 |
 | Protected-area name | `CHKO …` in green italics along the area | `park-name`, `park-area-name` | follows | |
 | Valley names | from z14, once along the valley, lower-case italics in dark brown `#453833`, letters well apart, bending with the valley | `names-valley-line` (`line-center`), `names-valley` for points, from z13 | follows; the names package keeps a valley's line 128 px past each tile edge | 566 |
-| Military district | forest and fields as they are, a grey outline; shooting ranges grey areas with a letter | `landuse-military` | a flat tan fill over everything | to do |
+| Military district | no fill: the land shows; a light grey wash to z13; a grey translucent band inside the border, 7 px at z12, 20 px at z14, 30 px at z16 (2×); shooting ranges paler grey with a letter | `landuse-military` to z12, `military-band` | follows; the district's name and the range letters too (568) | 567 |
 | Contours | from z13 a faint line every 10 m, every 50 m a stronger one named in bold dark green-grey, its top uphill; no 5 m lines | `contour-minor` from z12, `contour-major`, `contour-label` from z13 | follows; old archives keep upright heights (`contour-label-upright`) | 570 |
 | Hill shading | dark green-grey shadows far out (5th percentile of forest luminance 143 at z13, 152 at z14), lighter close up (171 at z15) | `hillshade`, palette `hillShadow` | follows within ~5 levels | 571 |
 | Paths, tracks, local trails | from z12 | road and trail layers | follows | |

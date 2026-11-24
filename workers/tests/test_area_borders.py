@@ -21,6 +21,9 @@ def tile(wkt):
     return mvt.encode([
         {"name": "park", "features": [{"geometry": wkt, "id": 7,
                                        "properties": {"class": "chránená_krajinná_oblasť"}}]},
+        {"name": "landuse", "features": [
+            {"geometry": wkt, "id": 8, "properties": {"class": "military"}},
+            {"geometry": wkt, "id": 9, "properties": {"class": "residential"}}]},
         {"name": "water", "features": [{"geometry": "POINT(5 5)", "properties": {"class": "lake"}}]}],
         default_options={"y_coord_down": True})
 
@@ -31,10 +34,10 @@ class ParkBorder(unittest.TestCase):
         import mapbox_vector_tile as mvt
         from pmtiles.reader import MmapSource, Reader
 
-        border = worker("tiles/park-border.py")
+        border = worker("tiles/area-borders.py")
         path = os.path.join(tempfile.mkdtemp(), "r.pmtiles")
         pmtiles(path, {(14, 0, 0): tile(TOP), (14, 0, 1): tile(BOTTOM)})
-        with mock.patch("sys.argv", ["park-border.py", path]), redirect_stderr(io.StringIO()):
+        with mock.patch("sys.argv", ["area-borders.py", path]), redirect_stderr(io.StringIO()):
             self.assertEqual(border.main(), 0)
         with open(path, "rb") as f:
             self.top = mvt.decode(gzip.decompress(Reader(MmapSource(f)).get(14, 0, 0)),
@@ -74,3 +77,27 @@ class ParkBorder(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MilitaryBorder(unittest.TestCase):
+    # 567 bug: Mapy's band inside a military area is up to 15 px, past the base map's 8 px buffer
+    @needs("pmtiles", "mapbox_vector_tile", "shapely")
+    def test_a_military_area_gets_its_border_and_a_town_none(self):
+        import mapbox_vector_tile as mvt
+        from pmtiles.reader import MmapSource, Reader
+        from shapely.geometry import shape
+
+        borders = worker("tiles/area-borders.py")
+        path = os.path.join(tempfile.mkdtemp(), "r.pmtiles")
+        pmtiles(path, {(14, 0, 0): tile(TOP), (14, 0, 1): tile(BOTTOM)})
+        with mock.patch("sys.argv", ["area-borders.py", path]), redirect_stderr(io.StringIO()):
+            self.assertEqual(borders.main(), 0)
+        with open(path, "rb") as f:
+            top = mvt.decode(gzip.decompress(Reader(MmapSource(f)).get(14, 0, 0)),
+                             default_options={"y_coord_down": True})
+        feats = top["military_border"]["features"]
+        self.assertEqual([f["properties"] for f in feats], [{"class": "military"}])
+        geom = shape(feats[0]["geometry"])
+        lowest = max(y for line in getattr(geom, "geoms", [geom]) for _, y in line.coords)
+        self.assertGreater(lowest, 4096 + CUT, "it came from the tile below")
+        self.assertEqual(len(top["landuse"]["features"]), 2, "the land use itself stays")

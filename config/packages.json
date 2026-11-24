@@ -325,6 +325,7 @@
       "landcover": "landscape",
       "park": "landscape",
       "park_border": "landscape",
+      "military_border": "landscape",
       "mountain_peak": "landscape",
       "aeroway": "landscape",
       "aerodrome_label": "landscape",

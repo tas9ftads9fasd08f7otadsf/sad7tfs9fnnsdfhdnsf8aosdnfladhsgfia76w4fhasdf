@@ -92,6 +92,7 @@ const BASE_CLAIMS = {
   water: "water", water_name: "water", waterway: "water",
   boundary: "boundaries",
   landcover: "landscape", landuse: "landscape", park: "landscape", park_border: "landscape",
+  military_border: "landscape",
   mountain_peak: "landscape",
   aeroway: "landscape", aerodrome_label: "landscape",
   poi: "points",
