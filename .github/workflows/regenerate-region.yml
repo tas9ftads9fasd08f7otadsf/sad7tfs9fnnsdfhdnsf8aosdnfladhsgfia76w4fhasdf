@@ -312,6 +312,7 @@ jobs:
           path: |
             data/region.geojson
             data/region.poly
+            data/state.geojson
           retention-days: 1
 
       # the build's artifact names: `transport.yml` and `navigation-region.yml` fetch them by name

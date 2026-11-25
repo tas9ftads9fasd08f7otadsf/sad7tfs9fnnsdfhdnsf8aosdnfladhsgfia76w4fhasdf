@@ -524,6 +524,7 @@ jobs:
           path: |
             data/region.geojson
             data/region.poly
+            data/state.geojson
           retention-days: 1
 
       # an artifact, not a cache: within a run it's the same, a cache could miss

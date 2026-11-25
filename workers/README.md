@@ -412,7 +412,8 @@ Bbox je obdĺžnik, ale produkt pokrýva krajinu – rohové bunky za hranicou
 dlaždice sú preto **varovanie so zoznamom**, nie chyba: tam jednoducho nebude
 terén. Build zlyhá až vtedy, keď pre dané územie nie je **ani jedna**.
 
-> **Copernicus GLO-30 ako záloha je zámerne vypnutý.** Je to model *povrchu*:
+> **Copernicus GLO-30 ako záloha je zámerne vypnutý.** (Len 3D terén za
+> hranicou štátu ho berie, pozri nižšie – tam inak nie je nič.) Je to model *povrchu*:
 > vrstevnice by v lese viedli po korunách stromov a skaly by vychádzali
 > z vegetácie. Keby sa ním chýbajúce dlaždice ticho dopĺňali, časť mapy by
 > klamala a nikde by nebolo vidieť, ktorá. Radšej nech build povie, že terén
@@ -1992,8 +1993,20 @@ jediného pixela kraja sa nezapíše vôbec.
 **Cena je stena v 3D.** Terén sa na hranici kraja láme na rovinu, takže pri
 zapnutom 3D stojí po obvode regiónu zvislý múr (`v6` tam terén dopĺňal okolím
 pull-push pyramídou – múr nebol, ale tieňovanie slablo až stovky pixelov za
-hranicou). Podoba kódovania je **`v8`** (meno assetu v sklade aj kľúč cache),
+hranicou). Podoba kódovania je **`v9`** (meno assetu v sklade aj kľúč cache),
 inak by build vrátil staré dlaždice.
+
+**Za hranicou štátu nie je rovina, ale Copernicus GLO-30** (item 579). Tatry
+sa na hranici nekončia, a pri „Pozri sa okolo“ či lete to bolo vidno hneď.
+`region-poly.py` uloží obrys štátu do `data/state.geojson` (artefakt
+`region-poly`), `terrain/abroad.py` spraví VRT z COG-ov GLO-30 okolo bboxu
+(o 2° širšie, nízke zoomy siahajú ďaleko) čítaných na mieste cez `/vsicurl/`
+a `tiles.py --state --abroad-dem` nimi vyplní všetko mimo kraja a mimo štátu
+(`fill_abroad`). Nad susedným krajom ostáva rovina: tam aplikácia kladie
+archív toho kraja a rovinu berie ako „bez zeme“. Len pre celý kraj – pohorie má
+`DEM_FILL`. Bez obrysu štátu (kraj je sám štát) alebo keď GLO-30 nejde načítať,
+je za hranicou rovina ako predtým. GLO-30 je model povrchu, takže v lese na
+hranici je schod o výšku stromov; vrstevnice ani skaly z neho nie sú.
 
 Maska je rastrová a **bez shapely** – tá istá úvaha ako v `dem/coverage.py`: pri
 mriežke 2048 buniek je bunka ~100 m, kým dlaždica na z14 má ~1,5 km. Vrstevnice
