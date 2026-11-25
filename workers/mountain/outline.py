@@ -6,6 +6,7 @@
 
 A range wholly inside its model and naming no areas keeps its box: no file is written.
 """
+
 import argparse
 import json
 import math
@@ -42,10 +43,10 @@ def path_for(key):
 
 def fetch(relation):
     """An OSM relation's area as GeoJSON, from Nominatim."""
-    query = urllib.parse.urlencode({"osm_ids": f"R{relation}", "format": "json",
-                                    "polygon_geojson": 1, "polygon_threshold": TOLERANCE})
-    req = urllib.request.Request(f"{LOOKUP}?{query}",
-                                 headers={"User-Agent": "maptiles outline (skifahrer/maptiles)"})
+    query = urllib.parse.urlencode(
+        {"osm_ids": f"R{relation}", "format": "json", "polygon_geojson": 1, "polygon_threshold": TOLERANCE}
+    )
+    req = urllib.request.Request(f"{LOOKUP}?{query}", headers={"User-Agent": "maptiles outline (skifahrer/maptiles)"})
     with urllib.request.urlopen(req, timeout=90) as resp:
         found = json.load(resp)
     # Nominatim's usage policy: one request a second
@@ -71,16 +72,22 @@ def outline(areas, bbox, relations, coverage=None, model=MODEL):
         cut = cut.intersection(shape(coverage))
     parts = [p for p in getattr(cut, "geoms", [cut]) if p.geom_type == "Polygon" and km2(p) >= MIN_KM2]
     if not parts:
-        raise SystemExit(f"::error::Nothing of {relations or 'the box'} {bbox} lies inside "
-                         f"{model}'s coverage.")
+        raise SystemExit(f"::error::Nothing of {relations or 'the box'} {bbox} lies inside {model}'s coverage.")
     whole = unary_union(parts)
     if not areas and whole.area >= WHOLE * frame.area:
         return None
     shaped = whole.simplify(TOLERANCE, preserve_topology=True)
     geom = json.loads(json.dumps(mapping(shaped)), parse_float=lambda v: round(float(v), 6))
-    return {"type": "FeatureCollection", "features": [
-        {"type": "Feature", "properties": {"osm_relations": relations, "bbox": bbox, "model": model},
-         "geometry": geom}]}
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"osm_relations": relations, "bbox": bbox, "model": model},
+                "geometry": geom,
+            }
+        ],
+    }
 
 
 def write(key, data):

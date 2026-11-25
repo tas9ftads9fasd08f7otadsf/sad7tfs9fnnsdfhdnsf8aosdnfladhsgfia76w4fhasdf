@@ -11,6 +11,7 @@ from load import FIXTURES, WORKERS, needs, worker
 def read(path):
     """`{("n"|"w"|"r", id): tags}` of an OSM file."""
     import osmium
+
     out = {}
     for o in osmium.FileProcessor(path):
         out[(o.type_str(), o.id)] = dict(o.tags)
@@ -36,6 +37,7 @@ class Rail(unittest.TestCase):
     def test_bearing(self):
         def p(lat, lon):
             return SimpleNamespace(lat=lat, lon=lon)
+
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(49, 17)), 0)
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(48, 18)), 90, delta=0.5)
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(47, 17)), 180)
@@ -50,9 +52,18 @@ class Rail(unittest.TestCase):
         # fix 843: PBF writing broke on pyosmium 3
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "rail.osm.pbf")
-            r = subprocess.run([sys.executable, os.path.join(WORKERS, "rail/lines.py"),
-                                "--pbf", os.path.join(FIXTURES, "rail.osm"), "--out", out],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "rail/lines.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "rail.osm"),
+                    "--out",
+                    out,
+                ],
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             tags = read(out)
         self.assertEqual(tags[("w", 10)]["colour"], "#0000cc", "the tram line wins the colour")
@@ -64,7 +75,6 @@ class Rail(unittest.TestCase):
         self.assertEqual(tags[("n", 2)]["rail_bearing"], "90")
         self.assertEqual(tags[("n", 5)]["rail_bearing"], "270")
         self.assertIn(("r", 20), tags)
-
 
 
 @needs("osmium")
@@ -102,16 +112,19 @@ class RoutingNetwork(unittest.TestCase):
         self.assertEqual(sorted(got), ["no_left_turn", "only_straight_on"])
         self.assertEqual(got["no_left_turn"]["edges"], [(1, 2), (2, 4)])
         self.assertEqual(got["no_left_turn"]["via"], 2)
-        spared = {self.fmt.EXCEPTIONS[i] for i in range(len(self.fmt.EXCEPTIONS))
-                  if got["no_left_turn"]["exceptions"] >> i & 1}
+        spared = {
+            self.fmt.EXCEPTIONS[i]
+            for i in range(len(self.fmt.EXCEPTIONS))
+            if got["no_left_turn"]["exceptions"] >> i & 1
+        }
         self.assertEqual(spared, {"bicycle", "psv"})
         self.assertEqual(got["only_straight_on"]["edges"], [(4, 2), (2, 3), (3, 7)])
         self.assertEqual(self.net.skipped["restriction:hgv"], 1)
 
 
-
 def box_m2(dlon, dlat, lat):
     import math
+
     deg = 6371008.8 * math.pi / 180
     return dlon * deg * math.cos(math.radians(lat)) * dlat * deg
 
@@ -121,9 +134,18 @@ class Buildings(unittest.TestCase):
     def test_area_on_ways_and_multipolygons(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "b.osm.pbf")
-            r = subprocess.run([sys.executable, os.path.join(WORKERS, "buildings/areas.py"),
-                                "--pbf", os.path.join(FIXTURES, "buildings.osm"), "--out", out],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "buildings/areas.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "buildings.osm"),
+                    "--out",
+                    out,
+                ],
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             tags = read(out)
         house = box_m2(0.0003, 0.0001, 48.15)
@@ -136,9 +158,18 @@ class Buildings(unittest.TestCase):
     def test_a_place_with_a_point_is_named_once(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "p.osm.pbf")
-            r = subprocess.run([sys.executable, os.path.join(WORKERS, "buildings/areas.py"),
-                                "--pbf", os.path.join(FIXTURES, "places.osm"), "--out", out],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "buildings/areas.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "places.osm"),
+                    "--out",
+                    out,
+                ],
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             tags = read(out)
         self.assertNotIn("place", tags[("w", 200)], "same name, point inside")
@@ -164,9 +195,18 @@ class BoundaryLabels(unittest.TestCase):
     def test_a_municipality_its_settlement_names_is_marked(self):
         with tempfile.TemporaryDirectory() as tmp:
             out = os.path.join(tmp, "m.osm.pbf")
-            r = subprocess.run([sys.executable, os.path.join(WORKERS, "boundaries/labels.py"),
-                                "--pbf", os.path.join(FIXTURES, "municipalities.osm"), "--out", out],
-                               capture_output=True, text=True)
+            r = subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "boundaries/labels.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "municipalities.osm"),
+                    "--out",
+                    out,
+                ],
+                capture_output=True,
+                text=True,
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             tags = read(out)
         self.assertEqual(tags[("r", 301)].get("named_by_place"), "yes", "same name, point inside")
@@ -182,10 +222,12 @@ class PlaceTwins(unittest.TestCase):
     def test_twins(self):
         t = worker("lib/place_twins.py")
         points = [(1, "A", "Q1", 17.0, 48.0), (2, "B", None, 17.5, 48.5), (3, "C", None, 30.0, 10.0)]
-        areas = [("a", "A-district", "Q1", (0, 0, 1, 1)),
-                 ("b", "B", None, (17.4, 48.4, 17.6, 48.6)),
-                 ("c", "C", None, (17.4, 48.4, 17.6, 48.6)),
-                 ("d", None, None, (17.4, 48.4, 17.6, 48.6))]
+        areas = [
+            ("a", "A-district", "Q1", (0, 0, 1, 1)),
+            ("b", "B", None, (17.4, 48.4, 17.6, 48.6)),
+            ("c", "C", None, (17.4, 48.4, 17.6, 48.6)),
+            ("d", None, None, (17.4, 48.4, 17.6, 48.6)),
+        ]
         self.assertEqual(t.twins(points, areas), {"a": 1, "b": 2})
         self.assertEqual(t.bbox([(1, 5), (3, 2), (2, 9)]), (1, 2, 3, 9))
 
@@ -206,10 +248,8 @@ class Trails(unittest.TestCase):
         # 510 Mapy draws a cycle route solid on a cycleway and dashed on a road or track
         self.assertTrue(self.t.on_cycleway({"highway": "cycleway"}))
         self.assertTrue(self.t.on_cycleway({"highway": "path", "bicycle": "designated"}))
-        self.assertTrue(self.t.on_cycleway(
-            {"highway": "path", "bicycle": "designated", "surface": "paving_stones"}))
-        self.assertFalse(self.t.on_cycleway(
-            {"highway": "path", "bicycle": "designated", "surface": "gravel"}))
+        self.assertTrue(self.t.on_cycleway({"highway": "path", "bicycle": "designated", "surface": "paving_stones"}))
+        self.assertFalse(self.t.on_cycleway({"highway": "path", "bicycle": "designated", "surface": "gravel"}))
         # 532 route 007 on a gravel cycleway in the Tatras is dashed in Mapy, as on a track
         self.assertFalse(self.t.on_cycleway({"highway": "cycleway", "surface": "gravel"}))
         self.assertFalse(self.t.on_cycleway({"highway": "cycleway", "surface": "fine_gravel"}))
@@ -261,10 +301,12 @@ class Trails(unittest.TestCase):
 
     def test_lane_order_stable_and_collapsed(self):
         base = {"route": "hiking", "colour": "red", "hex": "", "tier": "national", "ref": "", "name": ""}
-        routes = [dict(base, rel=3, colour="blue", name="Modrá"),
-                  dict(base, rel=1, ref="0001", name="Cesta SNP"),
-                  dict(base, rel=2, ref="0001", name=""),
-                  dict(base, rel=4, route="bicycle", tier="international", ref="EV13")]
+        routes = [
+            dict(base, rel=3, colour="blue", name="Modrá"),
+            dict(base, rel=1, ref="0001", name="Cesta SNP"),
+            dict(base, rel=2, ref="0001", name=""),
+            dict(base, rel=4, route="bicycle", tier="international", ref="EV13"),
+        ]
         order = [r["rel"] for r in self.t.Ways.lane_order(routes)]
         self.assertEqual(order, [4, 3, 1], "the unnamed part collapses into its named parent")
         self.assertEqual(order, [r["rel"] for r in self.t.Ways.lane_order(list(reversed(routes)))])
@@ -286,16 +328,23 @@ class Trails(unittest.TestCase):
         lanes = [dict(bike, colour="green"), dict(bike, colour="red"), dict(bike, colour="blue")]
         self.assertEqual(self.t.Ways.lane_slots(lanes), [(-1, 0, 0), (-1, 1, 0), (-1, 2, 0)])
         hike = {"route": "hiking", "hex": ""}
-        self.assertEqual(self.t.Ways.lane_slots([dict(hike, colour="green"), dict(hike, colour="red")]),
-                         [(1, 0, 0), (1, 1, 1)])
+        self.assertEqual(
+            self.t.Ways.lane_slots([dict(hike, colour="green"), dict(hike, colour="red")]), [(1, 0, 0), (1, 1, 1)]
+        )
 
     def test_lane_slots_share_a_lane_per_colour(self):
         base = {"route": "hiking", "colour": "red", "hex": ""}
-        lanes = [dict(base), dict(base), dict(base, colour="blue"),
-                 dict(base, route="ski"), dict(base, route="bicycle", colour=""),
-                 dict(base, route="mtb", colour="")]
-        self.assertEqual(self.t.Ways.lane_slots(lanes),
-                         [(1, 0, 0), (1, 1, 0), (1, 2, 1), (1, 3, 0), (-1, 0, 0), (-1, 1, 1)])
+        lanes = [
+            dict(base),
+            dict(base),
+            dict(base, colour="blue"),
+            dict(base, route="ski"),
+            dict(base, route="bicycle", colour=""),
+            dict(base, route="mtb", colour=""),
+        ]
+        self.assertEqual(
+            self.t.Ways.lane_slots(lanes), [(1, 0, 0), (1, 1, 0), (1, 2, 1), (1, 3, 0), (-1, 0, 0), (-1, 1, 1)]
+        )
 
     def test_educational_trail_gets_a_lane_outside_the_marks(self):
         # 515 Mapy draws a náučný chodník dash-dot outside the marks, never on the green one
@@ -309,11 +358,13 @@ class Trails(unittest.TestCase):
     def test_several_hiking_routes_stack_as_mapy_does(self):
         # 529 Mapy: red, blue, green, yellow outwards, a local route last, same colours on one lane
         base = {"route": "hiking", "colour": "", "hex": "", "tier": "regional", "ref": "", "name": ""}
-        marks = [dict(base, rel=1, colour="yellow", ref="8104"),
-                 dict(base, rel=2, colour="green", tier="local", ref="5148M"),
-                 dict(base, rel=3, colour="red", tier="national", ref="0701"),
-                 dict(base, rel=4, colour="red", tier="national", ref=""),
-                 dict(base, rel=5, colour="blue", ref="2404")]
+        marks = [
+            dict(base, rel=1, colour="yellow", ref="8104"),
+            dict(base, rel=2, colour="green", tier="local", ref="5148M"),
+            dict(base, rel=3, colour="red", tier="national", ref="0701"),
+            dict(base, rel=4, colour="red", tier="national", ref=""),
+            dict(base, rel=5, colour="blue", ref="2404"),
+        ]
         order = self.t.Ways.lane_order(marks)
         self.assertEqual([r["colour"] for r in order], ["red", "red", "blue", "yellow", "green"])
         self.assertEqual([lane for _, _, lane in self.t.Ways.lane_slots(order)], [0, 0, 1, 2, 3])
@@ -322,9 +373,12 @@ class Trails(unittest.TestCase):
         # 531 Mapy gave none of 7 Slovak colour-only routes a stripe (Has50 near Šaštín-Stráže)
         def relation(**tags):
             members = [SimpleNamespace(type="w", ref=7, role="")]
-            return SimpleNamespace(id=1, members=members,
-                                   tags=[SimpleNamespace(k=k, v=v) for k, v in
-                                         dict(type="route", route="hiking", **tags).items()])
+            return SimpleNamespace(
+                id=1,
+                members=members,
+                tags=[SimpleNamespace(k=k, v=v) for k, v in dict(type="route", route="hiking", **tags).items()],
+            )
+
         routes = self.t.Routes()
         routes.relation(relation(colour="green", ref="Has50", network="lwn"))
         routes.relation(relation(color="red"))
@@ -337,9 +391,12 @@ class Trails(unittest.TestCase):
         # 536 Mariánska cesta, Sultans Trail and the Bratislava city routes drew red; Mapy draws none
         def relation(**tags):
             members = [SimpleNamespace(type="w", ref=9, role="")]
-            return SimpleNamespace(id=2, members=members,
-                                   tags=[SimpleNamespace(k=k, v=v) for k, v in
-                                         {"type": "route", "route": "hiking", **tags}.items()])
+            return SimpleNamespace(
+                id=2,
+                members=members,
+                tags=[SimpleNamespace(k=k, v=v) for k, v in {"type": "route", "route": "hiking", **tags}.items()],
+            )
+
         routes = self.t.Routes()
         routes.relation(relation(ref="M05-13", network="iwn", name="Mariánska cesta"))
         routes.relation(relation(ref="E8", network="iwn"))

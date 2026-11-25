@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """How a package is packed – ZIP and Apple Archive, the same contents in both."""
+
 import importlib.util
 import json
 import os
@@ -44,29 +45,28 @@ def pack_zip(site, dest, root, files, info=None):
     t0 = time.time()
     done = 0
     last = t0
-    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED,
-                         compresslevel=ZIP_LEVEL) as z:
+    with zipfile.ZipFile(dest, "w", zipfile.ZIP_DEFLATED, compresslevel=ZIP_LEVEL) as z:
         if info is not None:
             # first, so it is in sight after unpacking
-            z.writestr(os.path.join(root, CONTENTS),
-                       json.dumps(info, ensure_ascii=False, indent=2) + "\n")
+            z.writestr(os.path.join(root, CONTENTS), json.dumps(info, ensure_ascii=False, indent=2) + "\n")
         for f in sorted(files):
             z.write(f, os.path.join(root, os.path.relpath(f, site)))
             done += os.path.getsize(f)
             # a beat every half minute: silence can't be told from a stuck step
             if time.time() - last >= 30:
                 last = time.time()
-                log(f"  [{(last - t0) / 60:.1f} min] "
-                    f"{folder.human(done)} of {folder.human(raw)}")
+                log(f"  [{(last - t0) / 60:.1f} min] {folder.human(done)} of {folder.human(raw)}")
     size = os.path.getsize(dest)
-    log(f"  done in {time.time() - t0:.0f} s: {folder.human(size)} "
-        f"({size * 100 // max(raw, 1)} % of the original size)")
+    log(
+        f"  done in {time.time() - t0:.0f} s: {folder.human(size)} ({size * 100 // max(raw, 1)} % of the original size)"
+    )
     return size
 
 
 def has_aa():
     """Is the Apple Archive CLI (`aa`) here? Only on macOS."""
     from shutil import which
+
     return which("aa") is not None
 
 
@@ -93,13 +93,13 @@ def pack_aar(site, dest, root, files, info=None):
                 shutil.copy2(f, target)
         if os.path.exists(dest):
             os.remove(dest)
-        subprocess.run(["aa", "archive", "-a", "lzfse", "-d", stage,
-                        "-o", dest], check=True)
+        subprocess.run(["aa", "archive", "-a", "lzfse", "-d", stage, "-o", dest], check=True)
     finally:
         shutil.rmtree(stage, ignore_errors=True)
     size = os.path.getsize(dest)
-    log(f"  done in {time.time() - t0:.0f} s: {folder.human(size)} "
-        f"({size * 100 // max(raw, 1)} % of the original size)")
+    log(
+        f"  done in {time.time() - t0:.0f} s: {folder.human(size)} ({size * 100 // max(raw, 1)} % of the original size)"
+    )
     return size
 
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Heights from the model – a profile along each edge at a fixed step, bilinear from the mosaic."""
+
 import json
 import math
 import os
@@ -27,8 +28,7 @@ ABOVE_TERRAIN = ("bridge", "tunnel")
 
 
 def resolution(dem):
-    info = json.loads(subprocess.run(["gdalinfo", "-json", dem], check=True,
-                                     capture_output=True, text=True).stdout)
+    info = json.loads(subprocess.run(["gdalinfo", "-json", dem], check=True, capture_output=True, text=True).stdout)
     gt = info["geoTransform"]
     return abs(gt[1]), abs(gt[5])
 
@@ -43,10 +43,28 @@ def _size(hdr):
 def _grid(dem, path, w, s, e, n, dx, dy):
     """A mosaic cutout at native resolution as raw Float32."""
     subprocess.run(
-        ["gdalwarp", "-q", "-overwrite", "-te", *map(repr, (w, s, e, n)),
-         "-tr", repr(dx), repr(dy), "-r", "near", "-ot", "Float32",
-         "-dstnodata", str(NODATA), "-of", "ENVI", dem, path],
-        check=True)
+        [
+            "gdalwarp",
+            "-q",
+            "-overwrite",
+            "-te",
+            *map(repr, (w, s, e, n)),
+            "-tr",
+            repr(dx),
+            repr(dy),
+            "-r",
+            "near",
+            "-ot",
+            "Float32",
+            "-dstnodata",
+            str(NODATA),
+            "-of",
+            "ENVI",
+            dem,
+            path,
+        ],
+        check=True,
+    )
     width, height = _size(os.path.splitext(path)[0] + ".hdr")
     return np.fromfile(path, dtype="<f4").reshape(height, width)
 
@@ -63,8 +81,12 @@ def bilinear(grid, col, row):
     fc, fr = c - c0, r - r0
     total = np.zeros(len(c), dtype=np.float64)
     weights = np.zeros(len(c), dtype=np.float64)
-    for rr, cc, weight in ((r0, c0, (1 - fr) * (1 - fc)), (r0, c1, (1 - fr) * fc),
-                           (r1, c0, fr * (1 - fc)), (r1, c1, fr * fc)):
+    for rr, cc, weight in (
+        (r0, c0, (1 - fr) * (1 - fc)),
+        (r0, c1, (1 - fr) * fc),
+        (r1, c0, fr * (1 - fc)),
+        (r1, c1, fr * fc),
+    ):
         v = grid[rr, cc].astype(np.float64)
         valid = v > NODATA + 1.0
         total += np.where(valid, v * weight, 0.0)
@@ -75,8 +97,7 @@ def bilinear(grid, col, row):
 
 def _by_windows(lat, lon, window):
     """Points by squares of side `window` – one grid in memory at a time."""
-    key = np.stack([np.floor(lon / window), np.floor(lat / window)],
-                   axis=1).astype(np.int64)
+    key = np.stack([np.floor(lon / window), np.floor(lat / window)], axis=1).astype(np.int64)
     cells, where = np.unique(key, axis=0, return_inverse=True)
     for i, (west, south) in enumerate(cells):
         yield west * window, south * window, np.flatnonzero(where.ravel() == i)
@@ -182,8 +203,7 @@ def profiles(network, dem, step_m=STEP_M):
     """`edge["profile"]` – heights in dm every `step_m`; returns (with profile, without)."""
     lat, lon, pieces = [], [], []
     for h in network.edges:
-        la, lo = _samples([network.nodes[h["from"]], *h["geom"], network.nodes[h["to"]]],
-                          step_m, h["length_cm"] / 100)
+        la, lo = _samples([network.nodes[h["from"]], *h["geom"], network.nodes[h["to"]]], step_m, h["length_cm"] / 100)
         pieces.append(len(la))
         lat.append(la)
         lon.append(lo)

@@ -5,6 +5,7 @@ The outline is `data/outlines/<range>.geojson` where the range has one, else its
 
     python3 workers/mountain/plan.py --mountain=vysoke_tatry --out=$GITHUB_OUTPUT
 """
+
 import argparse
 import hashlib
 import json
@@ -38,9 +39,10 @@ def outline(bbox):
     """The cut-out as the region polygon the DEM layers clip to."""
     w, s, e, n = bbox
     ring = [[w, s], [e, s], [e, n], [w, n], [w, s]]
-    return {"type": "FeatureCollection", "features": [
-        {"type": "Feature", "properties": {},
-         "geometry": {"type": "Polygon", "coordinates": [ring]}}]}
+    return {
+        "type": "FeatureCollection",
+        "features": [{"type": "Feature", "properties": {}, "geometry": {"type": "Polygon", "coordinates": [ring]}}],
+    }
 
 
 def outline_file(key):
@@ -92,8 +94,10 @@ def plan(key, test_km2=0.0, test_at="", mountains=None, areas=None, regions=None
     areas = registry("areas") if areas is None else areas
     regions = registry("regions") if regions is None else regions
     if key not in mountains:
-        raise SystemExit(f"::error::Unknown mountain “{key}”. Known "
-                         f"(`maps.mountains.ranges` of config/map-settings.json): {', '.join(sorted(mountains))}.")
+        raise SystemExit(
+            f"::error::Unknown mountain “{key}”. Known "
+            f"(`maps.mountains.ranges` of config/map-settings.json): {', '.join(sorted(mountains))}."
+        )
     entry = mountains[key]
     country, cut = entry["country"], entry["area"]
     if country not in regions:

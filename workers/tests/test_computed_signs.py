@@ -30,12 +30,12 @@ class Transitions(unittest.TestCase):
         return sorted((s["way"], s["context"], s["direction"]) for s in speed.signs(self.ways, self.contexts))
 
     def test_entry_and_exit_both_ways(self):
-        self.assertEqual(self.found(), [(200, "rural", 270), (201, "urban", 90), (201, "urban", 270),
-                                        (202, "rural", 90)])
+        self.assertEqual(
+            self.found(), [(200, "rural", 270), (201, "urban", 90), (201, "urban", 270), (202, "rural", 90)]
+        )
 
     def test_sign_stands_past_the_junction(self):
-        [entry] = [s for s in speed.signs(self.ways, self.contexts)
-                   if s["way"] == 201 and s["direction"] == 90]
+        [entry] = [s for s in speed.signs(self.ways, self.contexts) if s["way"] == 201 and s["direction"] == 90]
         self.assertAlmostEqual(speed._metres((17.10, 48.2), entry["point"]), speed.SIGN_M, delta=0.5)
 
     def test_a_side_street_off_the_road_gets_none(self):
@@ -56,8 +56,9 @@ class Transitions(unittest.TestCase):
 
     def test_continues(self):
         self.assertTrue(speed.continues({"highway": "primary"}, {"highway": "primary"}))
-        self.assertTrue(speed.continues({"highway": "primary", "name": "Hlavná"},
-                                        {"highway": "secondary", "name": "Hlavná"}))
+        self.assertTrue(
+            speed.continues({"highway": "primary", "name": "Hlavná"}, {"highway": "secondary", "name": "Hlavná"})
+        )
         self.assertFalse(speed.continues({"highway": "primary", "ref": "2"}, {"highway": "residential"}))
 
 
@@ -68,17 +69,19 @@ class TownSigns(unittest.TestCase):
     def setUp(self):
         import context
         import shapely
+
         self.context = context
-        self.ways = {300: way([1, 2, 3], [(17.08, 48.2), (17.10, 48.2), (17.12, 48.2)],
-                              highway="primary", ref="2")}
+        self.ways = {300: way([1, 2, 3], [(17.08, 48.2), (17.10, 48.2), (17.12, 48.2)], highway="primary", ref="2")}
         self.ways[300]["road"] = ("road", None)
         self.contexts = {300: "urban"}
         self.east = context.BuiltUp([shapely.box(17.10, 48.19, 17.13, 48.21)])
         self.nowhere = context.BuiltUp([])
 
     def found(self, towns, built_up=None):
-        return sorted((s["context"], s["direction"]) for s in
-                      speed.town_signs(self.ways, self.contexts, towns, built_up or self.east))
+        return sorted(
+            (s["context"], s["direction"])
+            for s in speed.town_signs(self.ways, self.contexts, towns, built_up or self.east)
+        )
 
     def test_built_up_land_says_where_the_village_is(self):
         self.assertEqual(self.found({2: ("begin", None)}), [("rural", 270), ("urban", 90)])
@@ -108,8 +111,10 @@ class TownSigns(unittest.TestCase):
 
     def test_town_sign_tags(self):
         self.assertEqual(speed.town_sign({"traffic_sign": "city_limit"}), ("begin", None))
-        self.assertEqual(speed.town_sign({"traffic_sign": "city_limit", "city_limit": "end",
-                                          "direction": "forward"}), ("end", "forward"))
+        self.assertEqual(
+            speed.town_sign({"traffic_sign": "city_limit", "city_limit": "end", "direction": "forward"}),
+            ("end", "forward"),
+        )
         self.assertEqual(speed.town_sign({"traffic_sign:backward": "city_limit"}), ("begin", "backward"))
         self.assertIsNone(speed.town_sign({"traffic_sign": "SK:253[50]"}))
 
@@ -125,8 +130,7 @@ class DeadEnds(unittest.TestCase):
     def setUp(self):
         self.ways = {
             400: way([1, 2, 3], [(17.1015, 48.2), (17.102, 48.2), (17.1025, 48.2)], highway="residential"),
-            401: way([2, 11, 10], [(17.102, 48.2), (17.102, 48.2005), (17.102, 48.201)],
-                     highway="residential"),
+            401: way([2, 11, 10], [(17.102, 48.2), (17.102, 48.2005), (17.102, 48.201)], highway="residential"),
         }
         self.contexts = {400: "urban", 401: "urban"}
 
@@ -181,66 +185,122 @@ class DeadEnds(unittest.TestCase):
     def test_its_feature_has_no_speed_context(self):
         [sign] = speed.dead_ends(self.ways, self.contexts)
         [feature] = speed.geojson([sign], "SK")["features"]
-        self.assertEqual(feature["properties"], {"kind": "dead-end", "country": "SK", "direction": 0,
-                                                 "osm_way": 401})
+        self.assertEqual(feature["properties"], {"kind": "dead-end", "country": "SK", "direction": 0, "osm_way": 401})
 
 
 @needs("osmium", "shapely", "numpy")
 class Region(unittest.TestCase):
     def test_ways_tagged_and_signs_written(self):
         import osmium
+
         with tempfile.TemporaryDirectory() as tmp:
             out, geo = os.path.join(tmp, "out.osm.pbf"), os.path.join(tmp, "signs.geojson")
-            subprocess.run([sys.executable, os.path.join(WORKERS, "transport", "speed.py"),
-                            "--pbf", os.path.join(FIXTURES, "speed-signs.osm"),
-                            "--out", out, "--signs", geo, "--country", "sk"],
-                           check=True, capture_output=True)
-            tagged = {o.id: o.tags.get("speed_context") for o in osmium.FileProcessor(out)
-                      if o.type_str() == "w"}
+            subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "transport", "speed.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "speed-signs.osm"),
+                    "--out",
+                    out,
+                    "--signs",
+                    geo,
+                    "--country",
+                    "sk",
+                ],
+                check=True,
+                capture_output=True,
+            )
+            tagged = {o.id: o.tags.get("speed_context") for o in osmium.FileProcessor(out) if o.type_str() == "w"}
             with open(geo, encoding="utf-8") as f:
                 features = json.load(f)["features"]
         self.assertEqual(tagged, {200: "rural", 201: "urban", 202: "rural", 203: "rural", 900: None})
-        self.assertEqual(sorted((f["properties"]["osm_way"], f["properties"]["direction"]) for f in features),
-                         [(200, 270), (201, 90), (201, 270), (202, 90)])
+        self.assertEqual(
+            sorted((f["properties"]["osm_way"], f["properties"]["direction"]) for f in features),
+            [(200, 270), (201, 90), (201, 270), (202, 90)],
+        )
         self.assertEqual({f["properties"]["country"] for f in features}, {"SK"})
 
     def test_a_dead_end_street_gets_its_sign(self):
         with tempfile.TemporaryDirectory() as tmp:
             geo = os.path.join(tmp, "signs.geojson")
-            subprocess.run([sys.executable, os.path.join(WORKERS, "transport", "speed.py"),
-                            "--pbf", os.path.join(FIXTURES, "dead-end.osm"),
-                            "--out", os.path.join(tmp, "out.osm.pbf"), "--signs", geo, "--country", "sk",
-                            "--outline", os.path.join(tmp, "missing.geojson")],
-                           check=True, capture_output=True)
+            subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "transport", "speed.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "dead-end.osm"),
+                    "--out",
+                    os.path.join(tmp, "out.osm.pbf"),
+                    "--signs",
+                    geo,
+                    "--country",
+                    "sk",
+                    "--outline",
+                    os.path.join(tmp, "missing.geojson"),
+                ],
+                check=True,
+                capture_output=True,
+            )
             with open(geo, encoding="utf-8") as f:
                 features = json.load(f)["features"]
-        self.assertEqual([(f["properties"]["kind"], f["properties"]["osm_way"], f["properties"]["direction"])
-                          for f in features], [("dead-end", 501, 0)])
+        self.assertEqual(
+            [(f["properties"]["kind"], f["properties"]["osm_way"], f["properties"]["direction"]) for f in features],
+            [("dead-end", 501, 0)],
+        )
 
     def test_a_mapped_town_sign_places_both_signs(self):
         with tempfile.TemporaryDirectory() as tmp:
             geo = os.path.join(tmp, "signs.geojson")
-            subprocess.run([sys.executable, os.path.join(WORKERS, "transport", "speed.py"),
-                            "--pbf", os.path.join(FIXTURES, "speed-town-sign.osm"),
-                            "--out", os.path.join(tmp, "out.osm.pbf"), "--signs", geo, "--country", "sk"],
-                           check=True, capture_output=True)
+            subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "transport", "speed.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "speed-town-sign.osm"),
+                    "--out",
+                    os.path.join(tmp, "out.osm.pbf"),
+                    "--signs",
+                    geo,
+                    "--country",
+                    "sk",
+                ],
+                check=True,
+                capture_output=True,
+            )
             with open(geo, encoding="utf-8") as f:
                 features = json.load(f)["features"]
             import osmium
+
             # 555 TestFlight ABeg: the sign itself says which way its town lies
-            sides = [n.tags["town_side"] for n in osmium.FileProcessor(os.path.join(tmp, "out.osm.pbf"))
-                     if n.is_node() and "town_side" in n.tags]
-        self.assertEqual(sorted((f["properties"]["speed_context"], f["properties"]["direction"])
-                                for f in features), [("rural", 270), ("urban", 90)])
+            sides = [
+                n.tags["town_side"]
+                for n in osmium.FileProcessor(os.path.join(tmp, "out.osm.pbf"))
+                if n.is_node() and "town_side" in n.tags
+            ]
+        self.assertEqual(
+            sorted((f["properties"]["speed_context"], f["properties"]["direction"]) for f in features),
+            [("rural", 270), ("urban", 90)],
+        )
         self.assertEqual(sides, ["90"])
 
     def test_no_sign_is_an_empty_file(self):
         with tempfile.TemporaryDirectory() as tmp:
             geo = os.path.join(tmp, "signs.geojson")
-            subprocess.run([sys.executable, os.path.join(WORKERS, "transport", "speed.py"),
-                            "--pbf", os.path.join(FIXTURES, "speed-context.osm"),
-                            "--out", os.path.join(tmp, "out.osm.pbf"), "--signs", geo],
-                           check=True, capture_output=True)
+            subprocess.run(
+                [
+                    sys.executable,
+                    os.path.join(WORKERS, "transport", "speed.py"),
+                    "--pbf",
+                    os.path.join(FIXTURES, "speed-context.osm"),
+                    "--out",
+                    os.path.join(tmp, "out.osm.pbf"),
+                    "--signs",
+                    geo,
+                ],
+                check=True,
+                capture_output=True,
+            )
             self.assertEqual(os.path.getsize(geo), 0, "an empty `features` list kills Planetiler")
 
 

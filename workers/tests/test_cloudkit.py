@@ -17,20 +17,41 @@ cloudkit = worker("deploy/cloudkit.py")
 
 
 def region(name, ts=1, **extra):
-    return dict({"name": name, "bbox": [17, 48, 18, 49], "updated_ts": ts,
-                 "maps": {"base": {"download": "https://example.invalid/b", "size": 1}}}, **extra)
+    return dict(
+        {
+            "name": name,
+            "bbox": [17, 48, 18, 49],
+            "updated_ts": ts,
+            "maps": {"base": {"download": "https://example.invalid/b", "size": 1}},
+        },
+        **extra,
+    )
 
 
 def catalog():
     return {
         "_updated_ts": 5,
-        "slovensko": {"id": "slovakia", "name": "Slovakia", "updated_ts": 3,
-                      "maps": {"routing": {"download": "https://example.invalid/r"}},
-                      "regions": {"kosicky": region("Košický", id="slovakia-kosicky"),
-                                  "presovsky": region("Prešovský", id="slovakia-presovsky")}},
-        "usa": {"id": "usa", "name": "United States",
-                "regions": {"california": {"id": "usa-california", "name": "California",
-                                           "subregions": {"bay": region("Bay Area", id="usa-california-bay")}}}},
+        "slovensko": {
+            "id": "slovakia",
+            "name": "Slovakia",
+            "updated_ts": 3,
+            "maps": {"routing": {"download": "https://example.invalid/r"}},
+            "regions": {
+                "kosicky": region("Košický", id="slovakia-kosicky"),
+                "presovsky": region("Prešovský", id="slovakia-presovsky"),
+            },
+        },
+        "usa": {
+            "id": "usa",
+            "name": "United States",
+            "regions": {
+                "california": {
+                    "id": "usa-california",
+                    "name": "California",
+                    "subregions": {"bay": region("Bay Area", id="usa-california-bay")},
+                }
+            },
+        },
         "svet_ground": dict(region("World – ground"), id="world_ground"),
     }
 
@@ -52,8 +73,11 @@ class FakeCloud:
             out = []
             for asked in payload["records"]:
                 record = self.records.get(asked["recordName"])
-                out.append(copy.deepcopy(record) if record else
-                           {"recordName": asked["recordName"], "serverErrorCode": "NOT_FOUND"})
+                out.append(
+                    copy.deepcopy(record)
+                    if record
+                    else {"recordName": asked["recordName"], "serverErrorCode": "NOT_FOUND"}
+                )
             return {"records": out}
         if self.before_modify:
             hook, self.before_modify = self.before_modify, None
@@ -67,7 +91,9 @@ class FakeCloud:
                 out.append({"recordName": name, "deleted": True})
                 continue
             if (op["operationType"] == "create" and have) or (
-                    op["operationType"] == "update" and (not have or have["recordChangeTag"] != record.get("recordChangeTag"))):
+                op["operationType"] == "update"
+                and (not have or have["recordChangeTag"] != record.get("recordChangeTag"))
+            ):
                 out.append({"recordName": name, "serverErrorCode": "CONFLICT"})
                 continue
             self.tag += 1
@@ -158,11 +184,11 @@ class Publishing(unittest.TestCase):
         def another_run(fake):
             fake.tag += 1
             fake.records["slovakia"]["recordChangeTag"] = str(fake.tag)
+
         cloud.before_modify = another_run
         quiet(cloudkit.publish, changed, cloud, now=200)
         self.assertEqual(cloud.field("slovakia", "name"), "Slovensko")
         self.assertEqual(cloud.calls.count("modify"), 3)
-
 
     def test_a_body_past_the_record_limit_goes_up_as_an_asset(self):
         cloud = FakeCloud()
@@ -200,22 +226,29 @@ class NewCountries(unittest.TestCase):
         cloud = FakeCloud()
         quiet(cloudkit.publish, catalog(), cloud, now=100)
         self.assertNotIn("features-beta", cloud.records)
-        cloud.records["features-prod"] = {"recordName": "features-prod", "recordType": "AppFeatures",
-                                          "recordChangeTag": "x",
-                                          "fields": {"switches": {"value": '{"gallery": true}'}}}
+        cloud.records["features-prod"] = {
+            "recordName": "features-prod",
+            "recordType": "AppFeatures",
+            "recordChangeTag": "x",
+            "fields": {"switches": {"value": '{"gallery": true}'}},
+        }
         bigger = catalog()
         bigger["rakusko"] = {"id": "austria", "name": "Austria", "regions": {"wien": region("Wien", id="austria-wien")}}
         quiet(cloudkit.publish, bigger, cloud, now=200)
         self.assertEqual(json.loads(cloud.field("features-beta", "switches")), {"country:austria": False})
-        self.assertEqual(json.loads(cloud.field("features-prod", "switches")),
-                         {"gallery": True, "country:austria": False})
+        self.assertEqual(
+            json.loads(cloud.field("features-prod", "switches")), {"gallery": True, "country:austria": False}
+        )
         self.assertNotIn("features-dev", cloud.records)
 
     def test_an_admin_switch_is_never_overwritten(self):
         cloud = FakeCloud()
-        cloud.records["features-beta"] = {"recordName": "features-beta", "recordType": "AppFeatures",
-                                          "recordChangeTag": "x",
-                                          "fields": {"switches": {"value": '{"country:austria": true}'}}}
+        cloud.records["features-beta"] = {
+            "recordName": "features-beta",
+            "recordType": "AppFeatures",
+            "recordChangeTag": "x",
+            "fields": {"switches": {"value": '{"country:austria": true}'}},
+        }
         with redirect_stdout(io.StringIO()):
             cloudkit.switch_off(cloud, ["austria"])
         self.assertEqual(json.loads(cloud.field("features-beta", "switches")), {"country:austria": True})
@@ -227,44 +260,57 @@ class Requests(unittest.TestCase):
         said = b'{"uuid":"u-1","reason":"Authentication failed","serverErrorCode":"AUTHENTICATION_FAILED"}'
         error = urllib.error.HTTPError("https://x", 401, "Unauthorized", {}, io.BytesIO(said))
         cloud = cloudkit.Cloud("kid", "/k", "production")
-        with mock.patch.object(cloudkit, "signed", return_value={}), \
-                mock.patch.object(cloudkit.urllib.request, "urlopen", side_effect=error):
+        with (
+            mock.patch.object(cloudkit, "signed", return_value={}),
+            mock.patch.object(cloudkit.urllib.request, "urlopen", side_effect=error),
+        ):
             with self.assertRaises(RuntimeError) as raised:
                 cloud("lookup", {"records": []})
-        self.assertEqual(str(raised.exception),
-                         "lookup /database/1/iCloud.com.rikimaps.rikimaps.public/production/public/records/lookup: "
-                         f"HTTP 401 Unauthorized – {said.decode()} (try 1 of 3)")
-
+        self.assertEqual(
+            str(raised.exception),
+            "lookup /database/1/iCloud.com.rikimaps.rikimaps.public/production/public/records/lookup: "
+            f"HTTP 401 Unauthorized – {said.decode()} (try 1 of 3)",
+        )
 
     def test_the_caller_is_a_signed_get(self):
         cloud = cloudkit.Cloud("kid", "/k", "development")
         answer = mock.MagicMock()
         answer.__enter__.return_value = io.BytesIO(b'{"userRecordName": "_abc"}')
-        with mock.patch.object(cloudkit, "signed", return_value={}) as signed, \
-                mock.patch.object(cloudkit.urllib.request, "urlopen", return_value=answer) as urlopen:
+        with (
+            mock.patch.object(cloudkit, "signed", return_value={}) as signed,
+            mock.patch.object(cloudkit.urllib.request, "urlopen", return_value=answer) as urlopen,
+        ):
             self.assertEqual(cloudkit.caller_line(cloud), "CloudKit development: the key acts as iCloud user _abc")
         request = urlopen.call_args.args[0]
         self.assertEqual((request.get_method(), request.data), ("GET", None))
-        self.assertEqual(signed.call_args.args[:2],
-                         ("/database/1/iCloud.com.rikimaps.rikimaps.public/development/public/users/caller", b""))
+        self.assertEqual(
+            signed.call_args.args[:2],
+            ("/database/1/iCloud.com.rikimaps.rikimaps.public/development/public/users/caller", b""),
+        )
 
     def test_an_unknown_caller_doesnt_stop_the_publish(self):
         cloud = mock.MagicMock(environment="production", side_effect=RuntimeError("caller: HTTP 401"))
-        self.assertEqual(cloudkit.caller_line(cloud),
-                         "CloudKit production: the key acts as iCloud user unknown – caller: HTTP 401")
+        self.assertEqual(
+            cloudkit.caller_line(cloud), "CloudKit production: the key acts as iCloud user unknown – caller: HTTP 401"
+        )
 
 
 class Signing(unittest.TestCase):
     def test_the_signature_verifies_with_the_public_key(self):
         with tempfile.TemporaryDirectory() as folder:
             private, public = os.path.join(folder, "k.pem"), os.path.join(folder, "p.pem")
-            subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", private],
-                           check=True, capture_output=True)
-            subprocess.run(["openssl", "ec", "-in", private, "-pubout", "-out", public],
-                           check=True, capture_output=True)
+            subprocess.run(
+                ["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", private],
+                check=True,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["openssl", "ec", "-in", private, "-pubout", "-out", public], check=True, capture_output=True
+            )
             body = b'{"records": []}'
-            headers = cloudkit.signed("/database/1/x/development/public/records/lookup", body, "kid", private,
-                                      date="2026-10-30T10:00:00Z")
+            headers = cloudkit.signed(
+                "/database/1/x/development/public/records/lookup", body, "kid", private, date="2026-10-30T10:00:00Z"
+            )
             self.assertEqual(headers["X-Apple-CloudKit-Request-KeyID"], "kid")
             digest = base64.b64encode(hashlib.sha256(body).digest()).decode()
             message = os.path.join(folder, "m")
@@ -273,24 +319,34 @@ class Signing(unittest.TestCase):
                 out.write(f"2026-10-30T10:00:00Z:{digest}:/database/1/x/development/public/records/lookup")
             with open(signature, "wb") as out:
                 out.write(base64.b64decode(headers["X-Apple-CloudKit-Request-SignatureV1"]))
-            verified = subprocess.run(["openssl", "dgst", "-sha256", "-verify", public, "-signature", signature,
-                                       message], capture_output=True)
+            verified = subprocess.run(
+                ["openssl", "dgst", "-sha256", "-verify", public, "-signature", signature, message], capture_output=True
+            )
             self.assertEqual(verified.returncode, 0, verified.stdout)
-
 
     def test_a_key_the_secret_mangled_still_signs(self):
         with tempfile.TemporaryDirectory() as folder:
             sec1 = os.path.join(folder, "k.pem")
-            subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-out", sec1],
-                           check=True, capture_output=True)
-            pkcs8 = subprocess.run(["openssl", "pkcs8", "-topk8", "-nocrypt", "-in", sec1],
-                                   check=True, capture_output=True).stdout.decode()
+            subprocess.run(
+                ["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-out", sec1], check=True, capture_output=True
+            )
+            pkcs8 = subprocess.run(
+                ["openssl", "pkcs8", "-topk8", "-nocrypt", "-in", sec1], check=True, capture_output=True
+            ).stdout.decode()
             with open(sec1) as handle:
                 sec1 = handle.read()
+
             def bare(pem):
                 return "".join(ln for ln in pem.splitlines() if "-----" not in ln and ln)
-            for secret in (sec1.replace("\n", "\\n"), sec1.replace("\n", " "), sec1.replace("\n", "\r\n"),
-                           f'"{pkcs8}"', bare(pkcs8), bare(sec1.split("-----END EC PARAMETERS-----")[1])):
+
+            for secret in (
+                sec1.replace("\n", "\\n"),
+                sec1.replace("\n", " "),
+                sec1.replace("\n", "\r\n"),
+                f'"{pkcs8}"',
+                bare(pkcs8),
+                bare(sec1.split("-----END EC PARAMETERS-----")[1]),
+            ):
                 with mock.patch.dict(os.environ, {"CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": secret, "CLOUDKIT_KEY_FILE": ""}):
                     path = cloudkit.key_file("development")
                 try:
@@ -309,23 +365,38 @@ class Signing(unittest.TestCase):
 class Main(unittest.TestCase):
     def test_without_a_key_nothing_is_published(self):
         # 491 unset means both environments, so neither may hold a key
-        with mock.patch.dict(os.environ, {"CLOUDKIT_KEY_ID_PRODUCTION": "", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "",
-                                          "CLOUDKIT_KEY_ID_DEVELOPMENT": "", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "",
-                                          "CLOUDKIT_KEY_FILE": "", "CLOUDKIT_ENV": ""}):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CLOUDKIT_KEY_ID_PRODUCTION": "",
+                "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "",
+                "CLOUDKIT_KEY_ID_DEVELOPMENT": "",
+                "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "",
+                "CLOUDKIT_KEY_FILE": "",
+                "CLOUDKIT_ENV": "",
+            },
+        ):
             out = io.StringIO()
             with redirect_stdout(out):
                 self.assertEqual(cloudkit.main(["maps.json"]), 0)
             self.assertIn("not published", out.getvalue())
 
     def test_each_environment_signs_with_its_own_key(self):
-        keys = {"CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
-                "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
-                "CLOUDKIT_KEY_FILE": ""}
+        keys = {
+            "CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id",
+            "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
+            "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id",
+            "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
+            "CLOUDKIT_KEY_FILE": "",
+        }
         for environment, key_id, pem in (("production", "prod-id", "prod-key"), ("development", "dev-id", "dev-key")):
-            with mock.patch.dict(os.environ, dict(keys, CLOUDKIT_ENV=environment)), \
-                    mock.patch.object(cloudkit, "pem_text", side_effect=lambda text: text), \
-                    mock.patch.object(cloudkit, "caller_line", return_value="caller"), \
-                    mock.patch.object(cloudkit, "publish") as publish, redirect_stdout(io.StringIO()):
+            with (
+                mock.patch.dict(os.environ, dict(keys, CLOUDKIT_ENV=environment)),
+                mock.patch.object(cloudkit, "pem_text", side_effect=lambda text: text),
+                mock.patch.object(cloudkit, "caller_line", return_value="caller"),
+                mock.patch.object(cloudkit, "publish") as publish,
+                redirect_stdout(io.StringIO()),
+            ):
                 self.assertEqual(cloudkit.main(["maps.json"]), 0)
             cloud = publish.call_args.args[1]
             self.assertEqual((cloud.environment, cloud.key_id), (environment, key_id))
@@ -333,16 +404,22 @@ class Main(unittest.TestCase):
                 self.assertEqual(handle.read(), pem)
             os.remove(cloud.key_file)
 
-    KEYS = {"CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id", "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
-            "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
-            "CLOUDKIT_KEY_FILE": ""}
+    KEYS = {
+        "CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id",
+        "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
+        "CLOUDKIT_KEY_ID_PRODUCTION": "prod-id",
+        "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "prod-key",
+        "CLOUDKIT_KEY_FILE": "",
+    }
 
     def publish_with(self, env, side_effect=None):
-        with mock.patch.dict(os.environ, dict(self.KEYS, **env)), \
-                mock.patch.object(cloudkit, "pem_text", side_effect=lambda text: text), \
-                mock.patch.object(cloudkit, "caller_line", return_value="caller"), \
-                mock.patch.object(cloudkit, "publish", side_effect=side_effect) as publish, \
-                redirect_stdout(io.StringIO()) as out:
+        with (
+            mock.patch.dict(os.environ, dict(self.KEYS, **env)),
+            mock.patch.object(cloudkit, "pem_text", side_effect=lambda text: text),
+            mock.patch.object(cloudkit, "caller_line", return_value="caller"),
+            mock.patch.object(cloudkit, "publish", side_effect=side_effect) as publish,
+            redirect_stdout(io.StringIO()) as out,
+        ):
             code = cloudkit.main(["maps.json"])
         clouds = [call.args[1] for call in publish.call_args_list]
         for cloud in clouds:
@@ -373,15 +450,26 @@ class Main(unittest.TestCase):
     def test_the_run_says_where_it_publishes_and_with_which_key(self):
         with tempfile.TemporaryDirectory() as folder:
             pem = os.path.join(folder, "k.pem")
-            subprocess.run(["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", pem],
-                           check=True, capture_output=True)
-            public = subprocess.run(["openssl", "ec", "-in", pem, "-pubout"], check=True, capture_output=True,
-                                    text=True).stdout.splitlines()[1]
-            env = {"CLOUDKIT_ENV": "production", "CLOUDKIT_KEY_ID_PRODUCTION": "0123456789abcdef",
-                   "CLOUDKIT_KEY_FILE": pem}
+            subprocess.run(
+                ["openssl", "ecparam", "-name", "prime256v1", "-genkey", "-noout", "-out", pem],
+                check=True,
+                capture_output=True,
+            )
+            public = subprocess.run(
+                ["openssl", "ec", "-in", pem, "-pubout"], check=True, capture_output=True, text=True
+            ).stdout.splitlines()[1]
+            env = {
+                "CLOUDKIT_ENV": "production",
+                "CLOUDKIT_KEY_ID_PRODUCTION": "0123456789abcdef",
+                "CLOUDKIT_KEY_FILE": pem,
+            }
             out = io.StringIO()
-            with mock.patch.dict(os.environ, env), mock.patch.object(cloudkit, "publish"), \
-                    mock.patch.object(cloudkit, "caller_line", return_value="caller"), redirect_stdout(out):
+            with (
+                mock.patch.dict(os.environ, env),
+                mock.patch.object(cloudkit, "publish"),
+                mock.patch.object(cloudkit, "caller_line", return_value="caller"),
+                redirect_stdout(out),
+            ):
                 cloudkit.main(["maps.json", "--force"])
         line = out.getvalue().splitlines()[0]
         self.assertIn("CloudKit production: container iCloud.com.rikimaps.rikimaps.public", line)
@@ -394,18 +482,33 @@ class Main(unittest.TestCase):
         env = {"CLOUDKIT_ENV": "production", "CLOUDKIT_KEY_ID_PRODUCTION": "kid", "CLOUDKIT_KEY_FILE": "/k"}
         refused = RuntimeError("modify x: ACCESS_DENIED CREATE operation not permitted")
         out = io.StringIO()
-        with mock.patch.dict(os.environ, env), mock.patch.object(cloudkit, "public_key", return_value="pub"), \
-                mock.patch.object(cloudkit, "publish", side_effect=refused), \
-                mock.patch.object(cloudkit, "caller_line", return_value="caller"), redirect_stdout(out):
+        with (
+            mock.patch.dict(os.environ, env),
+            mock.patch.object(cloudkit, "public_key", return_value="pub"),
+            mock.patch.object(cloudkit, "publish", side_effect=refused),
+            mock.patch.object(cloudkit, "caller_line", return_value="caller"),
+            redirect_stdout(out),
+        ):
             # 491 a refusal fails the run once both environments were tried
             self.assertEqual(cloudkit.main(["maps.json"]), 1)
-        self.assertIn("::error::CloudKit production: the account that created the Production key isn't in the "
-                      "Admin role of Production › Users", out.getvalue())
+        self.assertIn(
+            "::error::CloudKit production: the account that created the Production key isn't in the "
+            "Admin role of Production › Users",
+            out.getvalue(),
+        )
 
     def test_production_without_its_key_is_not_published(self):
-        with mock.patch.dict(os.environ, {"CLOUDKIT_ENV": "production", "CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id",
-                                          "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key", "CLOUDKIT_KEY_FILE": "",
-                                          "CLOUDKIT_KEY_ID_PRODUCTION": "", "CLOUDKIT_PRIVATE_KEY_PRODUCTION": ""}):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CLOUDKIT_ENV": "production",
+                "CLOUDKIT_KEY_ID_DEVELOPMENT": "dev-id",
+                "CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": "dev-key",
+                "CLOUDKIT_KEY_FILE": "",
+                "CLOUDKIT_KEY_ID_PRODUCTION": "",
+                "CLOUDKIT_PRIVATE_KEY_PRODUCTION": "",
+            },
+        ):
             out = io.StringIO()
             with redirect_stdout(out):
                 self.assertEqual(cloudkit.main(["maps.json"]), 0)

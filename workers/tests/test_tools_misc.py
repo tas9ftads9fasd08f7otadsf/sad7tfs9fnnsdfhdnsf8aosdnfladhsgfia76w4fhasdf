@@ -22,8 +22,14 @@ class Dmr5Remote(unittest.TestCase):
         return f.name
 
     def test_biggest_raster_not_a_sidecar(self):
-        path = self.plan([{"name": "DMR5/small.tif", "usize": 10}, {"name": "DMR5/big.tif", "usize": 99},
-                          {"name": "DMR5/big.tif.ovr", "usize": 999}, {"name": "readme.pdf", "usize": 5000}])
+        path = self.plan(
+            [
+                {"name": "DMR5/small.tif", "usize": 10},
+                {"name": "DMR5/big.tif", "usize": 99},
+                {"name": "DMR5/big.tif.ovr", "usize": 999},
+                {"name": "readme.pdf", "usize": 5000},
+            ]
+        )
         self.assertEqual(remote.pick_member(path, ""), "DMR5/big.tif")
         self.assertEqual(remote.pick_member(path, "x.tif"), "x.tif")
         with self.assertRaises(SystemExit):
@@ -55,8 +61,11 @@ class RocksShadingOptions(unittest.TestCase):
 
     def apply(self, options):
         ap = self.ap()
-        with mock.patch.object(sys, "argv", ["build.py", f"--options={options}"]), \
-                redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
+        with (
+            mock.patch.object(sys, "argv", ["build.py", f"--options={options}"]),
+            redirect_stdout(io.StringIO()),
+            redirect_stderr(io.StringIO()),
+        ):
             return self.b.apply_options(ap, ap.parse_args())
 
     def test_options_become_flags(self):
@@ -70,6 +79,7 @@ class RocksShadingOptions(unittest.TestCase):
 
     def test_histogram(self):
         import numpy as np
+
         rows = [(np.full((4, 4), 10, np.uint8), None), (np.full((4, 4), 250, np.uint8), None)]
         text = self.b.histogram(rows)
         self.assertIn("50.0 %", text)
@@ -90,6 +100,7 @@ class MeasureResampling(unittest.TestCase):
 
     def test_flat_stays_flat(self):
         import numpy as np
+
         flat = np.full((60, 60), 250.0)
         out = self.m.resample(flat, 1.0, 5.0, "cubicspline")
         self.assertTrue(np.allclose(out, 250.0))

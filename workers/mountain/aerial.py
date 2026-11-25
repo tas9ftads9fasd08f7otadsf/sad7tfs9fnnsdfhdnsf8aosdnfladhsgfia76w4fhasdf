@@ -4,6 +4,7 @@
     python3 workers/mountain/aerial.py --season=summer --source=ofmozaika_sk \
         --bbox=19.9,49.09,20.32,49.25 --poly=data/region.geojson --out=_site/tiles/vysoke_tatry-aerial_summer.pmtiles
 """
+
 import argparse
 import importlib.util
 import os
@@ -36,8 +37,7 @@ def source(key, season, path=None):
     if key not in known:
         raise SystemExit(f"::error::Unknown aerial source “{key}” – {path} has {', '.join(known)}.")
     if known[key].get("season") != season:
-        raise SystemExit(f"::error::Aerial source “{key}” is for {known[key].get('season')}, "
-                         f"not {season}.")
+        raise SystemExit(f"::error::Aerial source “{key}” is for {known[key].get('season')}, not {season}.")
     return known[key]
 
 
@@ -55,8 +55,7 @@ def window(bbox, z, x, y, size):
     w, s, e, n = bbox
     left, top = lonlat_to_tile(w, n, z)
     right, bottom = lonlat_to_tile(e, s, z)
-    px = [round(min(max((v - o) * size, 0), size))
-          for v, o in ((left, x), (top, y), (right, x), (bottom, y))]
+    px = [round(min(max((v - o) * size, 0), size)) for v, o in ((left, x), (top, y), (right, x), (bottom, y))]
     return None if px == [0, 0, size, size] else tuple(px)
 
 
@@ -67,8 +66,7 @@ def outline_mask(rings, z, x, y, size):
     mask = Image.new("L", (size, size), 0)
     draw = ImageDraw.Draw(mask)
     for ring, hole in sorted(rings, key=lambda r: r[1]):
-        points = [((tx - x) * size, (ty - y) * size)
-                  for tx, ty in (lonlat_to_tile(lon, lat, z) for lon, lat in ring)]
+        points = [((tx - x) * size, (ty - y) * size) for tx, ty in (lonlat_to_tile(lon, lat, z) for lon, lat in ring)]
         draw.polygon(points, fill=0 if hole else 255)
     return mask
 
@@ -161,13 +159,21 @@ def write(out, tiles, bbox, minzoom, maxzoom, name):
             with open(tiles[zxy], "rb") as jpeg:
                 writer.write_tile(zxy_to_tileid(*zxy), jpeg.read())
         writer.finalize(
-            {"tile_type": TileType.JPEG, "tile_compression": Compression.NONE,
-             "min_zoom": minzoom, "max_zoom": maxzoom,
-             "min_lon_e7": e7(w), "min_lat_e7": e7(s), "max_lon_e7": e7(e), "max_lat_e7": e7(n),
-             "center_zoom": min(maxzoom, minzoom + 4),
-             "center_lon_e7": e7((w + e) / 2), "center_lat_e7": e7((s + n) / 2)},
-            {"name": name, "format": "jpg", "type": "baselayer",
-             "description": "Aerial photos (orthophoto mosaic)"})
+            {
+                "tile_type": TileType.JPEG,
+                "tile_compression": Compression.NONE,
+                "min_zoom": minzoom,
+                "max_zoom": maxzoom,
+                "min_lon_e7": e7(w),
+                "min_lat_e7": e7(s),
+                "max_lon_e7": e7(e),
+                "max_lat_e7": e7(n),
+                "center_zoom": min(maxzoom, minzoom + 4),
+                "center_lon_e7": e7((w + e) / 2),
+                "center_lat_e7": e7((s + n) / 2),
+            },
+            {"name": name, "format": "jpg", "type": "baselayer", "description": "Aerial photos (orthophoto mosaic)"},
+        )
 
 
 def main():
@@ -223,24 +229,29 @@ def main():
         if filled:
             print(f"::warning::{filled} {args.season} tiles the server lacks are their parent, enlarged.")
         if holes:
-            raise SystemExit(f"::error::{len(holes)} {args.season} tiles have no photo and no parent "
-                             f"to stand in, e.g. {holes[:3]} – a package with holes isn't published.")
+            raise SystemExit(
+                f"::error::{len(holes)} {args.season} tiles have no photo and no parent "
+                f"to stand in, e.g. {holes[:3]} – a package with holes isn't published."
+            )
         if fetcher.n_fail > len(tiles) * 0.02:
-            raise SystemExit(f"::error::{fetcher.n_fail} {args.season} tiles failed – "
-                             f"a package with holes isn't published. Run it again; "
-                             f"the cache keeps what came.")
+            raise SystemExit(
+                f"::error::{fetcher.n_fail} {args.season} tiles failed – "
+                f"a package with holes isn't published. Run it again; "
+                f"the cache keeps what came."
+            )
         if tiles:
             name = os.path.basename(args.out).removesuffix(".pmtiles")
             write(args.out, tiles, bbox, minzoom, maxzoom, name)
             size = os.path.getsize(args.out)
-            print(f"{args.out}: {len(tiles)} tiles, z{minzoom}–z{maxzoom}, "
-                  f"{size / 1048576:.0f} MB")
+            print(f"{args.out}: {len(tiles)} tiles, z{minzoom}–z{maxzoom}, {size / 1048576:.0f} MB")
             out = {"enabled": "true", "maxzoom": str(maxzoom)}
         else:
             print(f"::warning::{url} gave no tile over {args.bbox} – no {args.season} photos.")
     else:
-        print(f"::notice::No {args.season} aerial photos: the range's `aerial_{args.season}` "
-              f"in config/map-settings.json is empty.")
+        print(
+            f"::notice::No {args.season} aerial photos: the range's `aerial_{args.season}` "
+            f"in config/map-settings.json is empty."
+        )
     if args.github_output:
         with open(args.github_output, "a") as f:
             f.write("".join(f"{k}={v}\n" for k, v in out.items()))

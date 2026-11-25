@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Cut a finished vector .pmtiles to the region: lines and areas cut, points beyond dropped."""
+
 import argparse
 import gzip
 import json
@@ -21,6 +22,7 @@ MARGIN_M = 100
 def region_polygon(path, margin_m):
     """The region polygon, grown by the margin."""
     from shapely.ops import unary_union
+
     with open(path) as f:
         data = json.load(f)
     if data.get("type") == "FeatureCollection":
@@ -42,24 +44,32 @@ def region_polygon(path, margin_m):
 
 
 def tile_bounds(z, x, y):
-    n = 2 ** z
+    n = 2**z
+
     def lat(t):
         return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * t / n))))
+
     return x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)
 
 
 def to_pixels(region, z, x, y, extent):
     """The region in this tile's pixels, y down."""
-    n = 2 ** z
+    n = 2**z
 
     def project(geom):
         from shapely.ops import transform
+
         def fn(lons, lats):
             px = [((lon + 180) / 360 * n - x) * extent for lon in lons]
-            py = [((1 - math.log(math.tan(math.radians(la)) + 1 / math.cos(math.radians(la)))
-                    / math.pi) / 2 * n - y) * extent for la in lats]
+            py = [
+                ((1 - math.log(math.tan(math.radians(la)) + 1 / math.cos(math.radians(la))) / math.pi) / 2 * n - y)
+                * extent
+                for la in lats
+            ]
             return px, py
+
         return transform(fn, geom)
+
     return project(region)
 
 
@@ -97,12 +107,14 @@ def clip_tile(data, region, z, x, y, compressed):
     extent = out[0]["extent"]
     encoded = mapbox_vector_tile.encode(
         [{"name": layer["name"], "features": layer["features"]} for layer in out],
-        default_options={"extents": extent, "y_coord_down": True})
+        default_options={"extents": extent, "y_coord_down": True},
+    )
     return gzip.compress(encoded) if compressed else encoded
 
 
 def _same_kind(geom, kind):
     from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
+
     want = "Polygon" if "Polygon" in kind else "LineString" if "LineString" in kind else "Point"
     if geom.geom_type == "GeometryCollection":
         parts = [g for g in geom.geoms if want in g.geom_type]
@@ -123,8 +135,11 @@ def main():
     ap.add_argument("--margin-m", type=float, default=MARGIN_M)
     args = ap.parse_args()
     if not os.path.exists(args.region):
-        print(f"::warning::No region polygon ({args.region}), so {args.archive} is not cut "
-              "to the region and draws what lies beyond it.", file=sys.stderr)
+        print(
+            f"::warning::No region polygon ({args.region}), so {args.archive} is not cut "
+            "to the region and draws what lies beyond it.",
+            file=sys.stderr,
+        )
         return
     region = region_polygon(args.region, args.margin_m)
     inside = prep(region.buffer(-2 * args.margin_m / 111_320))
@@ -141,8 +156,7 @@ def main():
             return
         compressed = header["tile_compression"] == Compression.GZIP
         writer = Writer(dst)
-        for (z, x, y), data in sorted(all_tiles(reader.get_bytes),
-                                      key=lambda t: zxy_to_tileid(*t[0])):
+        for (z, x, y), data in sorted(all_tiles(reader.get_bytes), key=lambda t: zxy_to_tileid(*t[0])):
             bounds = box(*tile_bounds(z, x, y))
             if inside.contains(bounds):
                 writer.write_tile(zxy_to_tileid(z, x, y), data)
@@ -162,10 +176,12 @@ def main():
             writer.finalize(header, metadata)
     before = os.path.getsize(args.archive)
     os.replace(tmp, args.archive)
-    print(f"Cut to the region ({args.margin_m:.0f} m beyond): {kept} tiles untouched, "
-          f"{cut} cut, {dropped} wholly outside dropped; "
-          f"{before / 1048576:.1f} → {os.path.getsize(args.archive) / 1048576:.1f} MB",
-          file=sys.stderr)
+    print(
+        f"Cut to the region ({args.margin_m:.0f} m beyond): {kept} tiles untouched, "
+        f"{cut} cut, {dropped} wholly outside dropped; "
+        f"{before / 1048576:.1f} → {os.path.getsize(args.archive) / 1048576:.1f} MB",
+        file=sys.stderr,
+    )
 
 
 if __name__ == "__main__":

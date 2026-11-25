@@ -6,6 +6,7 @@ Usage:
         --schema-out=/tmp/world-basic.yml --out=/tmp/variant.json
     python3 workers/world/variant.py --list        # what can be built
 """
+
 import argparse
 import json
 import os
@@ -45,7 +46,8 @@ def pick(name, raw=None):
         raise SystemExit(
             f"::error::World map variant “{name}” is unknown. There are: "
             f"{', '.join(sorted(v))} (the list is in `config/"
-            f"world-variants.json`).")
+            f"world-variants.json`)."
+        )
     return v[name]
 
 
@@ -61,14 +63,13 @@ def schema_for(layers, doc=None):
         raise SystemExit(
             f"::error::The variant asks for layers {missing} `workers/world/"
             f"world.yml` doesn't have (it has {sorted(have)}). Align `layers` "
-            f"in `config/world-variants.json` with the schema.")
+            f"in `config/world-variants.json` with the schema."
+        )
     out = dict(doc)
     out["layers"] = [layer for layer in doc["layers"] if layer["id"] in layers]
     # an unused source needn't even be downloaded
-    needed = {f.get("source") for layer in out["layers"]
-              for f in (layer.get("features") or [])}
-    out["sources"] = {k: v for k, v in (doc.get("sources") or {}).items()
-                      if k in needed}
+    needed = {f.get("source") for layer in out["layers"] for f in (layer.get("features") or [])}
+    out["sources"] = {k: v for k, v in (doc.get("sources") or {}).items() if k in needed}
     return out, sorted(s for s in needed if s)
 
 
@@ -89,10 +90,8 @@ def map_layers(layers, raw=None):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--variant", default="full")
-    ap.add_argument("--schema-out", default="",
-                    help="where to write the schema for Planetiler")
-    ap.add_argument("--out", default="",
-                    help="where to write the JSON of values for build.sh")
+    ap.add_argument("--schema-out", default="", help="where to write the schema for Planetiler")
+    ap.add_argument("--out", default="", help="where to write the JSON of values for build.sh")
     ap.add_argument("--list", action="store_true", help="list the variants and stop")
     args = ap.parse_args()
 
@@ -125,15 +124,12 @@ def main():
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
 
-    everything = {layer["id"] for layer in yaml.safe_load(
-        open(SCHEMA, encoding="utf-8"))["layers"]}
+    everything = {layer["id"] for layer in yaml.safe_load(open(SCHEMA, encoding="utf-8"))["layers"]}
     left_out = sorted(everything - set(layers))
     print(f"Variant `{name}`: {values['label']}")
-    print(f"  layers    {', '.join(layers)}"
-          + (f"   (left out: {', '.join(left_out)})" if left_out else ""))
+    print(f"  layers    {', '.join(layers)}" + (f"   (left out: {', '.join(left_out)})" if left_out else ""))
     print(f"  sources   {', '.join(sources)}")
-    print(f"  region    {values['region']}   "
-          f"catalog layers: {values['map_layers'] or '(none)'}")
+    print(f"  region    {values['region']}   catalog layers: {values['map_layers'] or '(none)'}")
     print(f"  cap       {values['limit_mb']} MB     fonts: {values['glyphs']}")
     return 0
 

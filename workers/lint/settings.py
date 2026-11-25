@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """`config/map-settings.json` resolves for every map a form can build, and no form goes around it."""
+
 import importlib.util
 import json
 import sys
@@ -50,12 +51,12 @@ spec.loader.exec_module(opts)
 settings = load(SETTINGS)
 regions = settings.get("regions") or {}
 areas = {k for k in settings.get("areas") or {} if not k.startswith("_")}
-dem = {k: v.get("for", []) for k, v in
-       ((settings.get("sources") or {}).get("dem") or {}).items() if not k.startswith("_")}
+dem = {
+    k: v.get("for", []) for k, v in ((settings.get("sources") or {}).get("dem") or {}).items() if not k.startswith("_")
+}
 credits = {k for k in settings.get("credits") or {} if not k.startswith("_")}
 maps = settings.get("maps") or {}
-ranges = {k: v for k, v in ((maps.get(opts.MOUNTAINS) or {}).get("ranges") or {}).items()
-          if not k.startswith("_")}
+ranges = {k: v for k, v in ((maps.get(opts.MOUNTAINS) or {}).get("ranges") or {}).items() if not k.startswith("_")}
 ranges_known = list(ranges)
 aerial = (settings.get("sources") or {}).get("aerial") or {}
 
@@ -89,11 +90,15 @@ for key, node in maps.items():
 
 # 3. a country a form builds has its own entry, or it quietly gets Slovakia's model
 built = set(form(STATE_WF).get("country", {}).get("options") or []) - {"all"}
-built |= {regions[r].get("country") or r for r in form(REGION_WF).get("region", {}).get("options") or []
-          if r in regions}
+built |= {
+    regions[r].get("country") or r for r in form(REGION_WF).get("region", {}).get("options") or [] if r in regions
+}
 for country in sorted(built - set(maps)):
-    error(SETTINGS, f"Country `{country}` is built by a form but has no `maps.{country}` – "
-                    f"say what model covers it, even if it is `none`.")
+    error(
+        SETTINGS,
+        f"Country `{country}` is built by a form but has no `maps.{country}` – "
+        f"say what model covers it, even if it is `none`.",
+    )
 
 # 4. every source a level picks exists and fits its layer
 allowed = {
@@ -136,8 +141,7 @@ for r in form(REGION_WF).get("region", {}).get("options") or []:
         error(SETTINGS, f"Region `{r}`: {exc}")
 offered = form(MOUNTAIN_WF).get("mountain", {}).get("options") or []
 if offered[-1:] != ["all"] or sorted(offered[:-1]) != sorted(ranges_known):
-    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, `maps.mountains.ranges` "
-                       f"has {ranges_known}, then `all`.")
+    error(MOUNTAIN_WF, f"The `mountain` choice is {offered}, `maps.mountains.ranges` has {ranges_known}, then `all`.")
 for r in ranges_known:
     try:
         opts.resolve(settings, regions, mountain=r)
@@ -148,9 +152,10 @@ for r in ranges_known:
 for path, may in FORMS.items():
     for name in form(path):
         if name not in may:
-            error(path, f"Input `{name}`: a setting goes into {SETTINGS}, not the form "
-                        f"(it may ask {', '.join(sorted(may))}).")
+            error(
+                path,
+                f"Input `{name}`: a setting goes into {SETTINGS}, not the form (it may ask {', '.join(sorted(may))}).",
+            )
 
-print(f"map settings: {bad} errors ({len(maps)} categories, {len(ranges_known)} ranges, "
-      f"{len(aerial)} aerial sources)")
+print(f"map settings: {bad} errors ({len(maps)} categories, {len(ranges_known)} ranges, {len(aerial)} aerial sources)")
 sys.exit(1 if bad else 0)

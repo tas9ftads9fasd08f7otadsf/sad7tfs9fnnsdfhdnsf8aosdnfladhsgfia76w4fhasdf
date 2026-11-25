@@ -16,8 +16,9 @@ CACHE_KEYS = os.path.join(WORKERS, "plan/cache-keys.sh")
 
 
 def bash(script, env=None, cwd=ROOT):
-    return subprocess.run(["bash", "-c", script], capture_output=True, text=True,
-                          env={**os.environ, **(env or {})}, cwd=cwd)
+    return subprocess.run(
+        ["bash", "-c", script], capture_output=True, text=True, env={**os.environ, **(env or {})}, cwd=cwd
+    )
 
 
 class StoreArea(unittest.TestCase):
@@ -31,12 +32,17 @@ class StoreArea(unittest.TestCase):
         self.assertEqual(self.ask("store_area", "vysoke_tatry"), "vysoke_tatry")
 
     def test_store_token(self):
-        for given, stored in (("shading", "tienovanie"), ("none", "ziadne"),
-                              ("whole_region", "cely_region"), ("dmr5", "dmr5")):
+        for given, stored in (
+            ("shading", "tienovanie"),
+            ("none", "ziadne"),
+            ("whole_region", "cely_region"),
+            ("dmr5", "dmr5"),
+        ):
             self.assertEqual(self.ask("store_token", given), stored)
 
     def test_python_spelling_agrees(self):
         from load import worker
+
         target = worker("dem/target.py")
         for key in ("whole", "cutout_tatry", "vysoke_tatry"):
             self.assertEqual(target.store_area(key), self.ask("store_area", key))
@@ -45,8 +51,10 @@ class StoreArea(unittest.TestCase):
 class LayerDone(unittest.TestCase):
     def decide(self, **env):
         with tempfile.NamedTemporaryFile("r", suffix=".out") as out:
-            r = bash("workers/plan/layer-done.sh", {"LAYER": "rocks", "HIT": "", "MATCHED": "",
-                                                    "HIT_LEGACY": "", "GITHUB_OUTPUT": out.name, **env})
+            r = bash(
+                "workers/plan/layer-done.sh",
+                {"LAYER": "rocks", "HIT": "", "MATCHED": "", "HIT_LEGACY": "", "GITHUB_OUTPUT": out.name, **env},
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             return dict(line.split("=", 1) for line in out.read().split()), r.stdout
 
@@ -66,17 +74,45 @@ class CacheKeys(unittest.TestCase):
         with open(CACHE_KEYS) as f:
             text = f.read()
         names = set(re.findall(r"\$\{?([A-Z][A-Z0-9_]+)", text)) - {"GITHUB_OUTPUT"}
-        names -= {"B", "DC", "DR", "DT", "CS", "RS", "TS", "RA", "CCAP", "LOWLAND", "TBITS",
-                  "TFMT", "C_OPT", "T_OPT", "R_OPT", "C_SETTINGS", "R_SETTINGS", "T_SETTINGS", "LEGACY"}
+        names -= {
+            "B",
+            "DC",
+            "DR",
+            "DT",
+            "CS",
+            "RS",
+            "TS",
+            "RA",
+            "CCAP",
+            "LOWLAND",
+            "TBITS",
+            "TFMT",
+            "C_OPT",
+            "T_OPT",
+            "R_OPT",
+            "C_SETTINGS",
+            "R_SETTINGS",
+            "T_SETTINGS",
+            "LEGACY",
+        }
         cls.inputs = sorted(names)
         cls.base = {n: f"v{i}" for i, n in enumerate(cls.inputs)}
-        cls.base.update(AREA_IN="whole_region", AREA_KEY="whole", OPT_CONTOUR_SOURCE="dmr5",
-                        OPT_ROCK_SOURCE="shading", OPT_SHADING_SOURCE="sonny")
+        cls.base.update(
+            AREA_IN="whole_region",
+            AREA_KEY="whole",
+            OPT_CONTOUR_SOURCE="dmr5",
+            OPT_ROCK_SOURCE="shading",
+            OPT_SHADING_SOURCE="sonny",
+        )
 
     def keys(self, **change):
         with tempfile.NamedTemporaryFile("r", suffix=".out") as out:
-            r = subprocess.run(["bash", CACHE_KEYS], capture_output=True, text=True,
-                               env={**os.environ, **self.base, **change, "GITHUB_OUTPUT": out.name})
+            r = subprocess.run(
+                ["bash", CACHE_KEYS],
+                capture_output=True,
+                text=True,
+                env={**os.environ, **self.base, **change, "GITHUB_OUTPUT": out.name},
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             return dict(line.split("=", 1) for line in out.read().split("\n") if line)
 
@@ -84,8 +120,14 @@ class CacheKeys(unittest.TestCase):
         self.assertEqual(self.keys(), self.keys())
 
     def test_inputs_found(self):
-        for name in ("DEM_BBOXKEY", "DEMKEY_ROCKS", "OPT_ROCK_RES", "CONTOUR_INTERVAL",
-                     "SCHEMA_CONTOURS", "OPT_TERRAIN_MAXZOOM"):
+        for name in (
+            "DEM_BBOXKEY",
+            "DEMKEY_ROCKS",
+            "OPT_ROCK_RES",
+            "CONTOUR_INTERVAL",
+            "SCHEMA_CONTOURS",
+            "OPT_TERRAIN_MAXZOOM",
+        ):
             self.assertIn(name, self.inputs)
 
     def test_every_input_changes_a_key(self):
@@ -120,8 +162,11 @@ class CacheKeys(unittest.TestCase):
             self.assertTrue(k[f"{layer}_done"].endswith("-"))
             self.assertTrue(k[layer].startswith(k[f"{layer}_done"]))
         # the trailing dash: z1 isn't a prefix of z15
-        self.assertFalse(self.keys(OPT_TERRAIN_MAXZOOM="15")["terrain"].startswith(
-            self.keys(OPT_TERRAIN_MAXZOOM="1")["terrain_done"]))
+        self.assertFalse(
+            self.keys(OPT_TERRAIN_MAXZOOM="15")["terrain"].startswith(
+                self.keys(OPT_TERRAIN_MAXZOOM="1")["terrain_done"]
+            )
+        )
 
     def test_old_spelling_kept(self):
         k = self.keys()
@@ -147,9 +192,17 @@ class PmtilesBudget(unittest.TestCase):
             with open(os.path.join(s.dir, "sizes.json"), "w") as f:
                 json.dump({str(z): mb for z, mb in sizes.items()}, f)
             out = os.path.join(s.dir, "x.pmtiles")
-            r = s.run(["bash", "-c", f'. workers/lib/pmtiles-budget.sh; '
-                                     f'pmtiles_in_budget s.yml {out} {start} 100 {floor} Tiles "advice" {cap_zoom}; '
-                                     f'echo "PM_Z=$PM_Z PM_MB=$PM_MB"'], cwd=ROOT, env=s.env(FAKE_DIR=s.dir))
+            r = s.run(
+                [
+                    "bash",
+                    "-c",
+                    f". workers/lib/pmtiles-budget.sh; "
+                    f'pmtiles_in_budget s.yml {out} {start} 100 {floor} Tiles "advice" {cap_zoom}; '
+                    f'echo "PM_Z=$PM_Z PM_MB=$PM_MB"',
+                ],
+                cwd=ROOT,
+                env=s.env(FAKE_DIR=s.dir),
+            )
             self.assertEqual(r.returncode, 0, r.stderr)
             with open(os.path.join(s.dir, "zooms")) as f:
                 tried = [int(z) for z in f.read().split()]
@@ -205,9 +258,19 @@ class Site(http.server.SimpleHTTPRequestHandler):
 
 
 class SmokeTest(unittest.TestCase):
-    FILES = ["tiles/manifest.json", "sprites/s.json", "sprites/s.png", "sprites/s@2x.json",
-             "sprites/s@2x.png", "styles/r-svetla.json", "styles/r-cestna-svetla.json",
-             "style-overrides.json", "tiles/r.pmtiles", "tiles/r-trails.pmtiles", "region.geojson"]
+    FILES = [
+        "tiles/manifest.json",
+        "sprites/s.json",
+        "sprites/s.png",
+        "sprites/s@2x.json",
+        "sprites/s@2x.png",
+        "styles/r-svetla.json",
+        "styles/r-cestna-svetla.json",
+        "style-overrides.json",
+        "tiles/r.pmtiles",
+        "tiles/r-trails.pmtiles",
+        "region.geojson",
+    ]
 
     def setUp(self):
         self.site = tempfile.mkdtemp()
@@ -218,14 +281,20 @@ class SmokeTest(unittest.TestCase):
                 f.write("x" * 4096)
         with open(os.path.join(self.site, "index.html"), "w") as f:
             f.write('<div id="map"></div>')
+
         def handler(*a, **kw):
             return Site(*a, directory=self.site, **kw)
+
         Site.missing, Site.flaky, Site.no_range = set(), {}, False
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
-        manifest = {"built_at": "t1", "glyphs": "https://fonts.example/{fontstack}",
-                    "default_region": "r", "regions": {"r": {"outline": "region.geojson"}}}
+        manifest = {
+            "built_at": "t1",
+            "glyphs": "https://fonts.example/{fontstack}",
+            "default_region": "r",
+            "regions": {"r": {"outline": "region.geojson"}},
+        }
         with open(os.path.join(self.site, "tiles/manifest.json"), "w") as f:
             json.dump(manifest, f)
 
@@ -235,9 +304,20 @@ class SmokeTest(unittest.TestCase):
 
     def smoke(self):
         with Stubs(sleep=[{"match": ".*"}]) as s:
-            return s.run(["bash", os.path.join(WORKERS, "deploy/smoke-test.sh")], cwd=ROOT, env=s.env(
-                BASE=self.base, REGION="r", SPRITE="s", SITE_DIR=self.site, TRAILS="true",
-                PAGES_BUILD_TYPE="workflow", NO_PROXY="127.0.0.1", no_proxy="127.0.0.1"))
+            return s.run(
+                ["bash", os.path.join(WORKERS, "deploy/smoke-test.sh")],
+                cwd=ROOT,
+                env=s.env(
+                    BASE=self.base,
+                    REGION="r",
+                    SPRITE="s",
+                    SITE_DIR=self.site,
+                    TRAILS="true",
+                    PAGES_BUILD_TYPE="workflow",
+                    NO_PROXY="127.0.0.1",
+                    no_proxy="127.0.0.1",
+                ),
+            )
 
     def test_all_there(self):
         r = self.smoke()
@@ -268,11 +348,16 @@ class SmokeTest(unittest.TestCase):
         with open(os.path.join(built, "tiles/manifest.json"), "w") as f:
             json.dump({"built_at": "t2"}, f)
         with Stubs(sleep=[{"match": ".*"}]) as s:
-            r = s.run(["bash", os.path.join(WORKERS, "deploy/smoke-test.sh")], cwd=ROOT, env=s.env(
-                BASE=self.base, REGION="r", SPRITE="s", SITE_DIR=built,
-                NO_PROXY="127.0.0.1", no_proxy="127.0.0.1"))
+            r = s.run(
+                ["bash", os.path.join(WORKERS, "deploy/smoke-test.sh")],
+                cwd=ROOT,
+                env=s.env(
+                    BASE=self.base, REGION="r", SPRITE="s", SITE_DIR=built, NO_PROXY="127.0.0.1", no_proxy="127.0.0.1"
+                ),
+            )
         self.assertEqual(r.returncode, 1)
         self.assertIn("Pages don't serve this deploy", r.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

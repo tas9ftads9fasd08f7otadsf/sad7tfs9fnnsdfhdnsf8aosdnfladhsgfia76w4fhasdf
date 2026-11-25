@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Ways get `speed_context`; where it changes and where a street ends, a computed sign goes to GeoJSON."""
+
 import argparse
 import json
 import math
@@ -54,8 +55,7 @@ def enterable(tags, at_start):
 def _metres(a, b):
     (lon1, lat1), (lon2, lat2) = a, b
     f1, f2 = math.radians(lat1), math.radians(lat2)
-    h = (math.sin((f2 - f1) / 2) ** 2
-         + math.cos(f1) * math.cos(f2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2)
+    h = math.sin((f2 - f1) / 2) ** 2 + math.cos(f1) * math.cos(f2) * math.sin(math.radians(lon2 - lon1) / 2) ** 2
     return 2 * RADIUS_M * math.asin(min(1.0, math.sqrt(h)))
 
 
@@ -94,8 +94,11 @@ def signs(ways, contexts):
             if "maxspeed" in way["tags"] or not enterable(way["tags"], at_start):
                 continue
             entered = contexts[wid]
-            if not any(contexts[other] != entered and continues(ways[other]["tags"], way["tags"])
-                       for other, _ in meeting if other != wid):
+            if not any(
+                contexts[other] != entered and continues(ways[other]["tags"], way["tags"])
+                for other, _ in meeting
+                if other != wid
+            ):
                 continue
             line = way["line"] if at_start else way["line"][::-1]
             length = sum(_metres(a, b) for a, b in zip(line, line[1:]))
@@ -139,8 +142,12 @@ def dead_ends(ways, contexts, signed=frozenset(), in_region=None):
         chain.reverse()
         wid, forward = step[chain[0], chain[1]]
         way = ways[wid]
-        if (way["tags"].get("highway") not in STREETS or contexts.get(wid) not in SETTLED
-                or not enterable(way["tags"], forward) or signed.intersection(chain)):
+        if (
+            way["tags"].get("highway") not in STREETS
+            or contexts.get(wid) not in SETTLED
+            or not enterable(way["tags"], forward)
+            or signed.intersection(chain)
+        ):
             continue
         line = [at[n] for n in chain]
         if sum(_metres(a, b) for a, b in zip(line, line[1:])) <= DEAD_END_MIN_M:
@@ -155,8 +162,10 @@ def region_test(path):
     if not path or not os.path.exists(path):
         return None
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
-        "region_mask", os.path.join(os.path.dirname(_HERE), "lib", "region-mask.py"))
+        "region_mask", os.path.join(os.path.dirname(_HERE), "lib", "region-mask.py")
+    )
     mask = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mask)
     rings = mask.rings_from_geojson(path)
@@ -167,8 +176,7 @@ def dead_end_sign(tags, by_country):
     """Whether a node's mapped sign is a dead-end one."""
     for key in SIGN_KEYS:
         name = sign_names.sign_name(tags.get(key), "")
-        if name and (by_country.get(name.split(".", 1)[0]) or {}).get(name, "").startswith(
-                "information/dead-end"):
+        if name and (by_country.get(name.split(".", 1)[0]) or {}).get(name, "").startswith("information/dead-end"):
             return True
     return False
 
@@ -220,7 +228,7 @@ def town_signs(ways, contexts, towns, built_up):
         for i, ref in enumerate(way["refs"]):
             if ref not in towns:
                 continue
-            sides = {"forward": way["line"][i:], "backward": way["line"][:i + 1][::-1]}
+            sides = {"forward": way["line"][i:], "backward": way["line"][: i + 1][::-1]}
             sides = {k: v for k, v in sides.items() if len(v) > 1}
             village = village_side(towns[ref], sides, built_up)
             if village is None:
@@ -230,8 +238,9 @@ def town_signs(ways, contexts, towns, built_up):
                     continue
                 length = sum(_metres(a, b) for a, b in zip(line, line[1:]))
                 point, heading = along(line, min(SIGN_M, length / 2))
-                out.append({"way": wid, "point": point, "direction": heading,
-                            "context": context.name(kind, side == village)})
+                out.append(
+                    {"way": wid, "point": point, "direction": heading, "context": context.name(kind, side == village)}
+                )
     return out
 
 
@@ -242,7 +251,7 @@ def town_sides(ways, towns, built_up):
         for i, ref in enumerate(way["refs"]):
             if ref not in towns or ref in out:
                 continue
-            sides = {"forward": way["line"][i:], "backward": way["line"][:i + 1][::-1]}
+            sides = {"forward": way["line"][i:], "backward": way["line"][: i + 1][::-1]}
             sides = {k: v for k, v in sides.items() if len(v) > 1}
             village = village_side(towns[ref], sides, built_up)
             if village is not None:
@@ -252,8 +261,7 @@ def town_sides(ways, towns, built_up):
 
 def merged(junction, town):
     """The town signs, and the junction signs no town sign stands near."""
-    return town + [s for s in junction
-                   if all(_metres(s["point"], t["point"]) > NEAR_TOWN_M for t in town)]
+    return town + [s for s in junction if all(_metres(s["point"], t["point"]) > NEAR_TOWN_M for t in town)]
 
 
 def read(pbf):
@@ -285,8 +293,7 @@ def read(pbf):
                 line = [(n.location.lon, n.location.lat) for n in w.nodes]
             except osmium.InvalidLocationError:
                 return
-            self.ways[w.id] = {"tags": tags, "road": road, "refs": [n.ref for n in w.nodes],
-                               "line": line}
+            self.ways[w.id] = {"tags": tags, "road": road, "refs": [n.ref for n in w.nodes], "line": line}
 
     h = Ways()
     h.apply_file(pbf, locations=True, idx="flex_mem")
@@ -295,12 +302,10 @@ def read(pbf):
 
 def classify(ways, built_up):
     """`{way id: context}`, the share inside built-up land measured where no tag says it."""
-    unsure = [wid for wid, w in ways.items()
-              if w["road"][1] is None and w["road"][0] != "living_street"]
+    unsure = [wid for wid, w in ways.items() if w["road"][1] is None and w["road"][0] != "living_street"]
     shares = built_up.shares([ways[wid]["line"] for wid in unsure])
     urban = {wid: share >= context.URBAN_SHARE for wid, share in zip(unsure, shares)}
-    return {wid: context.name(w["road"][0], urban.get(wid, w["road"][1] == "urban"))
-            for wid, w in ways.items()}
+    return {wid: context.name(w["road"][0], urban.get(wid, w["road"][1] == "urban")) for wid, w in ways.items()}
 
 
 def rewrite(pbf, out, contexts, sides=None):
@@ -332,19 +337,24 @@ def rewrite(pbf, out, contexts, sides=None):
 
 
 def properties(s, country):
-    out = {"kind": s.get("kind", "speed"), "country": country, "direction": s["direction"],
-           "osm_way": s["way"]}
+    out = {"kind": s.get("kind", "speed"), "country": country, "direction": s["direction"], "osm_way": s["way"]}
     if "context" in s:
         out["speed_context"] = s["context"]
     return out
 
 
 def geojson(found, country):
-    return {"type": "FeatureCollection", "features": [
-        {"type": "Feature",
-         "geometry": {"type": "Point", "coordinates": [round(s["point"][0], 7), round(s["point"][1], 7)]},
-         "properties": properties(s, country)}
-        for s in found]}
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {"type": "Point", "coordinates": [round(s["point"][0], 7), round(s["point"][1], 7)]},
+                "properties": properties(s, country),
+            }
+            for s in found
+        ],
+    }
 
 
 def main():
@@ -363,12 +373,15 @@ def main():
     found = merged(signs(ways, contexts), town_signs(ways, contexts, towns, built_up))
     ends = dead_ends(ways, contexts, signed, region_test(a.outline))
     # Planetiler's GeoJSON reader dies on an empty `features` list, not on an empty file
-    Path(a.signs).write_text(json.dumps(geojson(found + ends, a.country.upper())) if found + ends else "",
-                             encoding="utf-8")
+    Path(a.signs).write_text(
+        json.dumps(geojson(found + ends, a.country.upper())) if found + ends else "", encoding="utf-8"
+    )
     counted = Counter(contexts.values())
-    print(f"Speed context: {len(contexts)} ways ("
-          + ", ".join(f"{k}×{n}" for k, n in counted.most_common())
-          + f"), {len(found)} computed signs, {len(ends)} dead ends, {len(towns)} town signs")
+    print(
+        f"Speed context: {len(contexts)} ways ("
+        + ", ".join(f"{k}×{n}" for k, n in counted.most_common())
+        + f"), {len(found)} computed signs, {len(ends)} dead ends, {len(towns)} town signs"
+    )
 
 
 if __name__ == "__main__":

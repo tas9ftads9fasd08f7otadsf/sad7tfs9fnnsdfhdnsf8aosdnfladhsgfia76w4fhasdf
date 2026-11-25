@@ -36,8 +36,10 @@ class Blocks(unittest.TestCase):
 
 
 class Pyramid(unittest.TestCase):
-    INFO = {"size": [40000, 40000], "bands": [{"overviews": [
-        {"size": [20000, 20000]}, {"size": [10000, 10000]}, {"size": [5000, 5000]}, {}]}]}
+    INFO = {
+        "size": [40000, 40000],
+        "bands": [{"overviews": [{"size": [20000, 20000]}, {"size": [10000, 10000]}, {"size": [5000, 5000]}, {}]}],
+    }
 
     def test_coarsest_overview_still_finer(self):
         self.assertEqual(cut.pyramid_level(self.INFO, 1.0, 5.0), (1, 4.0))
@@ -59,10 +61,12 @@ class Raster(unittest.TestCase):
 
     def test_clamp(self):
         log = []
-        self.assertEqual(raster.clamp_to_raster((1100, 1700, 1200, 1800), self.INFO, 4, log.append),
-                         (1096, 1696, 1204, 1804))
-        self.assertEqual(raster.clamp_to_raster((900, 1500, 2000, 2500), self.INFO, 4, log.append),
-                         (1000, 1600, 1500, 2000))
+        self.assertEqual(
+            raster.clamp_to_raster((1100, 1700, 1200, 1800), self.INFO, 4, log.append), (1096, 1696, 1204, 1804)
+        )
+        self.assertEqual(
+            raster.clamp_to_raster((900, 1500, 2000, 2500), self.INFO, 4, log.append), (1000, 1600, 1500, 2000)
+        )
         self.assertTrue(log)
         with self.assertRaises(SystemExit):
             raster.clamp_to_raster((5000, 5000, 6000, 6000), self.INFO, 4, log.append)
@@ -109,10 +113,14 @@ class Variant(unittest.TestCase):
             self.v.pick("tiny")
 
     def test_schema_keeps_only_used_sources(self):
-        doc = {"sources": {"a": {}, "b": {}}, "layers": [
-            {"id": "x", "features": [{"source": "a"}]}, {"id": "y", "features": [{"source": "b"}]}]}
+        doc = {
+            "sources": {"a": {}, "b": {}},
+            "layers": [{"id": "x", "features": [{"source": "a"}]}, {"id": "y", "features": [{"source": "b"}]}],
+        }
         out, sources = self.v.schema_for(["x"], doc)
-        self.assertEqual(([layer["id"] for layer in out["layers"]], list(out["sources"]), sources), (["x"], ["a"], ["a"]))
+        self.assertEqual(
+            ([layer["id"] for layer in out["layers"]], list(out["sources"]), sources), (["x"], ["a"], ["a"])
+        )
         with self.assertRaises(SystemExit):
             self.v.schema_for(["z"], doc)
 
@@ -140,8 +148,22 @@ class Variant(unittest.TestCase):
 class Glyphs(unittest.TestCase):
     def test_ranges_from_names_only(self):
         with tempfile.NamedTemporaryFile("w", suffix=".geojson", delete=False, encoding="utf-8") as f:
-            json.dump({"features": [{"properties": {"name": "Žilina", "name:ru": "Жилина",
-                                                    "name:zh": "日本", "kind": "Ωmega", "rank": 3}}]}, f)
+            json.dump(
+                {
+                    "features": [
+                        {
+                            "properties": {
+                                "name": "Žilina",
+                                "name:ru": "Жилина",
+                                "name:zh": "日本",
+                                "kind": "Ωmega",
+                                "rank": 3,
+                            }
+                        }
+                    ]
+                },
+                f,
+            )
         self.addCleanup(os.remove, f.name)
         self.assertEqual(glyphs.ranges_in_geojson(f.name), {0, 1, 4})
 

@@ -27,8 +27,7 @@ def work_dir(test, replace=None):
 
 class Guards(unittest.TestCase):
     def run_in(self, cwd, script, **env):
-        return subprocess.run(["bash", script], cwd=cwd, capture_output=True, text=True,
-                              env={**os.environ, **env})
+        return subprocess.run(["bash", script], cwd=cwd, capture_output=True, text=True, env={**os.environ, **env})
 
     def test_graph_needs_a_scope_and_a_pbf(self):
         work = work_dir(self)
@@ -48,8 +47,11 @@ class Guards(unittest.TestCase):
             r = s.run(["bash", "workers/deploy/apple-archive.sh"], cwd=work, env=s.env(TEST_KM2="0"))
             self.assertEqual(r.returncode, 1)
             self.assertIn("_site isn't assembled", r.stdout)
-            r = s.run(["bash", "workers/deploy/apple-archive.sh"], cwd=work,
-                      env=s.env(ONLY="wikipedia", WIKI=os.path.join(work, "none"), TEST_KM2="0"))
+            r = s.run(
+                ["bash", "workers/deploy/apple-archive.sh"],
+                cwd=work,
+                env=s.env(ONLY="wikipedia", WIKI=os.path.join(work, "none"), TEST_KM2="0"),
+            )
             self.assertIn("there are no articles", r.stdout)
 
     def test_apple_archive_wants_sprites_only_when_a_style_has_one(self):
@@ -72,8 +74,13 @@ class Guards(unittest.TestCase):
 class PublishResults(unittest.TestCase):
     def publish(self, work, **env):
         log = os.path.join(work, "put.log")
-        r = subprocess.run(["bash", "workers/deploy/publish-results.sh"], cwd=work, capture_output=True, text=True,
-                           env={**os.environ, "PUT_LOG": log, "RUNNER_TEMP": work, "GITHUB_RUN_NUMBER": "7", **env})
+        r = subprocess.run(
+            ["bash", "workers/deploy/publish-results.sh"],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PUT_LOG": log, "RUNNER_TEMP": work, "GITHUB_RUN_NUMBER": "7", **env},
+        )
         if not os.path.exists(log):
             return r, []
         with open(log) as f:
@@ -124,8 +131,13 @@ class NodeOrder(unittest.TestCase):
     def order(self, **env):
         out = os.path.join(self.work, "out")
         open(out, "w").close()
-        r = subprocess.run(["bash", "workers/routing/order.sh"], cwd=self.work, capture_output=True, text=True,
-                           env={**os.environ, "AREA": "mini", "GITHUB_OUTPUT": out, **env})
+        r = subprocess.run(
+            ["bash", "workers/routing/order.sh"],
+            cwd=self.work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "AREA": "mini", "GITHUB_OUTPUT": out, **env},
+        )
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         with open(out) as f:
             return dict(line.split("=", 1) for line in f.read().split())
@@ -153,17 +165,42 @@ class NodeOrder(unittest.TestCase):
 
 
 class Summary(unittest.TestCase):
-    ENV = {"REGION_NAME": "Trnavský kraj", "R_PLAN": "success", "R_CONTOURS": "success",
-           "R_SHADING_ROCKS": "skipped", "R_TRAILS": "success", "R_FEATURES": "success",
-           "R_TERRAIN": "failure", "R_TILES": "success", "R_ASSETS": "success",
-           "SRC_CONTOURS": "dmr5", "SRC_ROCKS": "dmr5", "SRC_SHADING": "sonny", "USED_CONTOURS": "dmr5",
-           "USED_ROCKS": "dmr5", "USED_SHADING": "sonny", "SIZE_LIMIT_MB": "900", "PAGE_URL": "https://x/",
-           "PUBLISH_PAGES": "true", "PAGES_BUILD_TYPE": "workflow", "REGION_KEY": "trnavsky",
-           "TEST_KM2": "0", "TEST_BBOX": "", "TEST_FULL_BBOX": "", "INPUTS_JSON": "{}",
-           "GITHUB_REPOSITORY": "o/r", "GITHUB_RUN_ID": "1"}
-    GH = [{"match": r"-q \.run_started_at", "out": "2026-10-10T10:00:00Z"},
-          {"match": r"runs/1/jobs", "out": "55\tterrain\tfailure\t2026-10-10T10:00:00Z\t2026-10-10T11:00:00Z\tHeight tiles\thttps://j\n"},
-          {"match": r"jobs/55/logs", "out": "2026-10-10T10:59:59.0Z ##[error]The model is missing\n"}]
+    ENV = {
+        "REGION_NAME": "Trnavský kraj",
+        "R_PLAN": "success",
+        "R_CONTOURS": "success",
+        "R_SHADING_ROCKS": "skipped",
+        "R_TRAILS": "success",
+        "R_FEATURES": "success",
+        "R_TERRAIN": "failure",
+        "R_TILES": "success",
+        "R_ASSETS": "success",
+        "SRC_CONTOURS": "dmr5",
+        "SRC_ROCKS": "dmr5",
+        "SRC_SHADING": "sonny",
+        "USED_CONTOURS": "dmr5",
+        "USED_ROCKS": "dmr5",
+        "USED_SHADING": "sonny",
+        "SIZE_LIMIT_MB": "900",
+        "PAGE_URL": "https://x/",
+        "PUBLISH_PAGES": "true",
+        "PAGES_BUILD_TYPE": "workflow",
+        "REGION_KEY": "trnavsky",
+        "TEST_KM2": "0",
+        "TEST_BBOX": "",
+        "TEST_FULL_BBOX": "",
+        "INPUTS_JSON": "{}",
+        "GITHUB_REPOSITORY": "o/r",
+        "GITHUB_RUN_ID": "1",
+    }
+    GH = [
+        {"match": r"-q \.run_started_at", "out": "2026-10-10T10:00:00Z"},
+        {
+            "match": r"runs/1/jobs",
+            "out": "55\tterrain\tfailure\t2026-10-10T10:00:00Z\t2026-10-10T11:00:00Z\tHeight tiles\thttps://j\n",
+        },
+        {"match": r"jobs/55/logs", "out": "2026-10-10T10:59:59.0Z ##[error]The model is missing\n"},
+    ]
 
     def summary(self, steps):
         work = work_dir(self)
@@ -173,15 +210,19 @@ class Summary(unittest.TestCase):
                 f.write(text)
         out = os.path.join(work, "summary.md")
         with Stubs(gh=self.GH) as s:
-            r = s.run(["bash", "workers/deploy/summary.sh"], cwd=work,
-                      env=s.env(**self.ENV, GITHUB_STEP_SUMMARY=out))
+            r = s.run(["bash", "workers/deploy/summary.sh"], cwd=work, env=s.env(**self.ENV, GITHUB_STEP_SUMMARY=out))
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         with open(out) as f:
             return f.read()
 
     def test_steps_by_order_and_what_failed(self):
-        text = self.summary({"a.tsv": "30\tContours\t75\t10 m\n", "b.tsv": "10\tRegion PBF\t3661\t373 MB\n",
-                             "rock-stats.txt": "failed=1\ncount=0\n"})
+        text = self.summary(
+            {
+                "a.tsv": "30\tContours\t75\t10 m\n",
+                "b.tsv": "10\tRegion PBF\t3661\t373 MB\n",
+                "rock-stats.txt": "failed=1\ncount=0\n",
+            }
+        )
         self.assertLess(text.index("| Region PBF | 1:01:01 | 373 MB |"), text.index("| Contours | 0:01:15 | 10 m |"))
         self.assertIn("The rock computation failed", text)
         self.assertIn("### [terrain](https://j) – failure after 1:00:00", text)

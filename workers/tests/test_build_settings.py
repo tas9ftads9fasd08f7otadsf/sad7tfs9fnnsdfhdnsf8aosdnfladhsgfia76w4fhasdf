@@ -30,5 +30,4 @@ class BuildSettings(unittest.TestCase):
                 self.assertEqual(bare - given, set())
 
     def test_the_pattern_tells_a_default_from_a_bare_read(self):
-        self.assertEqual(BARE.findall('a="$OPT_A" b="${OPT_B}" c="${OPT_C:-}" d="${OPT_D-x}"'),
-                         ["OPT_A", "OPT_B"])
+        self.assertEqual(BARE.findall('a="$OPT_A" b="${OPT_B}" c="${OPT_C:-}" d="${OPT_D-x}"'), ["OPT_A", "OPT_B"])

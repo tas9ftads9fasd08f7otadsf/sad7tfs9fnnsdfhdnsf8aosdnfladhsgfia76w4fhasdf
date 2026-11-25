@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """From a PBF, the junction graph – nodes, tagged edges and turn restrictions."""
+
 import math
 import os
 import sys
@@ -24,7 +25,7 @@ class Network:
     """One area's junction graph – what goes into tiles and into the node order."""
 
     def __init__(self):
-        self.nodes = {}         # osm id -> (lat_e7, lon_e7)
+        self.nodes = {}  # osm id -> (lat_e7, lon_e7)
         self.edges = []
         self.restrictions = []
         self.dropped = Counter()
@@ -72,10 +73,17 @@ class _Restrictions(osmium.SimpleHandler):
             v = v.strip()
             if v in fmt.EXCEPTIONS:
                 exceptions |= 1 << fmt.EXCEPTIONS.index(v)
-        self.restrictions.append({"rel": r.id, "kind": fmt.RESTRICTION_KINDS.index(kind),
-                                  "exceptions": exceptions, "from": frm[0], "to": to[0],
-                                  "via_node": via_n[0] if via_n else None,
-                                  "via_ways": via_w})
+        self.restrictions.append(
+            {
+                "rel": r.id,
+                "kind": fmt.RESTRICTION_KINDS.index(kind),
+                "exceptions": exceptions,
+                "from": frm[0],
+                "to": to[0],
+                "via_node": via_n[0] if via_n else None,
+                "via_ways": via_w,
+            }
+        )
         self.nodes.update(via_n)
 
 
@@ -124,8 +132,7 @@ class _Edges(osmium.SimpleHandler):
         for key, value in dropped:
             self.network.dropped[f"{key}={value}"] += 1
         try:
-            points = [(n.ref, round(n.location.lat * E7), round(n.location.lon * E7))
-                      for n in w.nodes]
+            points = [(n.ref, round(n.location.lat * E7), round(n.location.lon * E7)) for n in w.nodes]
         except osmium.InvalidLocationError:
             self.network.skipped["way without node coordinates"] += 1
             return
@@ -136,7 +143,7 @@ class _Edges(osmium.SimpleHandler):
         for i in range(1, len(points)):
             if points[i][0] not in self.junctions and i != len(points) - 1:
                 continue
-            piece = points[start:i + 1]
+            piece = points[start : i + 1]
             start = i
             if len(piece) < 2 or piece[0][0] == piece[-1][0]:
                 # a loop without a second junction isn't an edge one can take
@@ -145,7 +152,8 @@ class _Edges(osmium.SimpleHandler):
                 self.network.nodes[ref] = (lat, lon)
             edge = {
                 "way": w.id,
-                "from": piece[0][0], "to": piece[-1][0],
+                "from": piece[0][0],
+                "to": piece[-1][0],
                 "geom": [(lat, lon) for _r, lat, lon in piece[1:-1]],
                 "length_cm": _length_cm(piece),
                 "direction": direction,
@@ -178,8 +186,7 @@ def _length_cm(piece):
 def _haversine(lat1, lon1, lat2, lon2):
     f1, f2 = math.radians(lat1), math.radians(lat2)
     dl = math.radians(lon2 - lon1)
-    a = (math.sin((f2 - f1) / 2) ** 2
-         + math.cos(f1) * math.cos(f2) * math.sin(dl / 2) ** 2)
+    a = math.sin((f2 - f1) / 2) ** 2 + math.cos(f1) * math.cos(f2) * math.sin(dl / 2) ** 2
     return 2 * RADIUS_M * math.asin(min(1.0, math.sqrt(a)))
 
 
@@ -220,8 +227,9 @@ def _resolve_restrictions(network, raw):
             chain = _via_ways(by_way, z, network)
             if not chain:
                 continue
-        network.restrictions.append({"kind": z["kind"], "exceptions": z["exceptions"],
-                                     "edges": chain, "via": chain[0][1]})
+        network.restrictions.append(
+            {"kind": z["kind"], "exceptions": z["exceptions"], "edges": chain, "via": chain[0][1]}
+        )
 
 
 def _via_ways(by_way, z, network):

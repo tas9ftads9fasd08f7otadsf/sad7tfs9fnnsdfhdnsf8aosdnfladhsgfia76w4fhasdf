@@ -26,8 +26,9 @@ def mini_pbf(tmp):
 
 
 def count(pbf):
-    out = subprocess.run(["osmium", "fileinfo", "-e", "-g", "data.count.nodes", pbf],
-                         capture_output=True, text=True, check=True).stdout
+    out = subprocess.run(
+        ["osmium", "fileinfo", "-e", "-g", "data.count.nodes", pbf], capture_output=True, text=True, check=True
+    ).stdout
     return int(out.strip())
 
 
@@ -53,11 +54,22 @@ class RegionPbf(unittest.TestCase):
             f.write(SUDO)
         os.chmod(os.path.join(stubs, "sudo"), 0o755)
         out = os.path.join(work, "out")
-        env = {**os.environ, **LOCAL, "PATH": stubs + os.pathsep + os.environ["PATH"],
-               "GITHUB_OUTPUT": out, "GITHUB_STEP_SUMMARY": os.devnull,
-               "OPT_CUSTOM_PBF_URL": f"{self.base}/europe/mini.osm.pbf", "OPT_CUSTOM_NAME": "Malá Obec",
-               "OPT_CUSTOM_BBOX": ",".join(map(str, mini_region.BBOX)), "OPT_CROP_BBOX": "",
-               "OPT_TEST_KM2": "0", "OPT_TEST_AT": "", "OPT_AREA_BBOX": "", "AREA_IN": "", **opts}
+        env = {
+            **os.environ,
+            **LOCAL,
+            "PATH": stubs + os.pathsep + os.environ["PATH"],
+            "GITHUB_OUTPUT": out,
+            "GITHUB_STEP_SUMMARY": os.devnull,
+            "OPT_CUSTOM_PBF_URL": f"{self.base}/europe/mini.osm.pbf",
+            "OPT_CUSTOM_NAME": "Malá Obec",
+            "OPT_CUSTOM_BBOX": ",".join(map(str, mini_region.BBOX)),
+            "OPT_CROP_BBOX": "",
+            "OPT_TEST_KM2": "0",
+            "OPT_TEST_AT": "",
+            "OPT_AREA_BBOX": "",
+            "AREA_IN": "",
+            **opts,
+        }
         r = subprocess.run(["bash", "workers/plan/pbf.sh"], cwd=work, env=env, capture_output=True, text=True)
         outputs = {}
         if os.path.exists(out):
@@ -119,15 +131,25 @@ class RoutingPbf(unittest.TestCase):
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
         out = os.path.join(work, "out")
-        r = subprocess.run(["bash", "workers/routing/pbf.sh"], cwd=work, capture_output=True, text=True,
-                           env={**os.environ, **LOCAL, "AREA": "two", "OSMFR_BASE": base, "GITHUB_OUTPUT": out})
+        r = subprocess.run(
+            ["bash", "workers/routing/pbf.sh"],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, **LOCAL, "AREA": "two", "OSMFR_BASE": base, "GITHUB_OUTPUT": out},
+        )
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         merged = os.path.join(work, "data", "routing.osm.pbf")
         with open(os.path.join(tmp, "one.osm.pbf"), "wb") as f:
             f.write(blob)
         self.assertEqual(count(merged), count(os.path.join(tmp, "one.osm.pbf")), "shared nodes unified by id")
-        r = subprocess.run(["bash", "workers/routing/pbf.sh"], cwd=work, capture_output=True, text=True,
-                           env={**os.environ, **LOCAL, "AREA": "three", "OSMFR_BASE": base, "GITHUB_OUTPUT": out})
+        r = subprocess.run(
+            ["bash", "workers/routing/pbf.sh"],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, **LOCAL, "AREA": "three", "OSMFR_BASE": base, "GITHUB_OUTPUT": out},
+        )
         self.assertNotEqual(r.returncode, 0)
         self.assertIn("isn't in the `areas` of config/routing.json", r.stderr)
 
@@ -144,10 +166,8 @@ class RoutingPbf(unittest.TestCase):
             with open(out, "rb") as f:
                 return f.read()
 
-        a = pbf("a", "n1 v1 dV t2026-10-01T00:00:00Z x20.1 y49.15\n"
-                     "n2 v3 dV t2026-10-10T00:00:00Z x20.1 y49.2\n")
-        b = pbf("b", "n2 v4 dV t2026-10-26T00:00:00Z x20.11 y49.2\n"
-                     "n3 v1 dV t2026-09-01T00:00:00Z x20.0 y49.3\n")
+        a = pbf("a", "n1 v1 dV t2026-10-01T00:00:00Z x20.1 y49.15\nn2 v3 dV t2026-10-10T00:00:00Z x20.1 y49.2\n")
+        b = pbf("b", "n2 v4 dV t2026-10-26T00:00:00Z x20.11 y49.2\nn3 v1 dV t2026-09-01T00:00:00Z x20.0 y49.3\n")
         work = os.path.join(tmp, "work")
         os.makedirs(work)
         shadow_workers(work, {})
@@ -158,13 +178,18 @@ class RoutingPbf(unittest.TestCase):
         server, base = rangeserver.serve({"/europe/a-latest.osm.pbf": a, "/europe/b-latest.osm.pbf": b})
         self.addCleanup(server.server_close)
         self.addCleanup(server.shutdown)
-        r = subprocess.run(["bash", "workers/routing/pbf.sh"], cwd=work, capture_output=True, text=True,
-                           env={**os.environ, **LOCAL, "AREA": "two", "OSMFR_BASE": base,
-                                "GITHUB_OUTPUT": os.path.join(work, "out")})
+        r = subprocess.run(
+            ["bash", "workers/routing/pbf.sh"],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, **LOCAL, "AREA": "two", "OSMFR_BASE": base, "GITHUB_OUTPUT": os.path.join(work, "out")},
+        )
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         merged = os.path.join(work, "data", "routing.osm.pbf")
-        lines = subprocess.run(["osmium", "cat", "-f", "opl", merged],
-                               capture_output=True, text=True, check=True).stdout.splitlines()
+        lines = subprocess.run(
+            ["osmium", "cat", "-f", "opl", merged], capture_output=True, text=True, check=True
+        ).stdout.splitlines()
         self.assertEqual([line.split()[:2] for line in lines], [["n1", "v1"], ["n2", "v4"], ["n3", "v1"]])
 
 

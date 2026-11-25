@@ -21,19 +21,36 @@ def stamp(days_ago):
 
 
 def entry(fid, key, days_ago, size=1):
-    return {"id": fid, "name": key + ".tar.zst", "key": key, "full_key": key,
-            "size": size, "created": stamp(days_ago) if days_ago is not None else ""}
+    return {
+        "id": fid,
+        "name": key + ".tar.zst",
+        "key": key,
+        "full_key": key,
+        "size": size,
+        "created": stamp(days_ago) if days_ago is not None else "",
+    }
 
 
 class CachePrune(unittest.TestCase):
     def prune(self, items, **kw):
-        args = argparse.Namespace(**{"keep_days": 7, "keep_days_layers": 90, "keep_gb": 0,
-                                     "dead_only": False, "dry_run": False, "summary": "", **kw})
+        args = argparse.Namespace(
+            **{
+                "keep_days": 7,
+                "keep_days_layers": 90,
+                "keep_gb": 0,
+                "dead_only": False,
+                "dry_run": False,
+                "summary": "",
+                **kw,
+            }
+        )
         deleted = []
-        with mock.patch.object(cache, "creds_or_die", lambda what: "creds"), \
-                mock.patch.object(cache, "entries", lambda creds: items), \
-                mock.patch.object(cache.auth, "api_delete", lambda creds, fid: deleted.append(fid)), \
-                mock.patch.object(cache, "log"):
+        with (
+            mock.patch.object(cache, "creds_or_die", lambda what: "creds"),
+            mock.patch.object(cache, "entries", lambda creds: items),
+            mock.patch.object(cache.auth, "api_delete", lambda creds, fid: deleted.append(fid)),
+            mock.patch.object(cache, "log"),
+        ):
             self.assertEqual(cache.do_prune(args), 0)
         return deleted
 
@@ -42,8 +59,12 @@ class CachePrune(unittest.TestCase):
         self.assertEqual(self.prune(items), ["old"])
 
     def test_finished_layers_live_longer(self):
-        items = [entry("pbf", "pbf-x", 30), entry("rocks", "rocks-x", 30),
-                 entry("ancient", "contours-x", 100), entry("fresh", "dem-x", 1)]
+        items = [
+            entry("pbf", "pbf-x", 30),
+            entry("rocks", "rocks-x", 30),
+            entry("ancient", "contours-x", 100),
+            entry("fresh", "dem-x", 1),
+        ]
         self.assertEqual(sorted(self.prune(items)), ["ancient", "pbf"])
 
     def test_no_date_is_never_too_old(self):
@@ -54,35 +75,43 @@ class CachePrune(unittest.TestCase):
 
     def test_the_cap_sacrifices_what_can_be_fetched_again(self):
         gb = int(1e9)
-        items = [entry("pbf-new", "pbf-a", 1, gb), entry("terrain", "terrain-a", 2, gb),
-                 entry("pbf-old", "pbf-b", 3, gb), entry("rocks", "rocks-a", 4, gb)]
+        items = [
+            entry("pbf-new", "pbf-a", 1, gb),
+            entry("terrain", "terrain-a", 2, gb),
+            entry("pbf-old", "pbf-b", 3, gb),
+            entry("rocks", "rocks-a", 4, gb),
+        ]
         self.assertEqual(sorted(self.prune(items, keep_gb=2.5)), ["pbf-new", "pbf-old"])
         self.assertEqual(self.prune(items, keep_gb=3.5), ["pbf-old"])
 
     def test_an_old_build_day_goes_yesterday_stays(self):
         today = datetime.datetime.now(datetime.timezone.utc).date()
+
         def day(n):
             return (today - datetime.timedelta(days=n)).isoformat()
-        items = [entry("pbf-today", f"pbf-v6-trnavsky-t0-a-{day(0)}", 0),
-                 entry("pbf-yesterday", f"pbf-v6-trnavsky-t0-a-{day(1)}", 1),
-                 entry("pbf-old", f"pbf-v6-trnavsky-t0-a-{day(2)}", 2),
-                 entry("mountain-old", f"pbf-mountain-v3-tatry-b-{day(3)}", 3),
-                 entry("planetiler-old", f"planetiler-latest-{day(2)}", 2),
-                 entry("aerial", "aerial-v2-sk-b-z17", 2)]
-        self.assertEqual(sorted(self.prune(items, dead_only=True)),
-                         ["mountain-old", "pbf-old", "planetiler-old"])
+
+        items = [
+            entry("pbf-today", f"pbf-v6-trnavsky-t0-a-{day(0)}", 0),
+            entry("pbf-yesterday", f"pbf-v6-trnavsky-t0-a-{day(1)}", 1),
+            entry("pbf-old", f"pbf-v6-trnavsky-t0-a-{day(2)}", 2),
+            entry("mountain-old", f"pbf-mountain-v3-tatry-b-{day(3)}", 3),
+            entry("planetiler-old", f"planetiler-latest-{day(2)}", 2),
+            entry("aerial", "aerial-v2-sk-b-z17", 2),
+        ]
+        self.assertEqual(sorted(self.prune(items, dead_only=True)), ["mountain-old", "pbf-old", "planetiler-old"])
 
     def test_only_the_newest_top_up_of_a_prefix_stays(self):
-        items = [entry("slope-new", "slope-v1-sk-r-g2-20000000002", 1),
-                 entry("slope-old", "slope-v1-sk-r-g2-20000000001", 2),
-                 entry("slope-other", "slope-v1-sk-r-g1-20000000001", 2),
-                 entry("vector-wip", "shading-vector-sk-z14-30000000002-s", 1),
-                 entry("vector-old", "shading-vector-sk-z14-30000000001", 2),
-                 entry("wiki-old", "wiki-v3-trnavsky__sk_text-20000000001", 3),
-                 entry("wiki-new", "wiki-v3-trnavsky__sk_text-20000000005", 0)]
+        items = [
+            entry("slope-new", "slope-v1-sk-r-g2-20000000002", 1),
+            entry("slope-old", "slope-v1-sk-r-g2-20000000001", 2),
+            entry("slope-other", "slope-v1-sk-r-g1-20000000001", 2),
+            entry("vector-wip", "shading-vector-sk-z14-30000000002-s", 1),
+            entry("vector-old", "shading-vector-sk-z14-30000000001", 2),
+            entry("wiki-old", "wiki-v3-trnavsky__sk_text-20000000001", 3),
+            entry("wiki-new", "wiki-v3-trnavsky__sk_text-20000000005", 0),
+        ]
         items.sort(key=lambda e: e["created"], reverse=True)
-        self.assertEqual(sorted(self.prune(items, dead_only=True)),
-                         ["slope-old", "vector-old", "wiki-old"])
+        self.assertEqual(sorted(self.prune(items, dead_only=True)), ["slope-old", "vector-old", "wiki-old"])
 
     def test_dead_only_leaves_age_and_cap_to_the_weekly_run(self):
         # 486 `demtiles-` is retired now, so a plain key stands in
@@ -91,10 +120,16 @@ class CachePrune(unittest.TestCase):
 
     def test_retired_versions_go_even_after_a_build(self):
         # 486 a copy of the model stores and key versions no workflow asks for
-        items = [entry("tiles", "demtiles-v2-tdmr5abc-1_2_3_4", 1), entry("t7", "terrain-v7-x", 1),
-                 entry("t8", "terrain-v8-x", 1), entry("r2", "rocks-v2-x", 1), entry("r3", "rocks-v3-x", 1),
-                 entry("a1", "aerial-v1-summer-x-z", 1), entry("a2", "aerial-v2-x-z", 1),
-                 entry("m2", "pbf-mountain-v2-x", 1)]
+        items = [
+            entry("tiles", "demtiles-v2-tdmr5abc-1_2_3_4", 1),
+            entry("t7", "terrain-v7-x", 1),
+            entry("t8", "terrain-v8-x", 1),
+            entry("r2", "rocks-v2-x", 1),
+            entry("r3", "rocks-v3-x", 1),
+            entry("a1", "aerial-v1-summer-x-z", 1),
+            entry("a2", "aerial-v2-x-z", 1),
+            entry("m2", "pbf-mountain-v2-x", 1),
+        ]
         self.assertEqual(sorted(self.prune(items, dead_only=True)), ["a1", "m2", "r2", "t7", "tiles"])
         self.assertEqual(cache.kept("demtiles-", 30, 180), "retired: the next prune")
 
@@ -136,21 +171,23 @@ class DeadRulesCoverEveryKey(unittest.TestCase):
 
     def test_day_keys_are_dated(self):
         text = self.keys()
-        for prefix in re.findall(r"key: ([a-z0-9-]+)-[^\n]*\b(?:steps\.day\.outputs\.d|outputs\.day|inputs\.day) \}\}\s*$",
-                                 text, re.M):
+        for prefix in re.findall(
+            r"key: ([a-z0-9-]+)-[^\n]*\b(?:steps\.day\.outputs\.d|outputs\.day|inputs\.day) \}\}\s*$", text, re.M
+        ):
             with self.subTest(prefix=prefix):
                 self.assertTrue((prefix + "-").startswith(cache.DATED))
 
 
 class StorePrune(unittest.TestCase):
     def prune(self, items, **kw):
-        args = argparse.Namespace(**{"store": "dem-sonny", "keep_days": 30, "dry_run": False,
-                                     "summary": "", **kw})
+        args = argparse.Namespace(**{"store": "dem-sonny", "keep_days": 30, "dry_run": False, "summary": "", **kw})
         deleted = []
-        with mock.patch.object(store, "creds_or_die", lambda what: "creds"), \
-                mock.patch.object(store, "index", lambda creds, s: items), \
-                mock.patch.object(store.auth, "api_delete", lambda creds, fid: deleted.append(fid)), \
-                mock.patch.object(store, "log"):
+        with (
+            mock.patch.object(store, "creds_or_die", lambda what: "creds"),
+            mock.patch.object(store, "index", lambda creds, s: items),
+            mock.patch.object(store.auth, "api_delete", lambda creds, fid: deleted.append(fid)),
+            mock.patch.object(store, "log"),
+        ):
             self.assertEqual(store.do_prune(args), 0)
         return deleted
 
@@ -170,11 +207,13 @@ class StorePrune(unittest.TestCase):
     def retire(self, ids, **kw):
         args = argparse.Namespace(**{"dry_run": False, "summary": "", **kw})
         deleted = []
-        with mock.patch.object(store, "creds_or_die", lambda what: "creds"), \
-                mock.patch.object(store, "store_id", lambda creds, s: ids.get(s)), \
-                mock.patch.object(store, "index", lambda creds, s: self.ITEMS), \
-                mock.patch.object(store.auth, "api_delete", lambda creds, fid: deleted.append(fid)), \
-                mock.patch.object(store, "log"):
+        with (
+            mock.patch.object(store, "creds_or_die", lambda what: "creds"),
+            mock.patch.object(store, "store_id", lambda creds, s: ids.get(s)),
+            mock.patch.object(store, "index", lambda creds, s: self.ITEMS),
+            mock.patch.object(store.auth, "api_delete", lambda creds, fid: deleted.append(fid)),
+            mock.patch.object(store, "log"),
+        ):
             self.assertEqual(store.do_retire(args), 0)
         return deleted
 

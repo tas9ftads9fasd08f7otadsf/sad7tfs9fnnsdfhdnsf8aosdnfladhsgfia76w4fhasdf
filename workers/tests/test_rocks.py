@@ -19,15 +19,14 @@ class RockPlan(unittest.TestCase):
     def test_chunks_cover_the_extent(self):
         res = 5.0
         x0, y0, x1, y1 = self.plan.to_metric(BBOX)
-        keep, total, cells, (nx, ny, sx, sy, wm, hm) = self.plan.chunk_plan(
-            x0, y0, x1, y1, res, 4e6, BBOX)
+        keep, total, cells, (nx, ny, sx, sy, wm, hm) = self.plan.chunk_plan(x0, y0, x1, y1, res, 4e6, BBOX)
         self.assertEqual(total, nx * ny)
         self.assertGreater(total, 1)
         area = 0.0
         for i, a in enumerate(keep):
             area += (a[4] - a[2]) * (a[5] - a[3])
-            for b in keep[i + 1:]:
-                overlap = (min(a[4], b[4]) - max(a[2], b[2]) > 0 and min(a[5], b[5]) - max(a[3], b[3]) > 0)
+            for b in keep[i + 1 :]:
+                overlap = min(a[4], b[4]) - max(a[2], b[2]) > 0 and min(a[5], b[5]) - max(a[3], b[3]) > 0
                 self.assertFalse(overlap, (a, b))
         self.assertAlmostEqual(cells, area / res / res)
         self.assertLessEqual(area, wm * hm + 1e-6)
@@ -64,8 +63,9 @@ class RockPlan(unittest.TestCase):
             dem = write_dem(os.path.join(tmp, "dem.tif"), hill(100), BBOX)
             chunks = self.slope.chunk_grid(BBOX, 10.0, 256)
             x0, y0, x1, y1 = self.plan.to_metric(BBOX)
-            middle = min(chunks, key=lambda c: abs((c[2] + c[4]) / 2 - (x0 + x1) / 2)
-                         + abs((c[3] + c[5]) / 2 - (y0 + y1) / 2))
+            middle = min(
+                chunks, key=lambda c: abs((c[2] + c[4]) / 2 - (x0 + x1) / 2) + abs((c[3] + c[5]) / 2 - (y0 + y1) / 2)
+            )
             out = os.path.join(tmp, "chunk.tif")
             self.slope.slope_chunk(dem, middle, 10.0, out, tmp)
             self.assertFalse(os.path.exists(out + ".part"))

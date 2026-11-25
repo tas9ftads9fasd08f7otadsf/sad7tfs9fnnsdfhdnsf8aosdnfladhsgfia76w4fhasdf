@@ -10,6 +10,7 @@ The JAR targets Java 21 and `ubuntu-latest` has 17, so without that step
   4. a clipped run doesn't pass `--bounds` and `--polygon` together – `tileExtents`
      is computed in the constructor, so the polygon shows in the log and clips nothing.
 """
+
 import glob
 import os
 import re
@@ -22,8 +23,7 @@ import yaml
 SCRIPT = "workers/lib/planetiler.sh"
 IS_PLANETILER = re.compile(r"planetiler\.jar|lib/planetiler\.sh")
 # a run script, not a mentioned one: the path is the command's first word
-SCRIPT_PATH = re.compile(
-    r"^\s*(?:(?:bash|sh|source|\.)\s+)?(workers/[\w./-]+\.sh)\b", re.M)
+SCRIPT_PATH = re.compile(r"^\s*(?:(?:bash|sh|source|\.)\s+)?(workers/[\w./-]+\.sh)\b", re.M)
 
 
 def no_comments(s):
@@ -50,9 +50,11 @@ with open(SCRIPT, encoding="utf-8") as f:
     source = f.read()
 m = re.search(r'^JAVA_MIN="\$\{JAVA_MIN:-(\d+)\}"', source, re.M)
 if not m:
-    print(f"::error file={SCRIPT}::has no `JAVA_MIN=\"${{JAVA_MIN:-<number>}}\"` line. "
-          f"It's the one place saying which Java Planetiler wants – without "
-          f"it there's no checking that jobs really set it.")
+    print(
+        f'::error file={SCRIPT}::has no `JAVA_MIN="${{JAVA_MIN:-<number>}}"` line. '
+        f"It's the one place saying which Java Planetiler wants – without "
+        f"it there's no checking that jobs really set it."
+    )
     sys.exit(1)
 WANTS = m.group(1)
 print(f"{SCRIPT}: Planetiler wants Java {WANTS}")
@@ -63,18 +65,17 @@ for path in sorted(glob.glob(".github/workflows/*.yml")):
     for job_name, job in (wf.get("jobs") or {}).items():
         steps = job.get("steps") or []
 
-        java = [s for s in steps
-                if "actions/setup-java" in str(s.get("uses") or "")]
+        java = [s for s in steps if "actions/setup-java" in str(s.get("uses") or "")]
         for st in java:
             ver = str((st.get("with") or {}).get("java-version") or "")
             if ver != WANTS:
                 bad.append(
                     f"{path}: job '{job_name}' sets Java {ver or '?'}, but "
                     f"Planetiler wants {WANTS} (`JAVA_MIN` in {SCRIPT}). Two "
-                    f"versions side by side mean one job builds differently.")
+                    f"versions side by side mean one job builds differently."
+                )
 
-        runs = any(IS_PLANETILER.search(no_comments(with_called(
-            str(s.get("run") or "")))) for s in steps)
+        runs = any(IS_PLANETILER.search(no_comments(with_called(str(s.get("run") or "")))) for s in steps)
         if runs and not java:
             bad.append(
                 f"{path}: job '{job_name}' runs Planetiler but has no "
@@ -82,7 +83,8 @@ for path in sorted(glob.glob(".github/workflows/*.yml")):
                 f"targets {WANTS} – `java -jar` fails with "
                 f"UnsupportedClassVersionError after all the work before it. Add "
                 f"`- uses: actions/setup-java@v5` with `distribution: temurin` and "
-                f"`java-version: \"{WANTS}\"` (as the jobs in build-map-region.yml have).")
+                f'`java-version: "{WANTS}"` (as the jobs in build-map-region.yml have).'
+            )
 
 # 4. `--bounds` and `--polygon` together (see the docstring)
 # searched in scripts, not YAML: the call is in `workers/<job>/build.sh`
@@ -102,7 +104,8 @@ for path in sorted(glob.glob("workers/*/*.sh")):
         bad.append(
             f"{path}: runs Planetiler with `--polygon` AND `--bounds`. That "
             f"quietly turns the shape off and the map reaches past the region. "
-            f"Keep one – `workers/lib/region-clip.sh` builds the clip.")
+            f"Keep one – `workers/lib/region-clip.sh` builds the clip."
+        )
 
 # `region-clip.sh` is RUN, not read – with and without a polygon
 CLIP = "workers/lib/region-clip.sh"
@@ -113,15 +116,17 @@ with tempfile.TemporaryDirectory() as tmp:
     # clip off must give `--bounds` without `--polygon`; an empty switch means on
     for label, args, env, must, must_not in (
         ("with a polygon", [CLIP, "19,48,20,49", poly], {}, "--polygon", "--bounds"),
-        ("without a polygon", [CLIP, "19,48,20,49", os.path.join(tmp, "none.poly")],
-         {}, "--bounds", "--polygon"),
-        ("with the clip off", [CLIP, "19,48,20,49", poly],
-         {"OPT_REGION_CLIP": "false"}, "--bounds", "--polygon"),
-        ("with an empty OPT_REGION_CLIP", [CLIP, "19,48,20,49", poly],
-         {"OPT_REGION_CLIP": ""}, "--polygon", "--bounds"),
+        ("without a polygon", [CLIP, "19,48,20,49", os.path.join(tmp, "none.poly")], {}, "--bounds", "--polygon"),
+        ("with the clip off", [CLIP, "19,48,20,49", poly], {"OPT_REGION_CLIP": "false"}, "--bounds", "--polygon"),
+        (
+            "with an empty OPT_REGION_CLIP",
+            [CLIP, "19,48,20,49", poly],
+            {"OPT_REGION_CLIP": ""},
+            "--polygon",
+            "--bounds",
+        ),
     ):
-        r = subprocess.run(args, capture_output=True, text=True,
-                           env={**os.environ, **env})
+        r = subprocess.run(args, capture_output=True, text=True, env={**os.environ, **env})
         if r.returncode != 0:
             bad.append(f"{CLIP} ({label}) failed: {r.stderr.strip()[:200]}")
             continue
@@ -131,7 +136,8 @@ with tempfile.TemporaryDirectory() as tmp:
             bad.append(
                 f"{CLIP} ({label}) printed `{must_not}` – `--bounds` must NOT "
                 f"go with `--polygon` (it quietly turns the shape off), and "
-                f"without a polygon there's nothing to clip with.")
+                f"without a polygon there's nothing to clip with."
+            )
 
 for b in bad:
     print(f"::error::{b}")
