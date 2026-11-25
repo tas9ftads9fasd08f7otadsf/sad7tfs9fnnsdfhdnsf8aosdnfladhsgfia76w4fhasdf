@@ -38,7 +38,7 @@ CUT_KEY=whole
 
 # the real maxzoom is known only after computing (the size cap may lower it),
 # so the name is a function; the encoding shape is written once
-ENC_VER=v8
+ENC_VER=v9
 # empty for the defaults, so assets already stored stay found
 ENC_OPT=""
 [ "$BITS" != auto ] && ENC_OPT="${ENC_OPT}-b${BITS}"
@@ -107,10 +107,17 @@ if ! have_tiles; then
   elif [ "$TRC" -ne 0 ]; then
     exit "$TRC"
   fi
+  # a whole region only: a range is cut to its box, and `DEM_FILL` goes beyond it
+  ABROAD=()
+  if [ "$CUT_KEY" = whole ] && [ -s data/state.geojson ]; then
+    export GDAL_HTTP_MAX_RETRY=4 GDAL_HTTP_RETRY_DELAY=5 GDAL_DISABLE_READDIR_ON_OPEN=EMPTY_DIR
+    python3 workers/terrain/abroad.py --bbox="$BBOX" --out=dem/abroad.vrt \
+      && ABROAD=(--state=data/state.geojson --abroad-dem=dem/abroad.vrt)
+  fi
   echo "::group::Terrain tiles to z$TZ from model $TDEM, $FMT, fraction bits $BITS (cap ${TBUDGET_MB} MB)"
   # `--poly` stops shading at the region's edge; without a polygon the whole bbox
   python3 workers/terrain/tiles.py --dem="dem/$TDEM/all.vrt" --bbox="$BBOX" \
-    --poly=data/region.geojson --edge="$EDGE" \
+    --poly=data/region.geojson --edge="$EDGE" "${ABROAD[@]}" \
     --minzoom=5 --maxzoom="$TZ" --budget-mb="$TBUDGET_MB" --out=terrain-png \
     --format="$FMT" --max-frac-bits="$([ "$BITS" = auto ] && echo -1 || echo "$BITS")"
   # `tiles.py` writes the maxzoom made – the size cap may have lowered it

@@ -55,7 +55,7 @@ outline_from() { # $1 = PBF the outline is read from
   need_osmium
   need_gdal
   python3 workers/plan/region-poly.py --region="$KEY" --from-pbf="$1" \
-    --out=data/region.geojson --poly-out="$POLY" \
+    --out=data/region.geojson --poly-out="$POLY" --state-out=data/state.geojson \
     --summary="${GITHUB_STEP_SUMMARY:-/dev/null}"
 }
 

@@ -12,7 +12,9 @@ turns into a grid. `resampling()` picks by the pixel to cell ratio.
 
 Outside the region is a plane (`flatten_outside`) so nothing is shaded there;
 it starts a pixel inside, so even its wall is shaded in the region, not past it.
-A tile without a single region pixel isn't written.
+Beyond the state border (`--state`) the ground comes from `--abroad-dem` instead,
+so mountains go on past it; the plane stays over the neighbouring regions,
+whose own archives the app lays there. A tile without a region pixel isn't written.
 
 Usage:
     python3 workers/terrain/tiles.py --dem=dem/all.vrt \\
@@ -36,8 +38,8 @@ from cell import (SLOPE_EPS, dem_cell_metres, frac_bits,  # noqa: E402
                   resampling, tile_m_per_px)
 # work on the height grid is in `height.py`; here are the plan, warp and encoding
 sys.path.insert(0, _HERE)
-from height import (NODATA, edge_height, fill_nodata,  # noqa: E402
-                    flatten_outside, off_the_plane)
+from height import (NODATA, edge_height, fill_abroad,  # noqa: E402
+                    fill_nodata, flatten_outside, off_the_plane)
 
 R_EARTH = 6378137.0
 ORIGIN = math.pi * R_EARTH  # 20037508.342789244
@@ -183,6 +185,14 @@ def load_mask(poly, bbox):
     return mod, mod.mask_from_file(poly, bbox), rings
 
 
+def load_state(rm, path):
+    """The state's rings in Mercator, or `None` without a file."""
+    if not rm or not path or not os.path.exists(path):
+        return None
+    return [([(merc_x(x), merc_y(y)) for x, y in ring], hole)
+            for ring, hole in rm.rings_from_geojson(path)]
+
+
 def plane_height(dem, rm, rings, w, s, e, n, width=1024):
     """The plane's height outside – one for all zooms, otherwise they seam."""
     minx, maxx, miny, maxy = merc_x(w), merc_x(e), merc_y(s), merc_y(n)
@@ -206,6 +216,11 @@ def main():
     ap.add_argument("--edge", type=int, default=-1,
                     help="pixels of real terrain past the region's edge; "
                          "negative = the plane starts that far inside")
+    ap.add_argument("--state", default="",
+                    help="the state's GeoJSON – beyond it the ground is "
+                         "`--abroad-dem`, not the plane")
+    ap.add_argument("--abroad-dem", default="",
+                    help="the model beyond the state border (.vrt/.tif)")
     ap.add_argument("--maxzoom", type=int, default=12)
     ap.add_argument("--minzoom", type=int, default=0)
     ap.add_argument("--out", required=True, help="directory of {z}/{x}/{y}.<format> tiles")
@@ -237,7 +252,17 @@ def main():
               f"{args.grow:g} of its side and outside ({args.edge:+d} px "
               f"from the edge) is a plane at {plane} m – nothing is shaded there.",
               flush=True)
-    else:
+    state = load_state(rm, args.state) if args.abroad_dem else None
+    abroad_cell = 0.0
+    if state is not None:
+        dx, dy = dem_cell_metres(args.abroad_dem, (s + n) / 2)
+        abroad_cell = max(dx, dy) if dx and dy else 0.0
+        print(f"Beyond the state border the ground is {args.abroad_dem} "
+              f"({abroad_cell:.0f} m), not the plane.", flush=True)
+    elif mask and args.abroad_dem:
+        print(f"::warning::No state border ({args.state or '--state'} missing) – "
+              "beyond it is the plane, as within the state.", flush=True)
+    if not mask:
         print("::warning::No region polygon – the whole region bbox is drawn, "
               "outside the region too. (`--poly` got no file.)", flush=True)
     # the grid is measured from the raster; without a measurement `average`
@@ -336,6 +361,15 @@ def main():
                 cut_px += int(keep.size - keep.sum())
                 all_px += keep.size
                 grid = flatten_outside(grid, keep, plane)
+            ground = keep
+            if state is not None:
+                warp_level(args.abroad_dem, "/tmp/abroad.raw", minx, miny, maxx,
+                           maxy, width, height, resampling(px_m, abroad_cell))
+                fill = np.fromfile("/tmp/abroad.raw", dtype="<f4").reshape(height, width)
+                # shrunk like `keep`, so the plane's ring along the state border is ground
+                home = rm.pixel_mask(state, (minx, miny, maxx, maxy),
+                                     width, height, grow=args.edge)
+                grid, ground = fill_abroad(grid, keep, home, fill, fill <= NODATA + 1.0)
 
             for ty in range(ry, ry_end + 1):
                 for tx in range(x0, x1 + 1):
@@ -366,10 +400,10 @@ def main():
                         continue
                     d = os.path.join(args.out, str(z), str(tx))
                     os.makedirs(d, exist_ok=True)
-                    if keep is not None:
-                        ground = keep[(ty - ry) * TILE:(ty - ry + 1) * TILE,
-                                      (tx - x0) * TILE:(tx - x0 + 1) * TILE]
-                        heights = off_the_plane(heights, ground, plane, bits)
+                    if ground is not None:
+                        tile_ground = ground[(ty - ry) * TILE:(ty - ry + 1) * TILE,
+                                             (tx - x0) * TILE:(tx - x0 + 1) * TILE]
+                        heights = off_the_plane(heights, tile_ground, plane, bits)
                     data = encode(terrarium(heights, bits))
                     with open(os.path.join(d, f"{ty}.{args.format}"), "wb") as f:
                         f.write(data)
@@ -405,7 +439,9 @@ def main():
         f.write(f"{made}\n")
     if all_px:
         print(f"{100 * cut_px / all_px:.0f} % of pixels were outside the "
-              f"region – a plane at {plane} m there, so nothing is shaded.")
+              f"region – a plane at {plane} m there"
+              + (", the abroad model beyond the state border." if state is not None
+                 else ", so nothing is shaded."))
     print(f"Total: {total_tiles} tiles, {total_bytes / 1048576:.1f} MB, "
           f"maxzoom z{made}"
           + (f"; {skipped} tiles outside the region skipped "

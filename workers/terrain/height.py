@@ -65,3 +65,10 @@ def off_the_plane(heights, ground, plane, bits):
 def flatten_outside(grid, known, height):
     """One height for the whole run outside the region – a plane has no slope to shade."""
     return np.where(known, grid, np.asarray(height, dtype=grid.dtype))
+
+
+
+def fill_abroad(grid, keep, home, fill, fill_missing):
+    """Ground beyond the state (`home`) from `fill` where it has a height, and where ground is."""
+    take = ~keep & ~home & ~fill_missing
+    return np.where(take, fill.astype(grid.dtype), grid), keep | take

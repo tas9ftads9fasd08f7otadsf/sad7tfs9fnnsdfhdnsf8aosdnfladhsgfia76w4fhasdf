@@ -3875,8 +3875,10 @@ export function buildStyle({
       encoding: "terrarium",
       tileSize: 256,
       maxzoom: demMaxzoom,
+      // beyond the state border the heights are Copernicus GLO-30 (`workers/terrain/abroad.py`)
       attribution: ownDem
         ? (DEM_SOURCES[tilesSource] || DEM_SOURCES[DEFAULT_DEM_SOURCE]).attribution
+          + " / " + DEM_SOURCES.copernicus.attribution
         : '<a href="https://registry.opendata.aws/terrain-tiles/">AWS Terrain Tiles</a>'
     };
     // vlastné dlaždice nemusia pokrývať celú mapu (rýchly test), `bounds`

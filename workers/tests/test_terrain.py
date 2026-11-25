@@ -117,6 +117,13 @@ class Height(unittest.TestCase):
             src = f.read()
         return int(re.search(r'"--edge",\s*type=int,\s*default=(-?\d+)', src).group(1))
 
+    def test_only_a_whole_region_goes_abroad(self):
+        # 579 a range is cut to its box and `DEM_FILL` already goes past it
+        with open(os.path.join(os.path.dirname(__file__), "..", "terrain", "build.sh")) as f:
+            src = f.read()
+        self.assertIn('if [ "$CUT_KEY" = whole ] && [ -s data/state.geojson ]; then', src)
+        self.assertIn('"${ABROAD[@]}"', src)
+
     def test_a_range_runs_past_its_box(self):
         with open(os.path.join(os.path.dirname(__file__), "..", "terrain", "build.sh")) as f:
             src = f.read()
@@ -131,6 +138,29 @@ class Height(unittest.TestCase):
         out = self.h.off_the_plane(g, ground, 928.0, 8)
         self.assertEqual(out.tolist(), [[928.0 + 1 / 256, 928.0 + 1 / 256], [928.0, 950.0]])
         self.assertIs(self.h.off_the_plane(g, ground, None, 8), g)
+
+    def test_mountains_go_on_past_the_state_border(self):
+        # 579 beyond the state the abroad model, over a neighbouring region still the plane
+        np = self.np
+        box = (18.0, 48.0, 21.0, 51.0)
+        state = [([(18.0, 48.0), (20.0, 48.0), (20.0, 51.0), (18.0, 51.0)], False)]
+        region = [([(19.0, 48.0), (20.0, 48.0), (20.0, 49.5), (19.0, 49.5)], False)]
+        keep = rmask.pixel_mask(region, box, 30, 30, grow=self.edge())
+        home = rmask.pixel_mask(state, box, 30, 30, grow=self.edge())
+        terrain = np.full((30, 30), 700.0)
+        fill = np.full((30, 30), 1800.0)
+        missing = np.zeros((30, 30), dtype=bool)
+        missing[:, -1] = True
+        g, ground = self.h.fill_abroad(self.h.flatten_outside(terrain, keep, 500.0),
+                                       keep, home, fill, missing)
+        self.assertEqual(g[25, 15], 700.0, "the region keeps its own model")
+        self.assertEqual(g[5, 15], 500.0, "a neighbouring region in the state is the plane")
+        self.assertEqual(g[25, 22], 1800.0, "beyond the state border")
+        self.assertEqual(g[25, 29], 500.0, "no abroad height: the plane")
+        self.assertEqual(set(g[25, 11:25].tolist()), {700.0, 1800.0},
+                         "no plane between the region and abroad")
+        self.assertTrue(ground[25, 22])
+        self.assertFalse(ground[5, 15] or ground[25, 29])
 
     def test_flatten_outside(self):
         np = self.np
@@ -191,6 +221,26 @@ class TerrainTiles(unittest.TestCase):
         arr = rng.integers(0, 256, (37, 23, 3), dtype=np.uint8)
         back = np.asarray(Image.open(io.BytesIO(self.t.png_rgb(arr))).convert("RGB"))
         self.assertTrue((back == arr).all())
+
+
+class Abroad(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.a = worker("terrain/abroad.py")
+
+    def test_tile_names(self):
+        # 579 Copernicus names a tile by its south-west corner
+        self.assertEqual(self.a.tile_name(49, 20), "Copernicus_DSM_COG_10_N49_00_E020_00_DEM")
+        self.assertEqual(self.a.tile_name(-4, -74), "Copernicus_DSM_COG_10_S04_00_W074_00_DEM")
+
+    def test_the_bbox_is_padded(self):
+        # 579 low zooms reach past the region; the abroad model must too
+        urls = self.a.tile_urls(20.0, 48.7, 22.6, 49.6, pad=1.0)
+        self.assertEqual(len(urls), 5 * 4)
+        self.assertIn("/vsicurl/https://copernicus-dem-30m.s3.amazonaws.com/"
+                      "Copernicus_DSM_COG_10_N50_00_E023_00_DEM/"
+                      "Copernicus_DSM_COG_10_N50_00_E023_00_DEM.tif", urls)
+        self.assertNotIn("N51", " ".join(urls))
 
 
 @needs("PIL", "pmtiles")

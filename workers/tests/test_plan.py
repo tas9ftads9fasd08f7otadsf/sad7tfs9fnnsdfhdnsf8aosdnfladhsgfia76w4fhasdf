@@ -53,6 +53,20 @@ class ParsePoly(unittest.TestCase):
         self.assertEqual(poly.ring_bbox(poly.parse_poly(POLY)), (17.0, 48.0, 19.5, 49.0))
 
 
+class StateOutline(unittest.TestCase):
+    def test_written_and_cleared(self):
+        # 579 terrain beyond the state border reads it; a stale one would cut the next region
+        import json
+        import os
+        import tempfile
+        path = os.path.join(tempfile.mkdtemp(), "state.geojson")
+        poly.write_state(path, [(rect(16.8, 47.7, 22.6, 49.6), False)])
+        with open(path) as f:
+            self.assertEqual(json.load(f)["type"], "FeatureCollection")
+        poly.write_state(path, None)
+        self.assertFalse(os.path.exists(path), "a region that is the state has none")
+
+
 class Seam(unittest.TestCase):
     PARENT = [(rect(0.0, 48.0, 0.4, 48.4), False)]
     OWN = [(rect(0.0, 48.0, 0.2, 48.4), False)]

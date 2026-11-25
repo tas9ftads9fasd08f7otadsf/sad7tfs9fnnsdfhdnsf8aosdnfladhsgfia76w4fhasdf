@@ -175,6 +175,19 @@ def neighbour_rings(regs, key, borders=None):
     return neighbours, parent_rings, missing
 
 
+def write_state(path, rings):
+    """The state's outline as GeoJSON; none for a region that is the state."""
+    if not path:
+        return
+    if os.path.exists(path):
+        os.remove(path)
+    data = geojson(rings) if rings else None
+    if data:
+        os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+        with open(path, "w") as f:
+            json.dump(data, f)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--region", required=True, help="key of `regions` in config/map-settings.json")
@@ -187,6 +200,9 @@ def main():
     ap.add_argument("--poly-out", default="",
                     help="where to save the .poly (for Planetiler --polygon "
                          "and `osmium extract --polygon`)")
+    ap.add_argument("--state-out", default="",
+                    help="where to save the state's outline: terrain beyond it "
+                         "comes from another model")
     ap.add_argument("--summary", default="", help="where to append the summary")
     ap.add_argument("--no-seam", action="store_true",
                     help="don't measure the seam with neighbouring regions")
@@ -201,7 +217,7 @@ def main():
     bbox = tuple(reg["bbox"])
 
     rings, source, exact = None, "", False
-    borders, state, has_state = [], {}, False
+    borders, state, has_state, country = [], {}, False, None
     if args.from_pbf:
         borders = boundary.borders_from_pbf(args.from_pbf)
         raw_rings = exact_rings(reg, borders, args.region)
@@ -256,6 +272,7 @@ def main():
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w") as f:
         json.dump(data, f)
+    write_state(args.state_out, country)
     if args.poly_out and has_border:
         os.makedirs(os.path.dirname(args.poly_out) or ".", exist_ok=True)
         with open(args.poly_out, "w") as f:
