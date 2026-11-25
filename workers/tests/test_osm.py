@@ -34,7 +34,8 @@ class Rail(unittest.TestCase):
         self.assertIsNone(self.r.gauge("standard"))
 
     def test_bearing(self):
-        p = lambda lat, lon: SimpleNamespace(lat=lat, lon=lon)
+        def p(lat, lon):
+            return SimpleNamespace(lat=lat, lon=lon)
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(49, 17)), 0)
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(48, 18)), 90, delta=0.5)
         self.assertAlmostEqual(self.r.bearing(p(48, 17), p(47, 17)), 180)

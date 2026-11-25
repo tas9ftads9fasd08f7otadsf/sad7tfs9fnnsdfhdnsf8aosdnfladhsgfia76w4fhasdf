@@ -39,7 +39,7 @@ CONTOUR_CELLS_PER_S = tiles.CONTOUR_CELLS_PER_S
 # `watch.py` is shared by both ways to rocks, so it lives in `workers/lib/`
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms, dir_mb  # noqa: E402
+from watch import dir_mb, hms  # noqa: E402
 
 # outlines in blocks and seams are the same as for rocks from slope
 blocks_mod = load("contour_blocks", os.path.join(

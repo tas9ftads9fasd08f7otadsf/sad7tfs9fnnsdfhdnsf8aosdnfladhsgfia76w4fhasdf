@@ -137,7 +137,8 @@ def chains(z, fine):
     avg = resample(ovr, OVR_M, GRID_M, "average")       # block read
     cs = resample(ovr, OVR_M, GRID_M, "cubicspline")
     n = (avg.shape[0] - 2, avg.shape[1] - 2)
-    warp = lambda a, k: resample(a, GRID_M, GRID_M * DRIFT, k, n_dst=n)
+    def warp(a, k):
+        return resample(a, GRID_M, GRID_M * DRIFT, k, n_dst=n)
     return {
         "reference (straight onto the target grid)":
             resample(z, fine, GRID_M, "average-exact"),

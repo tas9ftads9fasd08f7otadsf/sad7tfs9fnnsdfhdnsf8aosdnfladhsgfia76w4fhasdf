@@ -151,7 +151,7 @@ def e7(value):
 def write(out, tiles, bbox, minzoom, maxzoom, name):
     """`tiles` maps (z, x, y) to a JPEG on disk; the archive says what it holds."""
     from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
-    from pmtiles.writer import Writer                                # noqa: PLC0415
+    from pmtiles.writer import Writer  # noqa: PLC0415
 
     w, s, e, n = bbox
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)

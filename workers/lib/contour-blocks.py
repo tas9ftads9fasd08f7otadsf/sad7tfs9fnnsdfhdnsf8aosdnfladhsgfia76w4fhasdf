@@ -15,7 +15,6 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from watch import dir_mb, hms, run_watched  # noqa: E402
 
-
 # printed over every block and expected here: `<SRS>` is dropped from the window on purpose
 EXPECTED_WARNING = "No SRS set on layer"
 

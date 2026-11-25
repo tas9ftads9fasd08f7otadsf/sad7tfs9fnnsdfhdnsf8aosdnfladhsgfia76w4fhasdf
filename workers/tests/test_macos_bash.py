@@ -4,7 +4,6 @@ import re
 import unittest
 
 import yaml
-
 from load import WORKERS
 
 ROOT = os.path.dirname(WORKERS)

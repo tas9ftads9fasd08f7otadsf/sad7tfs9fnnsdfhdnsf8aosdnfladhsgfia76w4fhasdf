@@ -6,9 +6,9 @@ import zipfile
 from contextlib import redirect_stdout
 from unittest import mock
 
-from load import needs_cmd, worker
-from geo import hill, write_dem
 import rangeserver
+from geo import hill, write_dem
+from load import needs_cmd, worker
 
 fetch = worker("dem/fetch-open.py")
 ugkk = worker("dem/fetch-ugkk.py")

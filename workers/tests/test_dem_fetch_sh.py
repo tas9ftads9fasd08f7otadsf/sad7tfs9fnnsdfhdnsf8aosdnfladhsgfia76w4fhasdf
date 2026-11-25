@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 
-from load import needs_cmd, worker
 from geo import hill, write_dem
+from load import needs_cmd, worker
 from stubs import shadow_workers
 
 # --get copies from FAKE_STORE/<store>/, --rm logs; the real store.py talks to Drive

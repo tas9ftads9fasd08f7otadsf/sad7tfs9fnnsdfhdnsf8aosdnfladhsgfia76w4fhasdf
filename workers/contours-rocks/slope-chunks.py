@@ -11,7 +11,6 @@ Usage:
 """
 import argparse
 import importlib.util
-import json
 import math
 import os
 import subprocess
@@ -316,7 +315,7 @@ def main():
         base, sizes, stats_drive, creds = dd.serve_drive(0)
         dem = f"/vsicurl/{base}/{dd.TIF_NAME}"
         env = dd.drive.gdal_env()
-        print(f"  source: DMR 5.0 on Drive, "
+        print("  source: DMR 5.0 on Drive, "
               + ", ".join(f"{n} {s / 2**30:.1f} GiB" for n, s in sizes.items()))
         print(f"  access: {dd.auth.describe(creds)}")
     elif args.dem:

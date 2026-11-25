@@ -2,7 +2,6 @@
 """`config/map-settings.json` resolves for every map a form can build, and no form goes around it."""
 import importlib.util
 import json
-import os
 import sys
 
 import yaml

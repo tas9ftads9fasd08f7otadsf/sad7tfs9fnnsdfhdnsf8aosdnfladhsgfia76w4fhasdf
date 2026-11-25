@@ -16,6 +16,7 @@ _WORKERS = os.path.dirname(_HERE)
 
 sys.path.insert(0, os.path.join(_WORKERS, "plan"))
 import area  # noqa: E402
+
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
 

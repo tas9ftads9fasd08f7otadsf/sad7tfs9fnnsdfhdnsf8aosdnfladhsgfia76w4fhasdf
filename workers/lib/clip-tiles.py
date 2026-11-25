@@ -11,7 +11,6 @@ import mapbox_vector_tile
 from pmtiles.reader import MmapSource, Reader, all_tiles
 from pmtiles.tile import Compression, TileType, zxy_to_tileid
 from pmtiles.writer import Writer
-from shapely.affinity import affine_transform
 from shapely.geometry import box, shape
 from shapely.prepared import prep
 
@@ -44,7 +43,8 @@ def region_polygon(path, margin_m):
 
 def tile_bounds(z, x, y):
     n = 2 ** z
-    lat = lambda t: math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * t / n))))
+    def lat(t):
+        return math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * t / n))))
     return x / n * 360 - 180, lat(y + 1), (x + 1) / n * 360 - 180, lat(y)
 
 
@@ -96,13 +96,13 @@ def clip_tile(data, region, z, x, y, compressed):
         return None
     extent = out[0]["extent"]
     encoded = mapbox_vector_tile.encode(
-        [{"name": l["name"], "features": l["features"]} for l in out],
+        [{"name": layer["name"], "features": layer["features"]} for layer in out],
         default_options={"extents": extent, "y_coord_down": True})
     return gzip.compress(encoded) if compressed else encoded
 
 
 def _same_kind(geom, kind):
-    from shapely.geometry import GeometryCollection, MultiLineString, MultiPoint, MultiPolygon
+    from shapely.geometry import MultiLineString, MultiPoint, MultiPolygon
     want = "Polygon" if "Polygon" in kind else "LineString" if "LineString" in kind else "Point"
     if geom.geom_type == "GeometryCollection":
         parts = [g for g in geom.geoms if want in g.geom_type]

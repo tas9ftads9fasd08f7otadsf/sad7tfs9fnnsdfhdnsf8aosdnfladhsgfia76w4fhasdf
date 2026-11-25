@@ -287,7 +287,8 @@ class Signing(unittest.TestCase):
                                    check=True, capture_output=True).stdout.decode()
             with open(sec1) as handle:
                 sec1 = handle.read()
-            bare = lambda pem: "".join(ln for ln in pem.splitlines() if "-----" not in ln and ln)
+            def bare(pem):
+                return "".join(ln for ln in pem.splitlines() if "-----" not in ln and ln)
             for secret in (sec1.replace("\n", "\\n"), sec1.replace("\n", " "), sec1.replace("\n", "\r\n"),
                            f'"{pkcs8}"', bare(pkcs8), bare(sec1.split("-----END EC PARAMETERS-----")[1])):
                 with mock.patch.dict(os.environ, {"CLOUDKIT_PRIVATE_KEY_DEVELOPMENT": secret, "CLOUDKIT_KEY_FILE": ""}):

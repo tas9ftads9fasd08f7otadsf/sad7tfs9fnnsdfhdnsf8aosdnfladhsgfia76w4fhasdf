@@ -261,11 +261,14 @@ def _zip64_fix(extra, csize, usize, hoff):
             q = 0
             # a fixed order: ONLY the fields that overflowed outside are there
             if usize == 0xFFFFFFFF and q + 8 <= len(body):
-                usize = struct.unpack_from("<Q", body, q)[0]; q += 8
+                usize = struct.unpack_from("<Q", body, q)[0]
+                q += 8
             if csize == 0xFFFFFFFF and q + 8 <= len(body):
-                csize = struct.unpack_from("<Q", body, q)[0]; q += 8
+                csize = struct.unpack_from("<Q", body, q)[0]
+                q += 8
             if hoff == 0xFFFFFFFF and q + 8 <= len(body):
-                hoff = struct.unpack_from("<Q", body, q)[0]; q += 8
+                hoff = struct.unpack_from("<Q", body, q)[0]
+                q += 8
         p += 4 + ln
     return csize, usize, hoff
 

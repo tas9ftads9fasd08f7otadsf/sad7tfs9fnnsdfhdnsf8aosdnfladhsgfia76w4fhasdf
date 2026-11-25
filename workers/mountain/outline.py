@@ -18,6 +18,7 @@ import urllib.request
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import map_settings  # noqa: E402
+
 OUTLINES = os.path.join(os.path.dirname(_HERE), "data", "outlines")
 LOOKUP = "https://nominatim.openstreetmap.org/lookup"
 # a range is built from DMR 5.0, as `mountain.yml` asks for it
@@ -62,7 +63,7 @@ def km2(geom):
 def outline(areas, bbox, relations, coverage=None, model=MODEL):
     """The areas' union (or the box) inside `bbox` and `coverage`; None when that is the box."""
     from shapely.geometry import box, mapping, shape  # noqa: PLC0415
-    from shapely.ops import unary_union                # noqa: PLC0415
+    from shapely.ops import unary_union  # noqa: PLC0415
 
     frame = box(*bbox)
     cut = unary_union([shape(a) for a in areas]).intersection(frame) if areas else frame

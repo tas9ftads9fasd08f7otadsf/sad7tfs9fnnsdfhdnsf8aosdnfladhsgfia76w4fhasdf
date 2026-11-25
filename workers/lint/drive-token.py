@@ -6,7 +6,11 @@ link with a daily quota, or the cache isn't found and the build recomputes for
 hours. Checked from both sides: the caller passes `secrets: inherit` and the
 callee declares it. `DRIVE_CLIENT` is a repository variable, not a secret.
 """
-import glob, re, sys, yaml
+import glob
+import re
+import sys
+
+import yaml
 
 # sign-in comes as one secret or in parts; a partial group fails only hours into a run
 BLOB = "GDRIVE_CREDENTIALS"

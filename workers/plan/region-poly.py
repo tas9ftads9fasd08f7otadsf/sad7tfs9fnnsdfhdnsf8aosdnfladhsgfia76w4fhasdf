@@ -22,10 +22,10 @@ _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
-import map_settings  # noqa: E402
-from area import BORDER_BUFFER_M  # noqa: E402
 import boundary  # noqa: E402
+import map_settings  # noqa: E402
 import seam  # noqa: E402
+from area import BORDER_BUFFER_M  # noqa: E402
 
 # polygons sit beside the extracts, in another folder and without `-latest`
 POLY_BASE = os.environ.get("OSMFR_POLYGONS",

@@ -7,7 +7,7 @@ import sys
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _HERE)
-import context                                                    # noqa: E402
+import context  # noqa: E402
 
 ROUTING = os.path.join(os.path.dirname(os.path.dirname(_HERE)), "config", "routing.json")
 # a dictionary by name, a section of `routing.json`; a path reads a file of its own (fixtures)

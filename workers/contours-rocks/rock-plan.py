@@ -9,8 +9,8 @@ import sys
 # `watch.py` is shared by both ways to rocks, so it lives in `workers/lib/`
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms  # noqa: E402
 import cell  # noqa: E402
+from watch import hms  # noqa: E402
 
 # hillshading asks for the raster grid too, so the conversion is in `lib/cell.py`
 dem_cell_metres = cell.dem_cell_metres
@@ -60,7 +60,8 @@ def to_metric(bbox):
 def chunk_plan(x0, y0, x1, y1, res, chunk_cells, bbox, side_m=0):
     """Split into chunks + the list of those really in the area."""
     # EPSG:3035 is rotated against meridians; `side_m` overrides the chunk size
-    snap = lambda v, up: (math.ceil(v / res) if up else math.floor(v / res)) * res
+    def snap(v, up):
+        return (math.ceil(v / res) if up else math.floor(v / res)) * res
     x0, y0, x1, y1 = snap(x0, False), snap(y0, False), snap(x1, True), snap(y1, True)
     width_m, height_m = x1 - x0, y1 - y0
 

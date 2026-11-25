@@ -7,7 +7,7 @@ Usage:
 """
 import math
 
-from boundary import CUT_TOLERANCE_M   # sibling file, no dash in its name
+from boundary import CUT_TOLERANCE_M  # sibling file, no dash in its name
 
 M_PER_DEG_LAT = 110540.0
 M_PER_DEG_LON = 111320.0

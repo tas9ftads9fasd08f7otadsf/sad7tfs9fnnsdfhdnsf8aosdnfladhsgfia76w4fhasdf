@@ -5,7 +5,8 @@ When `socketserver`'s default queue of five overflows, the kernel drops the SYN
 without an error on either side and GDAL prints `response_code=0` two minutes
 later, which looks like a Drive error. Checked statically from `drive/serve.py`.
 """
-import ast, sys
+import ast
+import sys
 
 SRC = "workers/drive/serve.py"
 tree = ast.parse(open(SRC).read())

@@ -262,7 +262,7 @@ def main():
     args = ap.parse_args()
 
     Z = terrain(np.random.default_rng(args.seed))
-    lam = "  ".join(f"{int(l)} m" for l, _ in FEATS)
+    lam = "  ".join(f"{int(length)} m" for length, _ in FEATS)
     step = tile_step(args.maxzoom)
     print(f"terrain: slope {SLOPE:.0%}, noise σ = {NOISE} m, shapes {lam}, "
           f"seed {args.seed}")

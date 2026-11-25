@@ -28,7 +28,7 @@ SCRIPT_PATH = re.compile(
 
 def no_comments(s):
     """A line starting with `#` runs nothing, in bash or `run:`."""
-    return "\n".join(l for l in s.split("\n") if not re.match(r"^\s*#", l))
+    return "\n".join(line for line in s.split("\n") if not re.match(r"^\s*#", line))
 
 
 def with_called(text, seen=None):

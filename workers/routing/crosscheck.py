@@ -93,7 +93,7 @@ def main():
     ap.add_argument("--max-km", type=float, default=40.0)
     args = ap.parse_args()
 
-    import network as network_mod                                 # noqa: PLC0415
+    import network as network_mod  # noqa: PLC0415
     network = network_mod.load(args.pbf)
     chosen = pairs(network, args.n, args.seed, args.min_km * 1000, args.max_km * 1000)
     print(f"Network: {len(network.nodes)} junctions, {len(chosen)} pairs "

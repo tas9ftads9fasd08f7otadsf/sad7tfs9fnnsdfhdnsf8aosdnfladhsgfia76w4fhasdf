@@ -128,7 +128,7 @@ def main():
                     help="what area this is – goes into the order file")
     args = ap.parse_args()
 
-    import network as network_mod                                 # noqa: PLC0415
+    import network as network_mod  # noqa: PLC0415
 
     t0 = time.time()
     network = network_mod.load(args.pbf)

@@ -10,7 +10,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import format as fmt                                              # noqa: E402
+import format as fmt  # noqa: E402
 
 E7 = 1e7
 # `gdalwarp` sentinel; never 0 – zero is a valid height

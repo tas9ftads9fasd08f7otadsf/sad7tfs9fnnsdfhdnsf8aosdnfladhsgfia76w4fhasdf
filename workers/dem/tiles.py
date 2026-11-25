@@ -23,7 +23,6 @@ _WORKERS = os.path.dirname(_HERE)
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 from cell import M_PER_DEG_LAT, resampling  # noqa: E402
 
-
 # otherwise `gdalinfo -stats` leaves statistics in `.aux.xml`
 NO_PAM = {**os.environ, "GDAL_PAM_ENABLED": "NO"}
 

@@ -69,8 +69,8 @@ class BuiltUp:
     """Built-up areas in local metres, joined across the gaps between them."""
 
     def __init__(self, polygons):
-        import numpy as np                                        # noqa: PLC0415
-        import shapely                                            # noqa: PLC0415
+        import numpy as np  # noqa: PLC0415
+        import shapely  # noqa: PLC0415
         self.np, self.shapely = np, shapely
         polygons = [p for p in polygons if p is not None and not p.is_empty]
         self.parts = []
@@ -106,8 +106,8 @@ class BuiltUp:
 
 def built_up_areas(pbf):
     """Built-up polygons of a PBF, as shapely geometries in degrees."""
-    import osmium                                                 # noqa: PLC0415
-    import shapely                                                # noqa: PLC0415
+    import osmium  # noqa: PLC0415
+    import shapely  # noqa: PLC0415
 
     class Areas(osmium.SimpleHandler):
         def __init__(self):
@@ -130,7 +130,7 @@ def built_up_areas(pbf):
 
 def assign(network, built_up):
     """`speed_context` into each motor edge's tags; edges sharing tags get their own."""
-    from collections import Counter                               # noqa: PLC0415
+    from collections import Counter  # noqa: PLC0415
     unsure = [h for h in network.edges
               if h.get("road") and h["road"][1] is None and h["road"][0] != "living_street"]
     lines = [[network.nodes[h["from"]], *h["geom"], network.nodes[h["to"]]] for h in unsure]

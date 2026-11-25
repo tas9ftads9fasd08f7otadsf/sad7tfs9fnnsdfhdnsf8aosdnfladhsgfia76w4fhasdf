@@ -4,7 +4,6 @@ import subprocess
 import tempfile
 import unittest
 
-from load import WORKERS
 from stubs import shadow_workers
 
 # the store listing comes from STORE_LISTING, one `name:size` a line per store

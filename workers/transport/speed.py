@@ -11,8 +11,8 @@ from pathlib import Path
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "routing"))
 sys.path.insert(0, _HERE)
-import context                                                    # noqa: E402
-import signs as sign_names                                        # noqa: E402
+import context  # noqa: E402
+import signs as sign_names  # noqa: E402
 
 # how far past the junction the sign stands, so it doesn't sit on the crossing
 SIGN_M = 15

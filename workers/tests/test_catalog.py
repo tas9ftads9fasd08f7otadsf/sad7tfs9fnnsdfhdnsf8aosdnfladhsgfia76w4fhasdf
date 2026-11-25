@@ -6,7 +6,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest import mock
 
-from load import WORKERS, worker
+from load import worker
 
 catalog = worker("deploy/catalog.py")
 merge = worker("deploy/catalog-merge.py").merge

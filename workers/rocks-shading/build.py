@@ -67,7 +67,7 @@ write_downloaded, read_downloaded = vector.write_downloaded, vector.read_downloa
 # `watch.py` is shared by both ways to rocks, so it lives in `workers/lib/`
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms, dir_mb  # noqa: E402
+from watch import dir_mb, hms  # noqa: E402
 
 
 def save_preview(rows, path):

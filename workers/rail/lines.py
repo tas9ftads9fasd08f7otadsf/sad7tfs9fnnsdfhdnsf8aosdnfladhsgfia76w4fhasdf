@@ -11,8 +11,8 @@ import re
 from pathlib import Path
 
 import osmium
-
-from sections import Sections, kind as section_kind
+from sections import Sections
+from sections import kind as section_kind
 
 # lines whose colour belongs on the track
 ROUTES = {"tram", "subway", "light_rail", "monorail", "train", "railway", "funicular"}

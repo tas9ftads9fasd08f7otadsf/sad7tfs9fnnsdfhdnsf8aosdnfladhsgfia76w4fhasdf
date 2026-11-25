@@ -1,13 +1,12 @@
 import io
-import os
 import random
 import unittest
 import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
-from load import worker
 import rangeserver
+from load import worker
 
 rz_mod = worker("drive/zip-remote.py")
 

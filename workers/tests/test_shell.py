@@ -218,7 +218,8 @@ class SmokeTest(unittest.TestCase):
                 f.write("x" * 4096)
         with open(os.path.join(self.site, "index.html"), "w") as f:
             f.write('<div id="map"></div>')
-        handler = lambda *a, **kw: Site(*a, directory=self.site, **kw)
+        def handler(*a, **kw):
+            return Site(*a, directory=self.site, **kw)
         Site.missing, Site.flaky, Site.no_range = set(), {}, False
         self.server = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
         threading.Thread(target=self.server.serve_forever, daemon=True).start()

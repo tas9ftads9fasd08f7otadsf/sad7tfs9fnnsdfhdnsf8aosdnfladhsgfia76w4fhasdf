@@ -54,7 +54,7 @@ def schema_for(layers, doc=None):
     if doc is None:
         with open(SCHEMA, encoding="utf-8") as f:
             doc = yaml.safe_load(f)
-    have = {l["id"] for l in doc.get("layers") or []}
+    have = {layer["id"] for layer in doc.get("layers") or []}
     missing = [v for v in layers if v not in have]
     if missing:
         # Planetiler would silently build a map without them
@@ -63,10 +63,10 @@ def schema_for(layers, doc=None):
             f"world.yml` doesn't have (it has {sorted(have)}). Align `layers` "
             f"in `config/world-variants.json` with the schema.")
     out = dict(doc)
-    out["layers"] = [l for l in doc["layers"] if l["id"] in layers]
+    out["layers"] = [layer for layer in doc["layers"] if layer["id"] in layers]
     # an unused source needn't even be downloaded
-    needed = {f.get("source") for l in out["layers"]
-              for f in (l.get("features") or [])}
+    needed = {f.get("source") for layer in out["layers"]
+              for f in (layer.get("features") or [])}
     out["sources"] = {k: v for k, v in (doc.get("sources") or {}).items()
                       if k in needed}
     return out, sorted(s for s in needed if s)
@@ -125,7 +125,7 @@ def main():
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump(values, f, ensure_ascii=False, indent=2)
 
-    everything = {l["id"] for l in yaml.safe_load(
+    everything = {layer["id"] for layer in yaml.safe_load(
         open(SCHEMA, encoding="utf-8"))["layers"]}
     left_out = sorted(everything - set(layers))
     print(f"Variant `{name}`: {values['label']}")

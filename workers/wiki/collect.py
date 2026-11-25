@@ -224,7 +224,7 @@ def main():
                        "titles": titles, "qid": qid})
 
     qids = sorted({v["qid"] for v in things if v["qid"] and not v["titles"]})
-    direct = len({(l, n) for v in things for l, n in v["titles"].items()})
+    direct = len({(lang, n) for v in things for lang, n in v["titles"].items()})
     log("── Plan ────────────────────────────────────────────")
     log(f"  objects with a link  {len(things)}"
         + (f" (+{no_link} with a tag I don't understand)" if no_link else ""))

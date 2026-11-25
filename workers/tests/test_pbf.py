@@ -5,10 +5,10 @@ import subprocess
 import tempfile
 import unittest
 
-from load import WORKERS, needs, needs_cmd
-from stubs import shadow_workers
 import mini_region
 import rangeserver
+from load import WORKERS, needs, needs_cmd
+from stubs import shadow_workers
 
 ROOT = os.path.dirname(WORKERS)
 LOCAL = {"no_proxy": "127.0.0.1", "NO_PROXY": "127.0.0.1"}

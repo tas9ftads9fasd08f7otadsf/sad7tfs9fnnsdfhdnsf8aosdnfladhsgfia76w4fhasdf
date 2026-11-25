@@ -30,8 +30,8 @@ _DATA = os.path.join(os.path.dirname(_WORKERS), "config")     # registries (area
 
 # the resampling – one answer for the whole pipeline, see `lib/cell.py`
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
-from cell import resampling  # noqa: E402
 import map_settings  # noqa: E402
+from cell import resampling  # noqa: E402
 
 
 def load(name, path):
@@ -235,12 +235,12 @@ def main(argv=None):
     ovr_entry = find_sidecar(args.plan, member, ".ovr")
     lay = tiff_layout(args.url, main_entry, log) if main_entry else None
     lay_ovr = tiff_layout(args.url, ovr_entry, log) if ovr_entry else None
-    for name, l in (("main raster", lay), ("overviews", lay_ovr)):
-        if l and l["share"] > 1.0:
-            log(f"::warning::{name}: the tile directory is at {l['share']:.0f} % "
+    for name, layout in (("main raster", lay), ("overviews", lay_ovr)):
+        if layout and layout["share"] > 1.0:
+            log(f"::warning::{name}: the tile directory is at {layout['share']:.0f} % "
                 f"of the file. The ZIP member is deflated, so GDAL reaches it "
                 f"only by unpacking all before it – opening alone reads "
-                f"~{l['ifd'] / 1e9:.1f} GB.")
+                f"~{layout['ifd'] / 1e9:.1f} GB.")
 
     # the probe runs WITHOUT sidecars: a costly `.ovr` would look like the main file's fault
     t0 = time.time()

@@ -3,8 +3,8 @@ import os
 import tempfile
 import unittest
 
-from load import needs_cmd, worker
 from geo import hill, write_dem
+from load import needs_cmd, worker
 
 BBOX = (19.95, 49.15, 20.05, 49.25)
 

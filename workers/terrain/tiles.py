@@ -34,12 +34,11 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 _WORKERS = os.path.dirname(_HERE)
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 # grid and zoom arithmetic is in `lib/cell.py`: `lint/terrain.py` runs it without numpy
-from cell import (SLOPE_EPS, dem_cell_metres, frac_bits,  # noqa: E402
-                  resampling, tile_m_per_px)
+from cell import SLOPE_EPS, dem_cell_metres, frac_bits, resampling, tile_m_per_px  # noqa: E402
+
 # work on the height grid is in `height.py`; here are the plan, warp and encoding
 sys.path.insert(0, _HERE)
-from height import (NODATA, edge_height, fill_abroad,  # noqa: E402
-                    fill_nodata, flatten_outside, off_the_plane)
+from height import NODATA, edge_height, fill_abroad, fill_nodata, flatten_outside, off_the_plane  # noqa: E402
 
 R_EARTH = 6378137.0
 ORIGIN = math.pi * R_EARTH  # 20037508.342789244
@@ -63,7 +62,8 @@ def tile_range(z, w, s, e, n):
     x1 = int((merc_x(e) + ORIGIN) // size)
     y0 = int((ORIGIN - merc_y(n)) // size)
     y1 = int((ORIGIN - merc_y(s)) // size)
-    clamp = lambda v: max(0, min(count - 1, v))
+    def clamp(v):
+        return max(0, min(count - 1, v))
     return clamp(x0), clamp(x1), clamp(y0), clamp(y1)
 
 
@@ -123,6 +123,7 @@ def png_rgb(arr):
 
 def webp_rgb(arr):
     import io
+
     from PIL import Image
     buf = io.BytesIO()
     # `exact` keeps every RGB value, which is the height

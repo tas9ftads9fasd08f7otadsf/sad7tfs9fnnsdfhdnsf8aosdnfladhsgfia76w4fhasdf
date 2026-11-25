@@ -66,8 +66,8 @@ class TownSigns(unittest.TestCase):
     """Road 2 through a town sign at 17.10; the village lies east."""
 
     def setUp(self):
-        import shapely
         import context
+        import shapely
         self.context = context
         self.ways = {300: way([1, 2, 3], [(17.08, 48.2), (17.10, 48.2), (17.12, 48.2)],
                               highway="primary", ref="2")}

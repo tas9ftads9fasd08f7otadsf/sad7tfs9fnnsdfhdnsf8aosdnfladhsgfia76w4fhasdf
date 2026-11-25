@@ -8,9 +8,9 @@ from collections import Counter
 import osmium
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import context                                                    # noqa: E402
-import format as fmt                                              # noqa: E402
-import tags as tags_mod                                           # noqa: E402
+import context  # noqa: E402
+import format as fmt  # noqa: E402
+import tags as tags_mod  # noqa: E402
 
 E7 = 1e7
 RADIUS_M = 6371000.0

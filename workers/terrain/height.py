@@ -2,7 +2,6 @@
 """What is written where we have no height or don't want one."""
 import numpy as np
 
-
 # `gdalwarp` sentinel; must not be 0 – zero is a valid height
 NODATA = -9999.0
 

@@ -270,6 +270,7 @@ class TerrainPlane(unittest.TestCase):
 
     def test_read_from_the_archive(self):
         import tempfile
+
         from pmtiles.tile import Compression, TileType, zxy_to_tileid
         from pmtiles.writer import Writer
         folder = tempfile.mkdtemp()

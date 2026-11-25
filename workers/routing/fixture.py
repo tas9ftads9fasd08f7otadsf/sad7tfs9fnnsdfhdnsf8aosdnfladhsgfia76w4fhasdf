@@ -7,10 +7,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import format as fmt                                              # noqa: E402
-import order                                                      # noqa: E402
-import tags as tags_mod                                           # noqa: E402
-import tiles                                                      # noqa: E402
+import format as fmt  # noqa: E402
+import order  # noqa: E402
+import tags as tags_mod  # noqa: E402
+import tiles  # noqa: E402
 
 E7 = 10_000_000
 STEP_M = fmt.STEP_DM / 10
@@ -306,9 +306,8 @@ class Order:
 
 
 def write(path, s, dictionary, key, order):
-    from pmtiles.tile import (Compression, TileType,                # noqa: PLC0415
-                              zxy_to_tileid)
-    from pmtiles.writer import Writer                               # noqa: PLC0415
+    from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
+    from pmtiles.writer import Writer  # noqa: PLC0415
 
     bodies = tiles.split(s, dictionary, "SK", order, budget=BUDGET)
     zoom_max = max(z for z, _, _ in bodies)

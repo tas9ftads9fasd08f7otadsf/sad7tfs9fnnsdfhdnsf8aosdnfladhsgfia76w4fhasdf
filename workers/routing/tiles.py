@@ -9,8 +9,8 @@ import sys
 import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import format as fmt                                              # noqa: E402
-import tags as tags_mod                                           # noqa: E402
+import format as fmt  # noqa: E402
+import tags as tags_mod  # noqa: E402
 
 # the map's grid, so neighbouring regions' border tiles line up by z/x/y
 ZOOM = 9
@@ -152,7 +152,7 @@ def network_heights(network):
 
 def sample_heights(network, dem, step_m=0.0):
     """Heights from the model; when that fails, the archive goes without and says so."""
-    import heights                                                # noqa: PLC0415
+    import heights  # noqa: PLC0415
     t0 = time.time()
     try:
         if step_m > 0:
@@ -246,7 +246,7 @@ def main():
                     help="edge height profile step in metres; 0 = none")
     args = ap.parse_args()
 
-    import network as network_mod                                 # noqa: PLC0415
+    import network as network_mod  # noqa: PLC0415
 
     dictionary = tags_mod.dictionary(args.dictionary or None)
     if args.country and dictionary.value_index("country", args.country) is None:
@@ -336,9 +336,8 @@ def main():
     }
 
     # imported here, so a lint without pmtiles can import the tiler
-    from pmtiles.tile import (Compression, TileType,                # noqa: PLC0415
-                              zxy_to_tileid)
-    from pmtiles.writer import Writer                               # noqa: PLC0415
+    from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
+    from pmtiles.writer import Writer  # noqa: PLC0415
 
     with open(args.out, "wb") as f:
         wr = Writer(f)

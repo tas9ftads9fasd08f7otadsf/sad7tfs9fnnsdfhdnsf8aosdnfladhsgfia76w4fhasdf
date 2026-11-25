@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """Check: DMR 5.0 is refilled by its own pipeline and the way to it stays whole."""
-import re, sys, yaml
+import re
+import sys
+
+import yaml
+
 bad = 0
 
 # 1. update-dem.yml must fail on `dmr5`

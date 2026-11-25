@@ -112,7 +112,7 @@ class Variant(unittest.TestCase):
         doc = {"sources": {"a": {}, "b": {}}, "layers": [
             {"id": "x", "features": [{"source": "a"}]}, {"id": "y", "features": [{"source": "b"}]}]}
         out, sources = self.v.schema_for(["x"], doc)
-        self.assertEqual(([l["id"] for l in out["layers"]], list(out["sources"]), sources), (["x"], ["a"], ["a"]))
+        self.assertEqual(([layer["id"] for layer in out["layers"]], list(out["sources"]), sources), (["x"], ["a"], ["a"]))
         with self.assertRaises(SystemExit):
             self.v.schema_for(["z"], doc)
 
@@ -120,13 +120,13 @@ class Variant(unittest.TestCase):
         for name, spec in self.v.variants().items():
             with self.subTest(variant=name):
                 out, _ = self.v.schema_for(spec["layers"])
-                self.assertEqual(sorted(l["id"] for l in out["layers"]), sorted(spec["layers"]))
+                self.assertEqual(sorted(layer["id"] for layer in out["layers"]), sorted(spec["layers"]))
                 self.assertTrue(self.v.map_layers(spec["layers"]))
 
     def test_ground_carries_each_states_shape(self):
         # 495 Riki Maps AByj: the app cuts a map on its states' borders, so it needs their shapes
         out, sources = self.v.schema_for(self.v.pick("ground")["layers"])
-        country = next(l for l in out["layers"] if l["id"] == "country")
+        country = next(layer for layer in out["layers"] if layer["id"] == "country")
         self.assertEqual([(f["geometry"], f["min_zoom"]) for f in country["features"]], [("polygon", 0)])
         self.assertEqual([a["key"] for a in country["features"][0]["attributes"]], ["iso"])
         self.assertIn("countries", sources)

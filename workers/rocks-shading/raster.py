@@ -36,7 +36,7 @@ tile_res, ground_res = tiles.tile_res, tiles.ground_res
 # watch.py is shared by both kinds of rocks, so it lives in workers/lib/
 sys.path.insert(0, os.path.join(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms, dir_mb, Heartbeat  # noqa: E402
+from watch import Heartbeat, dir_mb, hms  # noqa: E402
 
 # the downscale the lighting field is computed on – it is a smooth function
 BG_DOWN = 8

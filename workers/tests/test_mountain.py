@@ -595,8 +595,9 @@ class Aerial(unittest.TestCase):
         self.assertIsNone(aerial.cut(jpeg, bbox, 15, *zdiar, rings), "in the box, beyond the parks")
         with Image.open(aerial.cut(jpeg, bbox, 8, 142, 87, rings)) as got:
             alpha = got.getchannel("A")
-            px = lambda lon, lat: tuple(int((v - o) * 256) for v, o in
-                                        zip(aerial.lonlat_to_tile(lon, lat, 8), (142, 87)))
+            def px(lon, lat):
+                return tuple(int((v - o) * 256) for v, o in
+                                                    zip(aerial.lonlat_to_tile(lon, lat, 8), (142, 87)))
             self.assertEqual(alpha.getpixel(px(20.134, 49.164)), 255)
             self.assertEqual(alpha.getpixel(px(20.27, 49.275)), 0)
 

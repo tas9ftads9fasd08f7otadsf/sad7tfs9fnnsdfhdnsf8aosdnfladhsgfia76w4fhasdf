@@ -7,7 +7,12 @@ string and doesn't fail), or a step `id` the job outputs point at is renamed
 (the job quietly returns nothing). What the script sets itself and
 `${VAR:-default}` don't count; a sourced `workers/*.sh` is read too.
 """
-import glob, os, re, sys, yaml
+import glob
+import os
+import re
+import sys
+
+import yaml
 
 # given by GitHub or the shell; `GH_TOKEN` and co. are read by tools under the script
 BUILTIN = {
@@ -22,7 +27,7 @@ BUILTIN = {
 }
 
 def no_comments(s):
-    return "\n".join(l for l in s.split("\n") if not re.match(r"^\s*#", l))
+    return "\n".join(line for line in s.split("\n") if not re.match(r"^\s*#", line))
 
 def no_single_quotes(s):
     """Drop `'…'` – bash expands nothing there, so a jq `$r` isn't an env variable."""
@@ -30,15 +35,19 @@ def no_single_quotes(s):
     while i < len(s):
         c = s[i]
         if c == "\\" and i + 1 < len(s):
-            out.append(s[i:i + 2]); i += 2; continue
+            out.append(s[i:i + 2])
+            i += 2
+            continue
         if c == '"':
             in_d = not in_d
         if c == "'" and not in_d:
             j = s.find("'", i + 1)
             if j < 0:
                 break
-            i = j + 1; continue
-        out.append(c); i += 1
+            i = j + 1
+            continue
+        out.append(c)
+        i += 1
     return "".join(out)
 
 def assigned(s):

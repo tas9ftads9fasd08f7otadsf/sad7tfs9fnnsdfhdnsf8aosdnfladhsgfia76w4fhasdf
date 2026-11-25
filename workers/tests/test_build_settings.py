@@ -2,9 +2,8 @@ import os
 import re
 import unittest
 
-from load import WORKERS
-
 import integration
+from load import WORKERS
 
 # `$OPT_X` or `${OPT_X}` – read without a default, so `set -u` stops on it when unset
 BARE = re.compile(r"\$\{?(OPT_[A-Z0-9_]+)(?![A-Z0-9_]|:?[-=])")

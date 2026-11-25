@@ -6,9 +6,9 @@ import tempfile
 import time
 import unittest
 
+import mini_region
 from load import WORKERS, needs, needs_cmd
 from stubs import Stubs, shadow_workers
-import mini_region
 
 ROOT = os.path.dirname(WORKERS)
 FAKE_PUT = """import os, sys

@@ -18,8 +18,8 @@ _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 MOUNTAINS = "mountains"
 
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
-from cell import terrain_zoom_for, tile_m_per_px  # noqa: E402
 import map_settings  # noqa: E402
+from cell import terrain_zoom_for, tile_m_per_px  # noqa: E402
 
 SETTINGS_NAME = map_settings.NAME
 SETTINGS = map_settings.PATH

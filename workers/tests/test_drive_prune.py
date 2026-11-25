@@ -61,7 +61,8 @@ class CachePrune(unittest.TestCase):
 
     def test_an_old_build_day_goes_yesterday_stays(self):
         today = datetime.datetime.now(datetime.timezone.utc).date()
-        day = lambda n: (today - datetime.timedelta(days=n)).isoformat()
+        def day(n):
+            return (today - datetime.timedelta(days=n)).isoformat()
         items = [entry("pbf-today", f"pbf-v6-trnavsky-t0-a-{day(0)}", 0),
                  entry("pbf-yesterday", f"pbf-v6-trnavsky-t0-a-{day(1)}", 1),
                  entry("pbf-old", f"pbf-v6-trnavsky-t0-a-{day(2)}", 2),
