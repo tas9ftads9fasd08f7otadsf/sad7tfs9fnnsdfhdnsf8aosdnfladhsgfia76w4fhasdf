@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """The map catalog `maps.json` – what is written into it and where."""
+
 import importlib.util
 import json
 import os
@@ -11,6 +12,7 @@ _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
+
 _DRIVE = os.path.join(_WORKERS, "drive")
 
 
@@ -43,7 +45,7 @@ def split_test(key):
     cut = key.rfind("_test")
     if cut < 0 or not key.endswith("km2"):
         return key, ""
-    middle = key[cut + 5:-3]
+    middle = key[cut + 5 : -3]
     return (key[:cut], middle) if middle.replace(".", "").isdigit() else (key, "")
 
 
@@ -92,11 +94,34 @@ def region_entry(man):
     return ((man.get("regions") or {}).get(key) or {}) if key else {}
 
 
-TILE_LAYERS = ("pmtiles", "contours", "rocks", "trails", "features", "points",
-               "transport", "paths", "boundaries", "water", "rail", "rail_routing",
-               "history", "names", "ski", "buildings", "aerial_summer", "aerial_winter",
-               "omt_landscape", "omt_points", "omt_roads", "omt_paths", "omt_railways",
-               "omt_water", "omt_boundaries", "omt_settlements")
+TILE_LAYERS = (
+    "pmtiles",
+    "contours",
+    "rocks",
+    "trails",
+    "features",
+    "points",
+    "transport",
+    "paths",
+    "boundaries",
+    "water",
+    "rail",
+    "rail_routing",
+    "history",
+    "names",
+    "ski",
+    "buildings",
+    "aerial_summer",
+    "aerial_winter",
+    "omt_landscape",
+    "omt_points",
+    "omt_roads",
+    "omt_paths",
+    "omt_railways",
+    "omt_water",
+    "omt_boundaries",
+    "omt_settlements",
+)
 
 
 def tiles_paths(man, reg):
@@ -146,10 +171,13 @@ def now():
 
 def region_models(man, reg):
     """Which source each layer of the region comes from – height models and photos."""
-    return {"contours": reg.get("dem_source"), "rocks": reg.get("rock_source"),
-            "shading": man.get("dem_source"),
-            "aerial_summer": reg.get("aerial_summer_source"),
-            "aerial_winter": reg.get("aerial_winter_source")}
+    return {
+        "contours": reg.get("dem_source"),
+        "rocks": reg.get("rock_source"),
+        "shading": man.get("dem_source"),
+        "aerial_summer": reg.get("aerial_summer_source"),
+        "aerial_winter": reg.get("aerial_winter_source"),
+    }
 
 
 def migrate_node(maps):
@@ -185,21 +213,24 @@ def node_id(regions, key, parent="", listed=True):
     own = (regions.get(base) or {}).get("id") if listed else None
     if not own:
         osmfr = (regions.get(base) or {}).get("osmfr") if listed else None
-        own = (names.osmfr_id(f"{osmfr['dir']}/{osmfr['slugs'][0]}") if osmfr
-               else (f"{parent}-" if parent else "") + names.id_piece(base))
+        own = (
+            names.osmfr_id(f"{osmfr['dir']}/{osmfr['slugs'][0]}")
+            if osmfr
+            else (f"{parent}-" if parent else "") + names.id_piece(base)
+        )
     return own + (f"_test{names.id_piece(test)}km2" if test else "")
 
 
 def stamp_ids(data, regions):
     """Every country, region and subregion carries its id; derived, so rewritten each time."""
-    pending = [(v, k, "", True) for k, v in data.items()
-               if not k.startswith(("_", "$")) and isinstance(v, dict)]
+    pending = [(v, k, "", True) for k, v in data.items() if not k.startswith(("_", "$")) and isinstance(v, dict)]
     while pending:
         node, key, parent, listed = pending.pop()
         node["id"] = node_id(regions, key, parent, listed)
         for nest in NESTS:
-            pending += [(v, k, node["id"], nest == "regions")
-                        for k, v in (node.get(nest) or {}).items() if isinstance(v, dict)]
+            pending += [
+                (v, k, node["id"], nest == "regions") for k, v in (node.get(nest) or {}).items() if isinstance(v, dict)
+            ]
     return data
 
 
@@ -257,8 +288,7 @@ def unchanged(maps, kind, fmt, sha, live):
     return record if link_id(record) in live else None
 
 
-def write_package(maps, kind, name, size, fid, fmt, at_ts=None,
-                  sha="", models=None, published=None):
+def write_package(maps, kind, name, size, fid, fmt, at_ts=None, sha="", models=None, published=None):
     """One package in one format into a `maps` entry; the top mirrors the ZIP for older readers."""
     kept = published_record(maps if published is None else published, kind, fmt)
     if kept and sha and kept.get("sha256") == sha and link_id(kept) == fid:
@@ -302,8 +332,7 @@ def link_id(record):
     """File id from `download`/`link` of one package record, or ""."""
     if not isinstance(record, dict):
         return ""
-    return (folder.id_from_link(record.get("download"))
-            or folder.id_from_link(record.get("link")))
+    return folder.id_from_link(record.get("download")) or folder.id_from_link(record.get("link"))
 
 
 def is_dead(record, live, protected):
@@ -355,8 +384,7 @@ def prune_dead(maps, live, protected=()):
         live_formats = entry.get("formats") or {}
         if live_formats:
             if is_dead(entry, live, protected):
-                entry.update(live_formats.get("zip")
-                             or live_formats[sorted(live_formats)[0]])
+                entry.update(live_formats.get("zip") or live_formats[sorted(live_formats)[0]])
             dropped += fell
             continue
         # without formats the top decides alone; one message, not two
@@ -377,24 +405,29 @@ def tidy(maps, retired=(), live=None, protected=()):
     """Drop what no longer belongs in an entry – and say so."""
     for kind in retired:
         if maps.pop(kind, None) is not None:
-            log(f"Package `{kind}` no longer exists (its contents moved to other "
-                f"packages) – dropped from the catalog entry.")
+            log(
+                f"Package `{kind}` no longer exists (its contents moved to other "
+                f"packages) – dropped from the catalog entry."
+            )
     if live is None:
         return
     fixed, dropped = prune_dead(maps, live, protected)
     for label in fixed:
-        log(f"::warning::The catalog link to {label} pointed nowhere, but a file of "
+        log(
+            f"::warning::The catalog link to {label} pointed nowhere, but a file of "
             f"that name IS in the map folder – relinked it. (A run uploaded the "
-            f"package but its catalog write never reached the branch.)")
+            f"package but its catalog write never reached the branch.)"
+        )
     for label in dropped:
-        log(f"::warning::The catalog linked {label}, but no such file is in the "
-            f"map folder on Drive, not even under another id – dropped.")
+        log(
+            f"::warning::The catalog linked {label}, but no such file is in the "
+            f"map folder on Drive, not even under another id – dropped."
+        )
 
 
 def write(path, data, label):
     """Write the catalog when it really changed; minified but sorted, so diffs stay real."""
-    text = json.dumps(data, ensure_ascii=False, separators=(",", ":"),
-                      sort_keys=True) + "\n"
+    text = json.dumps(data, ensure_ascii=False, separators=(",", ":"), sort_keys=True) + "\n"
     try:
         with open(path) as f:
             if f.read() == text:
@@ -412,27 +445,33 @@ def write_parts(maps, parts):
     """Parts of the `base` package – no package of their own, so sized here; `0` too."""
     entry = maps.get("base")
     if entry is None:
-        return                        # this run didn't upload the base map
+        return  # this run didn't upload the base map
     if not parts:
         entry.pop("parts", None)
         return
     entry["parts"] = {k: dict(v) for k, v in parts.items()}
 
 
-COMMENT = ("Map catalog of finished maps on Google Drive – which there are and "
-           "where. The top key is the country, under it `regions` and `subregions`; "
-           "`mountains` is no country but the category of ranges (`ranges`); "
-           "`id` names a node uniquely across the catalog (its osm.fr path); keys starting with `_` are catalog metadata, not countries. Written at the "
-           "end of a build by workers/deploy/publish-map.py; never edited by hand.")
-COMMENT_TEST = ("QUICK TEST runs – terrain covers only a few km² of the cut-out, so "
-                "these are NOT maps to download; finished maps are in maps.json. ")
+COMMENT = (
+    "Map catalog of finished maps on Google Drive – which there are and "
+    "where. The top key is the country, under it `regions` and `subregions`; "
+    "`mountains` is no country but the category of ranges (`ranges`); "
+    "`id` names a node uniquely across the catalog (its osm.fr path); keys starting with `_` are catalog metadata, not countries. Written at the "
+    "end of a build by workers/deploy/publish-map.py; never edited by hand."
+)
+COMMENT_TEST = (
+    "QUICK TEST runs – terrain covers only a few km² of the cut-out, so "
+    "these are NOT maps to download; finished maps are in maps.json. "
+)
 
 
 def online_aerial(sources):
     """The photo sources whose server goes deeper than their packages, as the app reads them."""
-    return {key: {"online": source["url"], "online_maxzoom": source["online_maxzoom"]}
-            for key, source in sources.items()
-            if str(source.get("url", "")).startswith("https://") and source.get("online_maxzoom")}
+    return {
+        key: {"online": source["url"], "online_maxzoom": source["online_maxzoom"]}
+        for key, source in sources.items()
+        if str(source.get("url", "")).startswith("https://") and source.get("online_maxzoom")
+    }
 
 
 def name_online_aerial(data, sources):
@@ -447,9 +486,22 @@ def name_online_aerial(data, sources):
         category.pop("aerial_sources", None)
 
 
-def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
-                  cat=None, layers=None, owns=None, base_parts=None,
-                  retired=(), live=None, drive=None):
+def write_catalog(
+    path,
+    parts,
+    regions,
+    uploaded,
+    man,
+    only="",
+    merge=False,
+    cat=None,
+    layers=None,
+    owns=None,
+    base_parts=None,
+    retired=(),
+    live=None,
+    drive=None,
+):
     """Add (or overwrite) an entry in `maps.json`. True when it changed.
 
     `uploaded` is `(kind, name, size, id, format, sha)`; `owns` the kinds this run decides.
@@ -464,8 +516,10 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         with open(write_base(path), "w") as f:
             json.dump(data, f, ensure_ascii=False, sort_keys=True)
     except OSError as exc:
-        log(f"::warning::The catalog before the write couldn't be kept ({exc}) – "
-            f"the commit carries the whole file, not just this change.")
+        log(
+            f"::warning::The catalog before the write couldn't be kept ({exc}) – "
+            f"the commit carries the whole file, not just this change."
+        )
     migrate(data)
     is_test = os.path.basename(path) == CATALOG_TEST
     data["_comment"] = (COMMENT_TEST if is_test else "") + COMMENT
@@ -481,7 +535,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     else:
         country = data.setdefault(cat[0], {})
         name_node(country, regions, cat[0], "region")
-        node = country                  # a whole-country build ends here
+        node = country  # a whole-country build ends here
     if len(cat) > 1 and not mountain:
         regs = country.setdefault("regions", {})
         node = regs.setdefault(cat[1], {})
@@ -503,9 +557,9 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         node.setdefault("run", env("GITHUB_RUN_NUMBER"))
         maps = node.setdefault("maps", {})
         for kind, name, size, fid, fmt, sha in uploaded:
-            write_package(maps, kind, name, size, fid, fmt,
-                          at_ts=data["_updated_ts"],
-                          sha=sha, models=region_models(man, reg))
+            write_package(
+                maps, kind, name, size, fid, fmt, at_ts=data["_updated_ts"], sha=sha, models=region_models(man, reg)
+            )
         tidy(maps, retired, live, {fid for _k, _n, _v, fid, _f, _s in uploaded})
         stamp_ids(data, regions)
         return write(path, data, f"added package {only} to {'/'.join(cat)}")
@@ -522,12 +576,31 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
         # the country whose data the range is made of
         entry["country"] = names.mountain_country() or node.get("country")
     # what a choice needs before unpacking: every zoom cap and every DEM source
-    for k in ("bbox", "maxzoom", "contours_maxzoom", "contour_interval",
-              "rocks_maxzoom", "rock_slope", "dem_source", "rock_source",
-              "trails_maxzoom", "features_maxzoom", "points_maxzoom",
-              "transport_maxzoom", "paths_maxzoom", "boundaries_maxzoom", "water_maxzoom",
-              "rail_maxzoom", "history_maxzoom", "names_maxzoom", "ski_maxzoom", "buildings_maxzoom",
-              "aerial_summer_maxzoom", "aerial_winter_maxzoom", "countries"):
+    for k in (
+        "bbox",
+        "maxzoom",
+        "contours_maxzoom",
+        "contour_interval",
+        "rocks_maxzoom",
+        "rock_slope",
+        "dem_source",
+        "rock_source",
+        "trails_maxzoom",
+        "features_maxzoom",
+        "points_maxzoom",
+        "transport_maxzoom",
+        "paths_maxzoom",
+        "boundaries_maxzoom",
+        "water_maxzoom",
+        "rail_maxzoom",
+        "history_maxzoom",
+        "names_maxzoom",
+        "ski_maxzoom",
+        "buildings_maxzoom",
+        "aerial_summer_maxzoom",
+        "aerial_winter_maxzoom",
+        "countries",
+    ):
         if reg.get(k) is not None:
             entry[k] = reg[k]
     tiles = tiles_paths(man, reg)
@@ -556,19 +629,28 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
             raise SystemExit(
                 "::error::`write_catalog` without `owns=`: there is no telling which "
                 "packages this run decides and which belong to another pipeline. "
-                "Pass the kinds of `uploaded` (publish-map.py does).")
+                "Pass the kinds of `uploaded` (publish-map.py does)."
+            )
         decided = set(owns)
-        entry["maps"] = {k: dict(v) for k, v in old_maps.items()
-                         if k not in decided}
+        entry["maps"] = {k: dict(v) for k, v in old_maps.items() if k not in decided}
     if merge:
         # what this run doesn't know it must not delete – with `merge` the catalog is the base
         kept = {k: v for k, v in node.items() if k != "maps" and k not in NESTS}
         kept.update(entry)
         entry = kept
     for kind, name, size, fid, fmt, sha in uploaded:
-        write_package(entry["maps"], kind, name, size, fid, fmt,
-                      at_ts=data["_updated_ts"],
-                      sha=sha, models=region_models(man, reg), published=old_maps)
+        write_package(
+            entry["maps"],
+            kind,
+            name,
+            size,
+            fid,
+            fmt,
+            at_ts=data["_updated_ts"],
+            sha=sha,
+            models=region_models(man, reg),
+            published=old_maps,
+        )
     # a format this run didn't build stays until its own job replaces it
     for kind in {k or "base" for k, *_ in uploaded}:
         formats = entry["maps"][kind].setdefault("formats", {})
@@ -577,8 +659,7 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     if base_parts is not None:
         write_parts(entry["maps"], base_parts)
     # only now, with this run's packages in; those are protected
-    tidy(entry["maps"], retired, live,
-         {fid for _k, _n, _v, fid, _f, _s in uploaded})
+    tidy(entry["maps"], retired, live, {fid for _k, _n, _v, fid, _f, _s in uploaded})
 
     # nested nodes belong to the node, not to this map
     keep = {k: node[k] for k in NESTS if k in node}
@@ -587,13 +668,15 @@ def write_catalog(path, parts, regions, uploaded, man, only="", merge=False,
     node.update(keep)
 
     stamp_ids(data, regions)
-    foreign = [k for k in entry["maps"]
-               if k not in {(kind or "base") for kind, *_ in uploaded}]
-    return write(path, data, f"wrote map {'/'.join(cat)} "
-                             f"({len(entry['maps'])} packages, "
-                             + (f"{len(foreign)} of them from another pipeline "
-                                f"({', '.join(sorted(foreign))}), " if foreign else "")
-                             + f"folder {'/'.join(parts)})")
+    foreign = [k for k in entry["maps"] if k not in {(kind or "base") for kind, *_ in uploaded}]
+    return write(
+        path,
+        data,
+        f"wrote map {'/'.join(cat)} "
+        f"({len(entry['maps'])} packages, "
+        + (f"{len(foreign)} of them from another pipeline ({', '.join(sorted(foreign))}), " if foreign else "")
+        + f"folder {'/'.join(parts)})",
+    )
 
 
 if __name__ == "__main__":
@@ -609,4 +692,5 @@ if __name__ == "__main__":
         raise SystemExit(
             "::error::workers/deploy/catalog.py alone answers only `--file` (which "
             "catalog to write – maps.json, or maps-test.json for a quick test) and "
-            "`--migrate <catalog>…`. The catalog is written by workers/deploy/publish-map.py.")
+            "`--migrate <catalog>…`. The catalog is written by workers/deploy/publish-map.py."
+        )

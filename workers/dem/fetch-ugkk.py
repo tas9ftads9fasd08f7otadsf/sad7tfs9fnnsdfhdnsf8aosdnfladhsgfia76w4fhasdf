@@ -12,6 +12,7 @@ Usage:
     python3 workers/dem/fetch-ugkk.py --bbox=W,S,E,N --out=ugkk.tif
     python3 workers/dem/fetch-ugkk.py --bbox=… --out=… --direct-urls=a.zip,b.zip
 """
+
 import argparse
 import json
 import math
@@ -31,6 +32,7 @@ _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
+
 _probe = SourceFileLoader("probe", os.path.join(_HERE, "probe.py")).load_module()
 UA = _probe.UA
 
@@ -72,8 +74,7 @@ def is_elevation_raster(path, min_cell_m=2.5):
     bands = info.get("bands") or []
     dtype = bands[0].get("type", "") if bands else ""
     ok = max(dx, dy) <= min_cell_m and dtype in ("Float32", "Float64", "Int32", "Int16")
-    return {"cell_m": max(dx, dy), "type": dtype, "ok": ok,
-            "size": info.get("size")}
+    return {"cell_m": max(dx, dy), "type": dtype, "ok": ok, "size": info.get("size")}
 
 
 def try_arcgis(bbox, tmp, sources, tile_px=4000):
@@ -121,7 +122,7 @@ def try_arcgis(bbox, tmp, sources, tile_px=4000):
     nx = max(1, math.ceil((e - w) * mx / tile_px))
     ny = max(1, math.ceil((n - s) * 110540 / tile_px))
     dx, dy = (e - w) / nx, (n - s) / ny
-    print(f"  downloading {nx}×{ny} = {nx*ny} tiles", flush=True)
+    print(f"  downloading {nx}×{ny} = {nx * ny} tiles", flush=True)
 
     tiles, t0 = [], time.time()
     for iy in range(ny):
@@ -130,12 +131,18 @@ def try_arcgis(bbox, tmp, sources, tile_px=4000):
             te, tn = tw + dx, ts + dy
             out = os.path.join(tmp, f"ags-{iy:03d}-{ix:03d}.tif")
             try:
-                d = _probe.fetch(service + "/exportImage", {
-                    "f": "json", "bbox": f"{tw},{ts},{te},{tn}",
-                    "bboxSR": "4326", "imageSR": "4326", "format": "tiff",
-                    "pixelType": "F32",
-                    "size": f"{max(1, round((te-tw)*mx))},{max(1, round((tn-ts)*110540))}",
-                })
+                d = _probe.fetch(
+                    service + "/exportImage",
+                    {
+                        "f": "json",
+                        "bbox": f"{tw},{ts},{te},{tn}",
+                        "bboxSR": "4326",
+                        "imageSR": "4326",
+                        "format": "tiff",
+                        "pixelType": "F32",
+                        "size": f"{max(1, round((te - tw) * mx))},{max(1, round((tn - ts) * 110540))}",
+                    },
+                )
                 if "href" not in d:
                     print(f"    ::warning::tile {iy}/{ix}: {str(d)[:70]}")
                     continue
@@ -145,8 +152,7 @@ def try_arcgis(bbox, tmp, sources, tile_px=4000):
                 print(f"    ::warning::tile {iy}/{ix}: {type(exc).__name__}")
             done = iy * nx + ix + 1
             el = time.time() - t0
-            print(f"    [{done}/{nx*ny}] {hms(el)}, ~{hms(el/done*(nx*ny-done))} left",
-                  flush=True)
+            print(f"    [{done}/{nx * ny}] {hms(el)}, ~{hms(el / done * (nx * ny - done))} left", flush=True)
     return tiles or None
 
 
@@ -159,10 +165,12 @@ def try_wcs(bbox, tmp, sources):
             print(f"  – WCS {base}: host doesn't answer ({why})")
             continue
         try:
-            caps = urllib.request.urlopen(urllib.request.Request(
-                base + ("&" if "?" in base else "?") +
-                "service=WCS&request=GetCapabilities", headers=UA),
-                timeout=_probe.DEFAULT_TIMEOUT).read()
+            caps = urllib.request.urlopen(
+                urllib.request.Request(
+                    base + ("&" if "?" in base else "?") + "service=WCS&request=GetCapabilities", headers=UA
+                ),
+                timeout=_probe.DEFAULT_TIMEOUT,
+            ).read()
         except Exception as exc:
             print(f"  – WCS {base}: {type(exc).__name__}")
             continue
@@ -172,11 +180,21 @@ def try_wcs(bbox, tmp, sources):
         print(f"  WCS answered: {base}")
         for cov in src.get("wcs_coverages", []):
             out = os.path.join(tmp, "wcs.tif")
-            url = base + ("&" if "?" in base else "?") + urllib.parse.urlencode({
-                "service": "WCS", "version": "2.0.1", "request": "GetCoverage",
-                "coverageId": cov, "format": "image/tiff",
-                "subset": f"Long({w},{e})",
-            }) + f"&subset=Lat({s},{n})"
+            url = (
+                base
+                + ("&" if "?" in base else "?")
+                + urllib.parse.urlencode(
+                    {
+                        "service": "WCS",
+                        "version": "2.0.1",
+                        "request": "GetCoverage",
+                        "coverageId": cov,
+                        "format": "image/tiff",
+                        "subset": f"Long({w},{e})",
+                    }
+                )
+                + f"&subset=Lat({s},{n})"
+            )
             try:
                 download(url, out)
             except Exception as exc:
@@ -221,10 +239,8 @@ def main():
     ap.add_argument("--bbox", required=True, help="west,south,east,north")
     ap.add_argument("--out", required=True, help="output GeoTIFF (COG)")
     ap.add_argument("--sources", default=map_settings.PATH)
-    ap.add_argument("--direct-urls", default="",
-                    help="comma separated URLs of .tif/.zip (last resort)")
-    ap.add_argument("--max-cells", type=float, default=3e9,
-                    help="cap on cutout cells at 1 m (0 = no cap)")
+    ap.add_argument("--direct-urls", default="", help="comma separated URLs of .tif/.zip (last resort)")
+    ap.add_argument("--max-cells", type=float, default=3e9, help="cap on cutout cells at 1 m (0 = no cap)")
     ap.add_argument("--keep-temp", action="store_true")
     args = ap.parse_args()
 
@@ -233,11 +249,13 @@ def main():
     lat = (s + n) / 2
     km2 = (e - w) * 111.32 * math.cos(math.radians(lat)) * (n - s) * 110.54
     cells = km2 * 1e6
-    print(f"Cutout {args.bbox} = {km2:.0f} km² → {cells/1e9:.2f} bn cells at 1 m")
+    print(f"Cutout {args.bbox} = {km2:.0f} km² → {cells / 1e9:.2f} bn cells at 1 m")
     if args.max_cells and cells > args.max_cells:
-        print(f"::error::That is {cells*4/1e9:.0f} GB in Float32, the cap is "
-              f"{args.max_cells/1e9:.1f} bn cells. A metre model makes sense for a "
-              f"range, not a region – pick a smaller cutout (input `area`).")
+        print(
+            f"::error::That is {cells * 4 / 1e9:.0f} GB in Float32, the cap is "
+            f"{args.max_cells / 1e9:.1f} bn cells. A metre model makes sense for a "
+            f"range, not a region – pick a smaller cutout (input `area`)."
+        )
         return 2
 
     tmp = tempfile.mkdtemp(prefix="ugkk-", dir=os.path.dirname(args.out) or ".")
@@ -252,11 +270,9 @@ def main():
         # host first: every service is on `skgeodesy.sk`, each would burn four profiles
         host_ok = True
         if not tiles:
-            host_ok, why = _probe.host_reachable(
-                map_settings.dem_sources(args.sources)["ugkk"]["directory"])
+            host_ok, why = _probe.host_reachable(map_settings.dem_sources(args.sources)["ugkk"]["directory"])
             if not host_ok:
-                print(f"── host skgeodesy.sk doesn't answer ({why}) – "
-                      f"no point trying ImageServer or WCS")
+                print(f"── host skgeodesy.sk doesn't answer ({why}) – no point trying ImageServer or WCS")
             else:
                 print("── 1. ArcGIS ImageServer")
                 tiles, how = try_arcgis(bbox, tmp, args.sources), "ArcGIS ImageServer"
@@ -282,8 +298,9 @@ def main():
                 print("       gdal_translate -of COG -co COMPRESS=DEFLATE \\")
                 print("         -co PREDICTOR=3 all.vrt " + os.path.basename(args.out))
                 print("  3. upload to the Drive store:")
-                print(f"       python3 workers/drive/store.py --put "
-                      f"--store=dem-ugkk --file={os.path.basename(args.out)}")
+                print(
+                    f"       python3 workers/drive/store.py --put --store=dem-ugkk --file={os.path.basename(args.out)}"
+                )
                 print("  From then on the build takes it from the store and downloads nothing.")
                 print()
                 print("Or: ugkk_urls with a link that IS reachable from GitHub.")
@@ -296,19 +313,44 @@ def main():
         # one COG per cutout
         vrt = os.path.join(tmp, "all.vrt")
         run(["gdalbuildvrt", "-q", "-resolution", "highest", vrt] + tiles)
-        run(["gdalwarp", "-q", "-overwrite", "-te", repr(w), repr(s), repr(e), repr(n),
-             "-t_srs", "EPSG:4326", "-r", "bilinear", "-ot", "Float32",
-             "-of", "COG", "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=3",
-             "-co", "BIGTIFF=YES", vrt, args.out])
+        run(
+            [
+                "gdalwarp",
+                "-q",
+                "-overwrite",
+                "-te",
+                repr(w),
+                repr(s),
+                repr(e),
+                repr(n),
+                "-t_srs",
+                "EPSG:4326",
+                "-r",
+                "bilinear",
+                "-ot",
+                "Float32",
+                "-of",
+                "COG",
+                "-co",
+                "COMPRESS=DEFLATE",
+                "-co",
+                "PREDICTOR=3",
+                "-co",
+                "BIGTIFF=YES",
+                vrt,
+                args.out,
+            ]
+        )
 
         meta = is_elevation_raster(args.out)
         mb = os.path.getsize(args.out) / 1048576
         print(f"\n✓ Done via: {how}")
-        print(f"  {args.out}: {mb:.0f} MB, cell ~{meta['cell_m']:.2f} m, "
-              f"{meta['type']}, {meta['size']} px, took {hms(time.time()-t0)}")
+        print(
+            f"  {args.out}: {mb:.0f} MB, cell ~{meta['cell_m']:.2f} m, "
+            f"{meta['type']}, {meta['size']} px, took {hms(time.time() - t0)}"
+        )
         if not meta["ok"]:
-            print(f"::warning::Cell {meta['cell_m']:.1f} m isn't a 1 m model – "
-                  f"check it really is DMR 5.0.")
+            print(f"::warning::Cell {meta['cell_m']:.1f} m isn't a 1 m model – check it really is DMR 5.0.")
 
         return 0
     finally:

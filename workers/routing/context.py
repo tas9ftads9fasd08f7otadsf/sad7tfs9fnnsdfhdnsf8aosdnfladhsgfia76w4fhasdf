@@ -1,23 +1,43 @@
 #!/usr/bin/env python3
 """A road's speed context – which of its country's default limits applies on it."""
+
 import math
 
 # the order of `speed_context` in the `tags` of routing.json
-CONTEXTS = ("urban", "rural", "motorway", "urban_motorway", "motorroad",
-            "urban_motorroad", "living_street")
+CONTEXTS = ("urban", "rural", "motorway", "urban_motorway", "motorroad", "urban_motorroad", "living_street")
 
 # a path or a footway has no default car speed
-MOTOR = {"motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link",
-         "secondary", "secondary_link", "tertiary", "tertiary_link", "unclassified",
-         "residential", "living_street", "service", "track", "road"}
+MOTOR = {
+    "motorway",
+    "motorway_link",
+    "trunk",
+    "trunk_link",
+    "primary",
+    "primary_link",
+    "secondary",
+    "secondary_link",
+    "tertiary",
+    "tertiary_link",
+    "unclassified",
+    "residential",
+    "living_street",
+    "service",
+    "track",
+    "road",
+}
 
 # industry often stands outside a village, so it isn't one
 BUILT_UP = ("residential", "commercial", "retail")
 
 # OSM writes the default a road falls under as `<country>:<zone>`
 ZONE_KEYS = ("maxspeed:type", "source:maxspeed", "zone:maxspeed", "zone:traffic", "maxspeed")
-ZONES = {"urban": "urban", "rural": "rural", "motorway": "motorway",
-         "living_street": "living_street", "pedestrian_zone": "living_street"}
+ZONES = {
+    "urban": "urban",
+    "rural": "rural",
+    "motorway": "motorway",
+    "living_street": "living_street",
+    "pedestrian_zone": "living_street",
+}
 
 # the gap a village's gardens and a church leave between residential areas
 GAP_M = 30
@@ -69,8 +89,9 @@ class BuiltUp:
     """Built-up areas in local metres, joined across the gaps between them."""
 
     def __init__(self, polygons):
-        import numpy as np                                        # noqa: PLC0415
-        import shapely                                            # noqa: PLC0415
+        import numpy as np  # noqa: PLC0415
+        import shapely  # noqa: PLC0415
+
         self.np, self.shapely = np, shapely
         polygons = [p for p in polygons if p is not None and not p.is_empty]
         self.parts = []
@@ -79,15 +100,13 @@ class BuiltUp:
             return
         _w, south, _e, north = shapely.bounds(shapely.GeometryCollection(polygons))
         self.cos = math.cos(math.radians((south + north) / 2))
-        joined = shapely.unary_union([shapely.buffer(self._metres(p), GAP_M)
-                                      for p in polygons])
+        joined = shapely.unary_union([shapely.buffer(self._metres(p), GAP_M) for p in polygons])
         self.parts = list(getattr(joined, "geoms", [joined]))
         self.tree = shapely.STRtree(self.parts)
 
     def _metres(self, geometry):
         cos = self.cos
-        return self.shapely.transform(
-            geometry, lambda xy: xy * [cos * METRES_PER_DEGREE, METRES_PER_DEGREE])
+        return self.shapely.transform(geometry, lambda xy: xy * [cos * METRES_PER_DEGREE, METRES_PER_DEGREE])
 
     def shares(self, lines):
         """Each line's share of length inside; lines are `[(lon, lat), …]`."""
@@ -97,8 +116,7 @@ class BuiltUp:
         drawn = np.empty(len(lines), dtype=object)
         drawn[:] = [self._metres(shapely.LineString(line)) for line in lines]
         hit_line, hit_part = self.tree.query(drawn, predicate="intersects")
-        inside = shapely.length(shapely.intersection(drawn[hit_line],
-                                                     np.array(self.parts)[hit_part]))
+        inside = shapely.length(shapely.intersection(drawn[hit_line], np.array(self.parts)[hit_part]))
         total = shapely.length(drawn)
         out = np.bincount(hit_line, weights=inside, minlength=len(lines))
         return np.divide(out, total, out=np.zeros(len(lines)), where=total > 0)
@@ -106,8 +124,8 @@ class BuiltUp:
 
 def built_up_areas(pbf):
     """Built-up polygons of a PBF, as shapely geometries in degrees."""
-    import osmium                                                 # noqa: PLC0415
-    import shapely                                                # noqa: PLC0415
+    import osmium  # noqa: PLC0415
+    import shapely  # noqa: PLC0415
 
     class Areas(osmium.SimpleHandler):
         def __init__(self):
@@ -130,9 +148,9 @@ def built_up_areas(pbf):
 
 def assign(network, built_up):
     """`speed_context` into each motor edge's tags; edges sharing tags get their own."""
-    from collections import Counter                               # noqa: PLC0415
-    unsure = [h for h in network.edges
-              if h.get("road") and h["road"][1] is None and h["road"][0] != "living_street"]
+    from collections import Counter  # noqa: PLC0415
+
+    unsure = [h for h in network.edges if h.get("road") and h["road"][1] is None and h["road"][0] != "living_street"]
     lines = [[network.nodes[h["from"]], *h["geom"], network.nodes[h["to"]]] for h in unsure]
     shares = built_up.shares([[(lon / 1e7, lat / 1e7) for lat, lon in line] for line in lines])
     urban = {id(h): share >= URBAN_SHARE for h, share in zip(unsure, shares)}

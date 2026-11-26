@@ -5,6 +5,7 @@ The package list is `config/packages.json`. Names are stable so the next
 build overwrites the same file and the link in `maps.json` keeps working.
 `contents.json` inside says what a package holds.
 """
+
 import argparse
 import importlib.util
 import os
@@ -16,6 +17,7 @@ _WORKERS = os.path.dirname(_HERE)
 _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 import map_settings  # noqa: E402
+
 _DRIVE = os.path.join(_WORKERS, "drive")
 
 
@@ -75,15 +77,16 @@ def live_ids(creds, fid, tries=4, sleep=time.sleep):
     for attempt in range(1, tries + 1):
         try:
             live = folder.ids_in(creds, fid)
-        except Exception as exc:                   # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             if attempt == tries:
-                log(f"::warning::The map folder couldn't be listed ({exc}) – this run "
-                    f"didn't check catalog links. Writing them as they are.")
+                log(
+                    f"::warning::The map folder couldn't be listed ({exc}) – this run "
+                    f"didn't check catalog links. Writing them as they are."
+                )
                 return None
-            sleep(2 ** attempt)
+            sleep(2**attempt)
             continue
-        log(f"The map folder holds {len(live)} files – catalog links to files no "
-            f"longer there are dropped by them.")
+        log(f"The map folder holds {len(live)} files – catalog links to files no longer there are dropped by them.")
         return live
 
 
@@ -110,14 +113,16 @@ def contents(kind, man, fmt="zip", parts=None):
         "built_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "run": env("GITHUB_RUN_NUMBER"),
         "run_id": env("GITHUB_RUN_ID"),
-        "manifest": {"dem": man.get("dem"),
-                     "dem_maxzoom": man.get("dem_maxzoom"),
-                     "dem_plane": man.get("dem_plane"),
-                     "dem_source": man.get("dem_source"),
-                     # tiles may be there with 3D off, so `dem` alone doesn't say
-                     "terrain_3d": man.get("terrain_3d"),
-                     "terrain_exaggeration": man.get("terrain_exaggeration"),
-                     "region": reg},
+        "manifest": {
+            "dem": man.get("dem"),
+            "dem_maxzoom": man.get("dem_maxzoom"),
+            "dem_plane": man.get("dem_plane"),
+            "dem_source": man.get("dem_source"),
+            # tiles may be there with 3D off, so `dem` alone doesn't say
+            "terrain_3d": man.get("terrain_3d"),
+            "terrain_exaggeration": man.get("terrain_exaggeration"),
+            "region": reg,
+        },
     }
 
 
@@ -132,33 +137,35 @@ def delete_legacy(creds, fid, kind, formats):
 
 
 def main():
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--site", default="_site", help="what gets packed")
     # zip always, .aar on top for Apple; formats add up, they don't switch
-    ap.add_argument("--format", default="zip",
-                    help="formats to build: `zip`, `aar`, `zip,aar`")
-    ap.add_argument("--folder", default=FOLDER_ID,
-                    help="folder on Drive (URL or id)")
+    ap.add_argument("--format", default="zip", help="formats to build: `zip`, `aar`, `zip,aar`")
+    ap.add_argument("--folder", default=FOLDER_ID, help="folder on Drive (URL or id)")
     ap.add_argument("--out", default="", help="where to keep the ZIP (default RUNNER_TEMP)")
-    ap.add_argument("--keep-zip", action="store_true",
-                    help="keep the ZIP on disk after uploading")
-    ap.add_argument("--dry-run", action="store_true",
-                    help="say names and path, pack and upload nothing")
-    ap.add_argument("--zip-only", action="store_true",
-                    help="pack into --out and leave Drive alone (local try)")
+    ap.add_argument("--keep-zip", action="store_true", help="keep the ZIP on disk after uploading")
+    ap.add_argument("--dry-run", action="store_true", help="say names and path, pack and upload nothing")
+    ap.add_argument("--zip-only", action="store_true", help="pack into --out and leave Drive alone (local try)")
     ap.add_argument("--summary", default="", help="where to append the summary")
-    ap.add_argument("--wiki", default="",
-                    help="folder with Wikipedia articles (package `wikipedia`); "
-                         "empty = not published and the old one deleted")
-    ap.add_argument("--only", default="",
-                    help="publish ONLY this package (e.g. `wikipedia`) and add to "
-                         "the catalog, not rewrite it – for pipelines that don't "
-                         "build the whole map")
-    ap.add_argument("--maps", default=catalog.CATALOG,
-                    help="catalog of finished maps in the repository (empty = "
-                         "don't write). A quick test turns it into "
-                         "`maps-test.json` – `catalog.py` decides.")
+    ap.add_argument(
+        "--wiki",
+        default="",
+        help="folder with Wikipedia articles (package `wikipedia`); empty = not published and the old one deleted",
+    )
+    ap.add_argument(
+        "--only",
+        default="",
+        help="publish ONLY this package (e.g. `wikipedia`) and add to "
+        "the catalog, not rewrite it – for pipelines that don't "
+        "build the whole map",
+    )
+    ap.add_argument(
+        "--maps",
+        default=catalog.CATALOG,
+        help="catalog of finished maps in the repository (empty = "
+        "don't write). A quick test turns it into "
+        "`maps-test.json` – `catalog.py` decides.",
+    )
     args = ap.parse_args()
 
     # a test writes its own file (`catalog.catalog_file`)
@@ -169,22 +176,22 @@ def main():
         with open(gh_out, "a") as f:
             f.write(f"maps_file={args.maps}\n")
     if args.maps != catalog.CATALOG:
-        log(f"Catalog of this run: {args.maps} (quick test – finished maps are "
-            f"in {catalog.CATALOG})")
+        log(f"Catalog of this run: {args.maps} (quick test – finished maps are in {catalog.CATALOG})")
 
     regions = map_settings.regions()
 
     formats = [f.strip() for f in args.format.split(",") if f.strip()]
     for f in formats:
         if f not in PACKERS:
-            raise SystemExit(f"::error::Unknown format “{f}”. Known: "
-                             f"{', '.join(PACKERS)}.")
+            raise SystemExit(f"::error::Unknown format “{f}”. Known: {', '.join(PACKERS)}.")
     if "aar" in formats and not has_aa():
         # skipping silently is not allowed; `aa` exists only on macOS
-        raise SystemExit("::error::Apple Archive can't be built – the `aa` tool "
-                         "isn't here. It ships with macOS (11+), so a `--format` "
-                         "with `aar` belongs in a job on `macos-15-intel`; on Linux "
-                         "keep `--format=zip`.")
+        raise SystemExit(
+            "::error::Apple Archive can't be built – the `aa` tool "
+            "isn't here. It ships with macOS (11+), so a `--format` "
+            "with `aar` belongs in a job on `macos-15-intel`; on Linux "
+            "keep `--format=zip`."
+        )
 
     parts = drive_path(regions)
     country_id = catalog.node_id(regions, parts[0])
@@ -202,25 +209,33 @@ def main():
     # the packages draw the whole region; base would be downloaded twice
     retired = files.base_retired(own_packages)
     if retired:
-        log("The base map isn't published: this build cut it into packages, "
-            "Landscape among them. Its old package is deleted.")
+        log(
+            "The base map isn't published: this build cut it into packages, "
+            "Landscape among them. Its old package is deleted."
+        )
     if args.only or mountain or retired:
         pieces = []
     # viewer and glyphs aren't packed; how much a package leaves out must show
     out_files, out_reasons = outside_packages(args.site, man)
     for description, count, size in out_reasons:
-        log(f"Not packed: {description}: {count} files, "
-            f"{folder.human(size)}")
+        log(f"Not packed: {description}: {count} files, {folder.human(size)}")
     for key, description, fs in pieces:
-        log(f"The base map carries part `{key}` – {description}: "
-            + (f"{len(fs)} files, "
-               f"{folder.human(sum(os.path.getsize(f) for f in fs))}"
-               if fs else "none in this region" if key in files.OPTIONAL_PARTS
-               else "THIS BUILD DIDN'T MAKE IT, the map won't have it"))
+        log(
+            f"The base map carries part `{key}` – {description}: "
+            + (
+                f"{len(fs)} files, {folder.human(sum(os.path.getsize(f) for f in fs))}"
+                if fs
+                else "none in this region"
+                if key in files.OPTIONAL_PARTS
+                else "THIS BUILD DIDN'T MAKE IT, the map won't have it"
+            )
+        )
     for p, fs in own_packages:
         for k in files.missing(man, p) if fs and p["key"] not in no_data else ():
-            log(f"::warning::Package `{p['key']}` goes without `{k}` – the manifest "
-                f"doesn't list it and the registry doesn't call it optional.")
+            log(
+                f"::warning::Package `{p['key']}` goes without `{k}` – the manifest "
+                f"doesn't list it and the registry doesn't call it optional."
+            )
     # out of the base map: files of own packages + what doesn't belong there
     exclude = [f for _p, fs in own_packages for f in fs] + out_files
     # a regenerated `rest` package takes the region's files the run carried over
@@ -231,25 +246,35 @@ def main():
         rest = rest_files(args.site, man, drawn + out_files)
         own_packages = [(p, fs + rest if p.get("rest") else fs) for p, fs in own_packages]
     batch = [
-        ("", "base map – the whole OSM cartography with waymarked trails, "
-             "routing network and search; without layers that have their own "
-             "package, glyphs or viewer",
-         args.site, [] if retired else base_files(args.site, exclude, keep)),
-    ] + [(p["key"], p["description"], args.site, [] if p["key"] in no_data else fs)
-         for p, fs in own_packages]
+        (
+            "",
+            "base map – the whole OSM cartography with waymarked trails, "
+            "routing network and search; without layers that have their own "
+            "package, glyphs or viewer",
+            args.site,
+            [] if retired else base_files(args.site, exclude, keep),
+        ),
+    ] + [(p["key"], p["description"], args.site, [] if p["key"] in no_data else fs) for p, fs in own_packages]
     if not mountain:
         batch = [b for b in batch if b[0] not in names.MOUNTAIN_ONLY]
     if mountain:
         # a mountain adds layers to its regions; it has no map of its own
         batch = [b for b in batch if b[0] in names.MOUNTAIN_PACKAGES]
         if not any(b[3] for b in batch):
-            raise SystemExit(f"::error::{args.site} holds none of the mountain's layers "
-                             f"({', '.join(names.MOUNTAIN_PACKAGES)}) – nothing to publish.")
+            raise SystemExit(
+                f"::error::{args.site} holds none of the mountain's layers "
+                f"({', '.join(names.MOUNTAIN_PACKAGES)}) – nothing to publish."
+            )
     # wikipedia has its own pipeline; without `--wiki` a map run would delete it
     if args.wiki or args.only == "wikipedia":
         batch.append(
-            ("wikipedia", registry.package("wikipedia")["description"],
-             args.wiki, all_files(args.wiki) if args.wiki else []))
+            (
+                "wikipedia",
+                registry.package("wikipedia")["description"],
+                args.wiki,
+                all_files(args.wiki) if args.wiki else [],
+            )
+        )
     # `--only`: a separate pipeline makes one package, the rest isn't deleted
     if args.only:
         # the base map is listed under the empty key, but called `base`
@@ -257,8 +282,9 @@ def main():
             args.only = ""
         known = [k for k, *_ in batch]
         if args.only not in known:
-            raise SystemExit(f"::error::`--only={args.only}` is unknown. Packages "
-                             f"are: {', '.join(k or 'base' for k in known)}.")
+            raise SystemExit(
+                f"::error::`--only={args.only}` is unknown. Packages are: {', '.join(k or 'base' for k in known)}."
+            )
         batch = [b for b in batch if b[0] == args.only]
         if args.only in no_data:
             # a skipped build step looks the same, so the old package stays for a full build
@@ -266,18 +292,22 @@ def main():
             return 0
         if not batch[0][3]:
             raise SystemExit(
-                f"::error::Package `{args.only}` has no files – nothing to "
-                f"publish. (Did the step that makes it run?)")
+                f"::error::Package `{args.only}` has no files – nothing to publish. (Did the step that makes it run?)"
+            )
     elif not mountain and not any(b[3] for b in batch):
-        raise SystemExit(f"::error::{args.site} has no files – nothing to "
-                         f"publish. (Did the `deploy` job get as far as "
-                         f"assembling the site?)")
+        raise SystemExit(
+            f"::error::{args.site} has no files – nothing to "
+            f"publish. (Did the `deploy` job get as far as "
+            f"assembling the site?)"
+        )
     # what this run decides – one list for deleting and for the catalog
     owns = [kind or "base" for kind, *_ in batch]
     for kind, description, _base, fs in batch:
-        state = (f"{len(fs)} files, "
-                 f"{folder.human(sum(os.path.getsize(f) for f in fs))}"
-                 if fs else "NOT IN THIS BUILD – the old package is deleted")
+        state = (
+            f"{len(fs)} files, {folder.human(sum(os.path.getsize(f) for f in fs))}"
+            if fs
+            else "NOT IN THIS BUILD – the old package is deleted"
+        )
         for fmt in formats:
             log(f"  {file_name(kind, fmt):<48} {description} – {state}")
     log(f"Folder on Drive: {where}")
@@ -293,8 +323,7 @@ def main():
                 continue
             for fmt in formats:
                 name = file_name(kind, fmt)
-                PACKERS[fmt](base, os.path.join(out, name), name[:-4], fs,
-                             info=contents(kind, man, fmt, pieces))
+                PACKERS[fmt](base, os.path.join(out, name), name[:-4], fs, info=contents(kind, man, fmt, pieces))
         return 0
 
     creds = auth.from_env()
@@ -304,7 +333,8 @@ def main():
             "the environment has none. Add the secret GDRIVE_CREDENTIALS (or the "
             "variable DRIVE_CLIENT and secrets DRIVE_SECRET / DRIVE_REFRESH) and "
             "pass it to the job via `env:` – the workflow “Drive · Sign in "
-            "(one-off)” makes them.")
+            "(one-off)” makes them."
+        )
     # scope before packing: a readonly token uploads nothing
     if auth.can_write(creds) is False:
         raise SystemExit(f"::error::The map wasn't published: {auth.scope_hint()}")
@@ -316,16 +346,17 @@ def main():
     shas = {}
     published = catalog.published_maps(args.maps, catalog_path(parts)) if args.maps else {}
     live_before = live_ids(creds, fid) if published else None
-    for (kind, description, base, fs), fmt in [(b_, f) for b_ in batch
-                                               for f in formats]:
+    for (kind, description, base, fs), fmt in [(b_, f) for b_ in batch for f in formats]:
         name = file_name(kind, fmt)
         if not fs:
             # the layer isn't in this build: an old package of that name would lie
             count = folder.delete_named(creds, fid, name)
             if count:
-                log(f"::warning::{description} isn't in this build – deleted "
+                log(
+                    f"::warning::{description} isn't in this build – deleted "
                     f"{count}× old {name}, so no package of another run stays "
-                    f"in the folder.")
+                    f"in the folder."
+                )
             else:
                 log(f"{name}: {description} isn't in this build – not publishing.")
             continue
@@ -334,27 +365,34 @@ def main():
         same = catalog.unchanged(published, kind, fmt, shas[kind], live_before)
         if same:
             log(f"{name}: the same contents as the published file – not uploaded again.")
-            done.append((kind, same.get("file") or name, description, same.get("size") or 0,
-                         "kept", catalog.link_id(same), fmt, shas[kind]))
+            done.append(
+                (
+                    kind,
+                    same.get("file") or name,
+                    description,
+                    same.get("size") or 0,
+                    "kept",
+                    catalog.link_id(same),
+                    fmt,
+                    shas[kind],
+                )
+            )
             continue
-        dest = os.path.join(args.out or os.environ.get("RUNNER_TEMP", "/tmp"),
-                            name)
-        size = PACKERS[fmt](base, dest, name[:-4], fs,
-                            info=contents(kind, man, fmt, pieces))
+        dest = os.path.join(args.out or os.environ.get("RUNNER_TEMP", "/tmp"), name)
+        size = PACKERS[fmt](base, dest, name[:-4], fs, info=contents(kind, man, fmt, pieces))
         try:
             log(f"Uploading {name} ({folder.human(size)}) …")
             t0 = time.time()
-            file_id, overwritten = folder.upload_clobber(
-                creds, dest, name, fid, f"{where}/{name}")
+            file_id, overwritten = folder.upload_clobber(creds, dest, name, fid, f"{where}/{name}")
             el = max(time.time() - t0, 1e-6)
-            log(f"  done in {el / 60:.1f} min "
-                f"({size / el / 1e6:.1f} MB/s)"
-                + (" – old file of that name overwritten" if overwritten else ""))
+            log(
+                f"  done in {el / 60:.1f} min "
+                f"({size / el / 1e6:.1f} MB/s)" + (" – old file of that name overwritten" if overwritten else "")
+            )
         finally:
             if not args.keep_zip and os.path.exists(dest):
                 os.remove(dest)
-        done.append((kind, name, description, size, overwritten, file_id, fmt,
-                     shas[kind]))
+        done.append((kind, name, description, size, overwritten, file_id, fmt, shas[kind]))
     log(f"Done: {len(done)} packages in {folder.folder_link(fid)}")
 
     for kind in {k for k, *_ in done}:
@@ -367,9 +405,11 @@ def main():
                 name = file_name(kind, fmt)
                 count = folder.delete_named(creds, fid, name)
                 if count:
-                    log(f"::warning::Package `{kind}` no longer exists – its contents "
+                    log(
+                        f"::warning::Package `{kind}` no longer exists – its contents "
                         f"moved to other packages. Deleted {count}× {name}, so nobody "
-                        f"downloads it twice.")
+                        f"downloads it twice."
+                    )
 
     live = live_ids(creds, fid)
 
@@ -377,41 +417,52 @@ def main():
         # a test is written too, just into its own node
         cat = catalog_path(parts)
         changed = catalog.write_catalog(
-            args.maps, parts, regions,
+            args.maps,
+            parts,
+            regions,
             # every format goes in; `merge` adds, doesn't overwrite
             [(k, n, v, i, f, sh) for k, n, _p, v, _pr, i, f, sh in done],
-            man, only=args.only, merge="zip" not in formats, cat=cat,
-            layers=layers(), owns=owns,
+            man,
+            only=args.only,
+            merge="zip" not in formats,
+            cat=cat,
+            layers=layers(),
+            owns=owns,
             # how much of the map is search – nowhere else to read it
             base_parts=None if args.only or mountain else part_sizes(pieces),
             # retired packages and dead links out, `--only` too
-            retired=RETIRED, live=live, drive=where)
+            retired=RETIRED,
+            live=live,
+            drive=where,
+        )
         if args.summary and changed:
             with open(args.summary, "a") as f:
-                f.write(f"Catalog `{args.maps}` in the repository is "
-                        f"updated (`{'/'.join(cat)}`).\n\n")
+                f.write(f"Catalog `{args.maps}` in the repository is updated (`{'/'.join(cat)}`).\n\n")
 
     if args.summary:
         with open(args.summary, "a") as f:
             f.write("## Map on Google Drive\n\n")
-            f.write(f"Folder [{where}]({folder.folder_link(fid)}) – "
-                    f"names are stable, so the next build overwrites these files. "
-                    f"`contents.json` inside says what a package holds.\n\n")
+            f.write(
+                f"Folder [{where}]({folder.folder_link(fid)}) – "
+                f"names are stable, so the next build overwrites these files. "
+                f"`contents.json` inside says what a package holds.\n\n"
+            )
             f.write("| package | what it holds | size | old |\n|---|---|--:|---|\n")
             for _kind, name, description, size, overwritten, _fid, _fmt, _sha in done:
-                f.write(f"| `{name}` | {description} | {folder.human(size)} | "
-                        f"{overwritten if overwritten == 'kept' else 'overwritten' if overwritten else '–'} |\n")
+                f.write(
+                    f"| `{name}` | {description} | {folder.human(size)} | "
+                    f"{overwritten if overwritten == 'kept' else 'overwritten' if overwritten else '–'} |\n"
+                )
             f.write("\n")
             # parts separately: the table counts them in the map's size
             if pieces:
-                f.write("Of that, the base map carries (no package of their "
-                        "own):\n\n")
+                f.write("Of that, the base map carries (no package of their own):\n\n")
                 f.write("| part | what it is | size |\n|---|---|--:|\n")
                 for key, description, fs in pieces:
                     size = sum(os.path.getsize(x) for x in fs)
-                    f.write(f"| `{key}` | {description} | "
-                            + (folder.human(size) if fs
-                               else "**not in this map**") + " |\n")
+                    f.write(
+                        f"| `{key}` | {description} | " + (folder.human(size) if fs else "**not in this map**") + " |\n"
+                    )
                 f.write("\n")
     return 0
 

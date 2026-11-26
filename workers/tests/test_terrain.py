@@ -24,7 +24,7 @@ class RegionMask(unittest.TestCase):
         self.assertAlmostEqual(m.pct, 100 / 9, delta=1)
 
     def tile_at(self, z, lon, lat):
-        n = 2 ** z
+        n = 2**z
         x = int((lon + 180) / 360 * n)
         y = int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
         return x, y
@@ -68,6 +68,7 @@ class Height(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import numpy as np
+
         cls.np = np
         cls.h = worker("terrain/height.py")
 
@@ -107,12 +108,13 @@ class Height(unittest.TestCase):
         rough = np.zeros((30, 30))
         for dy in (0, 1, 2):
             for dx in (0, 1, 2):
-                rough = np.maximum(rough, np.abs(g[dy:dy + 30, dx:dx + 30] - g[1:31, 1:31]))
+                rough = np.maximum(rough, np.abs(g[dy : dy + 30, dx : dx + 30] - g[1:31, 1:31]))
         self.assertEqual(float(rough[~known].max()), 0.0)
         self.assertGreater(float(rough[known].max()), 0.0)
 
     def edge(self):
         import re
+
         with open(os.path.join(os.path.dirname(__file__), "..", "terrain", "tiles.py")) as f:
             src = f.read()
         return int(re.search(r'"--edge",\s*type=int,\s*default=(-?\d+)', src).group(1))
@@ -151,14 +153,12 @@ class Height(unittest.TestCase):
         fill = np.full((30, 30), 1800.0)
         missing = np.zeros((30, 30), dtype=bool)
         missing[:, -1] = True
-        g, ground = self.h.fill_abroad(self.h.flatten_outside(terrain, keep, 500.0),
-                                       keep, home, fill, missing)
+        g, ground = self.h.fill_abroad(self.h.flatten_outside(terrain, keep, 500.0), keep, home, fill, missing)
         self.assertEqual(g[25, 15], 700.0, "the region keeps its own model")
         self.assertEqual(g[5, 15], 500.0, "a neighbouring region in the state is the plane")
         self.assertEqual(g[25, 22], 1800.0, "beyond the state border")
         self.assertEqual(g[25, 29], 500.0, "no abroad height: the plane")
-        self.assertEqual(set(g[25, 11:25].tolist()), {700.0, 1800.0},
-                         "no plane between the region and abroad")
+        self.assertEqual(set(g[25, 11:25].tolist()), {700.0, 1800.0}, "no plane between the region and abroad")
         self.assertTrue(ground[25, 22])
         self.assertFalse(ground[5, 15] or ground[25, 29])
 
@@ -174,6 +174,7 @@ class TerrainTiles(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import numpy as np
+
         cls.np = np
         cls.t = worker("terrain/tiles.py")
 
@@ -187,12 +188,12 @@ class TerrainTiles(unittest.TestCase):
         for bits in (0, 3, 6):
             with self.subTest(bits=bits):
                 back = self.decode(self.t.terrarium(heights, bits))
-                self.assertLessEqual(float(np.abs(back - heights).max()), 0.5 / 2 ** bits + 1e-9)
+                self.assertLessEqual(float(np.abs(back - heights).max()), 0.5 / 2**bits + 1e-9)
 
     def test_tile_range(self):
         self.assertEqual(self.t.tile_range(0, -180, -85, 180, 85), (0, 0, 0, 0))
         for z, lon, lat in ((14, 17.1, 48.142), (12, 22.53, 49.1), (8, -74.0, -3.5)):
-            n = 2 ** z
+            n = 2**z
             x = int((lon + 180) / 360 * n)
             y = int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
             self.assertEqual(self.t.tile_range(z, lon, lat, lon, lat), (x, x, y, y))
@@ -216,6 +217,7 @@ class TerrainTiles(unittest.TestCase):
 
     def test_png_reads_back(self):
         from PIL import Image
+
         np = self.np
         rng = np.random.default_rng(1)
         arr = rng.integers(0, 256, (37, 23, 3), dtype=np.uint8)
@@ -237,9 +239,12 @@ class Abroad(unittest.TestCase):
         # 579 low zooms reach past the region; the abroad model must too
         urls = self.a.tile_urls(20.0, 48.7, 22.6, 49.6, pad=1.0)
         self.assertEqual(len(urls), 5 * 4)
-        self.assertIn("/vsicurl/https://copernicus-dem-30m.s3.amazonaws.com/"
-                      "Copernicus_DSM_COG_10_N50_00_E023_00_DEM/"
-                      "Copernicus_DSM_COG_10_N50_00_E023_00_DEM.tif", urls)
+        self.assertIn(
+            "/vsicurl/https://copernicus-dem-30m.s3.amazonaws.com/"
+            "Copernicus_DSM_COG_10_N50_00_E023_00_DEM/"
+            "Copernicus_DSM_COG_10_N50_00_E023_00_DEM.tif",
+            urls,
+        )
         self.assertNotIn("N51", " ".join(urls))
 
 
@@ -253,6 +258,7 @@ class TerrainPlane(unittest.TestCase):
 
     def tile(self, plane_share):
         from PIL import Image
+
         image = Image.new("RGB", (256, 256), (131, 229, 0))  # 997 m
         hill = int(256 * (1 - plane_share) ** 0.5)
         for x in range(hill):
@@ -270,20 +276,32 @@ class TerrainPlane(unittest.TestCase):
 
     def test_read_from_the_archive(self):
         import tempfile
+
         from pmtiles.tile import Compression, TileType, zxy_to_tileid
         from pmtiles.writer import Writer
+
         folder = tempfile.mkdtemp()
         path = os.path.join(folder, "r-terrain.pmtiles")
         z, x, y = 5, 17, 10
         with open(path, "wb") as f:
             writer = Writer(f)
             writer.write_tile(zxy_to_tileid(z, x, y), self.tile(0.9))
-            writer.finalize({"tile_type": TileType.WEBP, "tile_compression": Compression.NONE,
-                             "min_zoom": z, "max_zoom": z,
-                             "min_lon_e7": int(19.0e7), "min_lat_e7": int(49.0e7),
-                             "max_lon_e7": int(20.0e7), "max_lat_e7": int(49.5e7),
-                             "center_zoom": z, "center_lon_e7": int(19.5e7),
-                             "center_lat_e7": int(49.25e7)}, {})
+            writer.finalize(
+                {
+                    "tile_type": TileType.WEBP,
+                    "tile_compression": Compression.NONE,
+                    "min_zoom": z,
+                    "max_zoom": z,
+                    "min_lon_e7": int(19.0e7),
+                    "min_lat_e7": int(49.0e7),
+                    "max_lon_e7": int(20.0e7),
+                    "max_lat_e7": int(49.5e7),
+                    "center_zoom": z,
+                    "center_lon_e7": int(19.5e7),
+                    "center_lat_e7": int(49.25e7),
+                },
+                {},
+            )
         self.assertEqual(self.p.plane(path), 997)
         self.assertIsNone(self.p.plane(os.path.join(folder, "none.pmtiles")))
 

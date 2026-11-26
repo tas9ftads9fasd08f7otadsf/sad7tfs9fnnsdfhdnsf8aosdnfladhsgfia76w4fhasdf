@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """A small `RTIL` archive for the app's reader tests – the network is hand-written, not from a PBF."""
+
 import argparse
 import json
 import math
@@ -7,10 +8,10 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import format as fmt                                              # noqa: E402
-import order                                                      # noqa: E402
-import tags as tags_mod                                           # noqa: E402
-import tiles                                                      # noqa: E402
+import format as fmt  # noqa: E402
+import order  # noqa: E402
+import tags as tags_mod  # noqa: E402
+import tiles  # noqa: E402
 
 E7 = 10_000_000
 STEP_M = fmt.STEP_DM / 10
@@ -48,15 +49,21 @@ class Net:
     def edge(self, a, b, tags, direction=fmt.D_FORWARD | fmt.D_BACKWARD, points=()):
         # the geometry is only the shape between nodes, as `network.py` writes it
         shape = [(e7(lat), e7(lon)) for lon, lat in points]
-        self.edges.append({"from": a, "to": b, "tags": tags, "direction": direction,
-                           "length_cm": _length_cm([self.nodes[a], *shape,
-                                                    self.nodes[b]]),
-                           "geom": shape})
+        self.edges.append(
+            {
+                "from": a,
+                "to": b,
+                "tags": tags,
+                "direction": direction,
+                "length_cm": _length_cm([self.nodes[a], *shape, self.nodes[b]]),
+                "geom": shape,
+            }
+        )
 
     def restriction(self, kind, exceptions, chain):
-        self.restrictions.append({"kind": fmt.RESTRICTION_KINDS.index(kind),
-                                  "exceptions": exceptions, "edges": chain,
-                                  "via": chain[0][1]})
+        self.restrictions.append(
+            {"kind": fmt.RESTRICTION_KINDS.index(kind), "exceptions": exceptions, "edges": chain, "via": chain[0][1]}
+        )
 
 
 def _length_cm(geom):
@@ -82,22 +89,15 @@ def base_network():
     b2 = s.node(2_000_002, 17.80, 48.60)
     b3 = s.node(2_000_003, 17.75, 48.65)
 
-    s.edge(n1, n2, {"highway": "residential", "name": "Hlavná",
-                    "surface": "asphalt"})
-    s.edge(n2, n3, {"highway": "motorway", "oneway": "yes", "ref": "D1",
-                    "maxspeed": "130"}, direction=fmt.D_FORWARD)
-    s.edge(n2, n4, {"highway": "footway", "foot": "yes"},
-           points=[(17.07, 48.61), (17.09, 48.605)])
+    s.edge(n1, n2, {"highway": "residential", "name": "Hlavná", "surface": "asphalt"})
+    s.edge(n2, n3, {"highway": "motorway", "oneway": "yes", "ref": "D1", "maxspeed": "130"}, direction=fmt.D_FORWARD)
+    s.edge(n2, n4, {"highway": "footway", "foot": "yes"}, points=[(17.07, 48.61), (17.09, 48.605)])
     # across the tile border: an edge sits in its first node's tile
-    s.edge(n4, b1, {"highway": "primary", "name": "Cesta cez hranicu",
-                    "ref": "I/61"})
-    s.edge(b1, b2, {"highway": "primary", "name": "Cesta cez hranicu",
-                    "ref": "I/61"})
-    s.edge(b1, b3, {"highway": "track", "surface": "gravel",
-                    "maxweight": "3"}, direction=fmt.D_BACKWARD)
+    s.edge(n4, b1, {"highway": "primary", "name": "Cesta cez hranicu", "ref": "I/61"})
+    s.edge(b1, b2, {"highway": "primary", "name": "Cesta cez hranicu", "ref": "I/61"})
+    s.edge(b1, b3, {"highway": "track", "surface": "gravel", "maxweight": "3"}, direction=fmt.D_BACKWARD)
 
-    s.restriction("no_left_turn", 1 << fmt.EXCEPTIONS.index("bicycle"),
-                  [(n1, n2), (n2, n3)])
+    s.restriction("no_left_turn", 1 << fmt.EXCEPTIONS.index("bicycle"), [(n1, n2), (n2, n3)])
     s.restriction("only_straight_on", 0, [(n1, n2), (n2, n4), (n4, b1)])
     return s
 
@@ -109,12 +109,10 @@ def dense(s, n=SIDE):
     for i in range(n):
         for j in range(n):
             osm += 1
-            grid[i, j] = s.node(osm, CENTRE[0] + (i - n / 2) * SPACING,
-                                CENTRE[1] + (j - n / 2) * SPACING)
+            grid[i, j] = s.node(osm, CENTRE[0] + (i - n / 2) * SPACING, CENTRE[1] + (j - n / 2) * SPACING)
     for i in range(n):
         for j in range(n):
-            tags = {"highway": "residential", "name": f"Ulica {i}-{j}",
-                    "surface": "paving_stones"}
+            tags = {"highway": "residential", "name": f"Ulica {i}-{j}", "surface": "paving_stones"}
             if i + 1 < n:
                 s.edge(grid[i, j], grid[i + 1, j], dict(tags))
             if j + 1 < n:
@@ -127,8 +125,7 @@ def roads():
     s = Net()
     c = [s.node(4_000_000 + i, 18.00 + i * 0.10, 48.50) for i in range(6)]
     for a, b in zip(c, c[1:]):
-        s.edge(a, b, {"highway": "primary", "ref": "I/65",
-                      "name": "Hlavný ťah"})
+        s.edge(a, b, {"highway": "primary", "ref": "I/65", "name": "Hlavný ťah"})
     # detours are longer, but search takes them until their class is cut
     for i in range(5):
         d = s.node(4_000_100 + i, 18.05 + i * 0.10, 48.52)
@@ -154,13 +151,10 @@ def _passage(s, osm, lat, length):
 def hills():
     """A network with heights: a road from a valley over a ridge and down again."""
     s = Net()
-    ridge = ((19.00, 420), (19.05, 660), (19.10, 980), (19.15, 540),
-             (19.20, 300))
-    u = [s.node(5_000_000 + i, lon, 49.00, height)
-         for i, (lon, height) in enumerate(ridge)]
+    ridge = ((19.00, 420), (19.05, 660), (19.10, 980), (19.15, 540), (19.20, 300))
+    u = [s.node(5_000_000 + i, lon, 49.00, height) for i, (lon, height) in enumerate(ridge)]
     for a, b in zip(u, u[1:]):
-        s.edge(a, b, {"highway": "secondary", "name": "Cez hrebeň",
-                      "ref": "II/520"})
+        s.edge(a, b, {"highway": "secondary", "name": "Cez hrebeň", "ref": "II/520"})
     waves(s)
     return s
 
@@ -173,9 +167,9 @@ def waves(s, step_m=STEP_M, amplitude_m=40):
             continue
         n = fmt.sample_count(h["length_cm"] / 100, step_m)
         h["profile"] = [
-            round((a + (b - a) * i / (n - 1)) * 10
-                  + amplitude_m * 10 * math.sin(4 * math.pi * i / (n - 1)))
-            for i in range(n)]
+            round((a + (b - a) * i / (n - 1)) * 10 + amplitude_m * 10 * math.sin(4 * math.pi * i / (n - 1)))
+            for i in range(n)
+        ]
 
 
 def junctions():
@@ -192,30 +186,31 @@ def motorway(s):
     """D1 with an exit to a road into town and an entry back."""
     m = [s.node(6_000_000 + i, 20.00 + i * 0.05, 49.20) for i in range(4)]
     for a, b in zip(m, m[1:]):
-        s.edge(a, b, {"highway": "motorway", "oneway": "yes", "ref": "D1"},
-               direction=fmt.D_FORWARD)
+        s.edge(a, b, {"highway": "motorway", "oneway": "yes", "ref": "D1"}, direction=fmt.D_FORWARD)
     x0 = s.node(6_000_010, 20.07, 49.18)
     x1 = s.node(6_000_011, 20.10, 49.16)
-    s.edge(m[1], x0, {"highway": "motorway_link", "oneway": "yes"},
-           direction=fmt.D_FORWARD)
-    s.edge(x0, x1, {"highway": "primary", "ref": "I/18",
-                    "name": "Cesta do mesta"})
+    s.edge(m[1], x0, {"highway": "motorway_link", "oneway": "yes"}, direction=fmt.D_FORWARD)
+    s.edge(x0, x1, {"highway": "primary", "ref": "I/18", "name": "Cesta do mesta"})
     n0 = s.node(6_000_020, 20.02, 49.225)
     n1 = s.node(6_000_021, 20.06, 49.22)
     s.edge(n0, n1, {"highway": "primary", "name": "Prístupová"})
-    s.edge(n1, m[2], {"highway": "motorway_link", "oneway": "yes"},
-           direction=fmt.D_FORWARD)
+    s.edge(n1, m[2], {"highway": "motorway_link", "oneway": "yes"}, direction=fmt.D_FORWARD)
 
 
 def roundabout(s):
     """An anticlockwise roundabout with four arms."""
-    ring = [s.node(6_000_030 + i, lon, lat) for i, (lon, lat) in enumerate(
-        ((20.200, 49.200), (20.205, 49.197), (20.210, 49.200), (20.205, 49.203)))]
+    ring = [
+        s.node(6_000_030 + i, lon, lat)
+        for i, (lon, lat) in enumerate(((20.200, 49.200), (20.205, 49.197), (20.210, 49.200), (20.205, 49.203)))
+    ]
     for a, b in zip(ring, ring[1:] + ring[:1]):
-        s.edge(a, b, {"highway": "tertiary", "junction": "roundabout",
-                      "oneway": "yes"}, direction=fmt.D_FORWARD)
-    arms = ((20.190, 49.200, "Západná"), (20.205, 49.190, "Južná"),
-            (20.220, 49.200, "Východná"), (20.205, 49.210, "Severná"))
+        s.edge(a, b, {"highway": "tertiary", "junction": "roundabout", "oneway": "yes"}, direction=fmt.D_FORWARD)
+    arms = (
+        (20.190, 49.200, "Západná"),
+        (20.205, 49.190, "Južná"),
+        (20.220, 49.200, "Východná"),
+        (20.205, 49.210, "Severná"),
+    )
     for i, (lon, lat, name) in enumerate(arms):
         end = s.node(6_000_034 + i, lon, lat)
         s.edge(end, ring[i], {"highway": "tertiary", "name": name})
@@ -266,8 +261,7 @@ def cutout(s, west):
     island = {u for h in out.edges for u in (h["from"], h["to"])}
     out.nodes = {k: v for k, v in s.nodes.items() if k in island}
     out.heights = {k: v for k, v in s.heights.items() if k in island}
-    out.restrictions = [z for z in s.restrictions
-                        if all(u in island for pair in z["edges"] for u in pair)]
+    out.restrictions = [z for z in s.restrictions if all(u in island for pair in z["edges"] for u in pair)]
     return out
 
 
@@ -306,24 +300,35 @@ class Order:
 
 
 def write(path, s, dictionary, key, order):
-    from pmtiles.tile import (Compression, TileType,                # noqa: PLC0415
-                              zxy_to_tileid)
-    from pmtiles.writer import Writer                               # noqa: PLC0415
+    from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
+    from pmtiles.writer import Writer  # noqa: PLC0415
 
     bodies = tiles.split(s, dictionary, "SK", order, budget=BUDGET)
     zoom_max = max(z for z, _, _ in bodies)
     graph = {
-        "scope": "region", "key": key, "name": key, "format": "rtil",
-        "format_version": fmt.VERSION, "dictionary": f"{dictionary.id:08x}",
-        "dictionary_version": dictionary.version, "order": f"{order.id:08x}",
-        "country": "SK", "zoom": tiles.ZOOM, "zoom_max": zoom_max,
+        "scope": "region",
+        "key": key,
+        "name": key,
+        "format": "rtil",
+        "format_version": fmt.VERSION,
+        "dictionary": f"{dictionary.id:08x}",
+        "dictionary_version": dictionary.version,
+        "order": f"{order.id:08x}",
+        "country": "SK",
+        "zoom": tiles.ZOOM,
+        "zoom_max": zoom_max,
         "split": sum(1 for z, _, _ in bodies if z > tiles.ZOOM),
-        "tiles": len(bodies), "nodes": len(s.nodes), "edges": len(s.edges),
-        "restrictions": len(s.restrictions), "height": bool(s.heights),
+        "tiles": len(bodies),
+        "nodes": len(s.nodes),
+        "edges": len(s.edges),
+        "restrictions": len(s.restrictions),
+        "height": bool(s.heights),
         "profile": any(h.get("profile") for h in s.edges),
         "profile_step_m": STEP_M,
         "multimodal": False,
-        "built_at": "2026-09-13T00:00:00Z", "run": "", "run_id": "",
+        "built_at": "2026-09-13T00:00:00Z",
+        "run": "",
+        "run_id": "",
     }
     os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
     with open(path, "wb") as f:
@@ -335,16 +340,27 @@ def write(path, s, dictionary, key, order):
         e = max(tiles.window(*z)[2] for z in bodies)
         n = max(tiles.window(*z)[3] for z in bodies)
         wr.finalize(
-            {"tile_type": TileType.UNKNOWN, "tile_compression": Compression.GZIP,
-             "min_zoom": tiles.ZOOM, "max_zoom": zoom_max,
-             "min_lon_e7": w, "min_lat_e7": j, "max_lon_e7": e, "max_lat_e7": n,
-             "center_zoom": tiles.ZOOM, "center_lon_e7": (w + e) // 2,
-             "center_lat_e7": (j + n) // 2},
-            {"name": f"{key}-routing", "format": "rtil",
-             "description": "Routing network with tags – the phone computes the cost",
-             "graph": graph})
-    print(f"{path}: {len(bodies)} tiles (z{tiles.ZOOM}–z{zoom_max}), "
-          f"{os.path.getsize(path)} B, {len(s.edges)} edges")
+            {
+                "tile_type": TileType.UNKNOWN,
+                "tile_compression": Compression.GZIP,
+                "min_zoom": tiles.ZOOM,
+                "max_zoom": zoom_max,
+                "min_lon_e7": w,
+                "min_lat_e7": j,
+                "max_lon_e7": e,
+                "max_lat_e7": n,
+                "center_zoom": tiles.ZOOM,
+                "center_lon_e7": (w + e) // 2,
+                "center_lat_e7": (j + n) // 2,
+            },
+            {
+                "name": f"{key}-routing",
+                "format": "rtil",
+                "description": "Routing network with tags – the phone computes the cost",
+                "graph": graph,
+            },
+        )
+    print(f"{path}: {len(bodies)} tiles (z{tiles.ZOOM}–z{zoom_max}), {os.path.getsize(path)} B, {len(s.edges)} edges")
 
 
 def main():
@@ -359,28 +375,41 @@ def main():
     junction_net = junctions()
     # the order covers the whole area, or two cutouts rank a node differently
     area = Net()
-    area.nodes = {**whole.nodes, **all_roads.nodes, **hill_net.nodes,
-                  **junction_net.nodes}
+    area.nodes = {**whole.nodes, **all_roads.nodes, **hill_net.nodes, **junction_net.nodes}
     node_order = Order(area)
-    write(os.path.join(args.out, "routing-fixture.pmtiles"), whole, dictionary,
-          "fixture", node_order)
-    write(os.path.join(args.out, "routing-fixture-west.pmtiles"),
-          cutout(base_network(), True), dictionary, "fixture-west", node_order)
-    write(os.path.join(args.out, "routing-fixture-east.pmtiles"),
-          cutout(base_network(), False), dictionary, "fixture-east", node_order)
-    write(os.path.join(args.out, "routing-fixture-roads.pmtiles"), all_roads,
-          dictionary, "fixture-roads", node_order)
-    write(os.path.join(args.out, "routing-fixture-hills.pmtiles"), hill_net,
-          dictionary, "fixture-hills", node_order)
-    write(os.path.join(args.out, "routing-fixture-junctions.pmtiles"),
-          junction_net, dictionary, "fixture-junctions", node_order)
+    write(os.path.join(args.out, "routing-fixture.pmtiles"), whole, dictionary, "fixture", node_order)
+    write(
+        os.path.join(args.out, "routing-fixture-west.pmtiles"),
+        cutout(base_network(), True),
+        dictionary,
+        "fixture-west",
+        node_order,
+    )
+    write(
+        os.path.join(args.out, "routing-fixture-east.pmtiles"),
+        cutout(base_network(), False),
+        dictionary,
+        "fixture-east",
+        node_order,
+    )
+    write(os.path.join(args.out, "routing-fixture-roads.pmtiles"), all_roads, dictionary, "fixture-roads", node_order)
+    write(os.path.join(args.out, "routing-fixture-hills.pmtiles"), hill_net, dictionary, "fixture-hills", node_order)
+    write(
+        os.path.join(args.out, "routing-fixture-junctions.pmtiles"),
+        junction_net,
+        dictionary,
+        "fixture-junctions",
+        node_order,
+    )
     # not part of the run, so beside it: the lint doesn't run over it
-    write(os.path.join(args.out, "other-order", "routing-fixture-east.pmtiles"),
-          cutout(base_network(), False), dictionary, "fixture-east",
-          Order(area, ORDER_OTHER, shift=1))
-    print(json.dumps({"dictionary": f"{dictionary.id:08x}",
-                      "order": f"{ORDER_ID:08x}",
-                      "other": f"{ORDER_OTHER:08x}"}))
+    write(
+        os.path.join(args.out, "other-order", "routing-fixture-east.pmtiles"),
+        cutout(base_network(), False),
+        dictionary,
+        "fixture-east",
+        Order(area, ORDER_OTHER, shift=1),
+    )
+    print(json.dumps({"dictionary": f"{dictionary.id:08x}", "order": f"{ORDER_ID:08x}", "other": f"{ORDER_OTHER:08x}"}))
     return 0
 
 

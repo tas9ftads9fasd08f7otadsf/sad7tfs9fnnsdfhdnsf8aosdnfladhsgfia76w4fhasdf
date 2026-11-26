@@ -10,6 +10,7 @@ Usage:
     python3 workers/dem/tiles.py --out tiles/ Slovakia_20m.tif [more.tif …]
     python3 workers/dem/tiles.py --out tiles/ --window=21,49,22,50 nation.tif
 """
+
 import argparse
 import json
 import math
@@ -23,14 +24,13 @@ _WORKERS = os.path.dirname(_HERE)
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
 from cell import M_PER_DEG_LAT, resampling  # noqa: E402
 
-
 # otherwise `gdalinfo -stats` leaves statistics in `.aux.xml`
 NO_PAM = {**os.environ, "GDAL_PAM_ENABLED": "NO"}
 
 # an empty tile carries which check called it empty; a new version makes
 # `dem/coverage.py` drop the old ones
-EMPTY_PX = 60                  # an empty tile's side in pixels
-EMPTY_TAG = "EMPTY_CHECK"      # the GDAL metadata item's name
+EMPTY_PX = 60  # an empty tile's side in pixels
+EMPTY_TAG = "EMPTY_CHECK"  # the GDAL metadata item's name
 # v1 = sampled, v2 = an exact pass; the value is stamped into stored tiles, keep it
 EMPTY_CHECK = "v2-presne"
 # no empty tile is bigger (60×60 px is a few kB) – `dem/trust.py` opens only smaller
@@ -41,9 +41,7 @@ def gdalinfo(path, stats=""):
     """`stats`: empty = none, `approx` = sampled, `exact` = exact."""
     flag = {"": [], "approx": ["-approx_stats"], "exact": ["-stats"]}[stats]
     cmd = ["gdalinfo", "-json"] + flag + [path]
-    out = subprocess.run(
-        cmd, capture_output=True, text=True, check=True, env=NO_PAM
-    ).stdout
+    out = subprocess.run(cmd, capture_output=True, text=True, check=True, env=NO_PAM).stdout
     return json.loads(out)
 
 
@@ -69,8 +67,10 @@ def has_elevations(path):
         return rng
     rng = elevation_range(path, exact=True)
     if rng is not None:
-        print(f"  (sampling found no heights in {os.path.basename(path)}, "
-              f"the exact pass did: {rng[0]:.1f} … {rng[1]:.1f} m)")
+        print(
+            f"  (sampling found no heights in {os.path.basename(path)}, "
+            f"the exact pass did: {rng[0]:.1f} … {rng[1]:.1f} m)"
+        )
     return rng
 
 
@@ -80,12 +80,14 @@ def wgs84_bounds(info):
     if not ext or not ext.get("coordinates"):
         raise SystemExit("The raster has no knowable WGS84 extent (no projection?).")
     pts = []
+
     def walk(node):
         if isinstance(node[0], (int, float)):
             pts.append(node)
         else:
             for n in node:
                 walk(n)
+
     walk(ext["coordinates"])
     xs = [p[0] for p in pts]
     ys = [p[1] for p in pts]
@@ -127,10 +129,8 @@ def plan_tiles(bounds, window, dlon, dlat):
     lon_range = range(math.floor(w), math.ceil(e))
     if window is not None:
         # the union of window and raster: empty degrees stored, overhangs reported
-        lat_range = range(min(lat_range.start, math.floor(window[1])),
-                          max(lat_range.stop, math.ceil(window[3])))
-        lon_range = range(min(lon_range.start, math.floor(window[0])),
-                          max(lon_range.stop, math.ceil(window[2])))
+        lat_range = range(min(lat_range.start, math.floor(window[1])), max(lat_range.stop, math.ceil(window[3])))
+        lon_range = range(min(lon_range.start, math.floor(window[0])), max(lon_range.stop, math.ceil(window[2])))
 
     write, partial = [], []
     for lat in lat_range:
@@ -145,8 +145,12 @@ def plan_tiles(bounds, window, dlon, dlat):
                     write.append((lon, lat, name, True))
                 continue
             # a pixel of slack: the window widens to whole degrees
-            if (lon < window[0] - dlon or lon + 1 > window[2] + dlon
-                    or lat < window[1] - dlat or lat + 1 > window[3] + dlat):
+            if (
+                lon < window[0] - dlon
+                or lon + 1 > window[2] + dlon
+                or lat < window[1] - dlat
+                or lat + 1 > window[3] + dlat
+            ):
                 if not thin:
                     partial.append(name)
                 continue
@@ -157,25 +161,54 @@ def plan_tiles(bounds, window, dlon, dlat):
 def empty_tile(dst, lon, lat, dtype, nodata, px=EMPTY_PX):
     """An empty tile for a whole degree – "we looked and nothing is here". True when made."""
     # burnt with nodata: newer GDAL fills a sourceless VRT with zeros, and zero is sea
-    nd = nodata if nodata is not None else (
-        -9999.0 if dtype.startswith("Float") else -32768)
+    nd = nodata if nodata is not None else (-9999.0 if dtype.startswith("Float") else -32768)
     try:
         subprocess.run(
-            ["gdal_create", "-q", "-of", "GTiff", "-outsize", str(px), str(px),
-             "-bands", "1", "-ot", dtype, "-burn", repr(nd), "-a_nodata", repr(nd),
-             "-a_srs", "EPSG:4326", "-a_ullr", str(lon), str(lat + 1), str(lon + 1), str(lat),
-             "-mo", f"{EMPTY_TAG}={EMPTY_CHECK}",
-             "-co", "COMPRESS=DEFLATE", dst],
-            check=True, env=NO_PAM)
+            [
+                "gdal_create",
+                "-q",
+                "-of",
+                "GTiff",
+                "-outsize",
+                str(px),
+                str(px),
+                "-bands",
+                "1",
+                "-ot",
+                dtype,
+                "-burn",
+                repr(nd),
+                "-a_nodata",
+                repr(nd),
+                "-a_srs",
+                "EPSG:4326",
+                "-a_ullr",
+                str(lon),
+                str(lat + 1),
+                str(lon + 1),
+                str(lat),
+                "-mo",
+                f"{EMPTY_TAG}={EMPTY_CHECK}",
+                "-co",
+                "COMPRESS=DEFLATE",
+                dst,
+            ],
+            check=True,
+            env=NO_PAM,
+        )
     except subprocess.CalledProcessError as exc:
-        print(f"::warning::Empty tile {os.path.basename(dst)} couldn't be made "
-              f"({exc}) – the refill will ask for that degree again.")
+        print(
+            f"::warning::Empty tile {os.path.basename(dst)} couldn't be made "
+            f"({exc}) – the refill will ask for that degree again."
+        )
         return False
     if elevation_range(dst, exact=True) is not None:
         os.remove(dst)
-        print(f"::warning::Empty tile {os.path.basename(dst)} didn't come out "
-              f"empty (GDAL put values instead of nodata) – not storing it, zero "
-              f"is sea on the map.")
+        print(
+            f"::warning::Empty tile {os.path.basename(dst)} didn't come out "
+            f"empty (GDAL put values instead of nodata) – not storing it, zero "
+            f"is sea on the map."
+        )
         return False
     return True
 
@@ -185,20 +218,23 @@ def main():
     ap.add_argument("src", nargs="+", help="input rasters")
     ap.add_argument("--out", required=True)
     # empty = by the pixel/cell ratio; a fixed `bilinear` striped the hillshading
-    ap.add_argument("--resampling", default="",
-                    help="a fixed resampling; empty = by the pixel/cell ratio "
-                         "(workers/lib/cell.py)")
-    ap.add_argument("--window", default="",
-                    help="W,S,E,N – the window the caller REALLY read. A degree "
-                         "not wholly in it isn't stored; a degree without "
-                         "heights is stored empty (see the header).")
+    ap.add_argument(
+        "--resampling", default="", help="a fixed resampling; empty = by the pixel/cell ratio (workers/lib/cell.py)"
+    )
+    ap.add_argument(
+        "--window",
+        default="",
+        help="W,S,E,N – the window the caller REALLY read. A degree "
+        "not wholly in it isn't stored; a degree without "
+        "heights is stored empty (see the header).",
+    )
     args = ap.parse_args()
 
     window = None
     if args.window.strip():
         vals = [float(v) for v in args.window.split(",")]
         if len(vals) != 4:
-            raise SystemExit(f"::error::--window wants W,S,E,N: \"{args.window}\"")
+            raise SystemExit(f'::error::--window wants W,S,E,N: "{args.window}"')
         window = tuple(vals)
 
     temps = []
@@ -207,8 +243,7 @@ def main():
         # one VRT over all inputs – handles overlaps too
         src = os.path.join(args.out or ".", "_dem-tiles.vrt")
         os.makedirs(args.out, exist_ok=True)
-        subprocess.run(["gdalbuildvrt", "-q", "-resolution", "highest", src, *args.src],
-                       check=True)
+        subprocess.run(["gdalbuildvrt", "-q", "-resolution", "highest", src, *args.src], check=True)
         temps.append(src)
         print(f"Joined into a VRT: {len(args.src)} rasters")
 
@@ -222,8 +257,19 @@ def main():
         os.makedirs(args.out, exist_ok=True)
         unscaled = os.path.join(args.out, "_dem-tiles-unscaled.tif")
         subprocess.run(
-            ["gdal_translate", "-q", "-unscale", "-ot", "Float32",
-             "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=3", src, unscaled],
+            [
+                "gdal_translate",
+                "-q",
+                "-unscale",
+                "-ot",
+                "Float32",
+                "-co",
+                "COMPRESS=DEFLATE",
+                "-co",
+                "PREDICTOR=3",
+                src,
+                unscaled,
+            ],
             check=True,
         )
         temps.append(unscaled)
@@ -249,17 +295,23 @@ def main():
         lo, hi = rng
         print(f"Heights in the source: {lo:.1f} … {hi:.1f} m")
         if lo < -500 or hi > 9000:
-            print("::warning::The height range doesn't look like metres above "
-                  "sea level – check the source's units (decimetres? feet?).")
+            print(
+                "::warning::The height range doesn't look like metres above "
+                "sea level – check the source's units (decimetres? feet?)."
+            )
 
     # `near` on the same grid is a pure sub-pixel shift; a metric source is 1:1, `lib/cell.py` picks
     cell_m = dlat * M_PER_DEG_LAT
     how = args.resampling or resampling(cell_m, cell_m)
     if not same_grid:
-        print(f"Resampling to WGS84: `{how}`"
-              + (" (fixed)" if args.resampling else
-                 f" – the {cell_m:.1f} m cell stays, the projection changes, "
-                 f"so it must filter the same everywhere"))
+        print(
+            f"Resampling to WGS84: `{how}`"
+            + (
+                " (fixed)"
+                if args.resampling
+                else f" – the {cell_m:.1f} m cell stays, the projection changes, so it must filter the same everywhere"
+            )
+        )
 
     os.makedirs(args.out, exist_ok=True)
     made = []
@@ -274,12 +326,28 @@ def main():
                 print(f"  ○ {name} (in the window, but the model doesn't reach it)")
             continue
         cmd = [
-            "gdalwarp", "-q", "-overwrite", "-t_srs", "EPSG:4326",
-            "-te", str(lon), str(lat), str(lon + 1), str(lat + 1),
-            "-tr", repr(dlon), repr(dlat),
-            "-r", "near" if same_grid else how,
-            "-co", "COMPRESS=DEFLATE", "-co", f"PREDICTOR={predictor}",
-            "-co", "TILED=YES", "-multi",
+            "gdalwarp",
+            "-q",
+            "-overwrite",
+            "-t_srs",
+            "EPSG:4326",
+            "-te",
+            str(lon),
+            str(lat),
+            str(lon + 1),
+            str(lat + 1),
+            "-tr",
+            repr(dlon),
+            repr(dlat),
+            "-r",
+            "near" if same_grid else how,
+            "-co",
+            "COMPRESS=DEFLATE",
+            "-co",
+            f"PREDICTOR={predictor}",
+            "-co",
+            "TILED=YES",
+            "-multi",
         ]
         if nodata is not None:
             cmd += ["-dstnodata", repr(nodata)]
@@ -293,12 +361,10 @@ def main():
             # with a window an empty tile is an answer; rewritten coarse to take no room
             os.remove(dst)
             # how much of the degree the raster reached – half-reached and empty is suspicious
-            over = (max(0.0, min(lon + 1, e) - max(lon, w))
-                    * max(0.0, min(lat + 1, n) - max(lat, s))) * 100.0
+            over = (max(0.0, min(lon + 1, e) - max(lon, w)) * max(0.0, min(lat + 1, n) - max(lat, s))) * 100.0
             if empty_tile(dst, lon, lat, dtype, nodata):
                 empty.append(name)
-                print(f"  ○ {name} (read whole, no heights in it; "
-                      f"the raster reached {over:.0f} % of the degree)")
+                print(f"  ○ {name} (read whole, no heights in it; the raster reached {over:.0f} % of the degree)")
             continue
         made.append(name)
         print(f"  ✓ {name}")
@@ -308,15 +374,18 @@ def main():
             os.remove(t)
     if partial:
         # no warning, the right result – but logged, or it is searched for in the store
-        print(f"Outside the window, not stored: {' '.join(sorted(set(partial)))} – "
-              f"window {args.window} didn't read those degrees whole and a "
-              f"tile's name promises a whole degree.")
+        print(
+            f"Outside the window, not stored: {' '.join(sorted(set(partial)))} – "
+            f"window {args.window} didn't read those degrees whole and a "
+            f"tile's name promises a whole degree."
+        )
     if not made and not empty:
         raise SystemExit("The raster doesn't cover a single whole 1° tile.")
 
-    print(f"{len(made)} tiles: {' '.join(sorted(set(made)))}"
-          + (f" (+ {len(empty)} empty: {' '.join(sorted(set(empty)))})"
-             if empty else ""))
+    print(
+        f"{len(made)} tiles: {' '.join(sorted(set(made)))}"
+        + (f" (+ {len(empty)} empty: {' '.join(sorted(set(empty)))})" if empty else "")
+    )
 
 
 if __name__ == "__main__":

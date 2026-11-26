@@ -8,6 +8,7 @@ Usage:
         --from-pbf=data/region.osm.pbf --out=data/region.geojson \
         --poly-out=data/region.poly --summary=$GITHUB_STEP_SUMMARY
 """
+
 import argparse
 import json
 import math
@@ -22,14 +23,13 @@ _DATA = os.path.join(os.path.dirname(_WORKERS), "config")
 
 sys.path.insert(0, _HERE)
 sys.path.insert(0, os.path.join(_WORKERS, "lib"))
-import map_settings  # noqa: E402
-from area import BORDER_BUFFER_M  # noqa: E402
 import boundary  # noqa: E402
+import map_settings  # noqa: E402
 import seam  # noqa: E402
+from area import BORDER_BUFFER_M  # noqa: E402
 
 # polygons sit beside the extracts, in another folder and without `-latest`
-POLY_BASE = os.environ.get("OSMFR_POLYGONS",
-                           "https://download.openstreetmap.fr/polygons")
+POLY_BASE = os.environ.get("OSMFR_POLYGONS", "https://download.openstreetmap.fr/polygons")
 
 
 def regions(path=None):
@@ -140,8 +140,7 @@ def exact_rings(reg, borders, key=""):
     """The region's rings from the assembled PBF borders, or `None`."""
     if not borders:
         return None
-    return boundary.pick(borders, osm_name(reg, key),
-                         int(reg.get("admin_level") or 4))
+    return boundary.pick(borders, osm_name(reg, key), int(reg.get("admin_level") or 4))
 
 
 def neighbour_rings(regs, key, borders=None):
@@ -150,7 +149,7 @@ def neighbour_rings(regs, key, borders=None):
     Returns `({key: rings}, parent_rings, [missing keys])`.
     """
     reg = regs.get(key) or {}
-    parent = ((reg.get("osmfr") or {}).get("parent") or "")
+    parent = (reg.get("osmfr") or {}).get("parent") or ""
     if not parent:
         return {}, None, []
     w, s, e, n = reg["bbox"]
@@ -162,16 +161,14 @@ def neighbour_rings(regs, key, borders=None):
             continue
         bw, bs, be, bn = r.get("bbox") or (0, 0, 0, 0)
         if bw > e or be < w or bs > n or bn < s:
-            continue            # bboxes don't even touch
-        rings = (exact_rings(r, borders, k) if borders
-                 else download_rings(r))
+            continue  # bboxes don't even touch
+        rings = exact_rings(r, borders, k) if borders else download_rings(r)
         if rings:
             neighbours[k] = rings
         else:
             missing.append(k)
     parent_reg = regs.get(parent) or {}
-    parent_rings = (exact_rings(parent_reg, borders, parent) if borders
-                    else download_rings(parent_reg))
+    parent_rings = exact_rings(parent_reg, borders, parent) if borders else download_rings(parent_reg)
     return neighbours, parent_rings, missing
 
 
@@ -192,27 +189,30 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--region", required=True, help="key of `regions` in config/map-settings.json")
     ap.add_argument("--regions", default="", help="path to map-settings.json")
-    ap.add_argument("--from-pbf", default="",
-                    help="OSM PBF to read the EXACT border from "
-                         "(`boundary=administrative` relation); without it "
-                         "osm.fr's fallback `.poly` is used")
+    ap.add_argument(
+        "--from-pbf",
+        default="",
+        help="OSM PBF to read the EXACT border from "
+        "(`boundary=administrative` relation); without it "
+        "osm.fr's fallback `.poly` is used",
+    )
     ap.add_argument("--out", default="data/region.geojson")
-    ap.add_argument("--poly-out", default="",
-                    help="where to save the .poly (for Planetiler --polygon "
-                         "and `osmium extract --polygon`)")
-    ap.add_argument("--state-out", default="",
-                    help="where to save the state's outline: terrain beyond it "
-                         "comes from another model")
+    ap.add_argument(
+        "--poly-out",
+        default="",
+        help="where to save the .poly (for Planetiler --polygon and `osmium extract --polygon`)",
+    )
+    ap.add_argument(
+        "--state-out", default="", help="where to save the state's outline: terrain beyond it comes from another model"
+    )
     ap.add_argument("--summary", default="", help="where to append the summary")
-    ap.add_argument("--no-seam", action="store_true",
-                    help="don't measure the seam with neighbouring regions")
+    ap.add_argument("--no-seam", action="store_true", help="don't measure the seam with neighbouring regions")
     args = ap.parse_args()
 
     regs = regions(args.regions or None)
     reg = regs.get(args.region)
     if not reg:
-        print(f"::error::Unknown region '{args.region}'. Known: "
-              f"{', '.join(sorted(regs))}", file=sys.stderr)
+        print(f"::error::Unknown region '{args.region}'. Known: {', '.join(sorted(regs))}", file=sys.stderr)
         return 1
     bbox = tuple(reg["bbox"])
 
@@ -223,29 +223,34 @@ def main():
         raw_rings = exact_rings(reg, borders, args.region)
         if raw_rings:
             # a broken OSM relation must not stick out beyond the state border
-            parent = ((reg.get("osmfr") or {}).get("parent") or "")
-            country = (exact_rings(regs[parent], borders, parent)
-                       if parent and parent in regs else None)
+            parent = (reg.get("osmfr") or {}).get("parent") or ""
+            country = exact_rings(regs[parent], borders, parent) if parent and parent in regs else None
             # a region without a parent is the country itself
             has_state = bool(parent)
             before = sum(ring_area_km2(r) for r, hole in raw_rings if not hole)
             rings, state = boundary.prepare(raw_rings, country)
             after = sum(ring_area_km2(r) for r, hole in rings if not hole)
             exact = True
-            source = (f"OSM relation `{osm_name(reg, args.region)}` "
-                      f"(admin_level={reg.get('admin_level') or 4}) "
-                      f"from {args.from_pbf}")
+            source = (
+                f"OSM relation `{osm_name(reg, args.region)}` "
+                f"(admin_level={reg.get('admin_level') or 4}) "
+                f"from {args.from_pbf}"
+            )
             if state.get("clipped") and before - after > 1.0:
-                print(f"::warning::The region relation reached {before - after:,.0f} km² "
-                      f"beyond the state border; clipped by the state.")
+                print(
+                    f"::warning::The region relation reached {before - after:,.0f} km² "
+                    f"beyond the state border; clipped by the state."
+                )
         else:
-            print(f"::warning::{args.from_pbf} has no border "
-                  f"`{osm_name(reg, args.region)}` "
-                  f"(admin_level={reg.get('admin_level') or 4}), so cutting "
-                  f"uses osm.fr's FALLBACK `.poly` – rounded to ~550 m and "
-                  f"widened around the border, so the map reaches into the "
-                  f"neighbouring region and beyond the state border. Check "
-                  f"`osm_name` and `admin_level` in `regions` of config/map-settings.json.")
+            print(
+                f"::warning::{args.from_pbf} has no border "
+                f"`{osm_name(reg, args.region)}` "
+                f"(admin_level={reg.get('admin_level') or 4}), so cutting "
+                f"uses osm.fr's FALLBACK `.poly` – rounded to ~550 m and "
+                f"widened around the border, so the map reaches into the "
+                f"neighbouring region and beyond the state border. Check "
+                f"`osm_name` and `admin_level` in `regions` of config/map-settings.json."
+            )
 
     raw = ""
     url = poly_url(reg)
@@ -256,9 +261,11 @@ def main():
             rings = parse_poly(raw)
             source = f"{url} (fallback – not the region border)"
         except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-            print(f"::warning::The region polygon couldn't be downloaded "
-                  f"({url}: {exc}) – DEM layers are computed on the WHOLE BBOX "
-                  f"of the region, beyond it too. Try the run again.")
+            print(
+                f"::warning::The region polygon couldn't be downloaded "
+                f"({url}: {exc}) – DEM layers are computed on the WHOLE BBOX "
+                f"of the region, beyond it too. Try the run again."
+            )
     # a rectangle would only pretend to cut
     has_border = exact or bool(raw)
     if not rings:
@@ -266,8 +273,7 @@ def main():
 
     data = geojson(rings)
     if not data:
-        print("::error::The region polygon has no outer ring.",
-              file=sys.stderr)
+        print("::error::The region polygon has no outer ring.", file=sys.stderr)
         return 1
     os.makedirs(os.path.dirname(args.out) or ".", exist_ok=True)
     with open(args.out, "w") as f:
@@ -282,26 +288,27 @@ def main():
     seam_result = None
     if has_border and not args.no_seam:
         try:
-            neighbours, parent_rings, missing = neighbour_rings(
-                regs, args.region, borders)
+            neighbours, parent_rings, missing = neighbour_rings(regs, args.region, borders)
             if missing:
-                print(f"::warning::The borders of neighbours {', '.join(sorted(missing))} "
-                      f"couldn't be obtained from the same source as ours, "
-                      f"so the seam with them was NOT measured – the numbers below "
-                      f"cover only the rest. For a region it means their relation "
-                      f"isn't in the PBF; check `osm_name` and `admin_level` "
-                      f"in `regions` of config/map-settings.json and that the parent cut has "
-                      f"`-s smart -S types=multipolygon,boundary`.")
+                print(
+                    f"::warning::The borders of neighbours {', '.join(sorted(missing))} "
+                    f"couldn't be obtained from the same source as ours, "
+                    f"so the seam with them was NOT measured – the numbers below "
+                    f"cover only the rest. For a region it means their relation "
+                    f"isn't in the PBF; check `osm_name` and `admin_level` "
+                    f"in `regions` of config/map-settings.json and that the parent cut has "
+                    f"`-s smart -S types=multipolygon,boundary`."
+                )
             if neighbours:
-                seam_result = seam.measure_seam(rings, neighbours, parent_rings,
-                                                BORDER_BUFFER_M)
-        except Exception as exc:                        # noqa: BLE001
-            print(f"::warning::The seam with the neighbours couldn't be measured ({exc}). "
-                  f"The map is done, only whether the neighbour joins it is unknown.")
+                seam_result = seam.measure_seam(rings, neighbours, parent_rings, BORDER_BUFFER_M)
+        except Exception as exc:  # noqa: BLE001
+            print(
+                f"::warning::The seam with the neighbours couldn't be measured ({exc}). "
+                f"The map is done, only whether the neighbour joins it is unknown."
+            )
 
     pw, ps, pe, pn = ring_bbox(rings)
-    area = sum(ring_area_km2(r) for r, hole in rings if not hole) \
-        - sum(ring_area_km2(r) for r, hole in rings if hole)
+    area = sum(ring_area_km2(r) for r, hole in rings if not hole) - sum(ring_area_km2(r) for r, hole in rings if hole)
     bw, bs, be, bn = bbox
     bbox_km2 = ring_area_km2([(bw, bs), (be, bs), (be, bn), (bw, bn)])
     share = 100 * area / bbox_km2 if bbox_km2 else 0
@@ -311,38 +318,43 @@ def main():
     print(f"Region polygon: {args.out}")
     print(f"  source               {source}")
     if exact:
-        print("  clipped by state     "
-              + ("yes (region relation intersected with the state border)"
-                 if state.get("clipped") else
-                 "not needed – this region IS the country"
-                 if not has_state else
-                 "NO – the state border couldn't be used (see ::warning:: "
-                 "above)"))
-        print("  simplification       "
-              + (f"{boundary.CUT_TOLERANCE_M:g} m (for the cut's speed)"
-                 if state.get("simplified") else
-                 "NO – cutting with full geometry, the parent cut takes longer"))
+        print(
+            "  clipped by state     "
+            + (
+                "yes (region relation intersected with the state border)"
+                if state.get("clipped")
+                else "not needed – this region IS the country"
+                if not has_state
+                else "NO – the state border couldn't be used (see ::warning:: above)"
+            )
+        )
+        print(
+            "  simplification       "
+            + (
+                f"{boundary.CUT_TOLERANCE_M:g} m (for the cut's speed)"
+                if state.get("simplified")
+                else "NO – cutting with full geometry, the parent cut takes longer"
+            )
+        )
     if args.poly_out:
-        print(f"  .poly for cutting    "
-              f"{args.poly_out if has_border else 'NONE (tiles cover the whole bbox)'}")
-    print(f"  rings                {outer} (+{holes} holes), "
-          f"{sum(len(r) for r, _ in rings)} points")
+        print(f"  .poly for cutting    {args.poly_out if has_border else 'NONE (tiles cover the whole bbox)'}")
+    print(f"  rings                {outer} (+{holes} holes), {sum(len(r) for r, _ in rings)} points")
     print(f"  polygon bbox         {pw:.3f},{ps:.3f},{pe:.3f},{pn:.3f}")
     print(f"  region bbox          {bw},{bs},{be},{bn}")
-    print(f"  region area          {area:,.0f} km² of {bbox_km2:,.0f} km² "
-          f"bbox = {share:.0f} %")
-    print(f"  outside the region   {bbox_km2 - area:,.0f} km² "
-          f"({100 - share:.0f} % of bbox) no longer computed")
+    print(f"  region area          {area:,.0f} km² of {bbox_km2:,.0f} km² bbox = {share:.0f} %")
+    print(f"  outside the region   {bbox_km2 - area:,.0f} km² ({100 - share:.0f} % of bbox) no longer computed")
     if seam_result:
         for line in seam.report(seam_result, BORDER_BUFFER_M):
             print(line)
     if args.summary:
         with open(args.summary, "a") as f:
-            f.write(f"- **Cut to region**: {area:,.0f} km² of "
-                    f"{bbox_km2:,.0f} km² bbox ({share:.0f} %), "
-                    f"{outer} ring(s), border: "
-                    + ("**exact from OSM**" if exact
-                       else "osm.fr fallback `.poly` (widened!)") + "\n")
+            f.write(
+                f"- **Cut to region**: {area:,.0f} km² of "
+                f"{bbox_km2:,.0f} km² bbox ({share:.0f} %), "
+                f"{outer} ring(s), border: "
+                + ("**exact from OSM**" if exact else "osm.fr fallback `.poly` (widened!)")
+                + "\n"
+            )
             if seam_result and seam_result["points"]:
                 f.write(f"- **Seam with neighbours**: {seam.summary(seam_result)}\n")
     return 0

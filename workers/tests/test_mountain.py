@@ -19,8 +19,10 @@ outline = worker("mountain/outline.py")
 names = worker("deploy/names.py")
 catalog = worker("deploy/catalog.py")
 
-CLEAR = {k: "" for k in ("REGION_KEY", "AREA_KEY", "CUSTOM_PBF_URL", "CUSTOM_NAME",
-                         "TEST_KM2", "MAP_LAYERS", "MOUNTAIN_COUNTRY")}
+CLEAR = {
+    k: ""
+    for k in ("REGION_KEY", "AREA_KEY", "CUSTOM_PBF_URL", "CUSTOM_NAME", "TEST_KM2", "MAP_LAYERS", "MOUNTAIN_COUNTRY")
+}
 
 
 def env(**kw):
@@ -43,6 +45,7 @@ class Registry(unittest.TestCase):
 
     def test_the_form_offers_every_mountain(self):
         import yaml
+
         with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
             flow = yaml.safe_load(f)
         on = flow.get("on") or flow.get(True)
@@ -63,6 +66,7 @@ class Registry(unittest.TestCase):
     def test_all_runs_no_build_job_itself(self):
         # 479 the fan-out run must not build a range of its own
         import yaml
+
         with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
             jobs = yaml.safe_load(f)["jobs"]
         self.assertIn("inputs.mountain == 'all'", jobs["all"]["if"])
@@ -74,6 +78,7 @@ class Registry(unittest.TestCase):
     def test_the_range_build_makes_and_publishes_settlements(self):
         # 501 built from the range's PBF, clipped to it, and named to the packer
         import yaml
+
         with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
             jobs = yaml.safe_load(f)["jobs"]
         job = jobs["settlements"]
@@ -84,14 +89,14 @@ class Registry(unittest.TestCase):
         for name in ("publish", "apple-archive"):
             with self.subTest(job=name):
                 self.assertIn("settlements", jobs[name]["needs"])
-                self.assertIn("needs.settlements.outputs.enabled",
-                              jobs[name]["env"]["BUILDINGS_ENABLED"])
+                self.assertIn("needs.settlements.outputs.enabled", jobs[name]["env"]["BUILDINGS_ENABLED"])
         self.assertIn("needs.settlements.result == 'success'", jobs["publish"]["if"])
         self.assertIn("settlements", names.MOUNTAIN_PACKAGES)
 
     def test_the_range_build_makes_and_publishes_its_trails(self):
         # 504 built from the range's PBF, clipped to it, and waited for by both packers
         import yaml
+
         with open(os.path.join(ROOT, ".github", "workflows", "mountain.yml")) as f:
             jobs = yaml.safe_load(f)["jobs"]
         steps = {s["name"]: s for s in jobs["trails"]["steps"]}
@@ -133,8 +138,10 @@ class Registry(unittest.TestCase):
 class Plan(unittest.TestCase):
     def test_a_range_resolves_to_its_country_and_cut_out(self):
         got = plan.plan("vysoke_tatry")
-        self.assertEqual((got["key"], got["country"], got["area"], got["area_key"]),
-                         ("vysoke_tatry", "slovensko", "vysoke_tatry", "vysoke_tatry"))
+        self.assertEqual(
+            (got["key"], got["country"], got["area"], got["area_key"]),
+            ("vysoke_tatry", "slovensko", "vysoke_tatry", "vysoke_tatry"),
+        )
         self.assertEqual(got["name"], "Vysoké Tatry")
         self.assertEqual(got["bbox"], "19.9,49.09,20.32,49.32")
         self.assertEqual(got["bboxkey"], "19_9_49_09_20_32_49_32")
@@ -173,25 +180,32 @@ class Plan(unittest.TestCase):
         self.assertGreater(len(rings[0][0]), 100, "the parks' edge, not the box's four corners")
         lons = [x for x, _ in rings[0][0]]
         lats = [y for _, y in rings[0][0]]
-        self.assertTrue(19.9 <= min(lons) and max(lons) <= 20.32 and 49.09 <= min(lats)
-                        and max(lats) <= 49.32, "inside the box")
+        self.assertTrue(
+            19.9 <= min(lons) and max(lons) <= 20.32 and 49.09 <= min(lats) and max(lats) <= 49.32, "inside the box"
+        )
 
     def test_an_outline_has_a_key_of_its_own(self):
         got = plan.plan("vysoke_tatry")
         self.assertTrue(got["shapekey"].startswith(got["bboxkey"] + "_o"))
         self.assertEqual(plan.plan("nizke_tatry")["shapekey"], plan.plan("nizke_tatry")["bboxkey"])
-        self.assertEqual(plan.plan("vysoke_tatry", test_km2=4)["shapekey"],
-                         plan.plan("vysoke_tatry", test_km2=4)["bboxkey"], "a test square is a box")
+        self.assertEqual(
+            plan.plan("vysoke_tatry", test_km2=4)["shapekey"],
+            plan.plan("vysoke_tatry", test_km2=4)["bboxkey"],
+            "a test square is a box",
+        )
 
     def test_the_high_tatras_end_where_the_lidar_does(self):
         got = plan.plan("vysoke_tatry")
         self.assertEqual(got["countries"], "SK")
-        self.assertEqual(got["osm"].split(),
-                         ["https://download.openstreetmap.fr/extracts/europe/slovakia-latest.osm.pbf"])
+        self.assertEqual(
+            got["osm"].split(), ["https://download.openstreetmap.fr/extracts/europe/slovakia-latest.osm.pbf"]
+        )
         rings = plan.rings(plan.shape("vysoke_tatry", [19.9, 49.09, 20.32, 49.32]))
         lats_at_morskie_oko = [y for x, y in rings[0][0] if abs(x - 20.071) < 0.01]
-        self.assertTrue(lats_at_morskie_oko and max(lats_at_morskie_oko) < 49.195,
-                        "the border runs south of Morskie Oko, so the range does too")
+        self.assertTrue(
+            lats_at_morskie_oko and max(lats_at_morskie_oko) < 49.195,
+            "the border runs south of Morskie Oko, so the range does too",
+        )
 
     def test_every_range_crossing_the_border_has_an_outline(self):
         for key in ("vysoke_tatry", "zapadne_tatry", "pieniny"):
@@ -200,8 +214,10 @@ class Plan(unittest.TestCase):
 
     def test_a_range_without_extracts_takes_its_countrys(self):
         mountains = {"x": {"country": "slovensko", "area": "pieniny"}}
-        self.assertEqual(plan.plan("x", mountains=mountains)["osm"],
-                         "https://download.openstreetmap.fr/extracts/europe/slovakia-latest.osm.pbf")
+        self.assertEqual(
+            plan.plan("x", mountains=mountains)["osm"],
+            "https://download.openstreetmap.fr/extracts/europe/slovakia-latest.osm.pbf",
+        )
 
     def test_every_range_names_its_countries_and_extracts(self):
         for key, entry in registry("mountains").items():
@@ -222,17 +238,27 @@ class Manifest(unittest.TestCase):
 
     def test_says_what_the_layers_really_are(self):
         site = self.site("contours", "rocks", "terrain")
-        with env(REGION_KEY="vysoke_tatry", AREA_BBOX="19.9,49.09,20.32,49.25",
-                 CONTOUR_INTERVAL="2.5", CONTOURS_MAXZOOM="16", ROCKS_MAXZOOM="16",
-                 ROCK_SLOPE="50", ROCKS_SOURCE="dmr5", CONTOURS_SOURCE="dmr5",
-                 TERRAIN_MAXZOOM="16", TERRAIN_SOURCE="dmr5", MOUNTAIN_NAME="Vysoké Tatry"):
+        with env(
+            REGION_KEY="vysoke_tatry",
+            AREA_BBOX="19.9,49.09,20.32,49.25",
+            CONTOUR_INTERVAL="2.5",
+            CONTOURS_MAXZOOM="16",
+            ROCKS_MAXZOOM="16",
+            ROCK_SLOPE="50",
+            ROCKS_SOURCE="dmr5",
+            CONTOURS_SOURCE="dmr5",
+            TERRAIN_MAXZOOM="16",
+            TERRAIN_SOURCE="dmr5",
+            MOUNTAIN_NAME="Vysoké Tatry",
+        ):
             got = manifest.manifest(site)
         reg = got["regions"]["vysoke_tatry"]
         self.assertEqual(reg["contour_interval"], 2.5)
         self.assertEqual(reg["bbox"], [19.9, 49.09, 20.32, 49.25])
         self.assertEqual(reg["contours"], "tiles/vysoke_tatry-contours.pmtiles")
-        self.assertEqual((got["dem"], got["dem_maxzoom"], got["terrain_3d"]),
-                         ("tiles/vysoke_tatry-terrain.pmtiles", 16, True))
+        self.assertEqual(
+            (got["dem"], got["dem_maxzoom"], got["terrain_3d"]), ("tiles/vysoke_tatry-terrain.pmtiles", 16, True)
+        )
         self.assertEqual(catalog.tiles_paths(got, reg)["terrain"], "tiles/vysoke_tatry-terrain.pmtiles")
         self.assertIsNone(got["dem_plane"], "an empty archive has no plane")
 
@@ -241,10 +267,10 @@ class Manifest(unittest.TestCase):
         with env(REGION_KEY="vysoke_tatry", AREA_BBOX="19.9,49.09,20.32,49.32", BOUNDARIES_MAXZOOM="14"):
             got = manifest.manifest(site)
         reg = got["regions"]["vysoke_tatry"]
-        self.assertEqual((reg["boundaries"], reg["boundaries_maxzoom"]),
-                         ("tiles/vysoke_tatry-range-boundaries.pmtiles", 14))
-        self.assertEqual(catalog.tiles_paths(got, reg)["boundaries"],
-                         "tiles/vysoke_tatry-range-boundaries.pmtiles")
+        self.assertEqual(
+            (reg["boundaries"], reg["boundaries_maxzoom"]), ("tiles/vysoke_tatry-range-boundaries.pmtiles", 14)
+        )
+        self.assertEqual(catalog.tiles_paths(got, reg)["boundaries"], "tiles/vysoke_tatry-range-boundaries.pmtiles")
 
     def test_the_app_gets_the_outline(self):
         site = self.site("terrain")
@@ -263,22 +289,28 @@ class Manifest(unittest.TestCase):
         open(os.path.join(site, "tiles", "vysoke_tatry-regulations.json"), "wb").close()
         for kind in ("trails", "water", "points"):
             open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb").close()
-        with env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4", TRANSPORT_MAXZOOM="14",
-                 COUNTRIES="SK,PL", WATER_MAXZOOM="14", AERIAL_SUMMER_SOURCE="ofmozaika_sk",
-                 AERIAL_WINTER_SOURCE="nobody"):
+        with env(
+            REGION_KEY="vysoke_tatry",
+            AREA_BBOX="1,2,3,4",
+            TRANSPORT_MAXZOOM="14",
+            COUNTRIES="SK,PL",
+            WATER_MAXZOOM="14",
+            AERIAL_SUMMER_SOURCE="ofmozaika_sk",
+            AERIAL_WINTER_SOURCE="nobody",
+        ):
             reg = manifest.manifest(site)["regions"]["vysoke_tatry"]
         # 504 a range carries its waymarked trails again; it has no base map to hold them
-        self.assertEqual((reg["trails"], reg["trails_maxzoom"]),
-                         ("tiles/vysoke_tatry-trails.pmtiles", 14))
+        self.assertEqual((reg["trails"], reg["trails_maxzoom"]), ("tiles/vysoke_tatry-trails.pmtiles", 14))
         self.assertEqual((reg["water"], reg["water_maxzoom"]), ("tiles/vysoke_tatry-water.pmtiles", 14))
         self.assertEqual((reg["points"], reg["points_maxzoom"]), ("tiles/vysoke_tatry-points.pmtiles", 15))
         self.assertEqual(reg["countries"], ["SK", "PL"])
-        self.assertEqual((reg["transport"], reg["paths_maxzoom"]),
-                         ("tiles/vysoke_tatry-transport.pmtiles", 14))
+        self.assertEqual((reg["transport"], reg["paths_maxzoom"]), ("tiles/vysoke_tatry-transport.pmtiles", 14))
         self.assertEqual(reg["road_sign_sprite"], ["tiles/vysoke_tatry-roadsigns.png"])
         self.assertEqual(reg["regulations"], "tiles/vysoke_tatry-regulations.json")
-        self.assertEqual((reg["aerial_summer"], reg["aerial_summer_maxzoom"], reg["aerial_summer_source"]),
-                         ("tiles/vysoke_tatry-aerial_summer.pmtiles", 17, "ofmozaika_sk"))
+        self.assertEqual(
+            (reg["aerial_summer"], reg["aerial_summer_maxzoom"], reg["aerial_summer_source"]),
+            ("tiles/vysoke_tatry-aerial_summer.pmtiles", 17, "ofmozaika_sk"),
+        )
         self.assertNotIn("aerial_winter", reg)
         self.assertNotIn("aerial_winter_source", reg, "no photos, so no source to credit")
         self.assertEqual(catalog.region_models({}, reg)["aerial_summer"], "ofmozaika_sk")
@@ -291,10 +323,8 @@ class Manifest(unittest.TestCase):
             with redirect_stdout(io.StringIO()):
                 self.assertEqual(manifest.main([site]), 0, "settlements alone are a package")
         reg = got["regions"]["vysoke_tatry"]
-        self.assertEqual((reg["buildings"], reg["buildings_maxzoom"]),
-                         ("tiles/vysoke_tatry-buildings.pmtiles", 14))
-        self.assertEqual(catalog.tiles_paths(got, reg)["buildings"],
-                         "tiles/vysoke_tatry-buildings.pmtiles")
+        self.assertEqual((reg["buildings"], reg["buildings_maxzoom"]), ("tiles/vysoke_tatry-buildings.pmtiles", 14))
+        self.assertEqual(catalog.tiles_paths(got, reg)["buildings"], "tiles/vysoke_tatry-buildings.pmtiles")
 
     def test_a_missing_layer_is_left_out(self):
         site = self.site("contours")
@@ -306,8 +336,11 @@ class Manifest(unittest.TestCase):
 
     def test_nothing_to_package_fails(self):
         site = self.site()
-        with env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4"), \
-                redirect_stdout(io.StringIO()), self.assertRaises(SystemExit):
+        with (
+            env(REGION_KEY="vysoke_tatry", AREA_BBOX="1,2,3,4"),
+            redirect_stdout(io.StringIO()),
+            self.assertRaises(SystemExit),
+        ):
             manifest.main([site])
 
 
@@ -318,8 +351,7 @@ class Names(unittest.TestCase):
             self.assertEqual(names.file_name("contours"), "vysoke_tatry-contours.zip")
 
     def test_a_test_gets_its_own_node(self):
-        with env(REGION_KEY="vysoke_tatry_test4", AREA_KEY="whole", TEST_KM2="4",
-                 MOUNTAIN_COUNTRY="slovensko"):
+        with env(REGION_KEY="vysoke_tatry_test4", AREA_KEY="whole", TEST_KM2="4", MOUNTAIN_COUNTRY="slovensko"):
             parts = names.drive_path({})
             self.assertEqual(parts, ["mountains", "vysoke_tatry"])
             self.assertEqual(names.catalog_path(parts)[-1], "vysoke_tatry_test4km2")
@@ -327,8 +359,7 @@ class Names(unittest.TestCase):
 
     def test_a_region_is_untouched(self):
         with env(REGION_KEY="presovsky", AREA_KEY="whole"):
-            self.assertEqual(names.drive_path({"presovsky": {"country": "slovensko"}}),
-                             ["slovensko", "presovsky"])
+            self.assertEqual(names.drive_path({"presovsky": {"country": "slovensko"}}), ["slovensko", "presovsky"])
 
 
 class Catalog(unittest.TestCase):
@@ -342,26 +373,35 @@ class Catalog(unittest.TestCase):
 
     def write(self, parts, man, uploaded, **kw):
         with redirect_stdout(io.StringIO()):
-            catalog.write_catalog(self.path, parts, self.regions, uploaded, man,
-                                  owns=[k for k, *_ in uploaded], **kw)
+            catalog.write_catalog(self.path, parts, self.regions, uploaded, man, owns=[k for k, *_ in uploaded], **kw)
         with open(self.path) as f:
             return json.load(f)
 
     def mountain(self):
-        man = {"default_region": "vysoke_tatry", "dem": "tiles/vysoke_tatry-terrain.pmtiles",
-               "dem_maxzoom": 16, "dem_source": "dmr5",
-               "regions": {"vysoke_tatry": {"bbox": [19.9, 49.09, 20.32, 49.25],
-                                            "contours": "tiles/vysoke_tatry-contours.pmtiles",
-                                            "contours_maxzoom": 16, "contour_interval": 2.5}}}
-        uploaded = [("contours", "vysoke_tatry-contours.zip", 10, "id1", "zip", "a" * 64),
-                    ("terrain", "vysoke_tatry-terrain.zip", 20, "id2", "zip", "b" * 64)]
+        man = {
+            "default_region": "vysoke_tatry",
+            "dem": "tiles/vysoke_tatry-terrain.pmtiles",
+            "dem_maxzoom": 16,
+            "dem_source": "dmr5",
+            "regions": {
+                "vysoke_tatry": {
+                    "bbox": [19.9, 49.09, 20.32, 49.25],
+                    "contours": "tiles/vysoke_tatry-contours.pmtiles",
+                    "contours_maxzoom": 16,
+                    "contour_interval": 2.5,
+                }
+            },
+        }
+        uploaded = [
+            ("contours", "vysoke_tatry-contours.zip", 10, "id1", "zip", "a" * 64),
+            ("terrain", "vysoke_tatry-terrain.zip", 20, "id2", "zip", "b" * 64),
+        ]
         with env(MOUNTAIN_COUNTRY="slovensko"):
             return self.write(["mountains", "vysoke_tatry"], man, uploaded)
 
     def test_a_mountain_sits_in_its_own_category(self):
         data = self.mountain()
-        self.assertEqual((data["mountains"]["id"], data["mountains"]["name"]),
-                         ("mountains", "Mountains"))
+        self.assertEqual((data["mountains"]["id"], data["mountains"]["name"]), ("mountains", "Mountains"))
         node = data["mountains"]["ranges"]["vysoke_tatry"]
         self.assertEqual((node["id"], node["name"]), ("mountains-vysoke_tatry", "Vysoké Tatry"))
         self.assertEqual((node["country"], node["drive"]), ("slovensko", "mountains/vysoke_tatry"))
@@ -381,8 +421,16 @@ class Catalog(unittest.TestCase):
 
     def test_a_mountain_under_its_country_moves_to_the_category(self):
         with open(self.path, "w") as f:
-            json.dump({"slovensko": {"name": "Slovakia", "regions": {},
-                                     "mountains": {"pieniny": {"name": "Pieniny", "maps": {}}}}}, f)
+            json.dump(
+                {
+                    "slovensko": {
+                        "name": "Slovakia",
+                        "regions": {},
+                        "mountains": {"pieniny": {"name": "Pieniny", "maps": {}}},
+                    }
+                },
+                f,
+            )
         data = self.mountain()
         self.assertEqual(sorted(data["mountains"]["ranges"]), ["pieniny", "vysoke_tatry"])
         self.assertEqual(data["mountains"]["ranges"]["pieniny"]["country"], "slovensko")
@@ -396,29 +444,56 @@ class Publish(unittest.TestCase):
         os.makedirs(os.path.join(site, "tiles"))
         # 490 ski and the range's boundaries were built, then left out of the publish
         # 501 settlements are published too
-        for kind in ("contours", "rocks", "terrain", "transport", "paths", "trails", "water",
-                     "points", "aerial_summer", "ski", "range-boundaries", "buildings"):
+        for kind in (
+            "contours",
+            "rocks",
+            "terrain",
+            "transport",
+            "paths",
+            "trails",
+            "water",
+            "points",
+            "aerial_summer",
+            "ski",
+            "range-boundaries",
+            "buildings",
+        ):
             with open(os.path.join(site, "tiles", f"vysoke_tatry-{kind}.pmtiles"), "wb") as f:
                 f.write(b"x")
         with open(os.path.join(site, "tiles", "manifest.json"), "w") as f:
             json.dump({"default_region": "vysoke_tatry", "regions": {"vysoke_tatry": {}}}, f)
         run = subprocess.run(
-            ["python3", os.path.join(WORKERS, "deploy", "publish-map.py"),
-             f"--site={site}", "--maps=", "--dry-run"],
-            capture_output=True, text=True,
-            env={**os.environ, **CLEAR, "REGION_KEY": "vysoke_tatry", "AREA_KEY": "whole",
-                 "MOUNTAIN_COUNTRY": "slovensko"})
+            ["python3", os.path.join(WORKERS, "deploy", "publish-map.py"), f"--site={site}", "--maps=", "--dry-run"],
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                **CLEAR,
+                "REGION_KEY": "vysoke_tatry",
+                "AREA_KEY": "whole",
+                "MOUNTAIN_COUNTRY": "slovensko",
+            },
+        )
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         listed = re.findall(r"^\s+(vysoke_tatry\S*\.zip) .* \d+ files", run.stdout, re.M)
         self.assertIn("vysoke_tatry-aerial_winter.zip", run.stdout)
-        self.assertEqual(sorted(listed), ["vysoke_tatry-aerial_summer.zip",
-                                          "vysoke_tatry-boundaries.zip",
-                                          "vysoke_tatry-contours.zip", "vysoke_tatry-paths.zip",
-                                          "vysoke_tatry-points.zip", "vysoke_tatry-roads.zip",
-                                          "vysoke_tatry-rocks.zip",
-                                          "vysoke_tatry-settlements.zip", "vysoke_tatry-ski.zip",
-                                          "vysoke_tatry-terrain.zip", "vysoke_tatry-trails.zip",
-                                          "vysoke_tatry-water.zip"])
+        self.assertEqual(
+            sorted(listed),
+            [
+                "vysoke_tatry-aerial_summer.zip",
+                "vysoke_tatry-boundaries.zip",
+                "vysoke_tatry-contours.zip",
+                "vysoke_tatry-paths.zip",
+                "vysoke_tatry-points.zip",
+                "vysoke_tatry-roads.zip",
+                "vysoke_tatry-rocks.zip",
+                "vysoke_tatry-settlements.zip",
+                "vysoke_tatry-ski.zip",
+                "vysoke_tatry-terrain.zip",
+                "vysoke_tatry-trails.zip",
+                "vysoke_tatry-water.zip",
+            ],
+        )
         # 504 the trails are published again, not deleted as a retired package
         self.assertNotRegex(run.stdout, r"vysoke_tatry-trails\.zip .* NOT IN THIS BUILD")
         self.assertIn("mountains/vysoke_tatry", run.stdout)
@@ -437,8 +512,9 @@ class Extracts(unittest.TestCase):
     def extract(self, folder, name, nodes):
         xml = os.path.join(folder, name + ".osm")
         with open(xml, "w") as f:
-            f.write(OSM.format("\n".join(NODE.format(i, v, lat, lon)
-                                          for i, lat, lon, v in ((n + (1,))[:4] for n in nodes))))
+            f.write(
+                OSM.format("\n".join(NODE.format(i, v, lat, lon) for i, lat, lon, v in ((n + (1,))[:4] for n in nodes)))
+            )
         pbf = os.path.join(folder, name + ".osm.pbf")
         subprocess.run(["osmium", "cat", "-o", pbf, xml], check=True)
         return "file://" + pbf
@@ -449,13 +525,20 @@ class Extracts(unittest.TestCase):
         # node 2 lies on the border and is in both countries' extracts
         sk = self.extract(work, "sk", [(1, 49.15, 20.1), (2, 49.2, 20.1), (5, 48.0, 20.1)])
         pl = self.extract(work, "pl", [(2, 49.2, 20.1), (3, 49.3, 20.0)])
-        run = subprocess.run(["bash", os.path.join(WORKERS, "mountain", "pbf.sh")], cwd=work,
-                             capture_output=True, text=True,
-                             env={**os.environ, "OSM_URLS": f"{sk} {pl}",
-                                  "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"})
+        run = subprocess.run(
+            ["bash", os.path.join(WORKERS, "mountain", "pbf.sh")],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "OSM_URLS": f"{sk} {pl}", "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"},
+        )
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
-        ids = subprocess.run(["osmium", "cat", "-f", "opl", os.path.join(work, "data", "region.osm.pbf")],
-                             capture_output=True, text=True, check=True).stdout.split()
+        ids = subprocess.run(
+            ["osmium", "cat", "-f", "opl", os.path.join(work, "data", "region.osm.pbf")],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.split()
         self.assertEqual(sorted(i for i in ids if i.startswith("n")), ["n1", "n2", "n3"])
 
     def test_an_object_in_both_extracts_at_two_versions_is_kept_once(self):
@@ -463,30 +546,48 @@ class Extracts(unittest.TestCase):
         self.addCleanup(shutil.rmtree, work)
         sk = self.extract(work, "sk", [(1, 49.15, 20.1), (2, 49.2, 20.1)])
         pl = self.extract(work, "pl", [(2, 49.2, 20.1, 4), (3, 49.3, 20.0)])
-        run = subprocess.run(["bash", os.path.join(WORKERS, "mountain", "pbf.sh")], cwd=work,
-                             capture_output=True, text=True,
-                             env={**os.environ, "OSM_URLS": f"{sk} {pl}",
-                                  "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"})
+        run = subprocess.run(
+            ["bash", os.path.join(WORKERS, "mountain", "pbf.sh")],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "OSM_URLS": f"{sk} {pl}", "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"},
+        )
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         pbf = os.path.join(work, "data", "region.osm.pbf")
-        lines = subprocess.run(["osmium", "cat", "-f", "opl", pbf],
-                               capture_output=True, text=True, check=True).stdout.splitlines()
-        self.assertEqual([line.split()[:2] for line in lines],
-                         [["n1", "v1"], ["n2", "v4"], ["n3", "v1"]])
+        lines = subprocess.run(
+            ["osmium", "cat", "-f", "opl", pbf], capture_output=True, text=True, check=True
+        ).stdout.splitlines()
+        self.assertEqual([line.split()[:2] for line in lines], [["n1", "v1"], ["n2", "v4"], ["n3", "v1"]])
         # what water's region cut runs on it
-        subprocess.run(["osmium", "extract", "-s", "smart", "-b", "19.9,49.09,20.32,49.32",
-                        "-o", os.path.join(work, "cut.osm.pbf"), pbf], check=True)
+        subprocess.run(
+            [
+                "osmium",
+                "extract",
+                "-s",
+                "smart",
+                "-b",
+                "19.9,49.09,20.32,49.32",
+                "-o",
+                os.path.join(work, "cut.osm.pbf"),
+                pbf,
+            ],
+            check=True,
+        )
 
     def test_the_extract_of_the_day_is_taken_not_downloaded(self):
         work = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, work)
         sk = self.extract(work, "sk", [(1, 49.15, 20.1), (2, 49.2, 20.1)])
         os.makedirs(os.path.join(work, "extracts"))
-        shutil.move(sk[len("file://"):], os.path.join(work, "extracts", "sk.osm.pbf"))
-        run = subprocess.run(["bash", os.path.join(WORKERS, "mountain", "pbf.sh")], cwd=work,
-                             capture_output=True, text=True,
-                             env={**os.environ, "OSM_URLS": sk,
-                                  "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"})
+        shutil.move(sk[len("file://") :], os.path.join(work, "extracts", "sk.osm.pbf"))
+        run = subprocess.run(
+            ["bash", os.path.join(WORKERS, "mountain", "pbf.sh")],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "OSM_URLS": sk, "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"},
+        )
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("Extract of the day: sk.osm.pbf", run.stdout)
 
@@ -498,16 +599,22 @@ class Extracts(unittest.TestCase):
         os.makedirs(os.path.join(work, "data"))
         pbf = os.path.join(work, "data", "region.osm.pbf")
         # the broken cache: osmium merge keeps both versions
-        subprocess.run(["osmium", "merge", "-o", pbf, sk[len("file://"):], pl[len("file://"):]],
-                       check=True)
-        run = subprocess.run(["bash", os.path.join(WORKERS, "mountain", "pbf.sh")], cwd=work,
-                             capture_output=True, text=True,
-                             env={**os.environ, "OSM_URLS": f"{sk} {pl}",
-                                  "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"})
+        subprocess.run(["osmium", "merge", "-o", pbf, sk[len("file://") :], pl[len("file://") :]], check=True)
+        run = subprocess.run(
+            ["bash", os.path.join(WORKERS, "mountain", "pbf.sh")],
+            cwd=work,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "OSM_URLS": f"{sk} {pl}", "MOUNTAIN_BBOX": "19.9,49.09,20.32,49.32"},
+        )
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
         self.assertIn("cut again", run.stdout)
-        twice = subprocess.run(["osmium", "fileinfo", "-e", "-g", "data.multiple_versions", pbf],
-                               capture_output=True, text=True, check=True).stdout.strip()
+        twice = subprocess.run(
+            ["osmium", "fileinfo", "-e", "-g", "data.multiple_versions", pbf],
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
         self.assertEqual(twice, "no")
 
 
@@ -517,8 +624,11 @@ class Outline(unittest.TestCase):
         return {"type": "Polygon", "coordinates": [[[w, s], [e, s], [e, n], [w, n], [w, s]]]}
 
     def test_two_parks_become_one_edge_inside_the_box(self):
-        parks = [self.square(19.8, 49.0, 20.1, 49.25), self.square(20.1, 49.1, 20.4, 49.3),
-                 self.square(20.2, 49.299, 20.201, 49.3)]
+        parks = [
+            self.square(19.8, 49.0, 20.1, 49.25),
+            self.square(20.1, 49.1, 20.4, 49.3),
+            self.square(20.2, 49.299, 20.201, 49.3),
+        ]
         got = outline.outline(parks, [19.9, 49.09, 20.32, 49.32], [1, 2, 3])
         geom = got["features"][0]["geometry"]
         self.assertEqual(geom["type"], "Polygon", "joined, the islet dropped")
@@ -545,8 +655,7 @@ class Outline(unittest.TestCase):
 
 class Aerial(unittest.TestCase):
     def test_the_zoom_is_taken_with_or_without_its_z(self):
-        self.assertEqual([aerial.zoom(v, 17) for v in ("z18", "18", "", " Z16 ")],
-                         [18, 18, 17, 16])
+        self.assertEqual([aerial.zoom(v, 17) for v in ("z18", "18", "", " Z16 ")], [18, 18, 17, 16])
 
     def test_every_tile_over_the_box_shallow_first(self):
         got = aerial.wanted([20.16, 49.17, 20.17, 49.175], 14, 15)
@@ -565,6 +674,7 @@ class Aerial(unittest.TestCase):
     @needs("PIL")
     def test_beyond_the_box_is_clear(self):
         from PIL import Image
+
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
         bbox = [19.9, 49.09, 20.32, 49.32]
@@ -582,11 +692,11 @@ class Aerial(unittest.TestCase):
     @needs("PIL")
     def test_photos_follow_the_outline(self):
         from PIL import Image
+
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
         bbox = [19.9, 49.09, 20.32, 49.32]
-        rings = aerial._mask.rings_from_geojson(
-            os.path.join(WORKERS, "data", "outlines", "vysoke_tatry.geojson"))
+        rings = aerial._mask.rings_from_geojson(os.path.join(WORKERS, "data", "outlines", "vysoke_tatry.geojson"))
         jpeg = os.path.join(tmp, "t.jpg")
         Image.new("RGB", (256, 256), (40, 90, 40)).save(jpeg, "JPEG")
         gerlach = (int(v) for v in aerial.lonlat_to_tile(20.134, 49.164, 14))
@@ -595,8 +705,10 @@ class Aerial(unittest.TestCase):
         self.assertIsNone(aerial.cut(jpeg, bbox, 15, *zdiar, rings), "in the box, beyond the parks")
         with Image.open(aerial.cut(jpeg, bbox, 8, 142, 87, rings)) as got:
             alpha = got.getchannel("A")
-            px = lambda lon, lat: tuple(int((v - o) * 256) for v, o in
-                                        zip(aerial.lonlat_to_tile(lon, lat, 8), (142, 87)))
+
+            def px(lon, lat):
+                return tuple(int((v - o) * 256) for v, o in zip(aerial.lonlat_to_tile(lon, lat, 8), (142, 87)))
+
             self.assertEqual(alpha.getpixel(px(20.134, 49.164)), 255)
             self.assertEqual(alpha.getpixel(px(20.27, 49.275)), 0)
 
@@ -617,16 +729,14 @@ class Aerial(unittest.TestCase):
         self.addCleanup(shutil.rmtree, tmp)
         cache = self._Cache(tmp)
         bbox = [19.9, 49.09, 20.32, 49.32]
-        rings = aerial._mask.rings_from_geojson(
-            os.path.join(WORKERS, "data", "outlines", "vysoke_tatry.geojson"))
+        rings = aerial._mask.rings_from_geojson(os.path.join(WORKERS, "data", "outlines", "vysoke_tatry.geojson"))
         gerlach = tuple(int(v) for v in aerial.lonlat_to_tile(20.134, 49.164, 15))
         zdiar = tuple(int(v) for v in aerial.lonlat_to_tile(20.27, 49.275, 15))
         for x, y in (gerlach, zdiar):
             self.marker(cache, 15, x, y)
         x0, y0 = min(gerlach[0], zdiar[0]), min(gerlach[1], zdiar[1])
         x1, y1 = max(gerlach[0], zdiar[0]) + 1, max(gerlach[1], zdiar[1]) + 1
-        asked = aerial.ask_again(cache, 15, x0, y0, x1, y1,
-                                 lambda z, x, y: aerial.needed(bbox, z, x, y, rings))
+        asked = aerial.ask_again(cache, 15, x0, y0, x1, y1, lambda z, x, y: aerial.needed(bbox, z, x, y, rings))
         self.assertEqual(asked, 1)
         self.assertFalse(os.path.exists(cache.path(15, *gerlach)), "AGgE: a hole stays a hole")
         self.assertTrue(os.path.exists(cache.path(15, *zdiar)), "beyond the parks is asked every run")
@@ -634,6 +744,7 @@ class Aerial(unittest.TestCase):
     @needs("PIL")
     def test_a_tile_the_server_lacks_is_its_parent_enlarged(self):
         from PIL import Image
+
         tmp = tempfile.mkdtemp()
         self.addCleanup(shutil.rmtree, tmp)
         cache = self._Cache(tmp)
@@ -665,8 +776,7 @@ class Aerial(unittest.TestCase):
         with open(jpeg, "wb") as f:
             f.write(b"\xff\xd8\xff" + bytes(20))
         out = os.path.join(tmp, "x-aerial_summer.pmtiles")
-        aerial.write(out, {(8, 145, 89): jpeg, (9, 290, 178): jpeg}, [20, 49, 20.3, 49.2],
-                     8, 9, "x-aerial_summer")
+        aerial.write(out, {(8, 145, 89): jpeg, (9, 290, 178): jpeg}, [20, 49, 20.3, 49.2], 8, 9, "x-aerial_summer")
         with open(out, "rb") as f:
             reader = Reader(MmapSource(f))
             head = reader.header()

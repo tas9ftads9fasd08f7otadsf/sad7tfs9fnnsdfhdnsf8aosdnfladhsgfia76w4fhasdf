@@ -6,7 +6,7 @@ import unittest
 from contextlib import redirect_stdout
 from unittest import mock
 
-from load import WORKERS, worker
+from load import worker
 
 catalog = worker("deploy/catalog.py")
 merge = worker("deploy/catalog-merge.py").merge
@@ -36,8 +36,9 @@ class Names(unittest.TestCase):
     def test_catalog_name_never_made_up(self):
         regions = {"trnavsky": {"name": "Trnavský kraj"}}
         self.assertEqual(catalog.catalog_name(regions, "trnavsky", "region"), "Trnavský kraj")
-        self.assertEqual(catalog.catalog_name(regions, "trnavsky_test4km2", "region"),
-                         "Trnavský kraj – quick test 4 km²")
+        self.assertEqual(
+            catalog.catalog_name(regions, "trnavsky_test4km2", "region"), "Trnavský kraj – quick test 4 km²"
+        )
         self.assertEqual(catalog.catalog_name({}, "neznamy", "region"), "neznamy")
 
     def test_registry_rename_reaches_the_catalog(self):
@@ -68,9 +69,14 @@ class Names(unittest.TestCase):
     def test_tiles_paths(self):
         man = {"dem": "https://x/tiles/trnavsky-terrain.pmtiles"}
         reg = {"pmtiles": "tiles/t.pmtiles", "trails": "tiles/t-trails.pmtiles", "bbox": [1, 2, 3, 4]}
-        self.assertEqual(catalog.tiles_paths(man, reg), {
-            "pmtiles": "tiles/t.pmtiles", "trails": "tiles/t-trails.pmtiles",
-            "terrain": "tiles/trnavsky-terrain.pmtiles"})
+        self.assertEqual(
+            catalog.tiles_paths(man, reg),
+            {
+                "pmtiles": "tiles/t.pmtiles",
+                "trails": "tiles/t-trails.pmtiles",
+                "terrain": "tiles/trnavsky-terrain.pmtiles",
+            },
+        )
         self.assertNotIn("terrain", catalog.tiles_paths({"dem": "https://aws/{z}/{x}/{y}.png"}, reg))
 
 
@@ -81,13 +87,14 @@ class RegionIds(unittest.TestCase):
     def test_osmfr_path(self):
         names = catalog.names
         self.assertEqual(names.osmfr_id("europe/slovakia-latest.osm.pbf"), "slovakia")
-        self.assertEqual(names.osmfr_id(
-            "https://download.openstreetmap.fr/extracts/europe/france/rhone_alpes/"
-            "savoie-latest.osm.pbf"), "france-rhone_alpes-savoie")
-        self.assertEqual(names.osmfr_id("north-america/us-west/california-latest"),
-                         "us_west-california")
-        self.assertEqual(names.osmfr_id("russia/ural_federal_district-latest"),
-                         "russia-ural_federal_district")
+        self.assertEqual(
+            names.osmfr_id(
+                "https://download.openstreetmap.fr/extracts/europe/france/rhone_alpes/savoie-latest.osm.pbf"
+            ),
+            "france-rhone_alpes-savoie",
+        )
+        self.assertEqual(names.osmfr_id("north-america/us-west/california-latest"), "us_west-california")
+        self.assertEqual(names.osmfr_id("russia/ural_federal_district-latest"), "russia-ural_federal_district")
 
     def test_registry_ids_are_unique_and_follow_osmfr(self):
         ids = [r["id"] for r in self.regions.values()]
@@ -99,18 +106,20 @@ class RegionIds(unittest.TestCase):
                 self.assertEqual(r["id"], catalog.names.osmfr_id(path), key)
 
     def test_every_node_stamped(self):
-        data = {"_comment": "x", "slovensko": {"regions": {
-            "presovsky": {"subregions": {"pieniny": {}}},
-            "presovsky_test4km2": {}}, "subregions": {"vysoke_tatry": {}}},
-            "austria": {"regions": {"tirol": {}}}}
+        data = {
+            "_comment": "x",
+            "slovensko": {
+                "regions": {"presovsky": {"subregions": {"pieniny": {}}}, "presovsky_test4km2": {}},
+                "subregions": {"vysoke_tatry": {}},
+            },
+            "austria": {"regions": {"tirol": {}}},
+        }
         catalog.stamp_ids(data, self.regions)
         sk = data["slovensko"]
         self.assertEqual(sk["id"], "slovakia")
         self.assertEqual(sk["regions"]["presovsky"]["id"], "slovakia-presovsky")
-        self.assertEqual(sk["regions"]["presovsky"]["subregions"]["pieniny"]["id"],
-                         "slovakia-presovsky-pieniny")
-        self.assertEqual(sk["regions"]["presovsky_test4km2"]["id"],
-                         "slovakia-presovsky_test4km2")
+        self.assertEqual(sk["regions"]["presovsky"]["subregions"]["pieniny"]["id"], "slovakia-presovsky-pieniny")
+        self.assertEqual(sk["regions"]["presovsky_test4km2"]["id"], "slovakia-presovsky_test4km2")
         self.assertEqual(sk["subregions"]["vysoke_tatry"]["id"], "slovakia-vysoke_tatry")
         self.assertEqual(data["austria"]["regions"]["tirol"]["id"], "austria-tirol")
         self.assertNotIn("id", data)
@@ -119,9 +128,12 @@ class RegionIds(unittest.TestCase):
 class Migrate(unittest.TestCase):
     def test_old_keys_become_today(self):
         old, new = next((o, n) for o, n in packages.legacy().items() if n != "base")
-        data = {"_comment": "x", "slovensko": {"regions": {"trnavsky": {"maps": {
-            old: {"popis": "d"},
-            "base": {"casti": {"trasy": {"popis": "t"}}}}}}}}
+        data = {
+            "_comment": "x",
+            "slovensko": {
+                "regions": {"trnavsky": {"maps": {old: {"popis": "d"}, "base": {"casti": {"trasy": {"popis": "t"}}}}}}
+            },
+        }
         maps = catalog.migrate(data)["slovensko"]["regions"]["trnavsky"]["maps"]
         self.assertNotIn(old, maps)
         self.assertEqual(maps[new], {"description": "d"})
@@ -130,9 +142,11 @@ class Migrate(unittest.TestCase):
 
 class Prune(unittest.TestCase):
     def test_live_kept_dead_revived_or_dropped(self):
-        maps = {"base": dict(record("A"), formats={"zip": record("A"), "aar": record("B", "trnavsky.aar")}),
-                "trails": record("C", "trnavsky-trails.zip"),
-                "water": record("D", "trnavsky-water.zip")}
+        maps = {
+            "base": dict(record("A"), formats={"zip": record("A"), "aar": record("B", "trnavsky.aar")}),
+            "trails": record("C", "trnavsky-trails.zip"),
+            "water": record("D", "trnavsky-water.zip"),
+        }
         live = {"A": "trnavsky.zip", "E": "trnavsky-trails.zip"}
         fixed, dropped = catalog.prune_dead(maps, live)
         self.assertEqual(fixed, ["trails (trnavsky-trails.zip)"])
@@ -195,8 +209,14 @@ class Unchanged(unittest.TestCase):
     """390: a range rebuilt with one new layer uploaded all of its 1 GB again."""
 
     def published(self, sha="s1", fid="Z1"):
-        rec = dict(record(fid, "vysoke_tatry-terrain.zip"), sha256=sha, run="9",
-                   updated_at="2026-10-27T14:33:59Z", updated_ts=1, size=5)
+        rec = dict(
+            record(fid, "vysoke_tatry-terrain.zip"),
+            sha256=sha,
+            run="9",
+            updated_at="2026-10-27T14:33:59Z",
+            updated_ts=1,
+            size=5,
+        )
         return {"terrain": dict(rec, formats={"zip": rec})}
 
     def test_same_contents_on_drive_is_kept(self):
@@ -212,23 +232,39 @@ class Unchanged(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "maps.json")
             with open(path, "w") as f:
-                json.dump({"mountains": {"ranges": {"vysoke_tatry": {"maps": self.published()}}},
-                           "slovensko": {"regions": {"trnavsky": {"maps": {"water": {}}}}}}, f)
+                json.dump(
+                    {
+                        "mountains": {"ranges": {"vysoke_tatry": {"maps": self.published()}}},
+                        "slovensko": {"regions": {"trnavsky": {"maps": {"water": {}}}}},
+                    },
+                    f,
+                )
             self.assertIn("terrain", catalog.published_maps(path, ["mountains", "vysoke_tatry"]))
             self.assertIn("water", catalog.published_maps(path, ["slovensko", "trnavsky"]))
             self.assertEqual(catalog.published_maps(path, ["slovensko", "nitriansky"]), {})
             self.assertEqual(catalog.published_maps(os.path.join(tmp, "none.json"), ["x"]), {})
 
     def test_kept_package_keeps_its_date_and_run(self):
-        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
-                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}):
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            redirect_stdout(io.StringIO()),
+            mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}),
+        ):
             path = os.path.join(tmp, "maps.json")
             with open(path, "w") as f:
                 json.dump({"mountains": {"ranges": {"vysoke_tatry": {"maps": self.published()}}}}, f)
-            uploaded = [("terrain", "vysoke_tatry-terrain.zip", 5, "Z1", "zip", "s1"),
-                        ("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1")]
-            catalog.write_catalog(path, ["mountains", "vysoke_tatry"], catalog.map_settings.regions(),
-                                  uploaded, {"regions": {}}, owns=["terrain", "water"])
+            uploaded = [
+                ("terrain", "vysoke_tatry-terrain.zip", 5, "Z1", "zip", "s1"),
+                ("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1"),
+            ]
+            catalog.write_catalog(
+                path,
+                ["mountains", "vysoke_tatry"],
+                catalog.map_settings.regions(),
+                uploaded,
+                {"regions": {}},
+                owns=["terrain", "water"],
+            )
             with open(path) as f:
                 maps = json.load(f)["mountains"]["ranges"]["vysoke_tatry"]["maps"]
         self.assertEqual((maps["terrain"]["run"], maps["terrain"]["updated_ts"]), ("9", 1))
@@ -239,11 +275,14 @@ class Unchanged(unittest.TestCase):
 class OnlineAerial(unittest.TestCase):
     # 503: the app loads a source's zooms past its packages from this server
     def test_only_an_https_source_with_a_depth_is_named(self):
-        sources = {"deep": {"url": "https://a/{z}/{x}/{y}.jpg", "maxzoom": 17, "online_maxzoom": 19},
-                   "offline": {"url": "https://b/{z}/{x}/{y}.jpg", "maxzoom": 17},
-                   "plain": {"url": "http://c/{z}/{x}/{y}.jpg", "online_maxzoom": 19}}
-        self.assertEqual(catalog.online_aerial(sources),
-                         {"deep": {"online": "https://a/{z}/{x}/{y}.jpg", "online_maxzoom": 19}})
+        sources = {
+            "deep": {"url": "https://a/{z}/{x}/{y}.jpg", "maxzoom": 17, "online_maxzoom": 19},
+            "offline": {"url": "https://b/{z}/{x}/{y}.jpg", "maxzoom": 17},
+            "plain": {"url": "http://c/{z}/{x}/{y}.jpg", "online_maxzoom": 19},
+        }
+        self.assertEqual(
+            catalog.online_aerial(sources), {"deep": {"online": "https://a/{z}/{x}/{y}.jpg", "online_maxzoom": 19}}
+        )
 
     # 503: a top-level key would read as a country, so it sits in the mountains category
     def test_named_under_mountains_and_dropped_when_gone(self):
@@ -263,26 +302,42 @@ class OnlineAerial(unittest.TestCase):
 
     # 503
     def test_a_range_write_names_the_sources(self):
-        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
-                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}):
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            redirect_stdout(io.StringIO()),
+            mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10", "MOUNTAIN_COUNTRY": "slovensko"}),
+        ):
             path = os.path.join(tmp, "maps.json")
-            catalog.write_catalog(path, ["mountains", "vysoke_tatry"], catalog.map_settings.regions(),
-                                  [("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1")],
-                                  {"regions": {}}, owns=["water"])
+            catalog.write_catalog(
+                path,
+                ["mountains", "vysoke_tatry"],
+                catalog.map_settings.regions(),
+                [("water", "vysoke_tatry-water.zip", 3, "W1", "zip", "w1")],
+                {"regions": {}},
+                owns=["water"],
+            )
             with open(path) as f:
                 written = json.load(f)["mountains"]
         self.assertIn("ofmozaika_sk", written["aerial_sources"])
 
     # 507: only range builds named them, so a catalog of region builds since 503 had none
     def test_a_region_write_names_the_sources_too(self):
-        with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()), \
-                mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10"}):
+        with (
+            tempfile.TemporaryDirectory() as tmp,
+            redirect_stdout(io.StringIO()),
+            mock.patch.dict(os.environ, {"GITHUB_RUN_NUMBER": "10"}),
+        ):
             path = os.path.join(tmp, "maps.json")
             with open(path, "w") as f:
                 json.dump({"mountains": {"ranges": {}}}, f)
-            catalog.write_catalog(path, ["slovensko", "bratislavsky"], catalog.map_settings.regions(),
-                                  [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)],
-                                  {"regions": {}}, owns=["terrain"])
+            catalog.write_catalog(
+                path,
+                ["slovensko", "bratislavsky"],
+                catalog.map_settings.regions(),
+                [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)],
+                {"regions": {}},
+                owns=["terrain"],
+            )
             with open(path) as f:
                 written = json.load(f)["mountains"]
         self.assertIn("ofmozaika_sk", written["aerial_sources"])
@@ -322,8 +377,9 @@ class Packages(unittest.TestCase):
         b = packages.credits(dem[0], {"contours": "dmr5", "rocks": "dmr5", "shading": "dmr5"})
         self.assertTrue(a and b)
         self.assertNotEqual(a, b)
-        self.assertEqual(packages.credits(dem[0], {"contours": "?"}),
-                         packages.credits(dem[0], {"contours": packages.DEFAULT_MODEL}))
+        self.assertEqual(
+            packages.credits(dem[0], {"contours": "?"}), packages.credits(dem[0], {"contours": packages.DEFAULT_MODEL})
+        )
 
     def test_photo_credits_follow_the_source(self):
         settings = packages.map_settings.load()
@@ -332,8 +388,9 @@ class Packages(unittest.TestCase):
         self.assertEqual([c["holder"] for c in got], ["OpenStreetMap contributors"])
         mosaic = packages.credits("aerial_summer", {"aerial_summer": "ofmozaika_sk"}, settings)
         self.assertEqual([c["holder"] for c in mosaic], ["GKÚ Bratislava, NLC Zvolen", "freemap.sk"])
-        self.assertEqual(packages.credits("aerial_summer", {}, settings), mosaic,
-                         "a manifest from before the source was recorded")
+        self.assertEqual(
+            packages.credits("aerial_summer", {}, settings), mosaic, "a manifest from before the source was recorded"
+        )
 
 
 if __name__ == "__main__":
@@ -346,18 +403,26 @@ class Rebuild(unittest.TestCase):
     def test_old_aar_kept_until_replaced(self):
         with tempfile.TemporaryDirectory() as tmp, redirect_stdout(io.StringIO()):
             path = os.path.join(tmp, "maps.json")
-            old = dict(record("Z1", "bratislavsky-terrain.zip"),
-                       formats={"zip": record("Z1", "bratislavsky-terrain.zip"),
-                                "aar": record("A1", "bratislavsky-terrain.aar")})
+            old = dict(
+                record("Z1", "bratislavsky-terrain.zip"),
+                formats={
+                    "zip": record("Z1", "bratislavsky-terrain.zip"),
+                    "aar": record("A1", "bratislavsky-terrain.aar"),
+                },
+            )
             with open(path, "w") as f:
                 json.dump({"slovensko": {"regions": {"bratislavsky": {"maps": {"terrain": old}}}}}, f)
             regions = catalog.map_settings.regions()
             uploaded = [("terrain", "bratislavsky-terrain.zip", 5, "Z2", "zip", "c" * 64)]
-            catalog.write_catalog(path, ["slovensko", "bratislavsky"], regions, uploaded,
-                                  {"regions": {}}, owns=["terrain"])
+            catalog.write_catalog(
+                path, ["slovensko", "bratislavsky"], regions, uploaded, {"regions": {}}, owns=["terrain"]
+            )
             with open(path) as f:
                 terrain = json.load(f)["slovensko"]["regions"]["bratislavsky"]["maps"]["terrain"]
         self.assertEqual(catalog.link_id(terrain["formats"]["zip"]), "Z2")
-        self.assertEqual(catalog.link_id(terrain["formats"].get("aar")), "A1",
-                         "a cancelled .aar job left the region with nothing the app opens")
+        self.assertEqual(
+            catalog.link_id(terrain["formats"].get("aar")),
+            "A1",
+            "a cancelled .aar job left the region with nothing the app opens",
+        )
         self.assertEqual(catalog.link_id(terrain), "Z2", "the top mirrors the new ZIP")

@@ -4,6 +4,7 @@
 The tile mosaic → a field of "how dark it is here against the surroundings", in
 bands. Used as a module: `load("shading_raster", "raster.py")`.
 """
+
 import importlib.util
 import math
 import os
@@ -34,13 +35,11 @@ run = tiles.run
 tile_res, ground_res = tiles.tile_res, tiles.ground_res
 
 # watch.py is shared by both kinds of rocks, so it lives in workers/lib/
-sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms, dir_mb, Heartbeat  # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+from watch import Heartbeat, dir_mb, hms  # noqa: E402
 
 # the downscale the lighting field is computed on – it is a smooth function
 BG_DOWN = 8
-
 
 
 def block_mean(gray, k, chunk_rows=4096):
@@ -51,8 +50,8 @@ def block_mean(gray, k, chunk_rows=4096):
     step = max(1, (chunk_rows // k)) * k
     for r in range(0, h2 * k, step):
         r1 = min(r + step, h2 * k)
-        blk = gray[r:r1, :w2 * k].reshape((r1 - r) // k, k, w2, k)
-        out[r // k:r1 // k] = blk.mean(axis=(1, 3), dtype=np.float32)
+        blk = gray[r:r1, : w2 * k].reshape((r1 - r) // k, k, w2, k)
+        out[r // k : r1 // k] = blk.mean(axis=(1, 3), dtype=np.float32)
     return out
 
 
@@ -66,8 +65,7 @@ def box_mean(a, r):
     ii = np.zeros((pad.shape[0] + 1, pad.shape[1] + 1), np.float64)
     np.cumsum(np.cumsum(pad, axis=0), axis=1, out=ii[1:, 1:])
     win = 2 * r + 1
-    s = (ii[win:win + h, win:win + w] - ii[0:h, win:win + w]
-         - ii[win:win + h, 0:w] + ii[0:h, 0:w])
+    s = ii[win : win + h, win : win + w] - ii[0:h, win : win + w] - ii[win : win + h, 0:w] + ii[0:h, 0:w]
     return (s / (win * win)).astype(np.float32)
 
 
@@ -80,7 +78,7 @@ def box_blur_u8(a, r):
     acc = np.zeros((h, w), np.uint16)
     for dy in range(2 * r + 1):
         for dx in range(2 * r + 1):
-            acc += ap[dy:dy + h, dx:dx + w]
+            acc += ap[dy : dy + h, dx : dx + w]
     acc //= (2 * r + 1) ** 2
     return acc.astype(np.uint8)
 
@@ -99,9 +97,11 @@ def load_band(fetcher, z, x0, x1, ty0, ty1, every=30):
             last = now
             finished = ty - ty0
             eta = (now - t0) / max(1, finished) * (ty1 - ty - 0) if finished else 0
-            print(f"  … decoding: row {finished + 1}/{ty1 - ty0}, "
-                  f"{n} tiles, running {hms(now - t0)}"
-                  + (f", {hms(eta)} left" if finished else ""), flush=True)
+            print(
+                f"  … decoding: row {finished + 1}/{ty1 - ty0}, "
+                f"{n} tiles, running {hms(now - t0)}" + (f", {hms(eta)} left" if finished else ""),
+                flush=True,
+            )
         for tx in range(x0, x1):
             n += 1
             p = fetcher.path(z, tx, ty)
@@ -115,7 +115,7 @@ def load_band(fetcher, z, x0, x1, ty0, ty1, every=30):
             if a.shape != (TILE, TILE):
                 continue
             ry, rx = (ty - ty0) * TILE, (tx - x0) * TILE
-            band[ry:ry + TILE, rx:rx + TILE] = a
+            band[ry : ry + TILE, rx : rx + TILE] = a
     return band
 
 
@@ -123,8 +123,7 @@ def upsample(small, h, w, k=BG_DOWN):
     """A downscaled field back to full resolution; the edge padded."""
     full = np.repeat(np.repeat(small, k, axis=0), k, axis=1)
     if full.shape[0] < h or full.shape[1] < w:
-        full = np.pad(full, ((0, max(0, h - full.shape[0])),
-                             (0, max(0, w - full.shape[1]))), mode="edge")
+        full = np.pad(full, ((0, max(0, h - full.shape[0])), (0, max(0, w - full.shape[1]))), mode="edge")
     return full[:h, :w]
 
 
@@ -162,16 +161,16 @@ def open_mask(score, r):
     if r <= 0:
         return score
     keep = (score > 0).astype(np.uint8)
-    keep = _rank_box(keep, r, np.minimum)   # erosion
-    keep = _rank_box(keep, r, np.maximum)   # dilation
+    keep = _rank_box(keep, r, np.minimum)  # erosion
+    keep = _rank_box(keep, r, np.maximum)  # dilation
     score = score.copy()
     score[keep == 0] = 0
     return score
 
 
-def score_band(gray, dark, always, local_px, rel, blur, fill_px=0, every=0,
-               open_px=0):
+def score_band(gray, dark, always, local_px, rel, blur, fill_px=0, every=0, open_px=0):
     """Grey → "darkness" (Byte): how far a pixel is under the reference."""
+
     # ref = clip(background − rel, always, dark); score = clip(ref − grey, 0, 255)
     def phase(text, t0):
         if every:
@@ -198,7 +197,7 @@ def score_band(gray, dark, always, local_px, rel, blur, fill_px=0, every=0,
         if bg is None:
             np.subtract(np.int16(dark), g, out=g)
         else:
-            rows = bg[r // BG_DOWN:(r1 + BG_DOWN - 1) // BG_DOWN]
+            rows = bg[r // BG_DOWN : (r1 + BG_DOWN - 1) // BG_DOWN]
             full = upsample(rows, r1 - r, w)
             np.subtract(full, g.astype(np.float32), out=full)
             g = full.astype(np.int16)
@@ -208,9 +207,9 @@ def score_band(gray, dark, always, local_px, rel, blur, fill_px=0, every=0,
     if fill_px > 0:
         phase("fill", t_f)
         # the mean darkness around, on the same downscale as the background
-        out = upsample(box_mean(block_mean(out, BG_DOWN),
-                                max(1, int(round(fill_px / BG_DOWN / 2)))),
-                       h, w).astype(np.uint8)
+        out = upsample(box_mean(block_mean(out, BG_DOWN), max(1, int(round(fill_px / BG_DOWN / 2)))), h, w).astype(
+            np.uint8
+        )
 
     if open_px > 0:
         # on the finished mask: before the threshold `dark_always` couldn't apply
@@ -241,13 +240,26 @@ def write_chunk(arr, ox, oy, res, out_tif):
     arr.tofile(raw)
     vrt = out_tif + ".vrt"
     with open(vrt, "w") as f:
-        f.write(VRT_RAW.format(w=w, h=h, ox=repr(ox), oy=repr(oy),
-                               res=repr(res), raw=os.path.basename(raw)))
+        f.write(VRT_RAW.format(w=w, h=h, ox=repr(ox), oy=repr(oy), res=repr(res), raw=os.path.basename(raw)))
     try:
-        run(["gdal_translate", "-q", "-of", "GTiff",
-             "-co", "COMPRESS=DEFLATE", "-co", "PREDICTOR=2",
-             "-co", "TILED=YES", "-co", "BIGTIFF=IF_SAFER",
-             vrt, out_tif])
+        run(
+            [
+                "gdal_translate",
+                "-q",
+                "-of",
+                "GTiff",
+                "-co",
+                "COMPRESS=DEFLATE",
+                "-co",
+                "PREDICTOR=2",
+                "-co",
+                "TILED=YES",
+                "-co",
+                "BIGTIFF=IF_SAFER",
+                vrt,
+                out_tif,
+            ]
+        )
     finally:
         for f in (raw, vrt):
             if os.path.exists(f):
@@ -261,16 +273,15 @@ def build_score_raster(fetcher, z, x0, y0, x1, y1, args, tmp, preview_rows):
     res = tile_res(z)
     w_px = (x1 - x0) * TILE
     local_px = args.local_px
-    pad_tiles = (int(math.ceil(max(local_px, args.fill_px, 2 * args.open_px)
-                               / 2.0 / TILE))
-                 + (1 if args.blur else 0))
+    pad_tiles = int(math.ceil(max(local_px, args.fill_px, 2 * args.open_px) / 2.0 / TILE)) + (1 if args.blur else 0)
     rows_per_band = max(1, int(args.band_cells // max(1, w_px * TILE)))
     tifs = []
     t0 = time.time()
     n_bands = int(math.ceil((y1 - y0) / rows_per_band))
-    print(f"  band = {rows_per_band} tile rows "
-          f"({rows_per_band * TILE} px), overlap {pad_tiles}, "
-          f"{n_bands} bands", flush=True)
+    print(
+        f"  band = {rows_per_band} tile rows ({rows_per_band * TILE} px), overlap {pad_tiles}, {n_bands} bands",
+        flush=True,
+    )
 
     for bi, ty in enumerate(range(y0, y1, rows_per_band)):
         ty1 = min(ty + rows_per_band, y1)
@@ -279,19 +290,24 @@ def build_score_raster(fetcher, z, x0, y0, x1, y1, args, tmp, preview_rows):
         # a band finished by an earlier run isn't computed again
         if os.path.exists(tif) and os.path.getsize(tif) > 0:
             tifs.append(tif)
-            print(f"  … darkness: band {bi + 1}/{n_bands} is there "
-                  f"({dir_mb(tif):.0f} MB) – skipping", flush=True)
+            print(f"  … darkness: band {bi + 1}/{n_bands} is there ({dir_mb(tif):.0f} MB) – skipping", flush=True)
             continue
         # a heartbeat around the band – otherwise "computing" looks like "stuck"
         hb = Heartbeat(f"band {bi + 1}/{n_bands}", every=args.heartbeat)
         hb.start()
         try:
-            gray = load_band(fetcher, z, x0, x1, py0, py1,
-                             every=args.heartbeat)
-            score, blurred = score_band(gray, args.dark, args.dark_always,
-                                        local_px, args.rel, args.blur,
-                                        args.fill_px, every=args.heartbeat,
-                                        open_px=args.open_px)
+            gray = load_band(fetcher, z, x0, x1, py0, py1, every=args.heartbeat)
+            score, blurred = score_band(
+                gray,
+                args.dark,
+                args.dark_always,
+                local_px,
+                args.rel,
+                args.blur,
+                args.fill_px,
+                every=args.heartbeat,
+                open_px=args.open_px,
+            )
         finally:
             hb.stop()
         del gray
@@ -308,14 +324,17 @@ def build_score_raster(fetcher, z, x0, y0, x1, y1, args, tmp, preview_rows):
             vis = blurred[top:bot]
             vh = (vis.shape[0] // k) * k
             if vh:
-                preview_rows.append((
-                    block_mean(vis[:vh], k).astype(np.uint8),
-                    block_mean(cut[:vh], k).astype(np.uint8)))
+                preview_rows.append(
+                    (block_mean(vis[:vh], k).astype(np.uint8), block_mean(cut[:vh], k).astype(np.uint8))
+                )
         del score, blurred, cut
         done = ty1 - y0
         el = time.time() - t0
         eta = el / max(1, done) * (y1 - y0 - done)
-        print(f"  … darkness: band {bi + 1}/{n_bands}, "
-              f"{done}/{y1 - y0} rows, running {hms(el)}, {hms(eta)} left, "
-              f"{dir_mb(tmp):.0f} MB on disk", flush=True)
+        print(
+            f"  … darkness: band {bi + 1}/{n_bands}, "
+            f"{done}/{y1 - y0} rows, running {hms(el)}, {hms(eta)} left, "
+            f"{dir_mb(tmp):.0f} MB on disk",
+            flush=True,
+        )
     return tifs, time.time() - t0

@@ -2,9 +2,8 @@ import os
 import re
 import unittest
 
-from load import WORKERS
-
 import integration
+from load import WORKERS
 
 # `$OPT_X` or `${OPT_X}` – read without a default, so `set -u` stops on it when unset
 BARE = re.compile(r"\$\{?(OPT_[A-Z0-9_]+)(?![A-Z0-9_]|:?[-=])")
@@ -31,5 +30,4 @@ class BuildSettings(unittest.TestCase):
                 self.assertEqual(bare - given, set())
 
     def test_the_pattern_tells_a_default_from_a_bare_read(self):
-        self.assertEqual(BARE.findall('a="$OPT_A" b="${OPT_B}" c="${OPT_C:-}" d="${OPT_D-x}"'),
-                         ["OPT_A", "OPT_B"])
+        self.assertEqual(BARE.findall('a="$OPT_A" b="${OPT_B}" c="${OPT_C:-}" d="${OPT_D-x}"'), ["OPT_A", "OPT_B"])

@@ -4,7 +4,6 @@ import subprocess
 import tempfile
 import unittest
 
-from load import WORKERS
 from stubs import shadow_workers
 
 # the store listing comes from STORE_LISTING, one `name:size` a line per store
@@ -29,9 +28,22 @@ class DemCheck(unittest.TestCase):
         listing = {f"STORE_LISTING_{k.replace('-', '_').upper()}": " ".join(v) for k, v in (stores or {}).items()}
         for k in ("DEM_STORE", "DMR5_STORE", "DMR35_STORE", "UGKK_STORE", "SONNY1_STORE"):
             env.setdefault(k, "")
-        r = subprocess.run(["bash", "workers/dem/check.sh"], cwd=self.work, capture_output=True, text=True,
-                           env={**os.environ, **listing, **env, "BBOX": BBOX, "GITHUB_OUTPUT": out,
-                                "SRC_CONTOURS": contours, "SRC_ROCKS": rocks, "SRC_TERRAIN": terrain})
+        r = subprocess.run(
+            ["bash", "workers/dem/check.sh"],
+            cwd=self.work,
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                **listing,
+                **env,
+                "BBOX": BBOX,
+                "GITHUB_OUTPUT": out,
+                "SRC_CONTOURS": contours,
+                "SRC_ROCKS": rocks,
+                "SRC_TERRAIN": terrain,
+            },
+        )
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         with open(out) as f:
             return dict(line.split("=", 1) for line in f.read().splitlines()), r.stdout
@@ -42,15 +54,20 @@ class DemCheck(unittest.TestCase):
         self.assertEqual(got["mirror_contours"], "")
         self.assertEqual(len(got["demkey_contours"]), 12)
         # a refilled tile changes the key, a foreign one doesn't
-        again, _ = self.check(contours="sonny", stores={"dem-sonny": stores["dem-sonny"][:2] + [f"N48E017.tif:{BIG + 1}"]})
+        again, _ = self.check(
+            contours="sonny", stores={"dem-sonny": stores["dem-sonny"][:2] + [f"N48E017.tif:{BIG + 1}"]}
+        )
         self.assertEqual(again["demkey_contours"], got["demkey_contours"])
-        changed, _ = self.check(contours="sonny", stores={"dem-sonny": [f"N49E019.tif:{BIG + 1}", f"N49E020.tif:{BIG}"]})
+        changed, _ = self.check(
+            contours="sonny", stores={"dem-sonny": [f"N49E019.tif:{BIG + 1}", f"N49E020.tif:{BIG}"]}
+        )
         self.assertNotEqual(changed["demkey_contours"], got["demkey_contours"])
 
     def test_empty_store_is_refilled(self):
         got, said = self.check(contours="sonny", terrain="sonny")
-        self.assertEqual((got["mirror_contours"], got["mirror_terrain"]), ("sonny", ""),
-                         "one mirror queued once for two layers")
+        self.assertEqual(
+            (got["mirror_contours"], got["mirror_terrain"]), ("sonny", ""), "one mirror queued once for two layers"
+        )
         self.assertIn("refilled by another layer already", said)
 
     def test_dmr5_missing_degree(self):
@@ -60,30 +77,50 @@ class DemCheck(unittest.TestCase):
 
     def test_dmr5_cutout(self):
         got, _ = self.check(contours="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX="20.0,49.1,20.3,49.25")
-        self.assertEqual((got["mirror_dmr5_area"], got["mirror_dmr5_asset"]),
-                         ("20.0,49.1,20.3,49.25", "ugkk-vysoke_tatry.tif"))
-        got, _ = self.check(contours="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX="20.0,49.1,20.3,49.25",
-                            stores={"dem-ugkk": ["ugkk-vysoke_tatry.tif:5"]})
+        self.assertEqual(
+            (got["mirror_dmr5_area"], got["mirror_dmr5_asset"]), ("20.0,49.1,20.3,49.25", "ugkk-vysoke_tatry.tif")
+        )
+        got, _ = self.check(
+            contours="dmr5",
+            AREA_KEY="vysoke_tatry",
+            AREA_BBOX="20.0,49.1,20.3,49.25",
+            stores={"dem-ugkk": ["ugkk-vysoke_tatry.tif:5"]},
+        )
         self.assertEqual(got["mirror_dmr5_area"], "")
 
     def test_terrain_ignores_the_cutout(self):
-        got, _ = self.check(terrain="dmr5", AREA_KEY="vysoke_tatry",
-                            stores={"dem-dmr5-v2": [f"N49E019.tif:{BIG}", f"N49E020.tif:{BIG}"]})
+        got, _ = self.check(
+            terrain="dmr5",
+            AREA_KEY="vysoke_tatry",
+            stores={"dem-dmr5-v2": [f"N49E019.tif:{BIG}", f"N49E020.tif:{BIG}"]},
+        )
         self.assertEqual((got["mirror_dmr5_area"], got["mirror_dmr5_tiles"]), ("", ""))
 
     def test_a_mountains_terrain_reads_the_cutout(self):
-        got, _ = self.check(terrain="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX="20.0,49.1,20.3,49.25",
-                            TERRAIN_CUTOUT="true")
+        got, _ = self.check(
+            terrain="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX="20.0,49.1,20.3,49.25", TERRAIN_CUTOUT="true"
+        )
         self.assertEqual((got["mirror_dmr5_asset"], got["mirror_dmr5_tiles"]), ("ugkk-vysoke_tatry.tif", ""))
 
     def test_a_range_across_a_border_refills_what_goes_on_beyond_it(self):
         ugkk = {"dem-ugkk": ["ugkk-vysoke_tatry.tif:5"]}
-        got, _ = self.check(terrain="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX=BBOX, TERRAIN_CUTOUT="true",
-                            DEM_FILL="sonny", stores=ugkk)
+        got, _ = self.check(
+            terrain="dmr5",
+            AREA_KEY="vysoke_tatry",
+            AREA_BBOX=BBOX,
+            TERRAIN_CUTOUT="true",
+            DEM_FILL="sonny",
+            stores=ugkk,
+        )
         self.assertEqual((got["mirror_fill"], got["mirror_terrain"]), ("sonny", ""))
-        filled, _ = self.check(terrain="dmr5", AREA_KEY="vysoke_tatry", AREA_BBOX=BBOX, TERRAIN_CUTOUT="true",
-                               DEM_FILL="sonny", stores={**ugkk, "dem-sonny": [f"N49E019.tif:{BIG}",
-                                                                              f"N49E020.tif:{BIG}"]})
+        filled, _ = self.check(
+            terrain="dmr5",
+            AREA_KEY="vysoke_tatry",
+            AREA_BBOX=BBOX,
+            TERRAIN_CUTOUT="true",
+            DEM_FILL="sonny",
+            stores={**ugkk, "dem-sonny": [f"N49E019.tif:{BIG}", f"N49E020.tif:{BIG}"]},
+        )
         self.assertEqual(filled["mirror_fill"], "")
         self.assertNotEqual(filled["demkey_terrain"], got["demkey_terrain"], "a refill builds the model again")
 

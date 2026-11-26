@@ -5,6 +5,7 @@ Assembling rings isn't linear in cells, so one pass over a cut-out never
 finished; in a block rings assemble fast and finished blocks stay on disk.
 The price is seams, which `stitch_seams()` joins by `ST_Union`.
 """
+
 import json
 import os
 import re
@@ -14,7 +15,6 @@ import time
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from watch import dir_mb, hms, run_watched  # noqa: E402
-
 
 # printed over every block and expected here: `<SRS>` is dropped from the window on purpose
 EXPECTED_WARNING = "No SRS set on layer"
@@ -29,10 +29,13 @@ def _pass_stderr(text, *, first, where):
         if EXPECTED_WARNING in line:
             expected += 1
             if first:
-                print(f"    (GDAL: \"{line.strip()}\" – as it should be, "
-                      f"`<SRS>` is dropped from the block window on purpose so "
-                      f"coordinates stay metric. Further ones are only "
-                      f"counted.)", flush=True)
+                print(
+                    f'    (GDAL: "{line.strip()}" – as it should be, '
+                    f"`<SRS>` is dropped from the block window on purpose so "
+                    f"coordinates stay metric. Further ones are only "
+                    f"counted.)",
+                    flush=True,
+                )
             continue
         print(f"    {where}: {line.rstrip()}", flush=True)
     return expected
@@ -41,9 +44,7 @@ def _pass_stderr(text, *, first, where):
 def raster_size(vrt):
     """(width, height) of a raster in pixels."""
     try:
-        info = json.loads(subprocess.run(["gdalinfo", "-json", vrt],
-                                         check=True, capture_output=True,
-                                         text=True).stdout)
+        info = json.loads(subprocess.run(["gdalinfo", "-json", vrt], check=True, capture_output=True, text=True).stdout)
         return info["size"][0], info["size"][1]
     except (subprocess.CalledProcessError, KeyError, ValueError):
         return 0, 0
@@ -51,9 +52,7 @@ def raster_size(vrt):
 
 def plan(w_px, h_px, block_px):
     """Top-left corners of the blocks; a block is a `block_px` square, the last smaller."""
-    return [(bx, by)
-            for by in range(0, h_px, block_px)
-            for bx in range(0, w_px, block_px)]
+    return [(bx, by) for by in range(0, h_px, block_px) for bx in range(0, w_px, block_px)]
 
 
 def mark_seams(src, dst, on_edge):
@@ -89,6 +88,7 @@ def _coords(geom):
 
 def _area(geom):
     """A geometry's area in m² (shoelace over metric coordinates), holes subtracted."""
+
     def ring(points):
         s = 0.0
         for i in range(len(points) - 1):
@@ -130,8 +130,7 @@ def file_area(path):
 def _touches(geom, x0, y0, x1, y1, tol):
     """Does the geometry reach the window's edge (in raster coordinates)?"""
     for x, y in _coords(geom):
-        if (abs(x - x0) <= tol or abs(x - x1) <= tol
-                or abs(y - y0) <= tol or abs(y - y1) <= tol):
+        if abs(x - x0) <= tol or abs(x - x1) <= tol or abs(y - y0) <= tol or abs(y - y1) <= tol:
             return True
     return False
 
@@ -167,7 +166,8 @@ def check_metric(seq, minimum=1000.0, samples=200):
             f"metres – `<SRS>` wasn't dropped from the block window and GDAL "
             f"converted them to WGS84. Areas would come to ~1e-9 m² and the "
             f"smallest-area filter would drop ALL rocks, the run staying "
-            f"green (runs 31245134321 and 31426542010).")
+            f"green (runs 31245134321 and 31426542010)."
+        )
     return True
 
 
@@ -180,11 +180,12 @@ def by_blocks(vrt, out_dir, levels, attributes, block_px, geo, *, budget_s=0):
     ox, oy, res = geo
     blocks = plan(w_px, h_px, block_px)
     os.makedirs(out_dir, exist_ok=True)
-    finished = sum(1 for i in range(len(blocks))
-                   if os.path.exists(os.path.join(out_dir, f"b{i:05d}.geojsonl")))
-    print(f"  block {block_px}×{block_px} px, {len(blocks)} blocks"
-          + (f", {finished} already done by an earlier run" if finished else ""),
-          flush=True)
+    finished = sum(1 for i in range(len(blocks)) if os.path.exists(os.path.join(out_dir, f"b{i:05d}.geojsonl")))
+    print(
+        f"  block {block_px}×{block_px} px, {len(blocks)} blocks"
+        + (f", {finished} already done by an earlier run" if finished else ""),
+        flush=True,
+    )
 
     t0 = time.time()
     done = 0
@@ -196,9 +197,10 @@ def by_blocks(vrt, out_dir, levels, attributes, block_px, geo, *, budget_s=0):
         bw, bh = min(block_px, w_px - bx), min(block_px, h_px - by)
         window = os.path.join(out_dir, "window.vrt")
         # `-of VRT` is XML over the same raster – the cut-out costs no byte
-        subprocess.run(["gdal_translate", "-q", "-of", "VRT",
-                        "-srcwin", str(bx), str(by), str(bw), str(bh),
-                        vrt, window], check=True)
+        subprocess.run(
+            ["gdal_translate", "-q", "-of", "VRT", "-srcwin", str(bx), str(by), str(bw), str(bh), vrt, window],
+            check=True,
+        )
         # drop <SRS>: the GeoJSON driver converts to WGS84 whenever it knows the source's
         with open(window) as f:
             xml = f.read()
@@ -209,14 +211,28 @@ def by_blocks(vrt, out_dir, levels, attributes, block_px, geo, *, budget_s=0):
             os.remove(part)
         # stderr is caught, not muted; on failure all of it is printed first
         result = subprocess.run(
-            ["gdal_contour", "-p", "-q", "-fl", *levels, *attributes,
-             "-f", "GeoJSONSeq", "-nln", "band",
-             # metric coordinates, two decimals = a centimetre
-             "-lco", "COORDINATE_PRECISION=2", window, part],
-            capture_output=True, text=True)
+            [
+                "gdal_contour",
+                "-p",
+                "-q",
+                "-fl",
+                *levels,
+                *attributes,
+                "-f",
+                "GeoJSONSeq",
+                "-nln",
+                "band",
+                # metric coordinates, two decimals = a centimetre
+                "-lco",
+                "COORDINATE_PRECISION=2",
+                window,
+                part,
+            ],
+            capture_output=True,
+            text=True,
+        )
         # `first` binds to the first occurrence, not the first block
-        no_srs += _pass_stderr(result.stderr, first=(no_srs == 0),
-                               where="gdal_contour")
+        no_srs += _pass_stderr(result.stderr, first=(no_srs == 0), where="gdal_contour")
         if result.stdout.strip():
             print(f"    gdal_contour: {result.stdout.strip()}", flush=True)
         result.check_returncode()
@@ -233,21 +249,21 @@ def by_blocks(vrt, out_dir, levels, attributes, block_px, geo, *, budget_s=0):
         # progress by block is all that tells anything about this long phase
         if done and (i % max(1, len(blocks) // 50) == 0 or i == len(blocks) - 1):
             rest = el / done * (len(blocks) - i - 1)
-            print(f"  … outlines: block {i + 1}/{len(blocks)}, running {hms(el)}, "
-                  f"~{hms(rest)} left, {dir_mb(out_dir):.0f} MB on disk",
-                  flush=True)
+            print(
+                f"  … outlines: block {i + 1}/{len(blocks)}, running {hms(el)}, "
+                f"~{hms(rest)} left, {dir_mb(out_dir):.0f} MB on disk",
+                flush=True,
+            )
         # the budget only after a written block – the next run picks up here
         if budget_s and el > budget_s:
             raise TimeoutError(f"outlines: {i + 1}/{len(blocks)} blocks")
     # the count is shown: one block of 364 without it is worth seeing
     if no_srs:
-        print(f"  (GDAL reported \"{EXPECTED_WARNING}\" for {no_srs} "
-              f"of {done} computed blocks – expected)", flush=True)
+        print(f'  (GDAL reported "{EXPECTED_WARNING}" for {no_srs} of {done} computed blocks – expected)', flush=True)
     return out_dir, len(blocks)
 
 
-def stitch_seams(seq, tmp, *, key_attribute="smin", heartbeat=30,
-                 max_s=0, label="seams"):
+def stitch_seams(seq, tmp, *, key_attribute="smin", heartbeat=30, max_s=0, label="seams"):
     """Join areas cut by a block edge, per class. Returns the result's path."""
     # ST_Union may fail silently on invalid geometry, so ST_MakeValid, and the
     # area is checked after; no SRS on output: `-a_srs` over GeoJSONSeq makes degrees
@@ -268,19 +284,33 @@ def stitch_seams(seq, tmp, *, key_attribute="smin", heartbeat=30,
         print("  seams: no area reaches a block edge", flush=True)
         return rest
 
-    print(f"  seams: {n_seam} areas on a block edge, {n_ok} away from it – "
-          f"stitching the former", flush=True)
+    print(f"  seams: {n_seam} areas on a block edge, {n_ok} away from it – stitching the former", flush=True)
     stitched = os.path.join(tmp, "stitched.geojsonl")
     # no `-a_srs` or `-t_srs`; `ST_Union` is planar and ignores SRID
     error = None
     try:
-        run_watched(["ogr2ogr", "-f", "GeoJSONSeq", stitched, seams,
-                     "-lco", "COORDINATE_PRECISION=2",
-                     "-dialect", "SQLITE", "-explodecollections",
-                     "-sql", f"SELECT {key_attribute}, "
-                             f"ST_Union(ST_MakeValid(geometry)) AS geometry "
-                             f"FROM seams GROUP BY {key_attribute}"],
-                    label, tmp=stitched, every=heartbeat, max_s=max_s)
+        run_watched(
+            [
+                "ogr2ogr",
+                "-f",
+                "GeoJSONSeq",
+                stitched,
+                seams,
+                "-lco",
+                "COORDINATE_PRECISION=2",
+                "-dialect",
+                "SQLITE",
+                "-explodecollections",
+                "-sql",
+                f"SELECT {key_attribute}, "
+                f"ST_Union(ST_MakeValid(geometry)) AS geometry "
+                f"FROM seams GROUP BY {key_attribute}",
+            ],
+            label,
+            tmp=stitched,
+            every=heartbeat,
+            max_s=max_s,
+        )
     except Exception as exc:
         error = f"{type(exc).__name__}"
 
@@ -294,29 +324,38 @@ def stitch_seams(seq, tmp, *, key_attribute="smin", heartbeat=30,
         try:
             check_metric(stitched)
         except RuntimeError as exc:
-            error = ("the union came out in DEGREES, not metres – the output "
-                     "got an SRS (`-a_srs`/`-t_srs`) and the GeoJSON driver "
-                     f"converted the coordinates to WGS84; {exc}")
+            error = (
+                "the union came out in DEGREES, not metres – the output "
+                "got an SRS (`-a_srs`/`-t_srs`) and the GeoJSON driver "
+                f"converted the coordinates to WGS84; {exc}"
+            )
     area_before = file_area(seams)
     area_after = file_area(stitched) if n_stitched and not error else 0.0
-    lost = (area_before > 0 and area_after < area_before * 0.5)
+    lost = area_before > 0 and area_after < area_before * 0.5
     if error or not n_stitched or lost:
-        why = (f"({error})" if error else
-               "(the union came out empty – look for `TopologyException` in the log)"
-               if not n_stitched else
-               f"(of {area_before/1e6:.2f} km² {area_after/1e6:.2f} km² were left)")
+        why = (
+            f"({error})"
+            if error
+            else "(the union came out empty – look for `TopologyException` in the log)"
+            if not n_stitched
+            else f"(of {area_before / 1e6:.2f} km² {area_after / 1e6:.2f} km² were left)"
+        )
         # the reason comes from what was found, never a guess
-        print(f"::warning::Stitching the seams can't be used {why}"
-              + f". Returning {n_seam} original areas unstitched: on block edges "
-              f"({label}) they will be cut and their holes open, but THERE – "
-              f"on the map a straight edge in the outline. When the reason is an "
-              f"empty union, look above for GEOS `TopologyException` over the "
-              f"gdal_contour outline; it isn't spatialite, that is installed.",
-              flush=True)
+        print(
+            f"::warning::Stitching the seams can't be used {why}"
+            + f". Returning {n_seam} original areas unstitched: on block edges "
+            f"({label}) they will be cut and their holes open, but THERE – "
+            f"on the map a straight edge in the outline. When the reason is an "
+            f"empty union, look above for GEOS `TopologyException` over the "
+            f"gdal_contour outline; it isn't spatialite, that is installed.",
+            flush=True,
+        )
         return seq
 
-    print(f"  seams: {n_seam} areas stitched into {n_stitched} "
-          f"({area_before/1e6:.2f} → {area_after/1e6:.2f} km²)", flush=True)
+    print(
+        f"  seams: {n_seam} areas stitched into {n_stitched} ({area_before / 1e6:.2f} → {area_after / 1e6:.2f} km²)",
+        flush=True,
+    )
     together = os.path.join(tmp, "stitched-all.geojsonl")
     with open(together, "w") as fo:
         for src in (rest, stitched):

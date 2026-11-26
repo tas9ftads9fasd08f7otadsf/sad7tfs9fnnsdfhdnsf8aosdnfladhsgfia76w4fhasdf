@@ -21,6 +21,7 @@ As a library:
         ...
     rz.extract_span(entries, on_file=lambda name, stream: ...)
 """
+
 import argparse
 import json
 import os
@@ -32,8 +33,10 @@ import urllib.request
 import zlib
 
 # the probe's User-Agent – some CDNs refuse an empty client
-UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
-      "(KHTML, like Gecko) Version/17.4 Safari/605.1.15")
+UA = (
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 "
+    "(KHTML, like Gecko) Version/17.4 Safari/605.1.15"
+)
 
 EOCD_SIG = b"PK\x05\x06"
 EOCD64_SIG = b"PK\x06\x06"
@@ -74,8 +77,7 @@ class RemoteZip:
         last = None
         for attempt in range(self.retries):
             try:
-                with _open(self.url, {"User-Agent": UA, "Range": "bytes=0-0"},
-                           self.timeout) as r:
+                with _open(self.url, {"User-Agent": UA, "Range": "bytes=0-0"}, self.timeout) as r:
                     code = r.getcode()
                     cr = r.headers.get("Content-Range", "")
                     r.read(1)
@@ -83,16 +85,17 @@ class RemoteZip:
                     raise RemoteZipError(
                         f"the server can't do HTTP Range (HTTP {code}, "
                         f"Content-Range: {cr or '—'}). Without it a 198 GB "
-                        f"archive can't be processed.")
+                        f"archive can't be processed."
+                    )
                 total = cr.rsplit("/", 1)[1].strip()
                 if not total.isdigit():
                     raise RemoteZipError(f"unreadable Content-Range: {cr}")
                 return int(total)
             except RemoteZipError:
                 raise
-            except Exception as exc:              # network, 5xx, timeout
+            except Exception as exc:  # network, 5xx, timeout
                 last = exc
-                time.sleep(min(2 ** attempt, 30))
+                time.sleep(min(2**attempt, 30))
         raise RemoteZipError(f"{self.url} doesn't answer: {last}")
 
     def _stream(self, start, end):
@@ -105,8 +108,8 @@ class RemoteZip:
                 if r.getcode() != 206:
                     r.close()
                     raise RemoteZipError(
-                        f"a Range got HTTP {r.getcode()} – the server would "
-                        f"send the whole file ({self.size} B)")
+                        f"a Range got HTTP {r.getcode()} – the server would send the whole file ({self.size} B)"
+                    )
                 return r
             except RemoteZipError:
                 raise
@@ -114,10 +117,10 @@ class RemoteZip:
                 if exc.code in (416,):
                     raise RemoteZipError(f"invalid range {start}-{end}") from exc
                 last = exc
-                time.sleep(min(2 ** attempt, 30))
+                time.sleep(min(2**attempt, 30))
             except Exception as exc:
                 last = exc
-                time.sleep(min(2 ** attempt, 30))
+                time.sleep(min(2**attempt, 30))
         raise RemoteZipError(f"range {start}-{end} couldn't be opened: {last}")
 
     def get(self, start, length):
@@ -137,8 +140,7 @@ class RemoteZip:
                 r.close()
             if len(buf) < want:
                 # the transfer broke – resume where it ended
-                self._log(f"  … the transfer broke at {len(buf)}/{want} B, "
-                          f"resuming")
+                self._log(f"  … the transfer broke at {len(buf)}/{want} B, resuming")
         return bytes(buf)
 
     def reader(self, start, end):
@@ -152,22 +154,21 @@ class RemoteZip:
         if pos < 0:
             raise RemoteZipError(
                 "the file doesn't end in a central directory end (PK\\x05\\x06) – "
-                "either it isn't a ZIP, or the server sent an error page.")
+                "either it isn't a ZIP, or the server sent an error page."
+            )
         cd_count, cd_size, cd_off = struct.unpack_from("<2xHII", tail, pos + 8)
         base = self.size - tail_len
 
         # ZIP64: 0xFFFF/0xFFFFFFFF means "the real number is elsewhere", always at 198 GB
         loc = tail.rfind(EOCD64_LOC_SIG, 0, pos)
-        if loc >= 0 and (cd_count == 0xFFFF or cd_size == 0xFFFFFFFF
-                         or cd_off == 0xFFFFFFFF):
+        if loc >= 0 and (cd_count == 0xFFFF or cd_size == 0xFFFFFFFF or cd_off == 0xFFFFFFFF):
             (eocd64_off,) = struct.unpack_from("<Q", tail, loc + 8)
             if base <= eocd64_off < self.size:
-                rec = tail[eocd64_off - base:]
+                rec = tail[eocd64_off - base :]
             else:
                 rec = self.get(eocd64_off, 56)
             if rec[:4] != EOCD64_SIG:
-                raise RemoteZipError(
-                    f"the ZIP64 record at offset {eocd64_off} doesn't start with PK\\x06\\x06")
+                raise RemoteZipError(f"the ZIP64 record at offset {eocd64_off} doesn't start with PK\\x06\\x06")
             cd_count, cd_size, cd_off = struct.unpack_from("<QQQ", rec, 32)
         return cd_off, cd_size, cd_count
 
@@ -176,25 +177,32 @@ class RemoteZip:
         if self._entries is not None:
             return self._entries
         cd_off, cd_size, cd_count = self._find_directory()
-        self._log(f"Central directory: {cd_count} members, "
-                  f"{cd_size / 1048576:.1f} MB at offset {cd_off}")
+        self._log(f"Central directory: {cd_count} members, {cd_size / 1048576:.1f} MB at offset {cd_off}")
         blob = self.get(cd_off, cd_size)
         out, p = [], 0
-        while p + 46 <= len(blob) and blob[p:p + 4] == CDIR_SIG:
-            (flags, method, _t, _d, crc, csize, usize, nlen, elen, clen,
-             _disk, _ia, _ea, hoff) = struct.unpack_from("<8xHHHHIIIHHHHHII", blob, p)
-            name = blob[p + 46:p + 46 + nlen].decode("utf-8", "replace")
-            extra = blob[p + 46 + nlen:p + 46 + nlen + elen]
+        while p + 46 <= len(blob) and blob[p : p + 4] == CDIR_SIG:
+            (flags, method, _t, _d, crc, csize, usize, nlen, elen, clen, _disk, _ia, _ea, hoff) = struct.unpack_from(
+                "<8xHHHHIIIHHHHHII", blob, p
+            )
+            name = blob[p + 46 : p + 46 + nlen].decode("utf-8", "replace")
+            extra = blob[p + 46 + nlen : p + 46 + nlen + elen]
             csize, usize, hoff = _zip64_fix(extra, csize, usize, hoff)
-            out.append({
-                "i": len(out), "name": name, "method": method, "flags": flags,
-                "crc": crc, "csize": csize, "usize": usize, "offset": hoff,
-                "nlen": nlen,
-            })
+            out.append(
+                {
+                    "i": len(out),
+                    "name": name,
+                    "method": method,
+                    "flags": flags,
+                    "crc": crc,
+                    "csize": csize,
+                    "usize": usize,
+                    "offset": hoff,
+                    "nlen": nlen,
+                }
+            )
             p += 46 + nlen + elen + clen
         if len(out) != cd_count:
-            self._log(f"::warning::the directory has {len(out)} members, the "
-                      f"header says {cd_count}")
+            self._log(f"::warning::the directory has {len(out)} members, the header says {cd_count}")
         self._entries = out
         return out
 
@@ -205,7 +213,7 @@ class RemoteZip:
         if raw[:4] != LFH_SIG:
             raise RemoteZipError(f"{entry['name']}: the local header is missing")
         nlen, elen = struct.unpack_from("<HH", raw, 26)
-        data = raw[30 + nlen + elen:30 + nlen + elen + take]
+        data = raw[30 + nlen + elen : 30 + nlen + elen + take]
         if entry["method"] == 0:
             return data[:want]
         dec = zlib.decompressobj(-zlib.MAX_WBITS)
@@ -223,15 +231,11 @@ class RemoteZip:
         start = ents[0]["offset"]
         # the end: the last member's data + room for its header and a data descriptor
         last = ents[-1]
-        end = min(last["offset"] + 30 + last["nlen"] + 4096 + last["csize"] + 24,
-                  self.size) - 1
+        end = min(last["offset"] + 30 + last["nlen"] + 4096 + last["csize"] + 24, self.size) - 1
         span = end - start + 1
         if hard_limit and span > hard_limit:
-            raise RemoteZipError(
-                f"the span has {span / 1048576:.0f} MB, the cap is "
-                f"{hard_limit / 1048576:.0f} MB")
-        self._log(f"Span {start}–{end} ({span / 1048576:.1f} MB), "
-                  f"{len(ents)} members")
+            raise RemoteZipError(f"the span has {span / 1048576:.0f} MB, the cap is {hard_limit / 1048576:.0f} MB")
+        self._log(f"Span {start}–{end} ({span / 1048576:.1f} MB), {len(ents)} members")
 
         rd = self.reader(start, end)
         done = 0
@@ -240,8 +244,8 @@ class RemoteZip:
             head = rd.read_exact(30)
             if head[:4] != LFH_SIG:
                 raise RemoteZipError(
-                    f"no local header at offset {e['offset']} "
-                    f"({e['name']}) – did the archive change meanwhile?")
+                    f"no local header at offset {e['offset']} ({e['name']}) – did the archive change meanwhile?"
+                )
             nlen, elen = struct.unpack_from("<HH", head, 26)
             rd.read_exact(nlen + elen)
             on_file(e, _EntryStream(rd, e))
@@ -256,16 +260,19 @@ def _zip64_fix(extra, csize, usize, hoff):
     p = 0
     while p + 4 <= len(extra):
         tag, ln = struct.unpack_from("<HH", extra, p)
-        body = extra[p + 4:p + 4 + ln]
+        body = extra[p + 4 : p + 4 + ln]
         if tag == 0x0001:
             q = 0
             # a fixed order: ONLY the fields that overflowed outside are there
             if usize == 0xFFFFFFFF and q + 8 <= len(body):
-                usize = struct.unpack_from("<Q", body, q)[0]; q += 8
+                usize = struct.unpack_from("<Q", body, q)[0]
+                q += 8
             if csize == 0xFFFFFFFF and q + 8 <= len(body):
-                csize = struct.unpack_from("<Q", body, q)[0]; q += 8
+                csize = struct.unpack_from("<Q", body, q)[0]
+                q += 8
             if hoff == 0xFFFFFFFF and q + 8 <= len(body):
-                hoff = struct.unpack_from("<Q", body, q)[0]; q += 8
+                hoff = struct.unpack_from("<Q", body, q)[0]
+                q += 8
         p += 4 + ln
     return csize, usize, hoff
 
@@ -302,9 +309,8 @@ class _ResumableReader:
                 self._reset()
                 self.fails += 1
                 if self.fails > self.rz.retries:
-                    raise RemoteZipError(
-                        f"reading from {self.pos} failed {self.fails}×: {exc}")
-                time.sleep(min(2 ** self.fails, 30))
+                    raise RemoteZipError(f"reading from {self.pos} failed {self.fails}×: {exc}")
+                time.sleep(min(2**self.fails, 30))
 
     def read_exact(self, n):
         buf = bytearray()
@@ -324,9 +330,7 @@ class _ResumableReader:
 
     def skip_to(self, abs_pos):
         if abs_pos < self.pos:
-            raise RemoteZipError(
-                f"can't go back ({self.pos} → {abs_pos}); members must "
-                f"go by offset")
+            raise RemoteZipError(f"can't go back ({self.pos} → {abs_pos}); members must go by offset")
         self.skip(abs_pos - self.pos)
 
     def drain_entry(self, e):
@@ -361,8 +365,8 @@ class _EntryStream:
             self.dec = zlib.decompressobj(-zlib.MAX_WBITS)
         else:
             raise RemoteZipError(
-                f"{entry['name']}: compression {entry['method']} isn't supported "
-                f"(we know 0 = stored and 8 = deflate)")
+                f"{entry['name']}: compression {entry['method']} isn't supported (we know 0 = stored and 8 = deflate)"
+            )
         self.buf = bytearray()
         self.eof = False
 
@@ -444,19 +448,16 @@ def main(argv=None):
     ents = rz.entries()
     total_c = sum(e["csize"] for e in ents)
     total_u = sum(e["usize"] for e in ents)
-    print(f"Members: {len(ents)}, compressed {total_c / 1e9:.1f} GB, "
-          f"unpacked {total_u / 1e9:.1f} GB")
+    print(f"Members: {len(ents)}, compressed {total_c / 1e9:.1f} GB, unpacked {total_u / 1e9:.1f} GB")
 
     if args.cmd == "list":
-        for e in ents[:args.limit]:
-            print(f"  [{e['i']:6d}] {e['name']}  "
-                  f"{e['csize'] / 1048576:.2f} → {e['usize'] / 1048576:.2f} MB")
+        for e in ents[: args.limit]:
+            print(f"  [{e['i']:6d}] {e['name']}  {e['csize'] / 1048576:.2f} → {e['usize'] / 1048576:.2f} MB")
         if len(ents) > args.limit:
             print(f"  … and {len(ents) - args.limit} more")
         if args.json:
             with open(args.json, "w") as f:
-                json.dump({"url": args.url, "size": rz.size, "entries": ents},
-                          f, ensure_ascii=False)
+                json.dump({"url": args.url, "size": rz.size, "entries": ents}, f, ensure_ascii=False)
             print(f"Manifest: {args.json}")
         return 0
 

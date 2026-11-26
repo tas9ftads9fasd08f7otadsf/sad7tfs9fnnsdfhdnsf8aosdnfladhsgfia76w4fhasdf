@@ -6,8 +6,8 @@ import tempfile
 import unittest
 from contextlib import redirect_stdout
 
-from load import needs_cmd, worker
 from geo import hill, write_dem
+from load import needs_cmd, worker
 from stubs import shadow_workers
 
 # --get copies from FAKE_STORE/<store>/, --rm logs; the real store.py talks to Drive
@@ -50,11 +50,19 @@ class Fetch(unittest.TestCase):
         write_dem(os.path.join(self.store, store, name), hill(cells)[:rows], box)
 
     def fetch(self, source="sonny", area="whole", bbox=BBOX, fill="", down=""):
-        r = subprocess.run(["bash", "workers/dem/fetch.sh", bbox, "dem/x", "", source, area], cwd=self.work,
-                           capture_output=True, text=True,
-                           env={**os.environ, "FAKE_STORE": self.store, "DEM_FILL": fill,
-                                "FAKE_STORE_DOWN": down, **{k: "" for k in (
-                               "DEM_STORE", "DMR5_STORE", "DMR35_STORE", "UGKK_STORE", "SONNY1_STORE")}})
+        r = subprocess.run(
+            ["bash", "workers/dem/fetch.sh", bbox, "dem/x", "", source, area],
+            cwd=self.work,
+            capture_output=True,
+            text=True,
+            env={
+                **os.environ,
+                "FAKE_STORE": self.store,
+                "DEM_FILL": fill,
+                "FAKE_STORE_DOWN": down,
+                **{k: "" for k in ("DEM_STORE", "DMR5_STORE", "DMR35_STORE", "UGKK_STORE", "SONNY1_STORE")},
+            },
+        )
         removed = os.path.join(self.store, "removed")
         if not os.path.exists(removed):
             return r, []
@@ -118,8 +126,13 @@ class Fetch(unittest.TestCase):
         self.assertNotIn("not a single tile", r.stdout)
 
     def height(self, lon, lat):
-        out = subprocess.run(["gdallocationinfo", "-valonly", "-wgs84", "dem/x/all.vrt", str(lon), str(lat)],
-                             cwd=self.work, capture_output=True, text=True, check=True).stdout
+        out = subprocess.run(
+            ["gdallocationinfo", "-valonly", "-wgs84", "dem/x/all.vrt", str(lon), str(lat)],
+            cwd=self.work,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
         return float(out.split()[0])
 
     def test_a_cutout_without_its_fill_stops(self):

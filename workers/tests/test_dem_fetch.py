@@ -6,9 +6,9 @@ import zipfile
 from contextlib import redirect_stdout
 from unittest import mock
 
-from load import needs_cmd, worker
-from geo import hill, write_dem
 import rangeserver
+from geo import hill, write_dem
+from load import needs_cmd, worker
 
 fetch = worker("dem/fetch-open.py")
 ugkk = worker("dem/fetch-ugkk.py")
@@ -27,9 +27,13 @@ def zipped(members):
 @needs_cmd("curl")
 class Download(unittest.TestCase):
     def setUp(self):
-        self.server, self.base = rangeserver.serve({
-            "/dem.zip": zipped({"dem/a.tif": b"II*\0", "readme.txt": b"x"}),
-            "/error.zip": b"<html>quota exceeded</html>", "/": b"ok"})
+        self.server, self.base = rangeserver.serve(
+            {
+                "/dem.zip": zipped({"dem/a.tif": b"II*\0", "readme.txt": b"x"}),
+                "/error.zip": b"<html>quota exceeded</html>",
+                "/": b"ok",
+            }
+        )
         self.addCleanup(self.server.server_close)
         self.addCleanup(self.server.shutdown)
         self.tmp = tempfile.mkdtemp()

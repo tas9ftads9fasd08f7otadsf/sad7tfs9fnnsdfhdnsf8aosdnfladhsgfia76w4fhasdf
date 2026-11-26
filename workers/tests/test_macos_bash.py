@@ -4,7 +4,6 @@ import re
 import unittest
 
 import yaml
-
 from load import WORKERS
 
 ROOT = os.path.dirname(WORKERS)
@@ -41,8 +40,9 @@ class MacosBash(unittest.TestCase):
                 text = re.sub(r"^\s*#.*$", "", f.read(), flags=re.M)
             for pattern, what in BASH4:
                 with self.subTest(script=script):
-                    self.assertIsNone(re.search(pattern, text),
-                                      f"{script} ({where}) uses {what}, which macOS's bash 3.2 can't run")
+                    self.assertIsNone(
+                        re.search(pattern, text), f"{script} ({where}) uses {what}, which macOS's bash 3.2 can't run"
+                    )
 
 
 if __name__ == "__main__":

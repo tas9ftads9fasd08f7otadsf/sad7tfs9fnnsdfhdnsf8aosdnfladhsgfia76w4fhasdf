@@ -5,14 +5,15 @@ Also adds speed change points (`rail_speed`, `rail_speed_prev`), the track beari
 at a signal (`rail_bearing`), the widest gauge in mm (`rail_gauge`) and the track section
 (`rail_section`, its extent `rail_section_box`), splitting a way at the switches that bound one.
 """
+
 import argparse
 import math
 import re
 from pathlib import Path
 
 import osmium
-
-from sections import Sections, kind as section_kind
+from sections import Sections
+from sections import kind as section_kind
 
 # lines whose colour belongs on the track
 ROUTES = {"tram", "subway", "light_rail", "monorail", "train", "railway", "funicular"}
@@ -93,9 +94,12 @@ class Lines(osmium.SimpleHandler):
         self.top_way = max(self.top_way, w.id)
         nodes = w.nodes
         if section_kind(w.tags):
-            self.sections.add(w.id, w.tags, [nd.ref for nd in nodes],
-                              [(nd.lon, nd.lat) if nd.location.valid() else None
-                               for nd in nodes])
+            self.sections.add(
+                w.id,
+                w.tags,
+                [nd.ref for nd in nodes],
+                [(nd.lon, nd.lat) if nd.location.valid() else None for nd in nodes],
+            )
         kind = w.tags.get("railway")
         if kind not in TRACKS:
             return
@@ -216,8 +220,7 @@ def main():
         writer.close()
     print(f"Lines: {rewrite.changed} tracks got a line colour or number")
     print(f"Sections: {len(lines.sections.ways)} tracks, {rewrite.split} split at a switch")
-    print(f"Speed changes at {len(changes)} points, {len(lines.bearing)} signals "
-          f"have a bearing")
+    print(f"Speed changes at {len(changes)} points, {len(lines.bearing)} signals have a bearing")
 
 
 if __name__ == "__main__":

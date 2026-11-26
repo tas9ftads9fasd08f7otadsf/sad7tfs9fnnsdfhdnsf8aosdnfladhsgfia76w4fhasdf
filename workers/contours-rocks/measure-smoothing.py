@@ -7,6 +7,7 @@ rounded coordinates are the stairs seen at max zoom.
 
     python3 workers/contours-rocks/measure-smoothing.py [--seed=7]
 """
+
 import argparse
 import importlib.util
 import math
@@ -20,8 +21,7 @@ _HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def _load(name, fname):
-    spec = importlib.util.spec_from_file_location(
-        name, os.path.join(_HERE, fname))
+    spec = importlib.util.spec_from_file_location(name, os.path.join(_HERE, fname))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -32,13 +32,13 @@ shapes = _load("smooth_shapes", "smooth-shapes.py")
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import cell  # noqa: E402
 
-NX, NY = 640, 320          # 1 m grid
-LAT = 49.1                 # latitude (Tatras) – for the tile grid
+NX, NY = 640, 320  # 1 m grid
+LAT = 49.1  # latitude (Tatras) – for the tile grid
 EXTENT = cell.TILE_EXTENT  # the vector tile's coordinate grid
-SLOPE = 0.10               # a 10 % slope – the isoline is then a graph y(x)
+SLOPE = 0.10  # a 10 % slope – the isoline is then a graph y(x)
 # real terrain shapes: (wavelength m, amplitude m)
 FEATS = [(60.0, 1.20), (25.0, 0.50), (12.0, 0.22)]
-NOISE = 0.15               # micro-relief: shrubs, boulders, measurement noise
+NOISE = 0.15  # micro-relief: shrubs, boulders, measurement noise
 LEVEL = 16.0
 
 
@@ -61,14 +61,11 @@ def lowpass(Z, win):
         return Z
     ny, nx = Z.shape
     my, mx = ny // win, nx // win
-    C = Z[:my * win, :mx * win].reshape(my, win, mx, win).mean(axis=(1, 3))
+    C = Z[: my * win, : mx * win].reshape(my, win, mx, win).mean(axis=(1, 3))
     cy = (np.arange(my) + 0.5) * win - 0.5
     cx = (np.arange(mx) + 0.5) * win - 0.5
-    tmp = np.vstack([np.interp(np.clip(np.arange(nx), cx[0], cx[-1]), cx, row)
-                     for row in C])
-    return np.column_stack([
-        np.interp(np.clip(np.arange(ny), cy[0], cy[-1]), cy, col)
-        for col in tmp.T])
+    tmp = np.vstack([np.interp(np.clip(np.arange(nx), cx[0], cx[-1]), cx, row) for row in C])
+    return np.column_stack([np.interp(np.clip(np.arange(ny), cy[0], cy[-1]), cy, col) for col in tmp.T])
 
 
 # marching squares: how gdal_contour traces an isoline too
@@ -83,16 +80,17 @@ def contour(Z, level):
     for j in range(ny - 1):
         for i in range(nx - 1):
             z = (Z[j, i], Z[j, i + 1], Z[j + 1, i + 1], Z[j + 1, i])
-            c = ((float(i), float(j)), (float(i + 1), float(j)),
-                 (float(i + 1), float(j + 1)), (float(i), float(j + 1)))
+            c = ((float(i), float(j)), (float(i + 1), float(j)), (float(i + 1), float(j + 1)), (float(i), float(j + 1)))
             if all(v >= level for v in z) or all(v < level for v in z):
                 continue
-            pts = [_edge(c[k], c[(k + 1) % 4], z[k], z[(k + 1) % 4], level)
-                   for k in range(4)
-                   if (z[k] >= level) != (z[(k + 1) % 4] >= level)]
+            pts = [
+                _edge(c[k], c[(k + 1) % 4], z[k], z[(k + 1) % 4], level)
+                for k in range(4)
+                if (z[k] >= level) != (z[(k + 1) % 4] >= level)
+            ]
             if len(pts) == 2:
                 segs.append((pts[0], pts[1]))
-            elif len(pts) == 4:          # a saddle – the cell centre decides
+            elif len(pts) == 4:  # a saddle – the cell centre decides
                 if (sum(z) / 4 >= level) == (z[0] >= level):
                     segs += [(pts[0], pts[1]), (pts[2], pts[3])]
                 else:
@@ -102,6 +100,7 @@ def contour(Z, level):
 
 def longest_chain(segs):
     """The longest continuous line – across the cut-out, not crumbs at the edge."""
+
     def key(p):
         return round(p[0], 6), round(p[1], 6)
 
@@ -119,8 +118,7 @@ def longest_chain(segs):
         for at_end in (0, 1):
             while True:
                 tip = chain[-1] if at_end else chain[0]
-                nxt = next(((si, s) for si, s in adj.get(key(tip), [])
-                            if not used[si]), None)
+                nxt = next(((si, s) for si, s in adj.get(key(tip), []) if not used[si]), None)
                 if nxt is None:
                     break
                 si, side = nxt
@@ -195,8 +193,7 @@ def bends(pts):
         nu, nv = math.hypot(ux, uy), math.hypot(vx, vy)
         if nu < 1e-12 or nv < 1e-12:
             continue
-        out.append(math.degrees(math.acos(
-            max(-1.0, min(1.0, (ux * vx + uy * vy) / (nu * nv))))))
+        out.append(math.degrees(math.acos(max(-1.0, min(1.0, (ux * vx + uy * vy) / (nu * nv))))))
     return np.array(out or [0.0])
 
 
@@ -210,16 +207,16 @@ def resample(pts, step=0.5):
 
 def metrics(pts):
     R = resample(pts)
-    R = R[(R[:, 0] > 20) & (R[:, 0] < NX - 20)]     # skip the cut-out's edges
-    dev = math.sqrt(float(np.mean((R[:, 1] - (LEVEL - feature(R[:, 0]))
-                                   / SLOPE) ** 2)))
+    R = R[(R[:, 0] > 20) & (R[:, 0] < NX - 20)]  # skip the cut-out's edges
+    dev = math.sqrt(float(np.mean((R[:, 1] - (LEVEL - feature(R[:, 0])) / SLOPE) ** 2)))
     x = R[:, 0]
     cols = [np.ones_like(x), x]
     for lam, _ in FEATS:
         cols += [np.sin(2 * math.pi * x / lam), np.cos(2 * math.pi * x / lam)]
     coef = np.linalg.lstsq(np.vstack(cols).T, R[:, 1], rcond=None)[0]
-    shapes_kept = [100.0 * math.hypot(coef[2 + 2 * k], coef[3 + 2 * k])
-             / (amp / SLOPE) for k, (_, amp) in enumerate(FEATS)]
+    shapes_kept = [
+        100.0 * math.hypot(coef[2 + 2 * k], coef[3 + 2 * k]) / (amp / SLOPE) for k, (_, amp) in enumerate(FEATS)
+    ]
     return dev, shapes_kept
 
 
@@ -238,41 +235,39 @@ def per_km(pts, thr=30.0):
 def run(Z, win, quarters, how, label, maxzoom):
     """`how` = ("chaikin", passes) or ("limit", sag in 1/4)."""
     simp = simplify(contour(lowpass(Z, win), LEVEL), quarters / 4.0)
-    pts = (chaikin(simp, how[1]) if how[0] == "chaikin"
-           else limit(simp, how[1], maxzoom))
+    pts = chaikin(simp, how[1]) if how[0] == "chaikin" else limit(simp, how[1], maxzoom)
     ang = bends(pts)
     dev, kept = metrics(pts)
     # and the same on the tile grid – how it ends in .pmtiles
     qpts = quantize(pts, tile_step(maxzoom))
     qang = bends(qpts)
-    print(f"{label:50s} {len(pts):5d} {ang.mean():6.1f}° "
-          f"{100 * float(np.mean(ang > 30)):5.1f}% {per_km(pts):6.1f} "
-          f"{dev:6.2f} m "
-          + " ".join(f"{t:4.0f}%" for t in kept)
-          + f"  │ {qang.mean():6.1f}° {100 * float(np.mean(qang > 30)):5.1f}%"
-          f" {per_km(qpts):6.1f}")
+    print(
+        f"{label:50s} {len(pts):5d} {ang.mean():6.1f}° "
+        f"{100 * float(np.mean(ang > 30)):5.1f}% {per_km(pts):6.1f} "
+        f"{dev:6.2f} m "
+        + " ".join(f"{t:4.0f}%" for t in kept)
+        + f"  │ {qang.mean():6.1f}° {100 * float(np.mean(qang > 30)):5.1f}%"
+        f" {per_km(qpts):6.1f}"
+    )
 
 
 def main():
-    ap = argparse.ArgumentParser(
-        description="Measuring contour smoothing on simulated terrain.")
+    ap = argparse.ArgumentParser(description="Measuring contour smoothing on simulated terrain.")
     ap.add_argument("--seed", type=int, default=20260810)
-    ap.add_argument("--maxzoom", type=int, default=14,
-                    help="maxzoom of the contour tiles (a 4096 grid)")
+    ap.add_argument("--maxzoom", type=int, default=14, help="maxzoom of the contour tiles (a 4096 grid)")
     args = ap.parse_args()
 
     Z = terrain(np.random.default_rng(args.seed))
-    lam = "  ".join(f"{int(l)} m" for l, _ in FEATS)
+    lam = "  ".join(f"{int(length)} m" for length, _ in FEATS)
     step = tile_step(args.maxzoom)
-    print(f"terrain: slope {SLOPE:.0%}, noise σ = {NOISE} m, shapes {lam}, "
-          f"seed {args.seed}")
-    print(f"tiles: maxzoom z{args.maxzoom} → grid {step:.3f} m "
-          f"(extent {EXTENT}, latitude {LAT}°)")
-    print(f"{'setting':50s} {'points':>5s} {'bend':>7s} {'>30°':>6s} "
-          f"{'teeth/km':>6s} {'deviation':>8s}  shapes (λ 60 / 25 / 12 m)"
-          f"  │ on the z{args.maxzoom} grid: bend, >30°, teeth/km")
-    run(terrain(), 1, 0, ("chaikin", 0),
-        "reference (terrain without noise, untouched)", args.maxzoom)
+    print(f"terrain: slope {SLOPE:.0%}, noise σ = {NOISE} m, shapes {lam}, seed {args.seed}")
+    print(f"tiles: maxzoom z{args.maxzoom} → grid {step:.3f} m (extent {EXTENT}, latitude {LAT}°)")
+    print(
+        f"{'setting':50s} {'points':>5s} {'bend':>7s} {'>30°':>6s} "
+        f"{'teeth/km':>6s} {'deviation':>8s}  shapes (λ 60 / 25 / 12 m)"
+        f"  │ on the z{args.maxzoom} grid: bend, >30°, teeth/km"
+    )
+    run(terrain(), 1, 0, ("chaikin", 0), "reference (terrain without noise, untouched)", args.maxzoom)
     print()
     for win, q, how, note in [
         (1, 1, ("chaikin", 1), "  ← 2025"),
@@ -286,8 +281,7 @@ def main():
         (7, 2, ("limit", 2), ""),
     ]:
         window = f"window {win}×{win}" if win > 1 else "no smoothing"
-        rounding = (f"{how[1]}× Chaikin" if how[0] == "chaikin"
-                    else f"limit, sag {how[1]}/4 grid")
+        rounding = f"{how[1]}× Chaikin" if how[0] == "chaikin" else f"limit, sag {how[1]}/4 grid"
         run(Z, win, q, how, f"{window}, {q}/4 cell, {rounding}{note}", args.maxzoom)
 
 

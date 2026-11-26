@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """The rock plan: which grid, how many cells and how long it will take."""
+
 import json
 import math
 import os
@@ -7,10 +8,9 @@ import subprocess
 import sys
 
 # `watch.py` is shared by both ways to rocks, so it lives in `workers/lib/`
-sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
-from watch import hms  # noqa: E402
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 import cell  # noqa: E402
+from watch import hms  # noqa: E402
 
 # hillshading asks for the raster grid too, so the conversion is in `lib/cell.py`
 dem_cell_metres = cell.dem_cell_metres
@@ -20,13 +20,13 @@ METRIC = "EPSG:3035"  # LAEA Europe – barely distorts areas at our latitudes
 SCALE = 100
 
 # measured on a GitHub runner, only for estimating: 170 chunks / 23.1 G cells in 75 min
-SLOPE_CELLS_PER_S = 5.1e6    # gdalwarp + gdaldem slope + gdal_translate
+SLOPE_CELLS_PER_S = 5.1e6  # gdalwarp + gdaldem slope + gdal_translate
 
 # `gdal_contour -p` costs by SOURCE cells, not the tracing grid; measured in blocks
 # (`ROCK_BLOCK_PX`) at 12.1 M cells/s on flat land – lower on a rocky cut-out
 CONTOUR_SRC_CELLS_PER_S = 1.2e7
 # the same run stayed under 16 GB at 23.1 G cells: time kills a request, not memory
-MOSAIC_MB_PER_GCELL = 240    # Int16 + DEFLATE + PREDICTOR
+MOSAIC_MB_PER_GCELL = 240  # Int16 + DEFLATE + PREDICTOR
 
 
 class CommandError(subprocess.CalledProcessError):
@@ -48,10 +48,8 @@ def run(cmd, **kw):
 def to_metric(bbox):
     """A bbox in degrees → an extent in metres (EPSG:3035)."""
     w, s, e, n = bbox
-    pts = "\n".join(f"{x} {y}" for x, y in
-                    [(w, s), (e, s), (w, n), (e, n), ((w + e) / 2, s), ((w + e) / 2, n)])
-    out = run(["gdaltransform", "-s_srs", "EPSG:4326", "-t_srs", METRIC],
-              input=pts).stdout.split()
+    pts = "\n".join(f"{x} {y}" for x, y in [(w, s), (e, s), (w, n), (e, n), ((w + e) / 2, s), ((w + e) / 2, n)])
+    out = run(["gdaltransform", "-s_srs", "EPSG:4326", "-t_srs", METRIC], input=pts).stdout.split()
     xs = [float(v) for v in out[0::3]]
     ys = [float(v) for v in out[1::3]]
     return min(xs), min(ys), max(xs), max(ys)
@@ -59,8 +57,11 @@ def to_metric(bbox):
 
 def chunk_plan(x0, y0, x1, y1, res, chunk_cells, bbox, side_m=0):
     """Split into chunks + the list of those really in the area."""
+
     # EPSG:3035 is rotated against meridians; `side_m` overrides the chunk size
-    snap = lambda v, up: (math.ceil(v / res) if up else math.floor(v / res)) * res
+    def snap(v, up):
+        return (math.ceil(v / res) if up else math.floor(v / res)) * res
+
     x0, y0, x1, y1 = snap(x0, False), snap(y0, False), snap(x1, True), snap(y1, True)
     width_m, height_m = x1 - x0, y1 - y0
 
@@ -86,19 +87,26 @@ def chunk_plan(x0, y0, x1, y1, res, chunk_cells, bbox, side_m=0):
 
 def intersects_bbox(cx0, cy0, cx1, cy1, bbox):
     """Does a chunk (in metres) reach the area bbox (in degrees)?"""
-    pts = "\n".join(f"{x} {y}" for x, y in
-                     [(cx0, cy0), (cx1, cy0), (cx0, cy1), (cx1, cy1),
-                      ((cx0 + cx1) / 2, cy0), ((cx0 + cx1) / 2, cy1),
-                      (cx0, (cy0 + cy1) / 2), (cx1, (cy0 + cy1) / 2)])
+    pts = "\n".join(
+        f"{x} {y}"
+        for x, y in [
+            (cx0, cy0),
+            (cx1, cy0),
+            (cx0, cy1),
+            (cx1, cy1),
+            ((cx0 + cx1) / 2, cy0),
+            ((cx0 + cx1) / 2, cy1),
+            (cx0, (cy0 + cy1) / 2),
+            (cx1, (cy0 + cy1) / 2),
+        ]
+    )
     try:
-        out = run(["gdaltransform", "-s_srs", METRIC, "-t_srs", "EPSG:4326"],
-                  input=pts).stdout.split()
+        out = run(["gdaltransform", "-s_srs", METRIC, "-t_srs", "EPSG:4326"], input=pts).stdout.split()
     except subprocess.CalledProcessError:
         return True  # when it can't be told, compute rather than skip
     xs = [float(v) for v in out[0::3]]
     ys = [float(v) for v in out[1::3]]
-    return not (max(xs) < bbox[0] or min(xs) > bbox[2]
-                or max(ys) < bbox[1] or min(ys) > bbox[3])
+    return not (max(xs) < bbox[0] or min(xs) > bbox[2] or max(ys) < bbox[1] or min(ys) > bbox[3])
 
 
 # what `--res=auto` picks from; 1 m is the finest, a z16 tile pixel is 1.57 m anyway
@@ -121,8 +129,7 @@ def pick_res(x0, y0, x1, y1, chunk_cells, bbox, budget_min, dem_cell_m):
     """The finest grid still meaningful (and fitting the budget)."""
     # the area really inside, on a coarse chunk raster – independent of the grid
     side = max(2000.0, math.sqrt((x1 - x0) * (y1 - y0) / 50.0))
-    probe, _, _, _ = chunk_plan(x0, y0, x1, y1, 10.0, chunk_cells, bbox,
-                                side_m=side)
+    probe, _, _, _ = chunk_plan(x0, y0, x1, y1, 10.0, chunk_cells, bbox, side_m=side)
     area_m2 = sum((c[4] - c[2]) * (c[5] - c[3]) for c in probe)
     if not area_m2:
         return RES_LADDER[3]  # nothing hit – let chunk_plan say it
@@ -132,14 +139,13 @@ def pick_res(x0, y0, x1, y1, chunk_cells, bbox, budget_min, dem_cell_m):
     budget_s = budget_min * 60 if budget_min else float("inf")
 
     print("── Picking the grid (rock_res=auto) ─────────────────")
-    print(f"  area            {area_m2/1e6:.0f} km²")
-    print("  budget          " + ("no cap – the finest meaningful one "
-                                  "is taken"
-                                  if budget_s == float("inf")
-                                  else f"{budget_min:g} min"))
+    print(f"  area            {area_m2 / 1e6:.0f} km²")
+    print(
+        "  budget          "
+        + ("no cap – the finest meaningful one is taken" if budget_s == float("inf") else f"{budget_min:g} min")
+    )
     if dem_cell_m:
-        print(f"  DEM cell        {dem_cell_m:.0f} m → finer than "
-              f"{floor:g} m is meaningless")
+        print(f"  DEM cell        {dem_cell_m:.0f} m → finer than {floor:g} m is meaningless")
     else:
         print(f"  DEM cell        unknown → floor {floor:g} m")
     # two halves, two numbers: at 1 m the slope costs two minutes, vectorising an hour and a half
@@ -155,17 +161,20 @@ def pick_res(x0, y0, x1, y1, chunk_cells, bbox, budget_min, dem_cell_m):
         est = s_slope + s_vec
         fits = est <= budget_s
         # without a budget the column is an estimate, not a verdict
-        mark = "" if budget_s == float("inf") else (
-            "  ✓" if fits else "  × over budget")
-        print(f"  {res:>4g} m  {cells/1e9:5.2f} G  slope ~{hms(s_slope)}"
-              f"  + vectors ~{hms(s_vec)} (traced at {vec:g} m)"
-              f"  = ~{hms(est)}{mark}")
+        mark = "" if budget_s == float("inf") else ("  ✓" if fits else "  × over budget")
+        print(
+            f"  {res:>4g} m  {cells / 1e9:5.2f} G  slope ~{hms(s_slope)}"
+            f"  + vectors ~{hms(s_vec)} (traced at {vec:g} m)"
+            f"  = ~{hms(est)}{mark}"
+        )
         if fits and chosen is None:
             chosen = res
     if chosen is None:
         chosen = RES_LADDER[-1]
-        print(f"::warning::Not even the coarsest {chosen:g} m grid fits the "
-              f"{hms(budget_s)} budget – try a smaller cut-out (input \"area\").")
+        print(
+            f"::warning::Not even the coarsest {chosen:g} m grid fits the "
+            f'{hms(budget_s)} budget – try a smaller cut-out (input "area").'
+        )
     print(f"  picked          {chosen:g} m")
     print("─────────────────────────────────────────────────────", flush=True)
     return chosen
@@ -207,6 +216,9 @@ def clip_vrt(vrt, box, res, tmp, src_res=0.0):
     y1 = math.ceil(box[3] / res) * res
     out = os.path.join(tmp, "slope-clip.vrt")
     coarser = ["-r", "average"] if src_res and res > src_res else []
-    run(["gdalbuildvrt", "-q", "-te", repr(x0), repr(y0), repr(x1), repr(y1),
-         "-tr", repr(res), repr(res)] + coarser + [out, vrt])
+    run(
+        ["gdalbuildvrt", "-q", "-te", repr(x0), repr(y0), repr(x1), repr(y1), "-tr", repr(res), repr(res)]
+        + coarser
+        + [out, vrt]
+    )
     return out

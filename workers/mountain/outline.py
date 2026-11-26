@@ -6,6 +6,7 @@
 
 A range wholly inside its model and naming no areas keeps its box: no file is written.
 """
+
 import argparse
 import json
 import math
@@ -18,6 +19,7 @@ import urllib.request
 _HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(_HERE), "lib"))
 import map_settings  # noqa: E402
+
 OUTLINES = os.path.join(os.path.dirname(_HERE), "data", "outlines")
 LOOKUP = "https://nominatim.openstreetmap.org/lookup"
 # a range is built from DMR 5.0, as `mountain.yml` asks for it
@@ -41,10 +43,10 @@ def path_for(key):
 
 def fetch(relation):
     """An OSM relation's area as GeoJSON, from Nominatim."""
-    query = urllib.parse.urlencode({"osm_ids": f"R{relation}", "format": "json",
-                                    "polygon_geojson": 1, "polygon_threshold": TOLERANCE})
-    req = urllib.request.Request(f"{LOOKUP}?{query}",
-                                 headers={"User-Agent": "maptiles outline (skifahrer/maptiles)"})
+    query = urllib.parse.urlencode(
+        {"osm_ids": f"R{relation}", "format": "json", "polygon_geojson": 1, "polygon_threshold": TOLERANCE}
+    )
+    req = urllib.request.Request(f"{LOOKUP}?{query}", headers={"User-Agent": "maptiles outline (skifahrer/maptiles)"})
     with urllib.request.urlopen(req, timeout=90) as resp:
         found = json.load(resp)
     # Nominatim's usage policy: one request a second
@@ -62,7 +64,7 @@ def km2(geom):
 def outline(areas, bbox, relations, coverage=None, model=MODEL):
     """The areas' union (or the box) inside `bbox` and `coverage`; None when that is the box."""
     from shapely.geometry import box, mapping, shape  # noqa: PLC0415
-    from shapely.ops import unary_union                # noqa: PLC0415
+    from shapely.ops import unary_union  # noqa: PLC0415
 
     frame = box(*bbox)
     cut = unary_union([shape(a) for a in areas]).intersection(frame) if areas else frame
@@ -70,16 +72,22 @@ def outline(areas, bbox, relations, coverage=None, model=MODEL):
         cut = cut.intersection(shape(coverage))
     parts = [p for p in getattr(cut, "geoms", [cut]) if p.geom_type == "Polygon" and km2(p) >= MIN_KM2]
     if not parts:
-        raise SystemExit(f"::error::Nothing of {relations or 'the box'} {bbox} lies inside "
-                         f"{model}'s coverage.")
+        raise SystemExit(f"::error::Nothing of {relations or 'the box'} {bbox} lies inside {model}'s coverage.")
     whole = unary_union(parts)
     if not areas and whole.area >= WHOLE * frame.area:
         return None
     shaped = whole.simplify(TOLERANCE, preserve_topology=True)
     geom = json.loads(json.dumps(mapping(shaped)), parse_float=lambda v: round(float(v), 6))
-    return {"type": "FeatureCollection", "features": [
-        {"type": "Feature", "properties": {"osm_relations": relations, "bbox": bbox, "model": model},
-         "geometry": geom}]}
+    return {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {"osm_relations": relations, "bbox": bbox, "model": model},
+                "geometry": geom,
+            }
+        ],
+    }
 
 
 def write(key, data):

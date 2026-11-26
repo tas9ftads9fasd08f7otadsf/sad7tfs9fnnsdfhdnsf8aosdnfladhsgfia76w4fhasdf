@@ -1,23 +1,24 @@
 import io
-import os
 import random
 import unittest
 import zipfile
 from contextlib import redirect_stderr, redirect_stdout
 from unittest import mock
 
-from load import worker
 import rangeserver
+from load import worker
 
 rz_mod = worker("drive/zip-remote.py")
 
 
 def archive(zip64=False):
     rnd = random.Random(7)
-    members = {"a/readme.txt": b"hello " * 1000,
-               "a/N49E019.tif": bytes(rnd.getrandbits(8) for _ in range(300_000)),
-               "b/empty.txt": b"",
-               "b/stored.bin": bytes(range(256)) * 50}
+    members = {
+        "a/readme.txt": b"hello " * 1000,
+        "a/N49E019.tif": bytes(rnd.getrandbits(8) for _ in range(300_000)),
+        "b/empty.txt": b"",
+        "b/stored.bin": bytes(range(256)) * 50,
+    }
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w") as z:
         for name, data in members.items():
@@ -51,6 +52,7 @@ class RemoteZip(unittest.TestCase):
 
         def on_file(e, stream):
             got[e["name"]] = stream.read()
+
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             rz.extract_span(entries, on_file)
         return got
@@ -59,8 +61,11 @@ class RemoteZip(unittest.TestCase):
         rz = self.open(self.url)
         names = [e["name"] for e in rz.entries()]
         self.assertEqual(names, list(self.members))
-        read = sum(int(r.split("-")[1]) - int(r[6:].split("-")[0]) + 1
-                   for _, r in rangeserver.Handler.requests if r and r.split("-")[1])
+        read = sum(
+            int(r.split("-")[1]) - int(r[6:].split("-")[0]) + 1
+            for _, r in rangeserver.Handler.requests
+            if r and r.split("-")[1]
+        )
         self.assertLess(read, self.size // 2, "only the tail and the directory were read")
 
     def test_every_member_unpacked(self):
