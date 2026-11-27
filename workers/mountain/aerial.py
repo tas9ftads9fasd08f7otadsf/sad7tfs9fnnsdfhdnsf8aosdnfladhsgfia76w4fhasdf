@@ -137,6 +137,19 @@ def from_parent(fetcher, z, x, y, minzoom):
     return None
 
 
+def as_webp(path, quality=80):
+    """A tile as WebP: a third smaller than JPEG at the same look; a cut tile already is one."""
+    if path.endswith(".webp"):
+        return path
+    from PIL import Image  # noqa: PLC0415
+
+    out = path + ".webp"
+    if not (os.path.isfile(out) and os.path.getmtime(out) >= os.path.getmtime(path)):
+        with Image.open(path) as img:
+            img.convert("RGB").save(out, "WEBP", quality=quality, method=4)
+    return out
+
+
 def zoom(value, default):
     """A zoom as the form takes it, `18` or `z18`."""
     return int(str(value).strip().lstrip("zZ") or default)
@@ -146,8 +159,8 @@ def e7(value):
     return int(round(value * 1e7))
 
 
-def write(out, tiles, bbox, minzoom, maxzoom, name):
-    """`tiles` maps (z, x, y) to a JPEG on disk; the archive says what it holds."""
+def write(out, tiles, bbox, minzoom, maxzoom, name, webp=False):
+    """`tiles` maps (z, x, y) to an image on disk; the archive says what it holds."""
     from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
     from pmtiles.writer import Writer  # noqa: PLC0415
 
@@ -160,7 +173,7 @@ def write(out, tiles, bbox, minzoom, maxzoom, name):
                 writer.write_tile(zxy_to_tileid(*zxy), jpeg.read())
         writer.finalize(
             {
-                "tile_type": TileType.JPEG,
+                "tile_type": TileType.WEBP if webp else TileType.JPEG,
                 "tile_compression": Compression.NONE,
                 "min_zoom": minzoom,
                 "max_zoom": maxzoom,
@@ -172,7 +185,12 @@ def write(out, tiles, bbox, minzoom, maxzoom, name):
                 "center_lon_e7": e7((w + e) / 2),
                 "center_lat_e7": e7((s + n) / 2),
             },
-            {"name": name, "format": "jpg", "type": "baselayer", "description": "Aerial photos (orthophoto mosaic)"},
+            {
+                "name": name,
+                "format": "webp" if webp else "jpg",
+                "type": "baselayer",
+                "description": "Aerial photos (orthophoto mosaic)",
+            },
         )
 
 
@@ -186,6 +204,7 @@ def main():
     ap.add_argument("--poly", default="", help="the range's outline (GeoJSON); else its box")
     ap.add_argument("--url", default="", help="instead of the source's own")
     ap.add_argument("--maxzoom", default="", help="instead of the source's own")
+    ap.add_argument("--format", default="jpeg", choices=("jpeg", "webp"), help="tiles in the archive")
     # a volunteer server: few connections, and the cache spares it the next run
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--github-output", default=os.environ.get("GITHUB_OUTPUT", ""))
@@ -225,7 +244,7 @@ def main():
                 filled += 1
             kept = cut(path, bbox, z, x, y, rings)
             if kept:
-                tiles[(z, x, y)] = kept
+                tiles[(z, x, y)] = as_webp(kept) if args.format == "webp" else kept
         if filled:
             print(f"::warning::{filled} {args.season} tiles the server lacks are their parent, enlarged.")
         if holes:
@@ -241,7 +260,7 @@ def main():
             )
         if tiles:
             name = os.path.basename(args.out).removesuffix(".pmtiles")
-            write(args.out, tiles, bbox, minzoom, maxzoom, name)
+            write(args.out, tiles, bbox, minzoom, maxzoom, name, webp=args.format == "webp")
             size = os.path.getsize(args.out)
             print(f"{args.out}: {len(tiles)} tiles, z{minzoom}–z{maxzoom}, {size / 1048576:.0f} MB")
             out = {"enabled": "true", "maxzoom": str(maxzoom)}

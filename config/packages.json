@@ -97,6 +97,18 @@
       "origin": "site"
     },
     {
+      "key": "orthophoto",
+      "app": "Orthophoto",
+      "symbol": "photo",
+      "app_detail": "Aerial photos of the whole region, the ground the map lies on",
+      "description": "orthophoto mosaic of a region, as WebP raster tiles (raster .pmtiles)",
+      "sources": ["ortofoto"],
+      "manifest": ["orthophoto"],
+      "suffixes": ["-orthophoto.pmtiles"],
+      "origin": "site",
+      "regenerate": "orthophoto"
+    },
+    {
       "key": "landscape",
       "app": "Landscape",
       "symbol": "leaf.fill",

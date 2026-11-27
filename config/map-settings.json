@@ -7,7 +7,7 @@
     "`maps.mountains`, then `defaults`. A range takes nothing from a country.",
     "  defaults        every key there is, with what it means in `options.py`",
     "  maps            countries as in `regions` and the category `mountains`",
-    "  sources.aerial  aerial photo sources; a map picks one with `aerial_summer`/`aerial_winter`",
+    "  sources.aerial  aerial photo sources; a map picks one with `aerial_summer`/`aerial_winter`/`orthophoto`",
     "  credits         data authors; every source names its own in `credits`",
     "  sources.dem     height models; a map picks them with `*_source`",
     "  regions         every map's place: name, bbox, osm.fr extract, country",
@@ -77,6 +77,8 @@
     "aerial_summer": "",
     "aerial_winter": "",
     "aerial_maxzoom": "",
+    "orthophoto": "",
+    "orthophoto_maxzoom": "",
     "custom_pbf_url": "",
     "custom_name": "",
     "custom_bbox": ""
@@ -366,12 +368,28 @@
           "ortofoto",
           "freemap"
         ]
+      },
+      "ortofoto_sk_3c": {
+        "label": "Ortofotomozaika SR, 3. cyklus 2023–2025 (ÚGKK SR)",
+        "season": "summer",
+        "url": "https://zbgisws.skgeodesy.sk/zbgis_ortofoto_wms/service.svc/get?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=1&STYLES=&CRS=EPSG:3857&BBOX={bbox-epsg-3857}&WIDTH=256&HEIGHT=256&FORMAT=image/jpeg",
+        "minzoom": 8,
+        "maxzoom": 17,
+        "online_maxzoom": 20,
+        "covers": [
+          "SK"
+        ],
+        "credits": [
+          "ortofoto"
+        ]
       }
     }
   },
   "maps": {
     "slovensko": {
-      "settings": {},
+      "settings": {
+        "orthophoto": "ortofoto_sk_3c"
+      },
       "regions": {}
     },
     "cesko": {

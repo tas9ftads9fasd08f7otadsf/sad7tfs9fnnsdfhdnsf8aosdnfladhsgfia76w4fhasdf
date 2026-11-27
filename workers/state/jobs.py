@@ -7,6 +7,7 @@ line and the workflow. `workers/lint/regenerate.py` guards the form's `choice`.
     python3 workers/state/jobs.py --list | --workflow=points | --name=points
     python3 workers/state/jobs.py --describe=points | --fields=points
 """
+
 import argparse
 import importlib.util
 import os
@@ -41,30 +42,33 @@ TARGETS = {
 # form order, cheapest first: OSM layers take minutes, DEM layers hours
 COST = {
     # key: (name, what it is)
-    "points": ("Points of interest",
-               "springs, caves, lookouts, monuments and other point features"),
-    "roads": ("Roads",
-              "every OSM road a car can drive, with road limits (clearance, weight, "
-              "speed) and the routing network the phone routes on"),
-    "paths": ("Paths",
-              "footways, paths, cycleways, steps and pedestrian streets – "
-              "everything cars don't fit"),
-    "boundaries": ("Boundaries and area names",
-                   "state, region, district and municipality boundaries with their names"),
-    "water": ("Water bodies",
-              "rivers, streams, lakes, reservoirs and the sea with their names"),
-    "railways": ("Railways & cable cars",
-                 "every railway and cable car, planned and abandoned railways too, named "
-                 "stations, line signs and the track network for navigation"),
-    "history": ("Army & history",
-                "military sites, historic places, mines, embankments, and everything "
-                "abandoned or disused"),
-    "settlements": ("Settlements",
-                    "every building with floor area, name, kind and address, and place names"),
+    "points": ("Points of interest", "springs, caves, lookouts, monuments and other point features"),
+    "roads": (
+        "Roads",
+        "every OSM road a car can drive, with road limits (clearance, weight, "
+        "speed) and the routing network the phone routes on",
+    ),
+    "paths": ("Paths", "footways, paths, cycleways, steps and pedestrian streets – everything cars don't fit"),
+    "boundaries": ("Boundaries and area names", "state, region, district and municipality boundaries with their names"),
+    "water": ("Water bodies", "rivers, streams, lakes, reservoirs and the sea with their names"),
+    "railways": (
+        "Railways & cable cars",
+        "every railway and cable car, planned and abandoned railways too, named "
+        "stations, line signs and the track network for navigation",
+    ),
+    "history": (
+        "Army & history",
+        "military sites, historic places, mines, embankments, and everything abandoned or disused",
+    ),
+    "settlements": ("Settlements", "every building with floor area, name, kind and address, and place names"),
     "contours": ("Contours", "contour lines from the height model"),
     "rocks": ("Rocks", "rock areas from the model's slope"),
-    "terrain": ("Hillshading and 3D terrain",
-                "height tiles for hillshading and 3D"),
+    "terrain": ("Hillshading and 3D terrain", "height tiles for hillshading and 3D"),
+    "orthophoto": (
+        "Orthophoto",
+        "the region's aerial photos as WebP, from its `orthophoto` source; "
+        "hours and tens of GB, Slovak regions only for now",
+    ),
 }
 
 
@@ -79,7 +83,8 @@ def _build():
                 f"::error::`{key}` is in COST, but the package registry "
                 f"({_packages.REGISTRY}) has no `regenerate` for it – "
                 f"the form would offer a choice the packer doesn't know and the run "
-                f"would fail on `--only`.")
+                f"would fail on `--only`."
+            )
         out[key] = {
             "name": name,
             "description": f"{what} – package `-{p['key']}.zip`",
@@ -96,9 +101,11 @@ JOBS = _build()
 def job(key):
     """A registry entry, or a hard stop naming what can be given."""
     if key not in JOBS:
-        print(f"::error::What can be regenerated: {', '.join(JOBS)} – “{key}” "
-              f"is unknown. The list is in {os.path.relpath(__file__)}.",
-              file=sys.stderr)
+        print(
+            f"::error::What can be regenerated: {', '.join(JOBS)} – “{key}” "
+            f"is unknown. The list is in {os.path.relpath(__file__)}.",
+            file=sys.stderr,
+        )
         sys.exit(1)
     return JOBS[key]
 
@@ -114,15 +121,12 @@ def fields(key, env=None):
 
 
 def main():
-    ap = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--list", action="store_true",
-                    help="keys that can be regenerated")
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--list", action="store_true", help="keys that can be regenerated")
     ap.add_argument("--workflow", default="", help="workflow over one region")
     ap.add_argument("--name", default="", help="that workflow's name")
     ap.add_argument("--describe", default="", help="what the choice regenerates")
-    ap.add_argument("--fields", default="",
-                    help="`-f` fields of the run over a region, `key=value` per line")
+    ap.add_argument("--fields", default="", help="`-f` fields of the run over a region, `key=value` per line")
     args = ap.parse_args()
 
     if args.list:
