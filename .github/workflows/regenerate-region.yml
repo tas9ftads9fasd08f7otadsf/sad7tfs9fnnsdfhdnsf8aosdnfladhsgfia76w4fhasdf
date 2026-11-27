@@ -5,7 +5,8 @@ run-name: "${{ github.workflow }} · ${{ inputs.region }}"
 # ONE LAYER OF ONE REGION ANEW – without rebuilding the map.
 #
 # Choices `what`: points, roads (the roads with the routing network), paths,
-# boundaries, water, railways, history, settlements, contours, rocks, terrain.
+# boundaries, water, railways, history, settlements, contours, rocks, terrain,
+# orthophoto (a region's aerial photos, from its `orthophoto` source; hours, tens of GB).
 # Only that package is overwritten on Drive.
 #
 # OSM layers take minutes (the same PBF as the map); DEM layers tens of minutes
@@ -79,6 +80,7 @@ on:
           - contours
           - rocks
           - terrain
+          - orthophoto
       test:
         description: "Quick test: only 4 km² in the middle of the region (a pipeline trial)"
         required: false
@@ -208,6 +210,8 @@ jobs:
       opt_terrain_format: ${{ steps.opts.outputs.opt_terrain_format }}
       opt_reuse_layers: ${{ steps.opts.outputs.opt_reuse_layers }}
       opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
+      opt_orthophoto: ${{ steps.opts.outputs.opt_orthophoto }}
+      opt_orthophoto_maxzoom: ${{ steps.opts.outputs.opt_orthophoto_maxzoom }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -586,9 +590,92 @@ jobs:
       budget_rocks_pct: ${{ needs.plan.outputs.budget_rocks_pct }}
       budget_terrain_pct: ${{ needs.plan.outputs.budget_terrain_pct }}
 
+  # the region's aerial photos as WebP, cut to its outline; the tile cache lets a
+  # run that hit the six hours go on where it stopped
+  orthophoto:
+    name: Orthophoto
+    needs: plan
+    if: ${{ !cancelled() && needs.plan.result == 'success' && inputs.what == 'orthophoto' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      TILE_KEY: orthophoto-v1-${{ needs.plan.outputs.opt_orthophoto }}-${{ needs.plan.outputs.key }}-z${{ needs.plan.outputs.opt_orthophoto_maxzoom }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Has the region a photo source?
+        run: |
+          set -euo pipefail
+          if [ -z '${{ needs.plan.outputs.opt_orthophoto }}' ]; then
+            echo "::error::Region ${{ needs.plan.outputs.key }} has no \`orthophoto\` in config/map-settings.json, so there are no photos to make."
+            exit 1
+          fi
+
+      # raw tiles, the WebP copies and the archive of a kraj take tens of GB
+      - name: Free disk space
+        run: |
+          set -uo pipefail
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h / | tail -1
+
+      - name: Tile cache (restore)
+        id: tile-cache
+        uses: ./.github/actions/cache-restore
+        with:
+          path: aerial-cache
+          key: ${{ env.TILE_KEY }}
+          restore-keys: |
+            orthophoto-v1-${{ needs.plan.outputs.opt_orthophoto }}-${{ needs.plan.outputs.key }}-
+
+      - name: Download the region polygon
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: region-poly
+          path: data
+
+      - name: Photos → PMTiles
+        id: photos
+        env:
+          BBOX: ${{ needs.plan.outputs.bbox }}
+          KEY: ${{ needs.plan.outputs.key }}
+          SOURCE: ${{ needs.plan.outputs.opt_orthophoto }}
+          MAXZOOM: ${{ needs.plan.outputs.opt_orthophoto_maxzoom }}
+        run: |
+          set -euo pipefail
+          python3 -c 'import pmtiles, PIL' 2>/dev/null \
+            || python3 -m pip install --quiet --break-system-packages pmtiles pillow
+          python3 workers/mountain/aerial.py --season=summer --source="$SOURCE" --bbox="$BBOX" \
+            --maxzoom="$MAXZOOM" --cache=aerial-cache --poly=data/region.geojson --format=webp \
+            --github-output=/tmp/photos.txt --out="_site/tiles/${KEY}-orthophoto.pmtiles"
+          cat /tmp/photos.txt >> "$GITHUB_OUTPUT"
+          if ! grep -q '^enabled=true' /tmp/photos.txt; then
+            echo "::error::No photos over ${KEY}, so there is nothing to overwrite -orthophoto on Drive with."
+            exit 1
+          fi
+          python3 workers/deploy/orthophoto-manifest.py --site=_site --region="$KEY" --source="$SOURCE"
+
+      - name: Tile cache (save)
+        if: ${{ always() && steps.tile-cache.outputs.cache-hit != 'true' && hashFiles('aerial-cache/**') != '' }}
+        continue-on-error: true
+        uses: ./.github/actions/cache-save
+        with:
+          path: aerial-cache
+          key: ${{ env.TILE_KEY }}
+
+      - name: Keep the layer for packing
+        uses: actions/upload-artifact@v7
+        with:
+          name: site-orthophoto
+          path: _site
+          retention-days: 1
+          compression-level: 0
+
   publish:
     name: Package to Drive and the catalog
-    needs: [plan, points, transport, boundaries, water, railways, history, settlements, routing, dem]
+    needs: [plan, points, transport, boundaries, water, railways, history, settlements, routing, dem, orthophoto]
     # `skipped` is fine, `failure` isn't: half a new and half an old layer would be a lying package
     if: >-
       ${{ !cancelled() && needs.plan.result == 'success'
@@ -601,6 +688,7 @@ jobs:
           && needs.settlements.result != 'failure'
           && needs.routing.result != 'failure'
           && needs.dem.result != 'failure'
+          && needs.orthophoto.result != 'failure'
           && needs.plan.outputs.opt_publish == 'true' }}
     runs-on: ubuntu-latest
     permissions:

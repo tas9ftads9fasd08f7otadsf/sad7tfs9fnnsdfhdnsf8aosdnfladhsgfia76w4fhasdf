@@ -42,6 +42,7 @@ on:
           - contours
           - rocks
           - terrain
+          - orthophoto
       test:
         description: "Quick test: every region only on 4 km² in its middle (a batch trial)"
         required: false

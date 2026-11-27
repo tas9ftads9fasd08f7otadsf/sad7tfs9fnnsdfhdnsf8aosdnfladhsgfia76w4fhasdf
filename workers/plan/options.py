@@ -128,6 +128,8 @@ DESCRIPTIONS = {
     "aerial_summer": "summer aerial photo source, a key of `sources.aerial` (empty = none)",
     "aerial_winter": "winter aerial photo source, a key of `sources.aerial` (empty = none)",
     "aerial_maxzoom": "deepest zoom of aerial photos (empty = the source's own)",
+    "orthophoto": "a region's orthophoto package source, a key of `sources.aerial` (empty = none)",
+    "orthophoto_maxzoom": "deepest zoom of the orthophoto package (empty = the source's own)",
 }
 
 # settings that moved between inputs – so they don't fail as "unknown"
@@ -289,6 +291,18 @@ def aerial_source(settings, key, season):
         )
     if known[key].get("season") != season:
         raise SettingsError(f"`aerial_{season}: {key}` is a {known[key].get('season')} source.")
+    return known[key]
+
+
+def orthophoto_source(settings, key):
+    """The source entry of `orthophoto`, `{}` when the region has none."""
+    if not key:
+        return {}
+    known = map_settings.aerial_sources(settings=settings)
+    if key not in known:
+        raise SettingsError(
+            f"`orthophoto: {key}` isn't in `sources.aerial` of {SETTINGS_NAME}. Known: {', '.join(sorted(known))}"
+        )
     return known[key]
 
 
@@ -455,6 +469,17 @@ def main():
         values[f"aerial_{season}_maxzoom"] = (
             values["aerial_maxzoom"] if src and aerial_zoom else as_text(src.get("maxzoom"))
         )
+    ortho_zoom = values["orthophoto_maxzoom"].strip()
+    if ortho_zoom and not check_int(values, "orthophoto_maxzoom", 0, 22):
+        return 1
+    try:
+        ortho = orthophoto_source(settings, values["orthophoto"])
+    except SettingsError as exc:
+        print(f"::error::{exc}", file=sys.stderr)
+        return 1
+    values["orthophoto_url"] = ortho.get("url", "")
+    values["orthophoto_minzoom"] = as_text(ortho.get("minzoom"))
+    values["orthophoto_maxzoom"] = ortho_zoom if ortho and ortho_zoom else as_text(ortho.get("maxzoom"))
     # one output, so a season matrix can pick its own with `fromJSON`
     values["aerial_sources"] = json.dumps({season: values[f"aerial_{season}"] for season in ("summer", "winter")})
 

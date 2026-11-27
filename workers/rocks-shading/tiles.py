@@ -4,6 +4,7 @@
 The tile grid geometry, `Fetcher` (retries, browser profiles, a disk cache) and
 `probe_zoom`, plus the shared basics (`WEBMERC`, `R`, `TILE`, `run()`). A module.
 """
+
 import gzip
 import http.client
 import math
@@ -27,8 +28,7 @@ TILES_PER_S = 25.0  # at --jobs=12 and ~25 kB a tile
 CONTOUR_CELLS_PER_S = 3.0e5
 
 # `watch.py` is shared by both ways to rocks, so it lives in `workers/lib/`
-sys.path.insert(0, os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 from watch import hms  # noqa: E402
 
 
@@ -38,7 +38,7 @@ def run(cmd, **kw):
 
 def lonlat_to_tile(lon, lat, z):
     """Coordinates → tile coordinates (fractional)."""
-    n = 2.0 ** z
+    n = 2.0**z
     x = (lon + 180.0) / 360.0 * n
     la = math.radians(max(-85.05112, min(85.05112, lat)))
     y = (1.0 - math.log(math.tan(la) + 1.0 / math.cos(la)) / math.pi) / 2.0 * n
@@ -48,17 +48,27 @@ def lonlat_to_tile(lon, lat, z):
 def tile_range(bbox, z):
     """A bbox in degrees → the tile range [x0, x1) × [y0, y1) at zoom z."""
     w, s, e, n = bbox
-    x0f, y0f = lonlat_to_tile(w, n, z)   # north = smaller y
+    x0f, y0f = lonlat_to_tile(w, n, z)  # north = smaller y
     x1f, y1f = lonlat_to_tile(e, s, z)
-    lim = 2 ** z
+    lim = 2**z
     x0, y0 = max(0, int(math.floor(x0f))), max(0, int(math.floor(y0f)))
     x1, y1 = min(lim, int(math.ceil(x1f))), min(lim, int(math.ceil(y1f)))
     return x0, y0, max(x1, x0 + 1), max(y1, y0 + 1)
 
 
+MERCATOR_HALF = 20037508.342789244
+
+
+def mercator_bbox(z, x, y):
+    """A tile's box in EPSG:3857 metres, `W,S,E,N` as a WMS 1.3.0 GetMap takes it."""
+    side = 2 * MERCATOR_HALF / (1 << z)
+    w, n = -MERCATOR_HALF + x * side, MERCATOR_HALF - y * side
+    return f"{w:.3f},{n - side:.3f},{w + side:.3f},{n:.3f}"
+
+
 def tile_res(z):
     """Pixel size in EPSG:3857 metres (not on the ground – see ground_res)."""
-    return 2.0 * R / (TILE * 2.0 ** z)
+    return 2.0 * R / (TILE * 2.0**z)
 
 
 def ground_res(z, lat):
@@ -69,33 +79,72 @@ def ground_res(z, lat):
 # each profile is one real browser – UA, `Sec-CH-UA` and platform must agree;
 # freemap.sk is a volunteer server, so `jobs` stays low and tiles are cached
 BROWSERS = (
-    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
-     '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"', '"Windows"', "sk-SK,sk;q=0.9,en-US;q=0.8,en;q=0.7"),
-    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
-     '"Chromium";v="133", "Not(A:Brand";v="24", "Google Chrome";v="133"', '"macOS"', "sk,cs;q=0.9,en;q=0.8"),
-    ("Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
-     '"Chromium";v="132", "Not_A Brand";v="8", "Google Chrome";v="132"', '"Linux"', "en-US,en;q=0.9"),
-    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0",
-     '"Microsoft Edge";v="134", "Chromium";v="134", "Not:A-Brand";v="24"', '"Windows"', "sk-SK,sk;q=0.9,en;q=0.8"),
-    ("Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
-     None, None, "sk-SK,sk;q=0.8,en-US;q=0.5,en;q=0.3"),
-    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:134.0) Gecko/20100101 Firefox/134.0",
-     None, None, "en-US,en;q=0.5"),
-    ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15",
-     None, None, "sk-SK,sk;q=0.9"),
-    ("Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1",
-     None, None, "sk-SK,sk;q=0.9,en-US;q=0.8"),
-    ("Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
-     '"Chromium";v="133", "Not(A:Brand";v="24", "Google Chrome";v="133"', '"Android"', "sk-SK,sk;q=0.9,en;q=0.8"),
+    (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
+        '"Chromium";v="134", "Not:A-Brand";v="24", "Google Chrome";v="134"',
+        '"Windows"',
+        "sk-SK,sk;q=0.9,en-US;q=0.8,en;q=0.7",
+    ),
+    (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+        '"Chromium";v="133", "Not(A:Brand";v="24", "Google Chrome";v="133"',
+        '"macOS"',
+        "sk,cs;q=0.9,en;q=0.8",
+    ),
+    (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36",
+        '"Chromium";v="132", "Not_A Brand";v="8", "Google Chrome";v="132"',
+        '"Linux"',
+        "en-US,en;q=0.9",
+    ),
+    (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0",
+        '"Microsoft Edge";v="134", "Chromium";v="134", "Not:A-Brand";v="24"',
+        '"Windows"',
+        "sk-SK,sk;q=0.9,en;q=0.8",
+    ),
+    (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
+        None,
+        None,
+        "sk-SK,sk;q=0.8,en-US;q=0.5,en;q=0.3",
+    ),
+    (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.7; rv:134.0) Gecko/20100101 Firefox/134.0",
+        None,
+        None,
+        "en-US,en;q=0.5",
+    ),
+    (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Safari/605.1.15",
+        None,
+        None,
+        "sk-SK,sk;q=0.9",
+    ),
+    (
+        "Mozilla/5.0 (iPhone; CPU iPhone OS 18_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.3 Mobile/15E148 Safari/604.1",
+        None,
+        None,
+        "sk-SK,sk;q=0.9,en-US;q=0.8",
+    ),
+    (
+        "Mozilla/5.0 (Linux; Android 15; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Mobile Safari/537.36",
+        '"Chromium";v="133", "Not(A:Brand";v="24", "Google Chrome";v="133"',
+        '"Android"',
+        "sk-SK,sk;q=0.9,en;q=0.8",
+    ),
 )
 
 PROJECT_UA = "fricomaps/shading-rocks (github.com/skifahrer/fricomaps)"
 
 # first bytes of formats PIL reads – to tell an image from an error page
-IMAGE_MAGIC = (b"\xff\xd8\xff",          # JPEG
-               b"\x89PNG\r\n\x1a\n",     # PNG
-               b"GIF87a", b"GIF89a",     # GIF
-               b"RIFF")                  # WebP (RIFF....WEBP)
+IMAGE_MAGIC = (
+    b"\xff\xd8\xff",  # JPEG
+    b"\x89PNG\r\n\x1a\n",  # PNG
+    b"GIF87a",
+    b"GIF89a",  # GIF
+    b"RIFF",
+)  # WebP (RIFF....WEBP)
 
 
 def looks_like_image(body):
@@ -123,8 +172,7 @@ def decode_body(body, encoding):
 class Fetcher:
     """Tile downloads: a thread-local persistent connection + a disk cache; 404 is no error."""
 
-    def __init__(self, url_tmpl, cache_dir, jobs=12, retries=3, timeout=30,
-                 ua="rotate", log_every=25):
+    def __init__(self, url_tmpl, cache_dir, jobs=12, retries=3, timeout=30, ua="rotate", log_every=25):
         self.tmpl = url_tmpl
         self.cache = cache_dir
         self.jobs, self.retries, self.timeout = jobs, retries, timeout
@@ -144,12 +192,18 @@ class Fetcher:
     def path(self, z, x, y):
         return os.path.join(self.cache, str(z), str(x), f"{y}.jpg")
 
+    def url(self, z, x, y):
+        """The tile's address: XYZ, or a WMS GetMap over its box in web mercator."""
+        return self.tmpl.format(z=z, x=x, y=y, **{"bbox-epsg-3857": mercator_bbox(z, x, y)})
+
     def headers(self):
         """Headers for one request: `rotate` picks a `BROWSERS` profile, `project` names us."""
         # no `br`/`zstd`: `http.client` doesn't unpack and stdlib has only gzip and deflate
-        h = {"Accept": "image/avif,image/webp,image/jpeg,image/*,*/*;q=0.8",
-             "Accept-Encoding": "gzip, deflate",
-             "Connection": "keep-alive"}
+        h = {
+            "Accept": "image/avif,image/webp,image/jpeg,image/*,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+        }
         if self.ua == "rotate":
             agent, ch_ua, platform, lang = random.choice(BROWSERS)
             h["Accept-Language"] = lang
@@ -175,8 +229,7 @@ class Fetcher:
         if c is None:
             if self.proxy:
                 p = urllib.parse.urlsplit(self.proxy)
-                c = http.client.HTTPSConnection(p.hostname, p.port or 8080,
-                                                timeout=self.timeout)
+                c = http.client.HTTPSConnection(p.hostname, p.port or 8080, timeout=self.timeout)
                 c.set_tunnel(self.host)
             elif self.scheme == "https":
                 c = http.client.HTTPSConnection(self.host, timeout=self.timeout)
@@ -205,8 +258,8 @@ class Fetcher:
             with self.lock:
                 self.n_cached += 1
             return "cache" if os.path.getsize(dst) > 0 else "missing"
-        url = self.tmpl.format(z=z, x=x, y=y)
-        rel = urllib.parse.urlsplit(url).path
+        parts = urllib.parse.urlsplit(self.url(z, x, y))
+        rel = parts.path + (f"?{parts.query}" if parts.query else "")
         body, status = None, 0
         for attempt in range(self.retries):
             try:
@@ -242,7 +295,7 @@ class Fetcher:
                 self.bytes += len(body)
             return "downloaded"
         if status == 404:
-            open(dst, "wb").close()   # a marker: nothing here
+            open(dst, "wb").close()  # a marker: nothing here
             with self.lock:
                 self.n_miss += 1
             return "missing"
@@ -273,34 +326,38 @@ class Fetcher:
                 with self.lock:
                     self.n_done += 1
                     done = self.n_done
-                if (self.log_every and done % self.log_every == 0) or \
-                        now - last[0] >= 15:
+                if (self.log_every and done % self.log_every == 0) or now - last[0] >= 15:
                     with lock:
                         last[0] = now
                         rate = done / max(1e-6, now - t0)
                         eta = (total - done) / max(1e-6, rate)
-                        print(f"  [{done}/{total}] {self.tmpl.format(z=z, x=x, y=y)}"
-                              f"  {state}, {total - done} left, "
-                              f"{rate:.0f}/s, {hms(eta)} to go, "
-                              f"{self.bytes / 1048576:.0f} MB", flush=True)
+                        print(
+                            f"  [{done}/{total}] {self.url(z, x, y)}"
+                            f"  {state}, {total - done} left, "
+                            f"{rate:.0f}/s, {hms(eta)} to go, "
+                            f"{self.bytes / 1048576:.0f} MB",
+                            flush=True,
+                        )
 
-        threads = [threading.Thread(target=worker, daemon=True)
-                   for _ in range(max(1, self.jobs))]
+        threads = [threading.Thread(target=worker, daemon=True) for _ in range(max(1, self.jobs))]
         for t in threads:
             t.start()
         for t in threads:
             t.join()
         dt = time.time() - t0
-        print(f"  tiles: {self.n_ok} downloaded, {self.n_cached} from the cache, "
-              f"{self.n_miss} missing (404), {self.n_fail} failed, "
-              f"{self.bytes / 1048576:.0f} MB in {hms(dt)}", flush=True)
+        print(
+            f"  tiles: {self.n_ok} downloaded, {self.n_cached} from the cache, "
+            f"{self.n_miss} missing (404), {self.n_fail} failed, "
+            f"{self.bytes / 1048576:.0f} MB in {hms(dt)}",
+            flush=True,
+        )
         # only when something was downloaded – "0 browsers" from the cache looks broken
         if self.ua == "rotate" and self.ua_seen:
-            print(f"  headers: {len(self.ua_seen)} different browsers "
-                  f"of {len(BROWSERS)} profiles", flush=True)
+            print(f"  headers: {len(self.ua_seen)} different browsers of {len(BROWSERS)} profiles", flush=True)
         if self.n_fail and self.n_fail > total * 0.02:
-            print(f"::warning::{self.n_fail} of {total} tiles couldn't be "
-                  f"downloaded – the mosaic will have blank spots.")
+            print(
+                f"::warning::{self.n_fail} of {total} tiles couldn't be downloaded – the mosaic will have blank spots."
+            )
         return dt
 
 
@@ -318,20 +375,23 @@ def probe_zoom(fetcher, bbox, zmax, zmin, max_tiles, budget_s):
             print(f"  z{z:<3} {count:>8} tiles  × over the {max_tiles} cap")
             continue
         if budget_s and estimate > budget_s:
-            print(f"  z{z:<3} {count:>8} tiles  × outlines ~{hms(estimate)}, "
-                  f"budget {hms(budget_s)}")
+            print(f"  z{z:<3} {count:>8} tiles  × outlines ~{hms(estimate)}, budget {hms(budget_s)}")
             continue
         tx, ty = lonlat_to_tile(lon, lat, z)
         ok = fetcher.get(z, int(tx), int(ty))
-        print(f"  z{z:<3} {count:>8} tiles  "
-              f"{'✓ tile is there' if ok else '× the server gave no tile'}"
-              + (f", outlines ~{hms(estimate)}" if ok else ""))
+        print(
+            f"  z{z:<3} {count:>8} tiles  "
+            f"{'✓ tile is there' if ok else '× the server gave no tile'}"
+            + (f", outlines ~{hms(estimate)}" if ok else "")
+        )
         if ok:
             print(f"  picked          z{z}")
             print("─────────────────────────────────────────────────────", flush=True)
             return z
     print("─────────────────────────────────────────────────────", flush=True)
-    print("::error::No zoom passed: either the cut-out is too big for the budget "
-          "(raise --budget-min or shrink area), or the server gave not one "
-          "probe tile (check --url).")
+    print(
+        "::error::No zoom passed: either the cut-out is too big for the budget "
+        "(raise --budget-min or shrink area), or the server gave not one "
+        "probe tile (check --url)."
+    )
     return 0

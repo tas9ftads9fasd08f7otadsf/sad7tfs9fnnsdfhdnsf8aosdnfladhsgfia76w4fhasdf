@@ -113,6 +113,7 @@ TILE_LAYERS = (
     "buildings",
     "aerial_summer",
     "aerial_winter",
+    "orthophoto",
     "omt_landscape",
     "omt_points",
     "omt_roads",
@@ -599,6 +600,8 @@ def write_catalog(
         "buildings_maxzoom",
         "aerial_summer_maxzoom",
         "aerial_winter_maxzoom",
+        "orthophoto_maxzoom",
+        "orthophoto_source",
         "countries",
     ):
         if reg.get(k) is not None:
