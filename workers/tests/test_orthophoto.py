@@ -118,7 +118,7 @@ class WebP(unittest.TestCase):
         jpeg = os.path.join(tmp, "t.jpg")
         Image.new("RGB", (256, 256), (40, 90, 40)).save(jpeg, "JPEG")
         out = os.path.join(tmp, "presovsky-orthophoto.pmtiles")
-        aerial.write(out, {(8, 142, 87): aerial.as_webp(jpeg)}, [20.0, 49.0, 21.0, 49.4], 8, 8, "p", webp=True)
+        aerial.write(out, {(8, 142, 87): aerial.as_webp(jpeg)}, [20.0, 49.0, 21.0, 49.4], 8, 8, "p", fmt="webp")
         with open(out, "rb") as f:
             reader = Reader(MmapSource(f))
             self.assertEqual(reader.header()["tile_type"], TileType.WEBP)

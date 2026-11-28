@@ -786,5 +786,49 @@ class Aerial(unittest.TestCase):
         self.assertEqual(manifest.pmtiles_zooms(out), (8, 9))
 
 
+ktx2 = worker("mountain/aerial-ktx2.py")
+KTX2_MAGIC = b"\xabKTX 20\xbb\r\n\x1a\n"
+
+
+class AerialKTX2(unittest.TestCase):
+    def photo(self, tmp, name, fmt):
+        from PIL import Image  # noqa: PLC0415
+
+        path = os.path.join(tmp, name)
+        Image.new("RGB", (256, 256), (90, 120, 60)).save(path, fmt)
+        return path
+
+    # 587 a tile goes to the archive as KTX2, which the app's GPU keeps compressed
+    @needs("PIL")
+    @needs_cmd("basisu")
+    def test_a_tile_becomes_ktx2(self):
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        for name, fmt in (("t.jpg", "JPEG"), ("t.webp", "WEBP")):
+            out = aerial.as_ktx2(self.photo(tmp, name, fmt))
+            with open(out, "rb") as f:
+                self.assertEqual(f.read(12), KTX2_MAGIC, name)
+
+    # 587 an archive of JPEG tiles becomes one of KTX2 tiles with the same zooms and bounds
+    @needs("PIL", "pmtiles")
+    @needs_cmd("basisu")
+    def test_an_archive_is_converted(self):
+        from pmtiles.reader import MmapSource, Reader  # noqa: PLC0415
+
+        tmp = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmp)
+        jpeg = self.photo(tmp, "t.jpg", "JPEG")
+        src, out = os.path.join(tmp, "a.pmtiles"), os.path.join(tmp, "b.pmtiles")
+        aerial.write(src, {(8, 145, 89): jpeg, (9, 290, 178): jpeg}, [20, 49, 20.3, 49.2], 8, 9, "x")
+        self.assertEqual(ktx2.convert(src, out, jobs=2), 2)
+        with open(out, "rb") as f:
+            reader = Reader(MmapSource(f))
+            head = reader.header()
+            self.assertEqual(head["tile_type"].name, "UNKNOWN")
+            self.assertEqual((head["min_zoom"], head["max_zoom"], head["min_lon_e7"]), (8, 9, 200000000))
+            self.assertEqual(reader.metadata()["format"], "ktx2")
+            self.assertEqual(reader.get(9, 290, 178)[:12], KTX2_MAGIC)
+
+
 if __name__ == "__main__":
     unittest.main()

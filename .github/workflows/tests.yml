@@ -86,6 +86,8 @@ jobs:
             mwparserfromhell coverage
           npm install --no-save --no-audit --no-fund --prefix "$RUNNER_TEMP/npm" \
             @maplibre/maplibre-gl-style-spec@23.3.0
+      - name: Install basisu
+        uses: ./.github/actions/basisu
       - name: Python
         run: |
           set -euo pipefail
