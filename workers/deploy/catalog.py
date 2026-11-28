@@ -96,6 +96,7 @@ def region_entry(man):
 
 TILE_LAYERS = (
     "pmtiles",
+    "terrain_advanced",
     "contours",
     "rocks",
     "trails",
@@ -598,6 +599,7 @@ def write_catalog(
         "names_maxzoom",
         "ski_maxzoom",
         "buildings_maxzoom",
+        "terrain_advanced_maxzoom",
         "aerial_summer_maxzoom",
         "aerial_winter_maxzoom",
         "orthophoto_maxzoom",

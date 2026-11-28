@@ -45,6 +45,8 @@
     "terrain_frac_bits": "auto",
     "terrain_format": "webp",
     "terrain_3d": "auto",
+    "terrain_advanced": "auto",
+    "terrain_advanced_maxzoom": 16,
     "trails": true,
     "trails_maxzoom": 14,
     "trails_local_minzoom": 12,

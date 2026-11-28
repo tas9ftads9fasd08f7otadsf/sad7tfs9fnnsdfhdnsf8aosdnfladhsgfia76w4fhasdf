@@ -44,6 +44,15 @@ for name, job in (bm.get("jobs") or {}).items():
     if str(with_.get("tiles", "")).lower() == "true":
         continue  # tiles are given by degrees, the name comes from them
     area, asset = str(with_.get("area", "")), str(with_.get("asset", ""))
+    # the advanced height model cuts the whole region box at 2 m, its own check names the file
+    if name == "advanced-cut":
+        if "inputs.dem_bbox" not in area or "advanced-dem.outputs.asset" not in asset:
+            print(
+                f"::error file={LAYERS}::job 'advanced-cut' must cut `inputs.dem_bbox` into "
+                f"`advanced-dem.outputs.asset`, not `{area}` into `{asset}`."
+            )
+            bad += 1
+        continue
     if "mirror_dmr5_area" not in area:
         print(
             f"::error file={LAYERS}::job '{name}' passes dmr5-drive.yml "

@@ -51,6 +51,18 @@
       "legacy": ["tienovanie"]
     },
     {
+      "key": "terrain_advanced",
+      "app": "Advanced height model",
+      "symbol": "mountain.2.circle.fill",
+      "app_detail": "Sharper hillshading and 3D terrain to zoom 16, from LiDAR at 2 m",
+      "description": "terrain height as terrarium tiles to z16 from DMR 5.0 at 2 m (raster .pmtiles) – the finer alternative to `terrain`",
+      "sources": ["author", "dmr5"],
+      "manifest": ["terrain_advanced"],
+      "suffixes": ["-terrain-advanced.pmtiles"],
+      "origin": "site",
+      "regenerate": "terrain_advanced"
+    },
+    {
       "key": "contours",
       "app": "Contours",
       "symbol": "chart.line.flattrend.xyaxis",
