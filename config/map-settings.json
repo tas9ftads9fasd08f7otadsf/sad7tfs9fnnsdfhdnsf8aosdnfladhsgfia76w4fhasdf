@@ -390,23 +390,7 @@
       "settings": {
         "orthophoto": "ortofoto_sk_3c"
       },
-      "regions": {
-        "bratislavsky": {
-          "settings": {
-            "publish": false,
-            "test_at": "17.26,48.462",
-            "test_km2": 25
-          }
-        },
-        "zilinsky": {
-          "settings": {
-            "publish": false,
-            "test_at": "19.07,49.19",
-            "test_km2": 9,
-            "terrain_maxzoom": 14
-          }
-        }
-      }
+      "regions": {}
     },
     "cesko": {
       "settings": {
@@ -507,12 +491,7 @@
           "osm": [
             "europe/slovakia-latest"
           ],
-          "settings": {
-            "publish": false,
-            "test_at": "19.07,49.19",
-            "test_km2": 9,
-            "terrain_maxzoom": 18
-          }
+          "settings": {}
         },
         "velka_fatra": {
           "country": "slovensko",
