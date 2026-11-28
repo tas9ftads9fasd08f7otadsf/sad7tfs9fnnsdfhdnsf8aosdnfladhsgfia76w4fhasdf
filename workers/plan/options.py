@@ -63,6 +63,9 @@ DESCRIPTIONS = {
     "terrain_format": "image format of height tiles: png or webp (lossless)",
     # public AWS tiles are global and coarse, so no 3D on them
     "terrain_3d": "3D terrain in the style (auto = when we have our own height tiles)",
+    # a package of its own beside the base terrain; DMR 5.0 is Slovak, ranges keep theirs
+    "terrain_advanced": "the advanced height model to z16 from DMR 5.0 at 2 m (auto = Slovak regions)",
+    "terrain_advanced_maxzoom": "max zoom of the advanced height model",
     # trails have no source choice – the same PBF as the map
     "trails": "make waymarked trails from OSM relations",
     "features": "make landscape features OpenMapTiles lacks",
@@ -157,6 +160,9 @@ NONE = "none"
 
 # rocks have one more source that reads no DEM: polygons from hillshading
 ROCK_FROM_SHADING = "shading"
+
+# the only model with a 2 m form for a whole region
+ADVANCED_SOURCE = "dmr5"
 
 # one choice instead of three checkboxes – the form holds ten inputs at most
 REBUILD = {
@@ -508,6 +514,14 @@ def main():
     values["contour_lines"] = "true" if contour_src != NONE else "false"
     values["rocks"] = "true" if rock_src != NONE else "false"
     values["terrain"] = "true" if shading_src != NONE else "false"
+    advanced = values["terrain_advanced"].strip().lower()
+    if advanced == "auto":
+        advanced = "true" if shading_src == ADVANCED_SOURCE and not args.mountain else "false"
+    values["terrain_advanced"] = advanced
+    if not check_bool(values, "terrain_advanced", "the advanced height model"):
+        return 1
+    if not check_int(values, "terrain_advanced_maxzoom", 14, 18):
+        return 1
     # `contours` gates the whole job: both layers go into one .pmtiles
     values["contours"] = "true" if contour_src != NONE or rock_src != NONE else "false"
     # `trails=1` would silently turn trails off, found only on the map

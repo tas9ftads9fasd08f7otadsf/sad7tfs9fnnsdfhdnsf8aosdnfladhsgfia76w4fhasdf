@@ -80,6 +80,7 @@ on:
           - contours
           - rocks
           - terrain
+          - terrain_advanced
           - orthophoto
       test:
         description: "Quick test: only 4 km² in the middle of the region (a pipeline trial)"
@@ -208,6 +209,8 @@ jobs:
       opt_terrain_maxzoom: ${{ steps.opts.outputs.opt_terrain_maxzoom }}
       opt_terrain_frac_bits: ${{ steps.opts.outputs.opt_terrain_frac_bits }}
       opt_terrain_format: ${{ steps.opts.outputs.opt_terrain_format }}
+      opt_terrain_advanced: ${{ steps.opts.outputs.opt_terrain_advanced }}
+      opt_terrain_advanced_maxzoom: ${{ steps.opts.outputs.opt_terrain_advanced_maxzoom }}
       opt_reuse_layers: ${{ steps.opts.outputs.opt_reuse_layers }}
       opt_rock_slope: ${{ steps.opts.outputs.opt_rock_slope }}
       opt_orthophoto: ${{ steps.opts.outputs.opt_orthophoto }}
@@ -540,7 +543,7 @@ jobs:
   dem:
     name: Height-model layers
     needs: plan
-    if: ${{ !cancelled() && needs.plan.result == 'success' && (inputs.what == 'contours' || inputs.what == 'rocks' || inputs.what == 'terrain') }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && (inputs.what == 'contours' || inputs.what == 'rocks' || inputs.what == 'terrain' || inputs.what == 'terrain_advanced') }}
     uses: ./.github/workflows/dem-layers.yml
     secrets: inherit                      # Drive (stores and cache); `env` isn't inherited
     with:
@@ -581,10 +584,12 @@ jobs:
       opt_terrain_maxzoom: ${{ needs.plan.outputs.opt_terrain_maxzoom }}
       opt_terrain_frac_bits: ${{ needs.plan.outputs.opt_terrain_frac_bits }}
       opt_terrain_format: ${{ needs.plan.outputs.opt_terrain_format }}
+      opt_terrain_advanced: ${{ inputs.what == 'terrain_advanced' && needs.plan.outputs.opt_terrain_advanced || 'false' }}
+      opt_terrain_advanced_maxzoom: ${{ needs.plan.outputs.opt_terrain_advanced_maxzoom }}
       opt_reuse_layers: ${{ needs.plan.outputs.opt_reuse_layers }}
       opt_contours_rebuild: ${{ inputs.what == 'contours' && 'true' || 'false' }}
       opt_rocks_rebuild: ${{ inputs.what == 'rocks' && 'true' || 'false' }}
-      opt_terrain_rebuild: ${{ inputs.what == 'terrain' && 'true' || 'false' }}
+      opt_terrain_rebuild: ${{ (inputs.what == 'terrain' || inputs.what == 'terrain_advanced') && 'true' || 'false' }}
       opt_size_limit_mb: ${{ needs.plan.outputs.opt_size_limit_mb }}
       budget_contours_pct: ${{ needs.plan.outputs.budget_contours_pct }}
       budget_rocks_pct: ${{ needs.plan.outputs.budget_rocks_pct }}
@@ -707,6 +712,18 @@ jobs:
           pattern: site-*
           path: _site
           merge-multiple: true
+
+      # not `site-*`, so a build keeps it off Pages; here it is just the layer
+      - name: Add the advanced height model (Drive only)
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: drive-terrain-advanced
+          path: _site
+      - name: Name the advanced height model in the manifest
+        env:
+          REGION_KEY: ${{ needs.plan.outputs.key }}
+        run: python3 workers/terrain/advanced-site.py --site=_site --region="$REGION_KEY"
 
       - name: What came from the layer jobs
         run: |

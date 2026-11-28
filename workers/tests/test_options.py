@@ -19,8 +19,7 @@ def run(*args, **kw):
     with tempfile.NamedTemporaryFile("r", suffix=".out") as out:
         defaults = {"--contour-source": "sonny", "--rock-source": "sonny", "--shading-source": "sonny"}
         defaults.update(kw)
-        argv = [sys.executable, OPTIONS, f"--out={out.name}", *args,
-                *(f"{k}={v}" for k, v in defaults.items())]
+        argv = [sys.executable, OPTIONS, f"--out={out.name}", *args, *(f"{k}={v}" for k, v in defaults.items())]
         r = subprocess.run(argv, capture_output=True, text=True)
         values = dict(line.removeprefix("opt_").split("=", 1) for line in out.read().splitlines() if "=" in line)
     return r, values
@@ -45,6 +44,19 @@ class Options(unittest.TestCase):
         self.assertEqual(v["rock_dem"], "sonny")
         self.assertTrue(v["terrain_maxzoom"].isdigit(), "auto is decided here")
 
+    def test_advanced_terrain_only_for_dmr5_regions(self):
+        # 590 the advanced height model is a 2 m DMR 5.0 cut: Slovak regions only, ranges keep theirs
+        v, _ = self.ok("--region=bratislavsky", **FROM_SETTINGS)
+        self.assertEqual((v["terrain_advanced"], v["terrain_advanced_maxzoom"]), ("true", "16"))
+        v, _ = self.ok("--region=praha", **FROM_SETTINGS)
+        self.assertEqual(v["terrain_advanced"], "false")
+        v, _ = self.ok("--mountain=mala_fatra", **FROM_SETTINGS)
+        self.assertEqual(v["terrain_advanced"], "false")
+        v, _ = self.ok("--region=bratislavsky", "--options=terrain_advanced=false", **FROM_SETTINGS)
+        self.assertEqual(v["terrain_advanced"], "false")
+        self.assertIn("terrain_advanced", self.fails("--region=bratislavsky", "--options=terrain_advanced=maybe"))
+        self.assertIn("terrain_advanced_maxzoom", self.fails("--options=terrain_advanced_maxzoom=22"))
+
     def test_options_parsed_and_quoted(self):
         v, _ = self.ok('--options=rock_res=2 crop_bbox="17,48,18,49" contour_interval=5.0')
         self.assertEqual((v["rock_res"], v["crop_bbox"], v["contour_interval"]), ("2", "17,48,18,49", "5"))
@@ -66,10 +78,12 @@ class Options(unittest.TestCase):
     def test_region_without_dem_gets_no_dem_layers(self):
         for region in ("cesko", "praha", "rakusko", "wien"):
             v, _ = self.ok(f"--region={region}", **FROM_SETTINGS)
-            self.assertEqual((v["contour_source"], v["rock_source"], v["shading_source"]),
-                             ("none", "none", "none"), region)
-            self.assertEqual((v["contours"], v["rocks"], v["terrain"], v["rock_dem"]),
-                             ("false", "false", "false", ""), region)
+            self.assertEqual(
+                (v["contour_source"], v["rock_source"], v["shading_source"]), ("none", "none", "none"), region
+            )
+            self.assertEqual(
+                (v["contours"], v["rocks"], v["terrain"], v["rock_dem"]), ("false", "false", "false", ""), region
+            )
             self.assertEqual((v["trails"], v["transport"], v["water"]), ("true", "true", "true"))
         v, _ = self.ok("--region=presovsky", **FROM_SETTINGS)
         self.assertEqual((v["contour_source"], v["terrain"], v["rock_slope"]), ("dmr5", "true", "50"))
@@ -104,8 +118,11 @@ class Options(unittest.TestCase):
         self.assertEqual((v["rocks_rebuild"], v["terrain_rebuild"]), ("true", "false"))
 
     def test_a_mountain_downloads_its_photos_anew(self):
-        for rebuild, aerial, rocks in (("aerial", "true", "false"), ("everything", "true", "true"),
-                                       ("rocks", "false", "true")):
+        for rebuild, aerial, rocks in (
+            ("aerial", "true", "false"),
+            ("everything", "true", "true"),
+            ("rocks", "false", "true"),
+        ):
             v, _ = self.ok("--mountain=vysoke_tatry", f"--rebuild={rebuild}", **FROM_SETTINGS)
             self.assertEqual((v["aerial_rebuild"], v["rocks_rebuild"]), (aerial, rocks), rebuild)
         _, said = self.ok("--mountain=vysoke_tatry", "--rebuild=aerial", **FROM_SETTINGS)
@@ -119,6 +136,7 @@ class Options(unittest.TestCase):
     @needs("yaml")
     def test_the_mountain_form_offers_only_known_rebuilds(self):
         import yaml  # noqa: PLC0415
+
         with open(os.path.join(os.path.dirname(WORKERS), ".github", "workflows", "mountain.yml")) as f:
             inputs = yaml.safe_load(f)[True]["workflow_dispatch"]["inputs"]
         offered = inputs["rebuild"]["options"]
@@ -127,10 +145,17 @@ class Options(unittest.TestCase):
 
 
 def settings_with(**maps):
-    return {"defaults": {**{k: "" for k in OPTS.DESCRIPTIONS}, "contour_source": "sonny",
-                         "rock_source": "sonny", "shading_source": "sonny", "rock_slope": 50},
-            "sources": {"aerial": {"a": {"season": "summer", "url": "u"}}},
-            "maps": maps}
+    return {
+        "defaults": {
+            **{k: "" for k in OPTS.DESCRIPTIONS},
+            "contour_source": "sonny",
+            "rock_source": "sonny",
+            "shading_source": "sonny",
+            "rock_slope": 50,
+        },
+        "sources": {"aerial": {"a": {"season": "summer", "url": "u"}}},
+        "maps": maps,
+    }
 
 
 REGIONS = {"sk": {"country": "sk"}, "ke": {"country": "sk"}, "ba": {"country": "sk"}}
@@ -138,8 +163,12 @@ REGIONS = {"sk": {"country": "sk"}, "ke": {"country": "sk"}, "ba": {"country": "
 
 class Layers(unittest.TestCase):
     def test_the_most_specific_wins(self):
-        s = settings_with(sk={"settings": {"rock_slope": 45, "contour_source": "dmr5"},
-                              "regions": {"ke": {"settings": {"rock_slope": 40}}}})
+        s = settings_with(
+            sk={
+                "settings": {"rock_slope": 45, "contour_source": "dmr5"},
+                "regions": {"ke": {"settings": {"rock_slope": 40}}},
+            }
+        )
         got, origin = OPTS.resolve(s, REGIONS, region="ke")
         self.assertEqual((got["rock_slope"], origin["rock_slope"]), ("40", "sk › ke"))
         self.assertEqual((got["contour_source"], origin["contour_source"]), ("dmr5", "sk"))
@@ -148,12 +177,12 @@ class Layers(unittest.TestCase):
         self.assertEqual(got["rock_slope"], "45", "a region without an entry takes its country")
 
     def test_a_range_takes_nothing_from_a_country(self):
-        s = settings_with(sk={"settings": {"rock_slope": 45}},
-                          mountains={"settings": {"contour_interval": 2.5},
-                                     "ranges": {"r": {"settings": {"aerial_summer": "a"}}}})
+        s = settings_with(
+            sk={"settings": {"rock_slope": 45}},
+            mountains={"settings": {"contour_interval": 2.5}, "ranges": {"r": {"settings": {"aerial_summer": "a"}}}},
+        )
         got, origin = OPTS.resolve(s, REGIONS, mountain="r")
-        self.assertEqual((got["rock_slope"], got["contour_interval"], got["aerial_summer"]),
-                         ("50", "2.5", "a"))
+        self.assertEqual((got["rock_slope"], got["contour_interval"], got["aerial_summer"]), ("50", "2.5", "a"))
         self.assertEqual(origin["aerial_summer"], "mountains › r")
 
     def test_null_means_none_and_json_types_read_as_the_jobs_do(self):
@@ -171,9 +200,15 @@ class Layers(unittest.TestCase):
             OPTS.resolve(s, REGIONS, region="ke")
 
     def test_photos_that_stop_at_a_border_are_named(self):
-        s = settings_with(mountains={"settings": {}, "ranges": {
-            "r": {"countries": ["SK", "PL"], "settings": {"aerial_summer": "a"}},
-            "s": {"countries": ["SK"], "settings": {"aerial_summer": "a"}}}})
+        s = settings_with(
+            mountains={
+                "settings": {},
+                "ranges": {
+                    "r": {"countries": ["SK", "PL"], "settings": {"aerial_summer": "a"}},
+                    "s": {"countries": ["SK"], "settings": {"aerial_summer": "a"}},
+                },
+            }
+        )
         s["sources"]["aerial"]["a"]["covers"] = ["SK"]
         for key, want in (("r", {"summer": ["PL"]}), ("s", {})):
             got, _ = OPTS.resolve(s, REGIONS, mountain=key)

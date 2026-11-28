@@ -64,6 +64,10 @@ COST = {
     "contours": ("Contours", "contour lines from the height model"),
     "rocks": ("Rocks", "rock areas from the model's slope"),
     "terrain": ("Hillshading and 3D terrain", "height tiles for hillshading and 3D"),
+    "terrain_advanced": (
+        "Advanced height model",
+        "height tiles to z16 from a 2 m DMR 5.0 cut, Slovak regions only; the first run cuts the model for an hour",
+    ),
     "orthophoto": (
         "Orthophoto",
         "the region's aerial photos as WebP, from its `orthophoto` source; "

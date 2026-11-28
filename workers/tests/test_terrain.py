@@ -1,6 +1,8 @@
 import io
+import json
 import math
 import os
+import tempfile
 import unittest
 
 from load import needs, worker
@@ -308,3 +310,49 @@ class TerrainPlane(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AdvancedSite(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.a = worker("terrain/advanced-site.py")
+
+    def site(self, root, manifest=True, archive=True):
+        os.makedirs(os.path.join(root, "tiles"))
+        if manifest:
+            with open(os.path.join(root, "tiles", "manifest.json"), "w") as f:
+                json.dump({"regions": {"bratislavsky": {"pmtiles": "tiles/bratislavsky.pmtiles"}}}, f)
+        if archive:
+            head = bytearray(127)
+            head[:7] = b"PMTiles"
+            head[7] = 3
+            head[100], head[101] = 5, 16
+            with open(os.path.join(root, "tiles", "bratislavsky-terrain-advanced.pmtiles"), "wb") as f:
+                f.write(head)
+
+    def region(self, root):
+        return json.load(open(os.path.join(root, "tiles", "manifest.json")))["regions"]["bratislavsky"]
+
+    def test_the_manifest_names_the_advanced_file(self):
+        # 590 the advanced model joins `_site` after the Pages deploy, so packaging needs its key
+        with tempfile.TemporaryDirectory() as root:
+            self.site(root)
+            self.assertEqual(self.a.add(root, "bratislavsky"), 16)
+            reg = self.region(root)
+            self.assertEqual(reg["terrain_advanced"], "tiles/bratislavsky-terrain-advanced.pmtiles")
+            self.assertEqual(reg["terrain_advanced_maxzoom"], 16)
+            self.assertEqual(reg["pmtiles"], "tiles/bratislavsky.pmtiles")
+
+    def test_a_regeneration_without_a_manifest_gets_one(self):
+        # 590 regenerating the package alone has no `site.sh` manifest to add to
+        with tempfile.TemporaryDirectory() as root:
+            self.site(root, manifest=False)
+            self.assertEqual(self.a.add(root, "bratislavsky"), 16)
+            self.assertEqual(self.region(root)["terrain_advanced_maxzoom"], 16)
+
+    def test_without_the_file_the_manifest_stays(self):
+        # 590 a region without the advanced model must not point at a missing file
+        with tempfile.TemporaryDirectory() as root:
+            self.site(root, archive=False)
+            self.assertIsNone(self.a.add(root, "bratislavsky"))
+            self.assertNotIn("terrain_advanced", self.region(root))

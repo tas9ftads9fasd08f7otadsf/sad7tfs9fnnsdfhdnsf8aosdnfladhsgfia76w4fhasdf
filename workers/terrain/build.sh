@@ -27,6 +27,12 @@ case "$LIMIT_MB" in ''|*[!0-9]*) LIMIT_MB=900 ;; esac
 TPCT="${BUDGET_TERRAIN_PCT:-12}"
 case "$TPCT" in ''|*[!0-9]*) TPCT=12 ;; esac
 TBUDGET_MB=$(( LIMIT_MB * TPCT / 100 ))
+# the advanced package goes to Drive alone, never into the site, so the site budget isn't its cap
+STEM=terrain
+if [ "${TERRAIN_PACKAGE:-}" = advanced ]; then
+  STEM=terrain-advanced
+  TBUDGET_MB="${TERRAIN_BUDGET_MB:-6000}"
+fi
 REBUILD="${TERRAIN_REBUILD:-false}"
 FMT="${TERRAIN_FORMAT:-webp}"
 case "$FMT" in png|webp) ;; *) FMT=webp ;; esac
@@ -55,7 +61,7 @@ fi
 [ -n "${DEM_FILL:-}" ] && ENC_OPT="${ENC_OPT}-f${DEM_FILL}2"
 # the overlap with the neighbouring region changes the tiles, so it is in the name too
 BORDER_M=$(python3 -c "import sys; sys.path.insert(0, 'workers/plan'); import area; print(int(area.BORDER_BUFFER_M))")
-asset_name() { echo "terrain-${REGION_KEY}-${TDEM}-z${1}-${ENC_VER}${ENC_OPT}-o${BORDER_M}.pmtiles"; }
+asset_name() { echo "${STEM}-${REGION_KEY}-${TDEM}-z${1}-${ENC_VER}${ENC_OPT}-o${BORDER_M}.pmtiles"; }
 
 # done = a finished archive lies here; half a PNG tree is a non-empty folder too
 have_tiles() { [ -s terrain-out/terrain.pmtiles ]; }
@@ -70,7 +76,7 @@ else
   # the highest stored zoom not above the wished one: a capped run stored exactly that
   HAVE_Z=$(python3 workers/drive/store.py --names --store="$TERRAIN_STORE" \
       2>/dev/null \
-    | sed -n "s/^terrain-${REGION_KEY}-${TDEM}-z\([0-9]\+\)-${ENC_VER}${ENC_OPT}-o${BORDER_M}\.pmtiles$/\1/p" \
+    | sed -n "s/^${STEM}-${REGION_KEY}-${TDEM}-z\([0-9]\+\)-${ENC_VER}${ENC_OPT}-o${BORDER_M}\.pmtiles$/\1/p" \
     | awk -v want="$TZ" '$1 <= want' | sort -n | tail -1)
   if [ -n "$HAVE_Z" ] && python3 workers/drive/store.py --get \
        --store="$TERRAIN_STORE" --name="$(asset_name "$HAVE_Z")" --dir=/tmp; then
@@ -147,14 +153,14 @@ fi
 TZ=$(cat terrain-out/maxzoom.txt 2>/dev/null || echo "$TZ")
 # among the other `.pmtiles`: to the client the same thing as the map, only raster
 mkdir -p _site/tiles
-cp terrain-out/terrain.pmtiles "_site/tiles/${REGION_KEY}-terrain.pmtiles"
+cp terrain-out/terrain.pmtiles "_site/tiles/${REGION_KEY}-${STEM}.pmtiles"
 echo "enabled=true" >> "$GITHUB_OUTPUT"
 echo "maxzoom=$TZ" >> "$GITHUB_OUTPUT"
 # hillshading has its own choice, so this may differ from the contours' model
 echo "dem_source=$TDEM" >> "$GITHUB_OUTPUT"
 # after falling back to Sonny, the original model's cache key mustn't get these tiles
 echo "fell_back=$FELL_BACK" >> "$GITHUB_OUTPUT"
-TER_MB=$(du -sm "_site/tiles/${REGION_KEY}-terrain.pmtiles" | cut -f1)
+TER_MB=$(du -sm "_site/tiles/${REGION_KEY}-${STEM}.pmtiles" | cut -f1)
 echo "Terrain tiles: raster .pmtiles ($FMT, fraction bits $BITS) to z$TZ from model $TDEM, ${TER_MB} MB"
 printf '%s\t%s\t%s\t%s\n' "60" "Hillshading and 3D terrain" "$(( $(date +%s) - T_TER ))" \
   "raster .pmtiles ($FMT, bits $BITS) to z$TZ from $TDEM, ${TER_MB} MB ($TSRC)" \

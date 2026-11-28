@@ -79,6 +79,11 @@ class Names(unittest.TestCase):
         )
         self.assertNotIn("terrain", catalog.tiles_paths({"dem": "https://aws/{z}/{x}/{y}.png"}, reg))
 
+    def test_advanced_terrain_travels_in_the_catalog(self):
+        # 590 the advanced height model is a package of its own, beside `terrain`
+        reg = {"terrain_advanced": "tiles/b-terrain-advanced.pmtiles"}
+        self.assertEqual(catalog.tiles_paths({}, reg), {"terrain_advanced": "tiles/b-terrain-advanced.pmtiles"})
+
 
 class RegionIds(unittest.TestCase):
     def setUp(self):

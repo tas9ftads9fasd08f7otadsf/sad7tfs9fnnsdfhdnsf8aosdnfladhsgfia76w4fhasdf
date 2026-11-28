@@ -706,6 +706,32 @@ mohlo byť vypnuté). Celý ten reťazec – štýl, zdroj, prevýšenie, manife
 kontroluje [`workers/lint/terrain3d.mjs`](lint/terrain3d.mjs); bez neho je
 chýbajúce 3D plochá mapa, ktorú nikto neohlási.
 
+#### Pokročilý výškový model (balík `terrain_advanced`)
+
+Základný výškový model kraja je z DMR 5.0 prevzorkovaného na 5 m a končí na
+z14 (pixel 6,3 m). Porovnanie s Mapy.com (586) ukázalo, že z15 z toho istého
+modelu nepridá nič – chýbajú dáta, nie zoom. Jemný reliéf (žľaby, malé hrebene,
+hrany skál) dáva až DMR 5.0 pod 5 m.
+
+- **Druhý balík vedľa základného**, nie náhrada: `terrain_advanced`, súbor
+  `<kraj>-terrain-advanced.pmtiles`, terrarium do **z16**
+  (`terrain_advanced_maxzoom`). Aplikácia zapína na jednom štýle len jeden
+  výškový model.
+- **Dáta: výrez DMR 5.0 v mriežke 2 m** z pyramíd na Drive
+  (`Data · DMR 5.0`, `grid_m: 2`), uložený ako `ugkk-<kraj>_2m.tif` v sklade
+  `dem-ugkk`. Job `advanced-dem` sa pozrie, či tam je; ak nie, `advanced-cut`
+  ho vyreže (prvý beh hodinu), `terrain-advanced` potom počíta dlaždice cestou
+  výrezu (`TERRAIN_PACKAGE=advanced` v `terrain/build.sh`). Pád späť na Sonny
+  tu nie je – bol by hrubší než základný model, ktorý má nahradiť.
+- **Nastavenie `terrain_advanced`**: `auto` = áno pre kraje s tieňovaním
+  z `dmr5` (slovenské), nie pre pohoria (tie majú 1 m výrez do z17) ani pre
+  Česko a Rakúsko.
+- **Na Pages nejde**: 1–3 GB na kraj (v horách ~0,5 MB/km²) sa do stránky
+  nezmestí, preto artefakt nie je `site-*`, ale `drive-terrain-advanced`. Do
+  `_site` príde až po nasadení Pages a `terrain/advanced-site.py` ho zapíše do
+  `manifest.json`, kde ho nájde balenie na Drive (ZIP aj `.aar`).
+- Samostatne: `Mapa · Regenerate region layer` s voľbou `terrain_advanced`.
+
 ### Skaly (najstrmšie úseky terénu)
 
 Kde sú vrstevnice husté, je stena. Hustota čiar je ale len **obraz sklonu** –
