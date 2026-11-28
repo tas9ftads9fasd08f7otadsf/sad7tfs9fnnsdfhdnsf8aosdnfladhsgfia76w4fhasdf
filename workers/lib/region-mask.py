@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Region mask: "does this place (tile, pixel) belong to the region?"
 
-    m = mask_from_file("data/region.geojson", cells=2048)
-    python3 workers/lib/region-mask.py --poly=… --bbox=… --zoom=14
+m = mask_from_file("data/region.geojson", cells=2048)
+python3 workers/lib/region-mask.py --poly=… --bbox=… --zoom=14
 """
+
 import argparse
 import json
 import sys
@@ -13,20 +14,18 @@ def rings_from_geojson(path):
     """GeoJSON → `[(ring, is_hole)]`; a ring is a list of `(lon, lat)`."""
     with open(path) as f:
         data = json.load(f)
-    feats = (data.get("features") if data.get("type") == "FeatureCollection"
-             else [data])
+    feats = data.get("features") if data.get("type") == "FeatureCollection" else [data]
     out = []
     for feat in feats or []:
         geom = feat.get("geometry") if "geometry" in feat else feat
         if not geom:
             continue
-        polys = ([geom.get("coordinates")] if geom.get("type") == "Polygon"
-                 else geom.get("coordinates") or [])
+        polys = [geom.get("coordinates")] if geom.get("type") == "Polygon" else geom.get("coordinates") or []
         for poly in polys:
             for i, ring in enumerate(poly or []):
                 pts = [(float(x), float(y)) for x, y in ring]
                 if len(pts) >= 3:
-                    out.append((pts, i > 0))     # first ring = outline
+                    out.append((pts, i > 0))  # first ring = outline
     return out
 
 
@@ -63,13 +62,7 @@ class Mask:
         self.nx = max(16, int(cells))
         self.ny = max(16, int(cells * span_y / span_x))
         self.dx, self.dy = span_x / self.nx, span_y / self.ny
-        self.grid = bytearray(self.nx * self.ny)
-        for j in range(self.ny):
-            y = self.s + (j + 0.5) * self.dy
-            row = j * self.nx
-            for i in range(self.nx):
-                if inside(rings, self.w + (i + 0.5) * self.dx, y):
-                    self.grid[row + i] = 1
+        self.grid = _grid(rings, bbox, self.nx, self.ny)
         self.hit = sum(self.grid)
 
     @property
@@ -87,10 +80,28 @@ class Mask:
         j1 = min(self.ny - 1, int((n - self.s) / self.dy))
         for j in range(j0, j1 + 1):
             row = j * self.nx
-            if 1 in self.grid[row + i0:row + i1 + 1]:
+            if 1 in self.grid[row + i0 : row + i1 + 1]:
                 return True
         # a window smaller than a mask cell (high zooms): the centre decides
         return inside(self.rings, (w + e) / 2, (s + n) / 2)
+
+
+def _grid(rings, bbox, nx, ny):
+    """Cell flags with row 0 in the south, filled by scanline where numpy is there."""
+    # pure Python costs cells × vertices: minutes to hours on a full-detail outline
+    try:
+        import numpy as np
+    except ImportError:
+        grid = bytearray(nx * ny)
+        w, s, e, n = bbox
+        dx, dy = (e - w) / nx, (n - s) / ny
+        for j in range(ny):
+            y = s + (j + 0.5) * dy
+            for i in range(nx):
+                if inside(rings, w + (i + 0.5) * dx, y):
+                    grid[j * nx + i] = 1
+        return grid
+    return bytearray(np.flipud(pixel_mask(rings, bbox, nx, ny)).astype(np.uint8).tobytes())
 
 
 def mask_from_file(path, bbox, cells=2048):
@@ -106,7 +117,7 @@ def _edges(rings):
     for ring, _hole in rings:
         for i, (ax, ay) in enumerate(ring):
             bx, by = ring[(i + 1) % len(ring)]
-            if ay != by:                      # a horizontal edge crosses no row
+            if ay != by:  # a horizontal edge crosses no row
                 x1.append(ax)
                 y1.append(ay)
                 x2.append(bx)
@@ -135,13 +146,15 @@ def pixel_mask(rings, box, width, height, grow=0):
     `rings` and `box` share coordinates; row 0 is the top; even-odd fill makes holes.
     """
     import numpy as np
+
     minx, miny, maxx, maxy = box
     dx, dy = (maxx - minx) / width, (maxy - miny) / height
     if grow < 0:
         # shrunk on a padded box, so a strip's own edge isn't taken for the region's
         k = int(-grow)
-        wide = pixel_mask(rings, (minx - k * dx, miny - k * dy, maxx + k * dx, maxy + k * dy),
-                          width + 2 * k, height + 2 * k)
+        wide = pixel_mask(
+            rings, (minx - k * dx, miny - k * dy, maxx + k * dx, maxy + k * dy), width + 2 * k, height + 2 * k
+        )
         return ~_dilate(~wide, k, np)[k:-k, k:-k]
     ex1, ey1, ex2, ey2 = (np.asarray(a, dtype=np.float64) for a in _edges(rings))
     mask = np.zeros((height, width), dtype=bool)
@@ -155,8 +168,7 @@ def pixel_mask(rings, box, width, height, grow=0):
         cross = (ey1 > y) != (ey2 > y)
         if not cross.any():
             continue
-        xs = ex1[cross] + (y - ey1[cross]) * ((ex2 - ex1)[cross]
-                                              / (ey2 - ey1)[cross])
+        xs = ex1[cross] + (y - ey1[cross]) * ((ex2 - ex1)[cross] / (ey2 - ey1)[cross])
         xs.sort()
         # crossing pairs are inside; bounds round inwards to pixel centres
         i0 = np.ceil((xs[0::2] - minx) / dx - 0.5).astype(np.int64)
@@ -171,7 +183,8 @@ def pixel_mask(rings, box, width, height, grow=0):
 def tile_box(z, x, y):
     """XYZ tile window in degrees (lon/lat, Web Mercator)."""
     import math
-    n = 2 ** z
+
+    n = 2**z
     lon1 = x / n * 360.0 - 180.0
     lon2 = (x + 1) / n * 360.0 - 180.0
     lat1 = math.degrees(math.atan(math.sinh(math.pi * (1 - 2 * y / n))))
@@ -197,20 +210,25 @@ def main():
     m = mask_from_file(args.poly, bbox, args.cells)
     print(f"Region mask: {m.nx}×{m.ny} cells, {m.pct:.1f} % of bbox in the region")
     import math
-    n = 2 ** args.zoom
+
+    n = 2**args.zoom
+
     def xt(lon):
         return int((lon + 180.0) / 360.0 * n)
+
     def yt(lat):
         r = math.radians(lat)
         return int((1 - math.log(math.tan(r) + 1 / math.cos(r)) / math.pi) / 2 * n)
+
     x0, x1 = xt(bbox[0]), xt(bbox[2])
     y0, y1 = yt(bbox[3]), yt(bbox[1])
     total = (x1 - x0 + 1) * (y1 - y0 + 1)
-    inside_n = sum(1 for x in range(x0, x1 + 1) for y in range(y0, y1 + 1)
-                   if tile_touches(m, args.zoom, x, y))
-    print(f"z{args.zoom}: {inside_n} of {total} tiles touch the region "
-          f"({total - inside_n} outside, so "
-          f"{100 * (total - inside_n) / total:.0f} % of the work is saved)")
+    inside_n = sum(1 for x in range(x0, x1 + 1) for y in range(y0, y1 + 1) if tile_touches(m, args.zoom, x, y))
+    print(
+        f"z{args.zoom}: {inside_n} of {total} tiles touch the region "
+        f"({total - inside_n} outside, so "
+        f"{100 * (total - inside_n) / total:.0f} % of the work is saved)"
+    )
     return 0
 
 

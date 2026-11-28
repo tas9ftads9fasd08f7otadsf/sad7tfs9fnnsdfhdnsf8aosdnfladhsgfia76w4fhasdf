@@ -1,9 +1,10 @@
 import io
 import math
 import os
+import time
 import unittest
 
-from load import needs, worker
+from load import needs, needs_cmd, worker
 
 rmask = worker("lib/region-mask.py")
 SQUARE = [([(19.0, 49.0), (20.0, 49.0), (20.0, 50.0), (19.0, 50.0)], False)]
@@ -22,6 +23,28 @@ class RegionMask(unittest.TestCase):
         self.assertFalse(m.touches(20.2, 49.0, 20.4, 49.5))
         self.assertFalse(m.touches(30.0, 49.0, 31.0, 50.0))
         self.assertAlmostEqual(m.pct, 100 / 9, delta=1)
+
+    @needs("numpy")
+    def test_a_fine_outline_masks_in_seconds(self):
+        # 586 a full-detail region outline kept the terrain job in its mask for minutes
+        ring = [
+            (19.5 + 0.4 * math.cos(2 * math.pi * k / 20000), 49.5 + 0.4 * math.sin(2 * math.pi * k / 20000))
+            for k in range(20000)
+        ]
+        started = time.monotonic()
+        m = rmask.Mask([(ring, False)], (19.0, 49.0, 20.0, 50.0), cells=2048)
+        self.assertLess(time.monotonic() - started, 20)
+        self.assertAlmostEqual(m.pct, 100 * math.pi * 0.4**2, delta=0.5)
+
+    def test_numpy_and_plain_masks_agree(self):
+        # 586 the scanline grid must flag the cells the ray cast does, holes included
+        bbox = (18.0, 48.0, 21.0, 51.0)
+        fast = rmask._grid(WITH_HOLE, bbox, 48, 48)
+        plain = bytearray(48 * 48)
+        for j in range(48):
+            for i in range(48):
+                plain[j * 48 + i] = rmask.inside(WITH_HOLE, 18.0 + (i + 0.5) / 16, 48.0 + (j + 0.5) / 16)
+        self.assertEqual(fast, plain)
 
     def tile_at(self, z, lon, lat):
         n = 2**z
@@ -214,6 +237,14 @@ class TerrainTiles(unittest.TestCase):
         hill[2, 2] = 5
         self.assertFalse(self.t.is_flat(hill, 10))
         self.assertFalse(self.t.is_flat(np.zeros((1, 4)), 10))
+
+    @needs_cmd("gdalwarp")
+    def test_a_failed_warp_says_why(self):
+        # 586 a failed warp in CI exited 1 with no word; its message must reach the log
+        with self.assertRaises(RuntimeError) as err:
+            self.t.warp_level("/nonexistent/all.vrt", os.devnull, 0, 0, 10, 10, 2, 2, "average")
+        self.assertIn("failed with exit", str(err.exception))
+        self.assertIn("/nonexistent/all.vrt", str(err.exception))
 
     def test_png_reads_back(self):
         from PIL import Image
