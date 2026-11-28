@@ -150,11 +150,12 @@ def as_webp(path, quality=80):
     return out
 
 
-KTX2_FLAGS = ["-ktx2", "-uastc", "-uastc_level", "1", "-uastc_rdo_l", "1.0", "-ktx2_zstandard_level", "18"]
+# xuastc 6 × 6: about a jpeg's size and look, a ninth of rgba on the gpu
+KTX2_FLAGS = ["-ktx2", "-ldr_6x6i"]
 
 
 def as_ktx2(path):
-    """A tile as KTX2 (UASTC, Zstandard): the GPU keeps it as ASTC, a quarter of RGBA."""
+    """A tile as KTX2 (XUASTC 6 × 6), which the GPU keeps as ASTC."""
     import subprocess  # noqa: PLC0415
     import tempfile  # noqa: PLC0415
 
