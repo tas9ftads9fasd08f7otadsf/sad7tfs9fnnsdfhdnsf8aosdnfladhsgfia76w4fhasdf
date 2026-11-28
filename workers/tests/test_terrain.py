@@ -27,8 +27,10 @@ class RegionMask(unittest.TestCase):
     @needs("numpy")
     def test_a_fine_outline_masks_in_seconds(self):
         # 586 a full-detail region outline kept the terrain job in its mask for minutes
-        ring = [(19.5 + 0.4 * math.cos(2 * math.pi * k / 20000), 49.5 + 0.4 * math.sin(2 * math.pi * k / 20000))
-                for k in range(20000)]
+        ring = [
+            (19.5 + 0.4 * math.cos(2 * math.pi * k / 20000), 49.5 + 0.4 * math.sin(2 * math.pi * k / 20000))
+            for k in range(20000)
+        ]
         started = time.monotonic()
         m = rmask.Mask([(ring, False)], (19.0, 49.0, 20.0, 50.0), cells=2048)
         self.assertLess(time.monotonic() - started, 20)
