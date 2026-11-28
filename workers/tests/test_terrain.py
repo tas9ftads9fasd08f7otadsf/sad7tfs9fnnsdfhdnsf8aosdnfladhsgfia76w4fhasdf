@@ -3,7 +3,7 @@ import math
 import os
 import unittest
 
-from load import needs, worker
+from load import needs, needs_cmd, worker
 
 rmask = worker("lib/region-mask.py")
 SQUARE = [([(19.0, 49.0), (20.0, 49.0), (20.0, 50.0), (19.0, 50.0)], False)]
@@ -214,6 +214,14 @@ class TerrainTiles(unittest.TestCase):
         hill[2, 2] = 5
         self.assertFalse(self.t.is_flat(hill, 10))
         self.assertFalse(self.t.is_flat(np.zeros((1, 4)), 10))
+
+    @needs_cmd("gdalwarp")
+    def test_a_failed_warp_says_why(self):
+        # 586 a failed warp in CI exited 1 with no word; its message must reach the log
+        with self.assertRaises(RuntimeError) as err:
+            self.t.warp_level("/nonexistent/all.vrt", os.devnull, 0, 0, 10, 10, 2, 2, "average")
+        self.assertIn("failed with exit", str(err.exception))
+        self.assertIn("/nonexistent/all.vrt", str(err.exception))
 
     def test_png_reads_back(self):
         from PIL import Image
