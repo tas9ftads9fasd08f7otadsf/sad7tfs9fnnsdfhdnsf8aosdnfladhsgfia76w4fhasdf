@@ -1,0 +1,25 @@
+name: Install basisu
+description: >-
+  Builds Basis Universal's `basisu`, which writes the photos' KTX2 tiles; Ubuntu packages none.
+
+inputs:
+  version:
+    description: "A tag of BinomialLLC/basis_universal"
+    required: false
+    default: v2_50
+
+runs:
+  using: composite
+  steps:
+    - name: Build basisu
+      shell: bash
+      env:
+        VERSION: ${{ inputs.version }}
+      run: |
+        set -euo pipefail
+        src="$RUNNER_TEMP/basis_universal"
+        git clone --quiet --depth 1 --branch "$VERSION" https://github.com/BinomialLLC/basis_universal.git "$src"
+        cmake -S "$src" -B "$src/build" -DCMAKE_BUILD_TYPE=Release > /dev/null
+        cmake --build "$src/build" --target basisu --parallel "$(nproc)" > /dev/null
+        sudo install "$(find "$src" -type f -name basisu -perm -u+x | head -n 1)" /usr/local/bin/basisu
+        basisu -version | head -n 1

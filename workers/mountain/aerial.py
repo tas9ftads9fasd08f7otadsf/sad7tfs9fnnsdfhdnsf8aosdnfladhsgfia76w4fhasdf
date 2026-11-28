@@ -150,6 +150,35 @@ def as_webp(path, quality=80):
     return out
 
 
+# xuastc 6 × 6: about a jpeg's size and look, a ninth of rgba on the gpu
+KTX2_FLAGS = ["-ktx2", "-ldr_6x6i"]
+
+
+def as_ktx2(path):
+    """A tile as KTX2 (XUASTC 6 × 6), which the GPU keeps as ASTC."""
+    import subprocess  # noqa: PLC0415
+    import tempfile  # noqa: PLC0415
+
+    out = path + ".ktx2"
+    if os.path.isfile(out) and os.path.getmtime(out) >= os.path.getmtime(path):
+        return out
+    with tempfile.TemporaryDirectory() as tmp:
+        src = path
+        if not path.endswith(".png"):
+            # basisu reads no WebP, and a PNG keeps a cut tile's clear edge
+            from PIL import Image  # noqa: PLC0415
+
+            src = os.path.join(tmp, "tile.png")
+            with Image.open(path) as img:
+                img.save(src, "PNG")
+        subprocess.run(
+            ["basisu", *KTX2_FLAGS, "-no_multithreading", "-file", src, "-output_file", out],
+            check=True,
+            stdout=subprocess.DEVNULL,
+        )
+    return out
+
+
 def zoom(value, default):
     """A zoom as the form takes it, `18` or `z18`."""
     return int(str(value).strip().lstrip("zZ") or default)
@@ -159,11 +188,15 @@ def e7(value):
     return int(round(value * 1e7))
 
 
-def write(out, tiles, bbox, minzoom, maxzoom, name, webp=False):
+TILE_TYPES = {"jpeg": ("JPEG", "jpg"), "webp": ("WEBP", "webp"), "ktx2": ("UNKNOWN", "ktx2")}
+
+
+def write(out, tiles, bbox, minzoom, maxzoom, name, fmt="jpeg"):
     """`tiles` maps (z, x, y) to an image on disk; the archive says what it holds."""
     from pmtiles.tile import Compression, TileType, zxy_to_tileid  # noqa: PLC0415
     from pmtiles.writer import Writer  # noqa: PLC0415
 
+    tile_type, format_name = TILE_TYPES[fmt]
     w, s, e, n = bbox
     os.makedirs(os.path.dirname(out) or ".", exist_ok=True)
     with open(out, "wb") as f:
@@ -173,7 +206,7 @@ def write(out, tiles, bbox, minzoom, maxzoom, name, webp=False):
                 writer.write_tile(zxy_to_tileid(*zxy), jpeg.read())
         writer.finalize(
             {
-                "tile_type": TileType.WEBP if webp else TileType.JPEG,
+                "tile_type": TileType[tile_type],
                 "tile_compression": Compression.NONE,
                 "min_zoom": minzoom,
                 "max_zoom": maxzoom,
@@ -187,7 +220,7 @@ def write(out, tiles, bbox, minzoom, maxzoom, name, webp=False):
             },
             {
                 "name": name,
-                "format": "webp" if webp else "jpg",
+                "format": format_name,
                 "type": "baselayer",
                 "description": "Aerial photos (orthophoto mosaic)",
             },
@@ -204,7 +237,7 @@ def main():
     ap.add_argument("--poly", default="", help="the range's outline (GeoJSON); else its box")
     ap.add_argument("--url", default="", help="instead of the source's own")
     ap.add_argument("--maxzoom", default="", help="instead of the source's own")
-    ap.add_argument("--format", default="jpeg", choices=("jpeg", "webp"), help="tiles in the archive")
+    ap.add_argument("--format", default="jpeg", choices=tuple(TILE_TYPES), help="tiles in the archive")
     # a volunteer server: few connections, and the cache spares it the next run
     ap.add_argument("--jobs", type=int, default=4)
     ap.add_argument("--github-output", default=os.environ.get("GITHUB_OUTPUT", ""))
@@ -244,7 +277,8 @@ def main():
                 filled += 1
             kept = cut(path, bbox, z, x, y, rings)
             if kept:
-                tiles[(z, x, y)] = as_webp(kept) if args.format == "webp" else kept
+                converted = {"webp": as_webp, "ktx2": as_ktx2}.get(args.format)
+                tiles[(z, x, y)] = converted(kept) if converted else kept
         if filled:
             print(f"::warning::{filled} {args.season} tiles the server lacks are their parent, enlarged.")
         if holes:
@@ -260,7 +294,7 @@ def main():
             )
         if tiles:
             name = os.path.basename(args.out).removesuffix(".pmtiles")
-            write(args.out, tiles, bbox, minzoom, maxzoom, name, webp=args.format == "webp")
+            write(args.out, tiles, bbox, minzoom, maxzoom, name, fmt=args.format)
             size = os.path.getsize(args.out)
             print(f"{args.out}: {len(tiles)} tiles, z{minzoom}–z{maxzoom}, {size / 1048576:.0f} MB")
             out = {"enabled": "true", "maxzoom": str(maxzoom)}
