@@ -158,10 +158,9 @@ def is_flat(heights, px_m):
 def warp_level(dem, path, minx, miny, maxx, maxy, width, height, resample):
     """Resample the DEM to a grid aligned to the zoom's tiles."""
     # Float32 keeps the fraction; a zero nodata was sea level and made a wall
-    subprocess.run(
+    done = subprocess.run(
         [
             "gdalwarp",
-            "-q",
             "-overwrite",
             "-t_srs",
             "EPSG:3857",
@@ -181,8 +180,13 @@ def warp_level(dem, path, minx, miny, maxx, maxy, width, height, resample):
             dem,
             path,
         ],
-        check=True,
+        capture_output=True,
+        text=True,
     )
+    # the output is shown only on failure: a run printed none and left nothing to go on
+    if done.returncode:
+        said = (done.stderr + done.stdout).strip()[-2000:] or "(gdalwarp printed nothing)"
+        raise RuntimeError(f"gdalwarp to {path} failed with exit {done.returncode}: {said}")
 
 
 def load_mask(poly, bbox):

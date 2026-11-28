@@ -17,11 +17,9 @@ const style = buildStyle({
 const paint = style.layers.find((l) => l.id === "hillshade").paint;
 const alpha = (hex) => parseInt(hex.slice(7, 9), 16) / 255;
 
-// 571 the owner: Mapy's shaded slopes are darker; ours were 12 levels lighter at its z13
-test("shaded slopes are as dark as Mapy's far out and lighten close up", () => {
-  assert.ok(alpha(paint["hillshade-shadow-color"]) >= 0.75, paint["hillshade-shadow-color"]);
+// 588 the owner: Mapy's shadows stay dark close up; variant C of the comparison in 586
+test("shaded slopes are as dark as Mapy's and stay dark close up", () => {
+  assert.ok(alpha(paint["hillshade-shadow-color"]) >= 0.85, paint["hillshade-shadow-color"]);
   const at = (z) => valueAtZoom(paint["hillshade-exaggeration"], z);
-  assert.ok(at(12) >= 0.85, `z12 ${at(12)}`);
-  assert.ok(at(13) >= 0.75, `z13 ${at(13)}`);
-  assert.ok(at(16) < at(13), "lighter close up, as on Mapy");
+  for (const z of [12, 13, 14, 15, 16]) assert.ok(at(z) >= 0.85, `z${z} ${at(z)}`);
 });
