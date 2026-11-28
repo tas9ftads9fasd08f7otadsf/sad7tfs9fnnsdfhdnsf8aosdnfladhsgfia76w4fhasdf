@@ -63,13 +63,7 @@ class Mask:
         self.nx = max(16, int(cells))
         self.ny = max(16, int(cells * span_y / span_x))
         self.dx, self.dy = span_x / self.nx, span_y / self.ny
-        self.grid = bytearray(self.nx * self.ny)
-        for j in range(self.ny):
-            y = self.s + (j + 0.5) * self.dy
-            row = j * self.nx
-            for i in range(self.nx):
-                if inside(rings, self.w + (i + 0.5) * self.dx, y):
-                    self.grid[row + i] = 1
+        self.grid = _grid(rings, bbox, self.nx, self.ny)
         self.hit = sum(self.grid)
 
     @property
@@ -91,6 +85,24 @@ class Mask:
                 return True
         # a window smaller than a mask cell (high zooms): the centre decides
         return inside(self.rings, (w + e) / 2, (s + n) / 2)
+
+
+def _grid(rings, bbox, nx, ny):
+    """Cell flags with row 0 in the south, filled by scanline where numpy is there."""
+    # pure Python costs cells × vertices: minutes to hours on a full-detail outline
+    try:
+        import numpy as np
+    except ImportError:
+        grid = bytearray(nx * ny)
+        w, s, e, n = bbox
+        dx, dy = (e - w) / nx, (n - s) / ny
+        for j in range(ny):
+            y = s + (j + 0.5) * dy
+            for i in range(nx):
+                if inside(rings, w + (i + 0.5) * dx, y):
+                    grid[j * nx + i] = 1
+        return grid
+    return bytearray(np.flipud(pixel_mask(rings, bbox, nx, ny)).astype(np.uint8).tobytes())
 
 
 def mask_from_file(path, bbox, cells=2048):
