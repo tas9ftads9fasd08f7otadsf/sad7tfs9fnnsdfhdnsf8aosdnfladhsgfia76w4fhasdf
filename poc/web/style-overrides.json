@@ -19,7 +19,7 @@
       "trailMtb": "#ba42e4",
       "rail": "#717170",
       "aerialway": "#4f4f4f",
-      "hillShadow": "#2c3f24c4",
+      "hillShadow": "#1f2e19d9",
       "hillAccent": "#5a6a4a38",
       "ice": "#d8f0fb",
       "trailYellow": "#f2d200",
@@ -760,19 +760,11 @@
               ],
               [
                 12,
-                0.88
-              ],
-              [
-                13,
-                0.78
-              ],
-              [
-                14,
-                0.62
+                0.85
               ],
               [
                 16,
-                0.5
+                0.85
               ]
             ]
           }
