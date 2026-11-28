@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A photo archive's JPEG or WebP tiles → the same archive with KTX2 tiles.
 
-    python3 workers/mountain/aerial-ktx2.py vysoke_tatry-aerial_summer.pmtiles out.pmtiles --jobs=8
+python3 workers/mountain/aerial-ktx2.py vysoke_tatry-aerial_summer.pmtiles out.pmtiles --jobs=8
 """
 
 import argparse
