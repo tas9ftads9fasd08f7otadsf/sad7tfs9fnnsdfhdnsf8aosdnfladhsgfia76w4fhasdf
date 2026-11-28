@@ -392,15 +392,7 @@
       "settings": {
         "orthophoto": "ortofoto_sk_3c"
       },
-      "regions": {
-        "bratislavsky": {
-          "settings": {
-            "publish": false,
-            "test_at": "17.26,48.462",
-            "test_km2": 9
-          }
-        }
-      }
+      "regions": {}
     },
     "cesko": {
       "settings": {
